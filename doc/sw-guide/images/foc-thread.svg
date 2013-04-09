@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="65cm" height="33cm" viewBox="-2 11 1299 660" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <rect style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke: #bfbfbf" x="40.53" y="60.795" width="1215.9" height="607.95"/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke: #bfbfbf" x1="648.48" y1="60.795" x2="648.48" y2="668.745"/>
+  <g>
+    <g>
+      <ellipse style="fill: #ffffff" cx="199.678" cy="439.278" rx="57.8235" ry="54.2429"/>
+      <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="199.678" cy="439.278" rx="57.8235" ry="54.2429"/>
+    </g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #ff0000" cx="199.678" cy="439.278" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="199.678" y="444.142">
+      <tspan x="199.678" y="444.142">CAN PHY</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <ellipse style="fill: #ffffff" cx="341.533" cy="439.278" rx="57.8235" ry="54.2429"/>
+      <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="341.533" cy="439.278" rx="57.8235" ry="54.2429"/>
+    </g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #ff0000" cx="341.533" cy="439.278" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="341.533" y="444.142">
+      <tspan x="341.533" y="444.142">CAN COMMS</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <ellipse style="fill: #ffffff" cx="199.678" cy="581.133" rx="57.8235" ry="54.2429"/>
+      <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="199.678" cy="581.133" rx="57.8235" ry="54.2429"/>
+    </g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #00ff00" cx="199.678" cy="581.133" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="199.678" y="577.891">
+      <tspan x="199.678" y="577.891">ETHERNET</tspan>
+      <tspan x="199.678" y="590.86">PHY</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <ellipse style="fill: #ffffff" cx="557.568" cy="581.133" rx="57.8235" ry="54.2429"/>
+      <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="557.568" cy="581.133" rx="57.8235" ry="54.2429"/>
+    </g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #00ff00" cx="557.568" cy="581.133" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="557.568" y="585.997">
+      <tspan x="557.568" y="585.997">TCP/IP</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <ellipse style="fill: #ffffff" cx="523.918" cy="358.218" rx="57.8235" ry="54.2429"/>
+      <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="523.918" cy="358.218" rx="57.8235" ry="54.2429"/>
+    </g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" cx="523.918" cy="358.218" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="523.918" y="354.976">
+      <tspan x="523.918" y="354.976">DISPLAY</tspan>
+      <tspan x="523.918" y="367.945">CONTROL</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <ellipse style="fill: #ffffff" cx="382.063" cy="175.833" rx="57.8235" ry="54.2429"/>
+      <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="382.063" cy="175.833" rx="57.8235" ry="54.2429"/>
+    </g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" cx="382.063" cy="175.833" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="382.063" y="180.697">
+      <tspan x="382.063" y="180.697">WATCHDOG</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <ellipse style="fill: #ffffff" cx="1111.61" cy="135.303" rx="57.8235" ry="54.2429"/>
+      <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="1111.61" cy="135.303" rx="57.8235" ry="54.2429"/>
+    </g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" cx="1111.61" cy="135.303" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="1111.61" y="140.167">
+      <tspan x="1111.61" y="140.167">PWM 1</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <ellipse style="fill: #ffffff" cx="949.483" cy="135.303" rx="57.8235" ry="54.2429"/>
+      <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="949.483" cy="135.303" rx="57.8235" ry="54.2429"/>
+    </g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" cx="949.483" cy="135.303" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="949.483" y="132.061">
+      <tspan x="949.483" y="132.061">MOTOR</tspan>
+      <tspan x="949.483" y="145.03">CONTROL</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <ellipse style="fill: #ffffff" cx="777.423" cy="581.133" rx="57.8235" ry="54.2429"/>
+      <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="777.423" cy="581.133" rx="57.8235" ry="54.2429"/>
+    </g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #00ff00" cx="777.423" cy="581.133" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="777.423" y="577.891">
+      <tspan x="777.423" y="577.891">ETHERNET</tspan>
+      <tspan x="777.423" y="590.86">COMMS</tspan>
+    </text>
+  </g>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke: #000000" x1="257.502" y1="581.133" x2="499.745" y2="581.133"/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke: #000000" x1="615.392" y1="581.133" x2="719.6" y2="581.133"/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke: #000000" x1="257.502" y1="439.278" x2="283.71" y2="439.278"/>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke: #000000" points="399.357,439.278 523.918,439.278 523.918,412.461 "/>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke: #000000" points="577.341,337.46 736.701,337.46 736.701,156.061 896.062,156.061 "/>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke: #000000" points="439.887,175.833 665.773,175.833 665.773,135.303 891.66,135.303 "/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke: #000000" x1="1007.31" y1="135.303" x2="1053.78" y2="135.303"/>
+  <g>
+    <g>
+      <rect style="fill: #ffffff" x="0" y="388.191" width="81.06" height="101.325"/>
+      <rect style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" x="0" y="388.191" width="81.06" height="101.325"/>
+    </g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" x="0" y="388.191" width="81.06" height="101.325"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="40.53" y="435.611">
+      <tspan x="40.53" y="435.611">CAN</tspan>
+      <tspan x="40.53" y="448.581">I/O</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <rect style="fill: #ffffff" x="0" y="530.046" width="81.06" height="101.325"/>
+      <rect style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" x="0" y="530.046" width="81.06" height="101.325"/>
+    </g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" x="0" y="530.046" width="81.06" height="101.325"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="40.53" y="585.572">
+      <tspan x="40.53" y="585.572">MII</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <rect style="fill: #ffffff" x="0" y="222.915" width="81.06" height="101.325"/>
+      <rect style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" x="0" y="222.915" width="81.06" height="101.325"/>
+    </g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" x="0" y="222.915" width="81.06" height="101.325"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="40.53" y="278.441">
+      <tspan x="40.53" y="278.441">GPIO</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <rect style="fill: #ffffff" x="0" y="81.06" width="81.06" height="101.325"/>
+      <rect style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" x="0" y="81.06" width="81.06" height="101.325"/>
+    </g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" x="0" y="81.06" width="81.06" height="101.325"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="40.53" y="136.586">
+      <tspan x="40.53" y="136.586">LCD</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <rect style="fill: #ffffff" x="1215.9" y="84.2163" width="81.06" height="101.325"/>
+      <rect style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" x="1215.9" y="84.2163" width="81.06" height="101.325"/>
+    </g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" x="1215.9" y="84.2163" width="81.06" height="101.325"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="1256.43" y="131.636">
+      <tspan x="1256.43" y="131.636">PWM</tspan>
+      <tspan x="1256.43" y="144.606">OUT</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <rect style="fill: #ffffff" x="321.084" y="20.265" width="121.59" height="79.0335"/>
+      <rect style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" x="321.084" y="20.265" width="121.59" height="79.0335"/>
+    </g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" x="321.084" y="20.265" width="121.59" height="79.0335"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="381.879" y="56.5394">
+      <tspan x="381.879" y="56.5394">WATCHDOG</tspan>
+      <tspan x="381.879" y="69.5088">OUTPUT</tspan>
+    </text>
+  </g>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke-dasharray: 4.053; stroke: #000000" x1="381.879" y1="99.2985" x2="382.063" y2="121.59"/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke-dasharray: 4.053; stroke: #000000" x1="141.855" y1="439.278" x2="81.06" y2="438.854"/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke-dasharray: 4.053; stroke: #000000" x1="141.855" y1="581.133" x2="81.06" y2="580.709"/>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke-dasharray: 4.053; stroke: #000000" points="466.095,358.218 202.65,358.218 202.65,273.578 81.06,273.578 "/>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke-dasharray: 4.053; stroke: #000000" points="470.497,337.46 263.445,337.46 263.445,131.723 81.06,131.723 "/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke-dasharray: 4.053; stroke: #000000" x1="1169.42" y1="135.303" x2="1215.9" y2="134.879"/>
+  <g>
+    <g>
+      <rect style="fill: #ffffff" x="1215.9" y="412.77" width="81.06" height="101.325"/>
+      <rect style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" x="1215.9" y="412.77" width="81.06" height="101.325"/>
+    </g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" x="1215.9" y="412.77" width="81.06" height="101.325"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="1256.43" y="468.296">
+      <tspan x="1256.43" y="468.296">ADC</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <rect style="fill: #ffffff" x="1215.9" y="537.625" width="81.06" height="101.325"/>
+      <rect style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" x="1215.9" y="537.625" width="81.06" height="101.325"/>
+    </g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" x="1215.9" y="537.625" width="81.06" height="101.325"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="1256.43" y="593.151">
+      <tspan x="1256.43" y="593.151">QEI</tspan>
+    </text>
+  </g>
+  <g>
+    <ellipse style="fill: #ffffff" cx="1109.85" cy="305.356" rx="57.8235" ry="54.2429"/>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="1109.85" cy="305.356" rx="57.8235" ry="54.2429"/>
+  </g>
+  <g>
+    <g>
+      <ellipse style="fill: #ffffff" cx="874.723" cy="305.356" rx="57.8235" ry="54.2429"/>
+      <ellipse style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" cx="874.723" cy="305.356" rx="57.8235" ry="54.2429"/>
+    </g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" cx="874.723" cy="305.356" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="874.723" y="302.114">
+      <tspan x="874.723" y="302.114">MOTOR</tspan>
+      <tspan x="874.723" y="315.083">CONTROL</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <rect style="fill: #ffffff" x="1215.9" y="254.113" width="81.06" height="101.325"/>
+      <rect style="fill: none; fill-opacity:0; stroke-width: 0.02; stroke: #ffffff" x="1215.9" y="254.113" width="81.06" height="101.325"/>
+    </g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" x="1215.9" y="254.113" width="81.06" height="101.325"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="1256.43" y="301.533">
+      <tspan x="1256.43" y="301.533">PWM</tspan>
+      <tspan x="1256.43" y="314.503">OUT</tspan>
+    </text>
+  </g>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4.053; stroke-dasharray: 4.053; stroke: #000000" x1="1167.67" y1="305.356" x2="1215.9" y2="304.776"/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4; stroke: #000000" x1="932.547" y1="305.356" x2="1052.02" y2="305.356"/>
+  <g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" cx="1109.85" cy="305.356" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="1109.85" y="310.22">
+      <tspan x="1109.85" y="310.22">PWM 2</tspan>
+    </text>
+  </g>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4; stroke: #000000" points="581.742,358.218 775.987,358.218 775.987,305.356 816.9,305.356 "/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4; stroke-dasharray: 4; stroke: #000000" x1="1167.45" y1="462.456" x2="1215.9" y2="463.433"/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 4; stroke-dasharray: 4; stroke: #000000" x1="1080.55" y1="587.356" x2="1215.9" y2="588.288"/>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4; stroke: #000000" points="990.371,173.659 1029.55,173.659 1029.55,424.101 1068.74,424.101 "/>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4; stroke: #000000" points="915.611,343.712 1008.99,343.712 1008.99,462.456 1051.8,462.456 "/>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4; stroke: #000000" points="949.483,189.546 949.483,481 1022.72,481 1022.72,533.113 "/>
+  <g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" cx="1109.62" cy="462.456" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="1109.62" y="467.32">
+      <tspan x="1109.62" y="467.32">ADC</tspan>
+    </text>
+  </g>
+  <g>
+    <ellipse style="fill: none; fill-opacity:0; stroke-width: 2.0265; stroke: #000000" cx="1022.72" cy="587.356" rx="57.8235" ry="54.2429"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:10.375;font-family:sanserif;font-style:normal;font-weight:normal" x="1022.72" y="592.22">
+      <tspan x="1022.72" y="592.22">QEI</tspan>
+    </text>
+  </g>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4; stroke: #000000" points="564.806,396.574 564.806,461.732 777.423,461.732 777.423,526.891 "/>
+  <polyline style="fill: none; fill-opacity:0; stroke-width: 4; stroke: #000000" points="874.723,359.599 874.723,587.356 964.9,587.356 "/>
+</svg>

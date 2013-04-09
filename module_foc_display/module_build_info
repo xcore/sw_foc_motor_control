@@ -1,0 +1,2 @@
+OPTIONAL_HEADERS += dsc_config.h
+

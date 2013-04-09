@@ -1,0 +1,67 @@
+<?xml version="1.0" ?>
+<xpd>
+    <components></components>
+    <dependency repo = "sc_pwm">
+        <githash>53f275204764669c9d8ae10378453aa279a5bc47</githash>
+        <uri>git@github.com:xcore/sc_pwm.git</uri>
+        <version>1.0.0rc0</version>
+    </dependency>
+    <dependency repo = "sc_can">
+        <githash>3ec6bf50a5de2b5e9dbd57400b69439f30ee7e02</githash>
+        <uri>git@github.com:xcore/sc_can.git</uri>
+    </dependency>
+    <dependency repo = "xcommon">
+        <githash>9078e1a092a5ddebbc32148b5ea6e0fc52bb9923</githash>
+        <uri>https://github.com/xcore/xcommon.git</uri>
+    </dependency>
+    <dependency repo = "sc_xtcp">
+        <githash>a9e68fadfd28eb79294cd9239dd3ddc8bb0712d4</githash>
+        <uri>git@github.com:xcore/sc_xtcp.git</uri>
+    </dependency>
+    <dependency repo = "sc_ethernet">
+        <githash>d015584d5ad4c01a5dec769b932464eafc6c5aaf</githash>
+        <uri>git@github.com:xcore/sc_ethernet.git</uri>
+    </dependency>
+    <description>XMOS motor control platform</description>
+    <location>git@github.com:xcore/sw_motor_control.git</location>
+    <name>sw_motor_control</name>
+    <maintainer>davidn@xmos.com</maintainer>
+    <release parenthash = "64bbe710e38941a8207c125c069158aad92852d1" version = "1.0.0rc0" githash = "4ceb53cd470e0338d706286a4371bb1e4c1e06bb"></release>
+    <release parenthash = "64bbe710e38941a8207c125c069158aad92852d1" version = "1.0.0" githash = "4ceb53cd470e0338d706286a4371bb1e4c1e06bb"></release>
+    <release parenthash = "ad62da3233b3d55e4afc5d2e7b3016d45b64241a" version = "1.0.1rc0" githash = "6358b683101a871c871f1fb1a6d6cff6e8404b31"></release>
+    <release parenthash = "ad62da3233b3d55e4afc5d2e7b3016d45b64241a" version = "1.0.1" githash = "6358b683101a871c871f1fb1a6d6cff6e8404b31"></release>
+    <release parenthash = "87880368bc900f1215848956c94338be0e5374d9" version = "1.0.2rc0" githash = "eccaec5a2cf331be4dd9faa7d7145fda86220370"></release>
+    <release parenthash = "87880368bc900f1215848956c94338be0e5374d9" version = "1.0.2" githash = "eccaec5a2cf331be4dd9faa7d7145fda86220370"></release>
+    <release parenthash = "39fc4492639533d56d5d3f59e7e19e89469ce0ca" version = "1.0.3rc0" githash = "1c53dbed9753ab2050a76827d8645ec0425c4ec4"></release>
+    <release parenthash = "39fc4492639533d56d5d3f59e7e19e89469ce0ca" version = "1.0.3" githash = "1c53dbed9753ab2050a76827d8645ec0425c4ec4"></release>
+    <release parenthash = "61fa8e2ae543b8aece4e88006685b925d12ec4e8" version = "1.0.4rc0" githash = "baf33bd8f6386768f68c16bbeb31e7e7c26a1a81"></release>
+    <release parenthash = "4c4b0039d1171fed09bebf46496ef7e4c238e269" version = "1.0.4rc1" githash = "7f0a0588b820e30282ce459ffb5aa13ed692e5b4"></release>
+    <release parenthash = "77135c7a3eacc42b5f16d9809fa8c1403f8f0c05" version = "1.1.0rc0" githash = "073ff50221cd0a1d9111c4c65c6b329dfe4a9b4c"></release>
+    <vendor>XMOS</vendor>
+    <xcore_repo>sw_motor_control.git</xcore_repo>
+    <xpd_version>1.0</xpd_version>
+    <template name = "Control Board Demo Project (Standalone)">
+        <board>XP-MC-CTRL-L2</board>
+        <description>This template is a simple demo using the features of the L2 Control Board.</description>
+        <src file = "src/main.xc">sw_motor_control/app_control_board_demo</src>
+        <dependencies>
+            <dependency>sw_motor_control</dependency>
+            <dependency>sc_can</dependency>
+            <dependency>sc_pwm</dependency>
+            <dependency>sc_xtcp</dependency>
+            <dependency>sc_ethernet</dependency>
+        </dependencies>
+    </template>
+    <template name = "Control Board Demo (Dual Axis FOC Motor Control)">
+        <board>XP-MC-CTRL-L2</board>
+        <description>Fully functional dual axis FOC speed control of two LDO PMSM motors</description>
+        <src file = "src/main.xc">sw_motor_control/app_dsc_demo</src>
+        <dependencies>
+            <dependency>sw_motor_control</dependency>
+            <dependency>sc_can</dependency>
+            <dependency>sc_pwm</dependency>
+            <dependency>sc_xtcp</dependency>
+            <dependency>sc_ethernet</dependency>
+        </dependencies>
+    </template>
+</xpd>
