@@ -14,11 +14,12 @@
 #ifndef _APP_GLOBAL_H_
 #define _APP_GLOBAL_H_
 
+#define USE_XSCOPE 1	// Define this to include XSCOPE support
+
+#define CHECK_ERRORS 1	// Define this to switch on error checks
+
 // Define the number of motors
 #define NUMBER_OF_MOTORS 2
-
-// Define this to include XSCOPE support
-#define USE_XSCOPE 1
 
 // This section to be used for specifying motor type ...
 

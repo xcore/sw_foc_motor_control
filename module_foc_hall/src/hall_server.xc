@@ -10,9 +10,7 @@
  * under a separate license, the separate license terms are shown
  * below. The modifications to the code are still covered by the 
  * copyright notice above.
- *
  **/                                   
-
 
 #include "hall_server.h"
 
@@ -24,6 +22,7 @@ static void init_hall_data( // Initialise Hall data structure for one motor
 {
 	hall_data_s.id = motor_id; // Set unique motor id
 
+	return;
 } // init_hall_data
 /*****************************************************************************/
 static void service_hall_input_pins( // Process new Hall data
@@ -36,6 +35,8 @@ static void service_hall_input_pins( // Process new Hall data
 //MB~ TODO: Insert filter here
 
 	hall_data_s.out_val = hall_data_s.inp_val; // NB Filtering not yet implemented
+
+	return;
 } // service_hall_input_pins
 /*****************************************************************************/
 static void service_hall_client_request( // Send processed HALL data to client
@@ -44,9 +45,11 @@ static void service_hall_client_request( // Send processed HALL data to client
 )
 {
 	c_hall <: hall_data_s.out_val;
+
+	return;
 } // service_hall_client_request
 /*****************************************************************************/
-void do_multiple_hall( // Get Hall Sensor data from motor and send to client
+void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	streaming chanend c_hall[], // Array of data channels to client (carries processed Hall data)
 	port in p4_hall[]					// Array of input port (carries raw Hall motor data)
 )
@@ -64,6 +67,7 @@ void do_multiple_hall( // Get Hall Sensor data from motor and send to client
 
 	// Loop forever
 	while (1) {
+#pragma xta endpoint "hall_main_loop"
 #pragma ordered // If multiple cases fire at same time, service top-most first
 		select {
 			// Service any change on input port pins
@@ -81,6 +85,7 @@ void do_multiple_hall( // Get Hall Sensor data from motor and send to client
 			break;
 		} // select
 	}	// while (1)
-} // do_multiple_hall
+
+	return;
+} // foc_hall_do_multiple
 /*****************************************************************************/
-// hall_server

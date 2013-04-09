@@ -61,7 +61,7 @@ on tile[MOTOR_TILE]: buffered out port:32 p32_pwm_lo[NUMBER_OF_MOTORS][NUM_ADC_P
 	= {	{PORT_M1_LO_A, PORT_M1_LO_B, PORT_M1_LO_C} ,{PORT_M2_LO_A, PORT_M2_LO_B, PORT_M2_LO_C} };
 
 // QEI ports
-on tile[MOTOR_TILE]: port in p_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER, PORT_M2_ENCODER };
+on tile[MOTOR_TILE]: port in p4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER, PORT_M2_ENCODER };
 
 // Watchdog port
 on tile[INTERFACE_TILE]: out port i2c_wd = PORT_WATCHDOG;
@@ -199,17 +199,11 @@ int main ( void ) // Program Entry Point
 		par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 		{
 			on tile[MOTOR_TILE] : do_pwm_inv_triggered( motor_cnt ,c_pwm[motor_cnt] ,p32_pwm_hi[motor_cnt] ,p32_pwm_lo[motor_cnt] ,c_adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
-
-#ifdef USE_SEPARATE_QEI_THREADS
-			on tile[MOTOR_TILE] : do_qei ( motor_cnt ,c_qei[motor_cnt], p_qei[motor_cnt] );
-#endif // #ifdef USE_SEPARATE_QEI_THREADS
 		}
 
-#ifndef USE_SEPARATE_QEI_THREADS
-		on tile[MOTOR_TILE] : do_multiple_qei( c_qei, p_qei );
-#endif // #ifndef USE_SEPARATE_QEI_THREADS
+		on tile[MOTOR_TILE] : foc_qei_do_multiple( c_qei, p4_qei );
 
-		on tile[MOTOR_TILE] : do_multiple_hall( c_hall ,p4_hall );
+		on tile[MOTOR_TILE] : foc_hall_do_multiple( c_hall ,p4_hall );
 
 		on tile[MOTOR_TILE] : adc_7265_triggered( c_adc_cntrl ,c_adc_trig ,p32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
 	} // par

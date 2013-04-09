@@ -1,30 +1,62 @@
 /*
- * Module:  module_dsc_qei
- * File:    qei_server.h
- *
  * The copyrights, all other intellectual and industrial 
  * property rights are retained by XMOS and/or its licensors. 
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
- * Copyright XMOS Ltd 2010
+ * Copyright XMOS Ltd 2013
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
  * below. The modifications to the code are still covered by the 
  * copyright notice above.
- *
  */                                   
-#ifndef __QEI_SERVER_H__
-#define __QEI_SERVER_H__
+
+/*****************************************************************************\
+	This code is designed to work on a Motor with a Max speed of 4000 RPM,
+	and a 1024 counts per revolution.
+
+	The QEI data is read in via a 4-bit port. With assignments as follows:-
+
+	 bit_3   bit_2   bit_1    bit_0
+	-------  -----  -------  -------
+  Un-used  Index  Phase_B  Phase_A
+
+	In normal operation the B and A bits change as a grey-code,
+	with the following convention
+
+			  ----------->  Counter-Clockwise
+	BA:  00 01 11 10 00
+			  <-----------  Clockwise
+
+	During one revolution, BA will change 1024 times,
+	Index will take the value of zero 1023 times, and the value one once only,
+  at the position origin. 
+	NB When the motor starts, it is NOT normally at the origin
+
+	A look-up table is used to decode the 2 phase bits, into a spin direction
+	with the following meanings: 
+		 1: Anit-Clocwise, 
+		 0: Unknown    (The motor has either stopped, or jumped one or more phases)
+		-1: Clocwise, 
+
+	The timer is read every time the phase bits change. I.E. 1024 times per revolution
+
+	The angular postion is incremented/decremented (with the spin value) if the 
+	motor is NOT at the origin. 
+	If the motor is at the origin, the angular position is reset to zero.
+
+\*****************************************************************************/
+
+#ifndef _QEI_SERVER_H_
+#define _QEI_SERVER_H_
+
 #include <xs1.h>
+#include <assert.h>
+#include <print.h>
 
-#include "dsc_config.h"
-#include "qei_client.h"
-
-#ifndef NUMBER_OF_MOTORS
-#define NUMBER_OF_MOTORS 1
-#endif
+#include "app_global.h"
+#include "qei_common.h"
 
 /* This is a bit of a cludge, we are using a non-standard configuration
  * where the timer on the tile for inner_loop() is running at 250 MHz,
@@ -70,7 +102,7 @@ typedef enum QEI_ENUM_TAG
 } QEI_ENUM_TYP;
 
 /** Structure containing QEI parameters for one motor */
-typedef struct QEI_PARAM_TAG // 
+typedef struct QEI_DATA_TAG // 
 {
 	unsigned inp_pins; // Raw data values on input port pins
 	unsigned prev_phases; // Previous phase values
@@ -90,31 +122,13 @@ typedef struct QEI_PARAM_TAG //
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error
 	int scale_err; // Scaling diffusion error 
-} QEI_PARAM_S;
+} QEI_DATA_S;
 
-/** Structure containing array of QEI parameters for all motors */
-typedef struct ALL_QEI_TAG // 
-{
-	QEI_PARAM_S qei_data[NUMBER_OF_MOTORS]; // Array of QEI parameters for all motors */
-} ALL_QEI_S;
-
-/** \brief Implementation of the QEI server thread
- *
- *  \param c_qei The control channel used by the client
- *  \param p_qei The hardware port where the quadrature encoder is located
- */
-void do_qei ( 
-	unsigned motor_id, // Motor identifier
-	streaming chanend c_qei, 
-	port in p_qei 
+/*****************************************************************************/
+void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to client
+	streaming chanend c_qei[], // Array of channels connecting server & client
+	port in p4_qei[] // Array of QEI data ports for each motor
 );
+/*****************************************************************************/
 
-/** \brief Implementation of the QEI server thread that services multiple QEI devices
- *
- *  \param c_qei The control channels used by the client
- *  \param p_qei The hardware ports where the quadrature encoder is located
- */
-void do_multiple_qei ( streaming chanend c_qei[], port in p_qei[] );
-
-
-#endif /*__QEI_SERVER_H__ */
+#endif // _QEI_SERVER_H_

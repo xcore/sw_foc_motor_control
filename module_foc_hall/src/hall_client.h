@@ -10,21 +10,19 @@
  * under a separate license, the separate license terms are shown
  * below. The modifications to the code are still covered by the 
  * copyright notice above.
- *
  */                                   
-#ifndef HALL_CLIENT_H_
-#define HALL_CLIENT_H_
+#ifndef _HALL_CLIENT_H_
+#define _HALL_CLIENT_H_
 
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
 
-#include "hall_commands.h"
-
+#include "hall_common.h"
 
 /*****************************************************************************/
-unsigned get_hall_data( // Returns (4-bit) Hall sensor data from channel
+unsigned foc_hall_get_data( // Returns (4-bit) Hall sensor data from channel
 	streaming chanend c_hall // Streaming channel for Hall sensor data
 );
 /*****************************************************************************/
-#endif /* HALL_CLIENT_H_ */
+#endif /* _HALL_CLIENT_H_ */

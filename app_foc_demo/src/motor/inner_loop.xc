@@ -159,14 +159,13 @@ typedef struct STRING_TAG // Structure containing string
 
 typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 {
+	QEI_PARAM_S qei_params; // QEI parameter structure 
 	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array of error messages
 	MOTOR_STATE_TYP state; // Current motor state
 	PID_CONST_TYP pid_consts[NUM_IQ_ESTIMATES][NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
 	ADC_DATA_TYP meas_adc; // Structure containing measured data from ADC
-	int meas_theta;	// Position as measured by the QEI
-	int meas_veloc;	// angular velocity as measured by the QEI
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int est_Id;	// Estimated radial current value
 	int est_Iq;	// Estimated tangential current value
@@ -192,7 +191,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	unsigned err_flgs;	// Fault detection flags
 	unsigned xscope;	// Flag set when xscope output required
 
-	int rev_cnt;	// rev. counter (No. of origin traversals)
 	int theta_offset;	// Phase difference between the QEI and the coils
 	int phi_err;	// Error diffusion value for Phi value
 	int phi_off;	// Phi value offset
@@ -294,7 +292,7 @@ void init_motor( // initialise data structure for one motor
 	safestrcpy( motor_s.err_strs[DIRECTION].str ,"Motor Spinning In Wrong Direction!" );
 
 	// NB Display will require following variables, before we have measured them! ...
-	motor_s.meas_veloc = motor_s.req_veloc;
+	motor_s.qei_params.veloc = motor_s.req_veloc;
 	motor_s.meas_speed = abs(motor_s.req_veloc);
 
 	// Initialise variables dependant on spin direction
@@ -459,17 +457,17 @@ void estimate_Iq_from_velocity( // Estimates tangential coil current from measur
  * WARNING: GRAD will be different for different motors.
  */
 {
-	int scaled_vel = VEL_GRAD * motor_s.meas_veloc; // scaled angular velocity
+	int scaled_vel = VEL_GRAD * motor_s.qei_params.veloc; // scaled angular velocity
 
 
-	if (0 > motor_s.meas_veloc)
+	if (0 > motor_s.qei_params.veloc)
 	{
 		motor_s.est_Iq = -sqrtuint( -scaled_vel );
-	} // if (0 > motor_s.meas_veloc)
+	} // if (0 > motor_s.qei_params.veloc)
 	else
 	{
 		motor_s.est_Iq = sqrtuint( scaled_vel );
-	} // if (0 > motor_s.meas_veloc)
+	} // if (0 > motor_s.qei_params.veloc)
 } // estimate_Iq_from_velocity
 /*****************************************************************************/
 void estimate_Iq_using_transforms( // Calculate Id & Iq currents using transforms. NB Required if requested Id is NON-zero
@@ -488,12 +486,12 @@ void estimate_Iq_using_transforms( // Calculate Id & Iq currents using transform
 // if (motor_s.xscope) xscope_probe_data( 6 ,beta_meas );
 
 	// Update Phi estimate ...
-	scaled_phi = motor_s.meas_veloc * PHI_GRAD + motor_s.phi_off + motor_s.phi_err;
+	scaled_phi = motor_s.qei_params.veloc * PHI_GRAD + motor_s.phi_off + motor_s.phi_err;
 	phi_est = (scaled_phi + HALF_PHASE) >> PHASE_BITS;
 	motor_s.phi_err = scaled_phi - (phi_est << PHASE_BITS);
 
 	// Calculate theta value for Park transform
-	theta_park = motor_s.meas_theta + motor_s.theta_offset + phi_est;
+	theta_park = motor_s.qei_params.theta + motor_s.theta_offset + phi_est;
 	theta_park &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 
 #pragma xta label "foc_loop_park"
@@ -610,7 +608,7 @@ void calc_foc_pwm( // Calculate FOC PWM output values
 	// Applying Speed PID.
 
 if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
-	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED] ,motor_s.meas_veloc ,motor_s.req_veloc );
+	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED] ,motor_s.qei_params.veloc ,motor_s.req_veloc );
 
 	// Calculate velocity PID output
 	if (PROPORTIONAL)
@@ -696,12 +694,12 @@ if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
 if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.set_Vq );
 
 	// Update Gamma estimate ...
-	scaled_phase = motor_s.meas_veloc * GAMMA_GRAD + motor_s.gamma_off + motor_s.gamma_err;
+	scaled_phase = motor_s.qei_params.veloc * GAMMA_GRAD + motor_s.gamma_off + motor_s.gamma_err;
 	motor_s.gamma_est = (scaled_phase + HALF_PHASE) >> PHASE_BITS;
 	motor_s.gamma_err = scaled_phase - (motor_s.gamma_est << PHASE_BITS);
 
 	// Update 'demand' theta value for next dq_to_pwm iteration
-	motor_s.set_theta = motor_s.meas_theta + motor_s.theta_offset + motor_s.gamma_est;
+	motor_s.set_theta = motor_s.qei_params.theta + motor_s.theta_offset + motor_s.gamma_est;
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 
@@ -747,16 +745,16 @@ MOTOR_STATE_TYP check_hall_state( // Inspect Hall-state and update motor-state i
 			{ // Spinning in correct direction
 
 				// Check if the angular origin has been found, AND, we have done more than one revolution
-				if (1 < abs(motor_s.rev_cnt))
+				if (1 < abs(motor_s.qei_params.rev_cnt))
 				{
 					/* Calculate the offset between arbitary set_theta and actual measured theta,
 					 * NB There are multiple values of set_theta that can be used for each meas_theta, 
            * depending on the number of pole pairs. E.g. [0, 256, 512, 768] are equivalent.
 					 */
-					motor_s.theta_offset = motor_s.set_theta - motor_s.meas_theta;
+					motor_s.theta_offset = motor_s.set_theta - motor_s.qei_params.theta;
 					motor_state = FOC; // Switch to main FOC state
 					motor_s.cnts[FOC] = 0; // Initialise FOC-state counter 
-				} // if (0 < motor_s.rev_cnt)
+				} // if (0 < motor_s.qei_params.rev_cnt)
 			} // if (motor_s.prev_hall == motor_s.end_hall)
 			else
 			{ // We are probably spinning in the wrong direction!-(
@@ -796,12 +794,12 @@ void update_motor_state( // Update state of motor based on motor sensor data
 	switch( motor_s.state )
 	{
 		case START : // Intial entry state
-			if (0 != motor_s.rev_cnt) // Check if angular position origin found
+			if (0 != motor_s.qei_params.rev_cnt) // Check if angular position origin found
 			{
 				motor_s.state = SEARCH; // Switch to search state
 				motor_s.cnts[SEARCH] = 0; // Initialise search-state counter
 if (dbg) { printint(motor_s.id); printstr( " SA: " ); printintln( motor_s.cnts[START] ); } 
-			} // if (0 != motor_s.rev_cnt)
+			} // if (0 != motor_s.qei_params.rev_cnt)
 		break; // case START
 
 		case SEARCH : // Turn motor using Hall state, and update motor state
@@ -811,25 +809,25 @@ if (dbg) { printint(motor_s.id); printstr( " SA: " ); printintln( motor_s.cnts[S
 	
 		case FOC : // Normal FOC state
 			// Check for a stall
-// if (dbg) { printint(motor_s.id); printchar(': '); printint( motor_s.meas_veloc ); printchar(' '); printint( motor_s.meas_theta ); printchar(' '); printintln( motor_s.valid ); }
+// if (dbg) { printint(motor_s.id); printchar(': '); printint( motor_s.qei_params.veloc ); printchar(' '); printint( motor_s.qei_params.theta ); printchar(' '); printintln( motor_s.valid ); }
 			// check for correct spin direction
       if (0 > motor_s.half_veloc)
 			{
-				if (motor_s.meas_veloc > -motor_s.half_veloc)
+				if (motor_s.qei_params.veloc > -motor_s.half_veloc)
 				{	// Spinning in wrong direction
 					motor_s.err_flgs |= ERROR_DIRECTION;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
-				} // if (motor_s.meas_veloc > -motor_s.half_veloc)
+				} // if (motor_s.qei_params.veloc > -motor_s.half_veloc)
       } // if (0 > motor_s.half_veloc)
 			else
 			{
-				if (motor_s.meas_veloc < -motor_s.half_veloc)
+				if (motor_s.qei_params.veloc < -motor_s.half_veloc)
 				{	// Spinning in wrong direction
 					motor_s.err_flgs |= ERROR_DIRECTION;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
-				} // if (motor_s.meas_veloc < -motor_s.half_veloc)
+				} // if (motor_s.qei_params.veloc < -motor_s.half_veloc)
       } // if (0 > motor_s.half_veloc)
 
 			if (motor_s.meas_speed < STALL_SPEED) 
@@ -943,7 +941,7 @@ void use_motor ( // Start motor, and run step through different motor states
 			switch(command)
 			{
 				case CMD_GET_IQ :
-					c_speed <: motor_s.meas_veloc;
+					c_speed <: motor_s.qei_params.veloc;
 					c_speed <: motor_s.req_veloc;
 				break; // case CMD_GET_IQ
 	
@@ -967,7 +965,7 @@ void use_motor ( // Start motor, and run step through different motor states
 #pragma xta label "foc_loop_shared_comms"
 			if(command == CMD_GET_VALS)
 			{
-				c_can_eth_shared <: motor_s.meas_veloc;
+				c_can_eth_shared <: motor_s.qei_params.veloc;
 				c_can_eth_shared <: motor_s.meas_adc.vals[PHASE_A];
 				c_can_eth_shared <: motor_s.meas_adc.vals[PHASE_B];
 			}
@@ -1013,7 +1011,7 @@ void use_motor ( // Start motor, and run step through different motor states
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 				} // if (motor_s.iters > DEMO_LIMIT)
 
-				new_hall = get_hall_data( c_hall ); // Get new hall state
+				new_hall = foc_hall_get_data( c_hall ); // Get new hall state
 // if (motor_s.xscope) xscope_probe_data( 5 ,(100 * (new_hall & 7)));
 
 				// Check error status
@@ -1026,18 +1024,17 @@ void use_motor ( // Start motor, and run step through different motor states
 				else
 				{
 					/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
-					{ motor_s.meas_veloc ,motor_s.meas_theta ,motor_s.rev_cnt } = get_qei_data( c_qei );
-						motor_s.meas_speed = abs( motor_s.meas_veloc ); // NB Used to spot stalling behaviour
+					foc_qei_get_data( motor_s.qei_params ,c_qei );
+					motor_s.meas_speed = abs( motor_s.qei_params.veloc ); // NB Used to spot stalling behaviour
 
-						if (4400 < motor_s.meas_speed) // Safety
-						{
-							printstr("AngVel:"); printintln( motor_s.meas_veloc );
-								motor_s.state= STOP;
-						} // if (4100 < motor_s.meas_veloc)
+					if (4400 < motor_s.meas_speed) // Safety
+					{
+						printstr("AngVel:"); printintln( motor_s.qei_params.veloc );
+							motor_s.state= STOP;
+					} // if (4100 < motor_s.qei_params.veloc)
 
-// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.rev_cnt );
-if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.meas_theta );
-if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.meas_veloc );
+if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
+if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 
 					/* Get ADC readings */
 					get_adc_vals_calibrated_int16_mb( c_adc_cntrl ,motor_s.meas_adc );
@@ -1068,7 +1065,7 @@ if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 						if (0 == motor_s.id) // Check if 1st Motor
 						{
 /*
-							xscope_probe_data(0, motor_s.meas_veloc );
+							xscope_probe_data(0, motor_s.qei_params.veloc );
 				  	  xscope_probe_data(1, motor_s.set_Vq );
 	    				xscope_probe_data(2, pwm_vals[PHASE_A] );
 	    				xscope_probe_data(3, pwm_vals[PHASE_B]);
