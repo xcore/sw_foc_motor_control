@@ -20,7 +20,7 @@
 #include <print.h>
 #include <assert.h>
 
-#include "dsc_config.h"
+#include "app_global.h"
 #include "hall_commands.h"
 
 /** Structure containing HALL parameters for one motor */
@@ -32,9 +32,9 @@ typedef struct HALL_PARAM_TAG //
 } HALL_PARAM_S;
 
 /*****************************************************************************/
-void do_multiple_hall( // Get Hall Sensor data from motor and send to client
-	streaming chanend c_hall[], // Array of data channels to client (carries processed Hall data)
-	port in p4_hall[]					// Array of input port (carries raw Hall motor data)
+void do_multiple_hall( // Get Hall Sensor data from port (motor) and send to client
+	streaming chanend c_hall[],	// Array of data channels to client (carries processed Hall data)
+	port in p4_hall[]						// Array of input ports (carries raw Hall motor data)
 );
 /*****************************************************************************/
 #endif // _HALL_SERVER_H_

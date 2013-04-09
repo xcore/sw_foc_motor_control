@@ -17,30 +17,17 @@
 
 
 /*****************************************************************************/
-unsigned get_hall_data(
+unsigned get_hall_data( // Returns (4-bit) Hall sensor data from channel
 	streaming chanend c_hall // Streaming channel for Hall sensor data
 )
 {
 	unsigned new_hall; // new hall data
 
 
-	c_hall <: HALL_CMD_DATA_REQ; // Request new hall sensor data
+	c_hall <: HALL_CMD_DATA_REQ;	// Request new hall sensor data
 	c_hall :> new_hall;						// Read new hall sensor data
 
 	return new_hall;
 } // get_hall_data
-/*****************************************************************************/
-{unsigned, unsigned, unsigned} get_hall_pos_speed_delta( chanend c_hall )
-{
-	unsigned theta, speed, delta;
-
-	/* get position & speed & delta*/
-	c_hall <: 0;
-	c_hall :> theta;
-	c_hall :> speed;
-	c_hall :> delta;
-
-	return {theta, speed, delta};
-} // get_hall_pos_speed_delta
 /*****************************************************************************/
 // hall_client.xc

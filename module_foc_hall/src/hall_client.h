@@ -23,22 +23,8 @@
 
 
 /*****************************************************************************/
-/** \brief Get position from a hall server
- *
- *  The client library function for a hall sensor server
- *
- *  \param c_hall the channel for communicating with the hall server
- */
-unsigned get_hall_data( 
+unsigned get_hall_data( // Returns (4-bit) Hall sensor data from channel
 	streaming chanend c_hall // Streaming channel for Hall sensor data
 );
-/*****************************************************************************/
-/** \brief Get position, speed and delta from a hall server
- *
- *  The client library function for a hall sensor server
- *
- *  \param c_hall the channel for communicating with the hall server
- */
-{unsigned, unsigned, unsigned} get_hall_pos_speed_delta( chanend c_hall );
 /*****************************************************************************/
 #endif /* HALL_CLIENT_H_ */
