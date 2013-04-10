@@ -16,7 +16,7 @@
 
 /*****************************************************************************/
 static void init_qei_data( // Initialise  QEI data for one motor
-	QEI_DATA_S &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	int inp_id  // Input unique motor identifier
 )
 {
@@ -44,7 +44,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 } // init_qei_data
 /*****************************************************************************/
 static signed char get_spin_value( // Estimate spin value from QEI states
-	QEI_DATA_S &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	QEI_ENUM_TYP cur_state // current QEI-state
 ) // Returns output spin value
 {
@@ -130,7 +130,7 @@ static signed char get_spin_value( // Estimate spin value from QEI states
 } // get_spin_value
 /*****************************************************************************/
 static int get_theta_value( // Calculate theta value (returned to client) from local angular count
-	QEI_DATA_S &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	int inp_ang // local angular input count
 ) // Returns theta value
 /*
@@ -198,7 +198,7 @@ static int get_theta_value( // Calculate theta value (returned to client) from l
 /*****************************************************************************/
 #pragma unsafe arrays
 static void service_input_pins( // Get QEI data from motor and send to client
-	QEI_DATA_S &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	unsigned inp_pins // Set of raw data values on input port pins
 )
 {
@@ -308,7 +308,7 @@ static const signed char get_spin_state[QEI_PHASES][QEI_PHASES] = {
 } // service_input_pins
 /*****************************************************************************/
 static int filter_velocity( // Smooths velocity estimate using low-pass filter
-	QEI_DATA_S &qei_data_s, // Reference to structure containing QEI parameters for one motor
+	QEI_DATA_TYP &qei_data_s, // Reference to structure containing QEI parameters for one motor
 	int meas_veloc // Angular velocity of motor measured in Ticks/angle_position
 ) // Returns filtered output value
 /* This is a 1st order IIR filter, it is configured as a low-pass filter, 
@@ -343,7 +343,7 @@ static int filter_velocity( // Smooths velocity estimate using low-pass filter
 /*****************************************************************************/
 #pragma unsafe arrays
 static void service_client_request( // Send processed QEI data to client
-	QEI_DATA_S &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	streaming chanend c_qei // Data channel to client (carries processed QEI data)
 )
 /*	The speed is calculated assuming the angular change is always 1 position.
@@ -385,7 +385,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	port in pQEI[] 						 // Array of input port (carries raw QEI motor data)
 )
 {
-	QEI_DATA_S all_qei_s[NUMBER_OF_MOTORS]; // Array of structures containing QEI parameters for all motor
+	QEI_DATA_TYP all_qei_s[NUMBER_OF_MOTORS]; // Array of structures containing QEI parameters for all motor
 	unsigned inp_pins[NUMBER_OF_MOTORS]; // Set of raw data values on input port pins
 
 
@@ -395,7 +395,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	}
 
 	while (1) {
-#pragma xta endpoint "qei_main_loop"
+pragma xta endpoint "qei_main_loop"
 #pragma ordered // If multiple cases fire at same time, service top-most first
 		select {
 			// Service any change on input port pins

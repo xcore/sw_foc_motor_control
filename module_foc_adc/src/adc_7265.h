@@ -1,14 +1,30 @@
-/*
- * adc_7265.h
+/**
+ * The copyrights, all other intellectual and industrial 
+ * property rights are retained by XMOS and/or its licensors. 
+ * Terms and conditions covering the use of this code can
+ * be found in the Xmos End User License Agreement.
  *
- *  Created on: Jul 6, 2011
- *      Author: A SRIKANTH
- */
+ * Copyright XMOS Ltd 2013
+ *
+ * In the case where this code is a modification of existing code
+ * under a separate license, the separate license terms are shown
+ * below. The modifications to the code are still covered by the 
+ * copyright notice above.
+ **/
 
-#ifndef ADC_7265_H_
-#define ADC_7265_H_
+#ifndef _ADC_7265_H_
+#define _ADC_7265_H_
+
+#include <xs1.h>
+#include <platform.h>
+#include <xclib.h>
+#include <print.h>
+#include <assert.h>
 
 #include "adc_common.h"
+
+/**  Default Filter Mode  1 == On */
+#define ADC_FILTER_7265 1
 
 /*	The AD7265 data-sheet refers to the following signals:-
  *		SCLK:				Serial Clock frequency (can be configured to between  4..16 MHz.)
@@ -61,19 +77,9 @@
  */
 #define ADC_SCLK_MHZ 8 // ADC Serial Clock frequency (in MHz)
 
-#define ADC_FILTER_7265
-
-#define NUM_ADC_DATA_PORTS 2 // The number data ports on the ADC chip (AD7265)
+#define NUM_ADC_DATA_PORTS 2 // The number of data ports on the ADC chip (AD7265)
 
 // ADC_TRIGGER_DELAY needs to be tuned to move the ADC trigger point into the centre of the 'OFF' period.
-// The 'test_pwm' application can be run in the simulator to tune the parameter.  Use the following
-// command line:
-//    xsim --vcd-tracing "-core stdcore[1] -ports" bin\test_pwm.xe > trace.vcd
-//
-// Then open the 'Waveforms' perspective in the XDE, click the 'load VCD file' icon and look at the
-// traces named 'PORT_M1_LO_A', 'PORT_M1_LO_B', 'PORT_M1_LO_C', and 'PORT_ADC_CONV'.  The ADC conversion
-// trigger should go high in the centre of the low periods of all of the motor control ports. This
-// occurs periodically, but an example can be found at around 94.8us into the simulaton.
 #define ADC_TRIGGER_DELAY 1980
 
 #define ADC_SCALE_BITS 16 // Used to generate 2^n scaling factor
@@ -114,29 +120,29 @@ typedef struct ADC_7265_TAG // Structure containing ADC-7265 data
 	ADC_TRIG_TYP trig_data[NUM_ADC_TRIGGERS];
 } ADC_7265_TYP;
 
+/*****************************************************************************/
 /** \brief Implements the AD7265 triggered ADC service
  *
- *  This implements the AD hardware interface to the 7265 ADC device.  It has two ports to allow reading two
- *  simultaneous current readings for a single motor.
+ *  This implements the AD hardware interface to the 7265 ADC device.  
+ *	It has two ports to allow reading two simultaneous current readings for a single motor.
  *
  *  \param c_adc the array of ADC server control channels
- *  \param c_trig the array of channels to recieve triggers from the PWM modules
- *  \param clk an XCORE clock to provide clocking to the ADC
- *  \param SCLK the external clock pin on the ADC
- *  \param CNVST the convert strobe on the ADC
- *  \param DATA_A the first data port on the ADC
- *  \param DATA_B the second data port on the ADC
- *  \param MUX a port to allow the selection of the analogue MUX input
- *
+ *  \param c_trigger the array of channels to recieve triggers from the PWM modules
+ *	\param p32_data the Array of ADC data ports 
+ *  \param adc_xclk an XCORE clock to provide clocking to the ADC
+ *  \param p1_serial_clk the external serial clock pin on the ADC
+ *  \param p1_ready the convert strobe on the ADC
+ *  \param p_mux port to allow the selection of the analogue MUX input
  */
-void adc_7265_triggered( 
-	streaming chanend c_control[NUM_ADC_TRIGGERS],
-	chanend c_trigger[NUM_ADC_TRIGGERS],
-	in buffered port:32 p_data[NUM_ADC_DATA_PORTS], 
-	clock xclk,
-	out port p_serial_clk,
-	port p_conv_strobe,
-	port out p_mux
+void foc_adc_7265_triggered( // On request, Transmits new sampled ADC values over Client <--> Server channel
+	streaming chanend c_control[NUM_ADC_TRIGGERS], // Array of ADC Client <--> Server channels
+	chanend c_trigger[NUM_ADC_TRIGGERS], // Array of channels to receive triggers from the PWM modules
+	in buffered port:32 p32_data[NUM_ADC_DATA_PORTS], // Array of ADC data ports 
+	clock adc_xclk, // XCORE clock to provide clocking to the ADC
+	out port p1_serial_clk, // External serial clock pin on the ADC
+	port p1_ready, // convert strobe on the ADC
+	port out p4_mux // port to allow the selection of the analogue MUX input
 );
+/*****************************************************************************/
 
-#endif /* ADC_7265_H_ */
+#endif /* _ADC_7265_H_ */

@@ -16,7 +16,7 @@
 
 /*****************************************************************************/
 void foc_qei_get_data( // Returns New QEI data (speed, position, etc)
-	QEI_PARAM_S &qei_data_s,	// Reference to structure containing QEI data
+	QEI_PARAM_TYP &qei_data_s,	// Reference to structure containing QEI data
 	streaming chanend c_qei	// Channel connecting to QEI client & server
 ) // On returns qei_data_s is updated
 {

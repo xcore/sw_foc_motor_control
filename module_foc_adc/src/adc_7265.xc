@@ -1,26 +1,21 @@
-/*
- * adc_7265.xc
+/**
+ * The copyrights, all other intellectual and industrial 
+ * property rights are retained by XMOS and/or its licensors. 
+ * Terms and conditions covering the use of this code can
+ * be found in the Xmos End User License Agreement.
  *
- *  Created on: Jul 6, 2011
- *  Author: A SRIKANTH
- */
+ * Copyright XMOS Ltd 2013
+ *
+ * In the case where this code is a modification of existing code
+ * under a separate license, the separate license terms are shown
+ * below. The modifications to the code are still covered by the 
+ * copyright notice above.
+ **/
 
-#include <stdlib.h>
-#include <assert.h>
-
-#include <xs1.h>
-#include <platform.h>
-#include <xclib.h>
-#include <print.h>
-
-#include <adc_common.h>
-#include <adc_7265.h>
-
-#pragma xta command "analyze loop adc_7265_main_loop"
-#pragma xta command "set required - 40 us"
+#include "adc_7265.h"
 
 /*****************************************************************************/
-void init_adc_phase( // Initialise the data for this phase of one ADC trigger
+static void init_adc_phase( // Initialise the data for this phase of one ADC trigger
 	ADC_PHASE_TYP &phase_data_s // Reference to structure containing data for this phase of one ADC trigger
 )
 {
@@ -32,7 +27,7 @@ void init_adc_phase( // Initialise the data for this phase of one ADC trigger
 
 } // init_adc_phase
 /*****************************************************************************/
-void gen_filter_params( // Generates required filter parameters from 'inp_bits'
+static void gen_filter_params( // Generates required filter parameters from 'inp_bits'
 	ADC_FILT_TYP &filt_s, // Reference to structure containing filter parameters
 	int inp_bits // used to specify filter: coef_val = 1/2^inp_bits
 )
@@ -42,7 +37,7 @@ void gen_filter_params( // Generates required filter parameters from 'inp_bits'
 	filt_s.coef_bits = inp_bits; // Store to use for fast divide
 } // gen_filter_params( specify_filter 
 /*****************************************************************************/
-void init_adc_trigger( // Initialise the data for this ADC trigger
+static void init_adc_trigger( // Initialise the data for this ADC trigger
 	ADC_TRIG_TYP &trig_data_s, // Reference to structure containing data for this ADC trigger
 	int inp_mux  // Mapping from 'trigger channel' to 'analogue ADC mux input'
 )
@@ -117,35 +112,6 @@ static void configure_adc_ports_7265( // Configure all ADC data ports
 	start_clock( xclk );
 } // configure_adc_ports_7265
 /*****************************************************************************/
-void enable_adc_capture( // Do set-up to allow ADC values for this trigger to be captured
-	ADC_TRIG_TYP &trig_data_s // Reference to structure containing data for this ADC trigger
-)
-{
-	trig_data_s.my_timer :> trig_data_s.time_stamp; 	// get current time
-	trig_data_s.time_stamp += ADC_TRIGGER_DELAY;				// Increment to time of ADC value capture
-	trig_data_s.guard_off = 1;													// Switch guard OFF to allow capture
-} // enable_adc_capture
-/*****************************************************************************/
-void service_control_token( // Services client control token for this trigger
-	ADC_TRIG_TYP &trig_data_s, // Reference to structure containing data for this ADC trigger
-	int trig_id, // trigger identifier
-	unsigned char inp_token // input control token
-)
-{
-	switch(inp_token)
-	{
-		case XS1_CT_END : // Request for ADC values
-			enable_adc_capture( trig_data_s ); // Enable capture of ADC values
-		break; // case XS1_CT_END
-	
-    default: // Unsupported Control Token
-			assert(0 == 1); // Error: Unknown Control Token
-		break;
-	} // switch(inp_token)
-
-} // service_control_token 
-/*****************************************************************************/
-#pragma unsafe arrays
 static void get_adc_port_data( // Get ADC data from one port
 	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing data for this phase of one ADC trigger
 	in buffered port:32 inp_data_port // ADC input data port for one phase
@@ -166,20 +132,19 @@ static void get_adc_port_data( // Get ADC data from one port
 	word_16 = (short)(tmp_val & ADC_MASK);	// Mask out active bits and convert to signed word
 	int_32 = ((int)word_16) >> ADC_DIFF_BITS; // Convert to int and recover original magnitude
 
-#ifdef ADC_FILTER_7265
-{
-	int sum_val = phase_data_s.adc_val; // get old value
+	// Check if filtering selected
+	if (1 == ADC_FILTER_7265)
+	{
+		int sum_val = phase_data_s.adc_val; // get old value
 
-	// Create filtered value and store in int_32 ...
-	int_32 = (sum_val + (sum_val << 1) + int_32 + 2) >> 2; // 1st order filter (uncalibrated value)
-}
-#endif // ifdef ADC_FILTER_7265
+		// Create filtered value and store in int_32 ...
+		int_32 = (sum_val + (sum_val << 1) + int_32 + 2) >> 2; // 1st order filter (uncalibrated value)
+	} // if (1 == ADC_FILTER_7265)
 
 	phase_data_s.adc_val = int_32; // Store uncalibrated value
 
 } // get_adc_port_data
 /*****************************************************************************/
-#pragma unsafe arrays
 static void get_trigger_data_7265( 
 	ADC_TRIG_TYP &trig_data_s, // Reference to structure containing data for this ADC trigger
 	in buffered port:32 p32_data[NUM_ADC_DATA_PORTS],  // Array of 32-bit buffered ADC data ports
@@ -213,7 +178,7 @@ static void get_trigger_data_7265(
 
 } // get_trigger_data_7265
 /*****************************************************************************/
-void filter_adc_data( // Low-pass filter generate a mean value which is used to 'calibrate' the ADC data
+static void filter_adc_data( // Low-pass filter generate a mean value which is used to 'calibrate' the ADC data
 	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing adc phase data
 	ADC_FILT_TYP &filt_s // Reference to structure containing filter parameters
 )
@@ -247,7 +212,7 @@ void filter_adc_data( // Low-pass filter generate a mean value which is used to 
 
 } // filter_adc_data
 /*****************************************************************************/
-void update_adc_trigger_data( // Update ADC values for this trigger
+static void update_adc_trigger_data( // Update ADC values for this trigger
 	ADC_TRIG_TYP &trig_data_s, // Reference to structure containing data for this ADC trigger
 	in buffered port:32 p32_data[NUM_ADC_DATA_PORTS], // Array of 32-bit buffered ADC data ports
 	port p1_ready,	 // 1-bit port used to as ready signal for p32_adc_data ports and ADC chip
@@ -286,7 +251,35 @@ void update_adc_trigger_data( // Update ADC values for this trigger
 	trig_data_s.guard_off = 0; // Reset guard to ON
 } // update_adc_trigger_data
 /*****************************************************************************/
-void service_data_request( // Services client command data request for this trigger
+static void enable_adc_capture( // Do set-up to allow ADC values for this trigger to be captured
+	ADC_TRIG_TYP &trig_data_s // Reference to structure containing data for this ADC trigger
+)
+{
+	trig_data_s.my_timer :> trig_data_s.time_stamp; 	// get current time
+	trig_data_s.time_stamp += ADC_TRIGGER_DELAY;				// Increment to time of ADC value capture
+	trig_data_s.guard_off = 1;													// Switch guard OFF to allow capture
+} // enable_adc_capture
+/*****************************************************************************/
+static void service_control_token( // Services client control token for this trigger
+	ADC_TRIG_TYP &trig_data_s, // Reference to structure containing data for this ADC trigger
+	int trig_id, // trigger identifier
+	unsigned char inp_token // input control token
+)
+{
+	switch(inp_token)
+	{
+		case XS1_CT_END : // Request for ADC values
+			enable_adc_capture( trig_data_s ); // Enable capture of ADC values
+		break; // case XS1_CT_END
+	
+    default: // Unsupported Control Token
+			assert(0 == 1); // Error: Unknown Control Token
+		break;
+	} // switch(inp_token)
+
+} // service_control_token 
+/*****************************************************************************/
+static void service_data_request( // Services client command data request for this trigger
 	ADC_TRIG_TYP &trig_data_s, // Reference to structure containing data for this trigger
 	streaming chanend c_control, // ADC Channel connecting to Control, for this trigger
 	int trig_id, // trigger identifier
@@ -311,8 +304,7 @@ void service_data_request( // Services client command data request for this trig
 	} // switch(inp_cmd)
 } // service_data_request 
 /*****************************************************************************/
-#pragma unsafe arrays
-void adc_7265_triggered( // Thread for ADC server
+void foc_adc_7265_triggered( // Thread for ADC server
 	streaming chanend c_control[NUM_ADC_TRIGGERS], // Array of ADC control Channels connecting to Control (inner_loop.xc)
 	chanend c_trigger[NUM_ADC_TRIGGERS], // Array of channels receiving control token triggers from PWM threads
 	in buffered port:32 p32_data[NUM_ADC_DATA_PORTS], // Array of 32-bit buffered ADC data ports
@@ -344,7 +336,7 @@ void adc_7265_triggered( // Thread for ADC server
 	while (1)
 	{
 #pragma xta endpoint "adc_7265_main_loop"
-#pragma ordered
+#pragma ordered // If multiple cases fire at same time, service top-most first
 		select
 		{
 			// Service any Control Tokens that are received
@@ -371,6 +363,6 @@ void adc_7265_triggered( // Thread for ADC server
 		} // select
 
 	} // while (1)
-} // adc_7265_triggered
+} // foc_adc_7265_triggered
 /*****************************************************************************/
 // adc_7265.xc

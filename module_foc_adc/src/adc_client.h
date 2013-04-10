@@ -15,50 +15,28 @@
  *
  **/
 
-#ifndef __ADC_CLIENT_H__
-#define __ADC_CLIENT_H__
+#ifndef _ADC_CLIENT_H_
+#define _ADC_CLIENT_H_
+
+#include <xs1.h>
+#include <print.h>
+#include <assert.h>
 
 #include "adc_common.h"
 
-typedef struct ADC_DATA_TAG // Structure containing ADC data
+typedef struct ADC_PARAM_TAG // Structure containing ADC parameters
 {
 	int vals[NUM_ADC_PHASES]; // Array of ADC values for each phase
-} ADC_DATA_TYP;
+} ADC_PARAM_TYP;
 
-/*---------------------------------------------------------------------------*/
-
-/** \brief ADC calibration sequence
- *
- * This switches the ADC server into calibration mode.  After a number (NUM_CALIBRATIONS) of samples
- * the server reverts to non-calibration mode, and subsequent calls to the function
- * get_adc_vals_calibrated_int16 will take the measured average of the calibration
- * period as an offset
- *
- * \param c_adc the control channel to the ADC server
+/*****************************************************************************/
+/** Get 12-bit ADC values and convert to signed 32-bit integer
+ * \param adc_data_s // Structure containing ADC data
+ * \param c_adc  // channel connecting ADC client and server
  */
-void do_adc_calibration( streaming chanend c_adc );
-
-/*---------------------------------------------------------------------------*/
-
-/** \brief Get values converted from 14 bit unsigned to 16 bit signed and calibrated
- *
- * Read a set of current values from the motor, and convert them into a
- * standardized 16 bit scale
- *
- * \param c_adc the control channel to the ADC server
- */
-{int, int, int} get_adc_vals_calibrated_int16( streaming chanend c_adc );
-
-/*---------------------------------------------------------------------------*/
-
-/** \brief Get 12-bit ADC values and convert to signed 32-bit integer
- *
- * Read 2 of 3 ADC values from the motor, and convert them into signed 32-bit integer
- *
- * \param c_adc the control channel to the ADC server
- */
-void get_adc_vals_calibrated_int16_mb( streaming chanend c_adc ,ADC_DATA_TYP &adc_data_s );
-
-/*---------------------------------------------------------------------------*/
-
-#endif /* __ADC_CLIENT_H__ */
+void foc_adc_get_data( // Get 12-bit ADC values and convert to signed 32-bit integer
+	ADC_PARAM_TYP &adc_data_s, // Structure containing ADC data
+	streaming chanend c_adc
+);
+/*****************************************************************************/
+#endif // _ADC_CLIENT_H_

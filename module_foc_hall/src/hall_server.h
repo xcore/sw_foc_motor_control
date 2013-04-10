@@ -22,13 +22,13 @@
 #include "app_global.h"
 #include "hall_common.h"
 
-/** Structure containing HALL parameters for one motor */
-typedef struct HALL_PARAM_TAG // 
+/** Structure containing HALL data for one motor */
+typedef struct HALL_DATA_TAG // 
 {
 	unsigned inp_val; // Raw value on input port pins
 	unsigned out_val; // Filtered output value
 	int id; // Unique motor identifier
-} HALL_PARAM_S;
+} HALL_DATA_TYP;
 
 /*****************************************************************************/
 /** Get Hall Sensor data from port (motor) and send to client

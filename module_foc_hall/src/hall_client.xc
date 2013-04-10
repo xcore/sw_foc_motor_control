@@ -15,7 +15,8 @@
 #include "hall_client.h"
 
 /*****************************************************************************/
-unsigned foc_hall_get_data( // Returns (4-bit) Hall sensor data from channel
+void foc_hall_get_data( // Returns (4-bit) Hall sensor data from channel
+	HALL_PARAM_TYP &hall_data_s,	// Reference to structure containing Hall parameters
 	streaming chanend c_hall // Streaming channel for Hall sensor data
 )
 {
@@ -23,7 +24,7 @@ unsigned foc_hall_get_data( // Returns (4-bit) Hall sensor data from channel
 
 
 	c_hall <: HALL_CMD_DATA_REQ;	// Request new hall sensor data
-	c_hall :> new_hall;						// Read new hall sensor data
+	c_hall :> hall_data_s.hall_val; // Read new hall sensor data
 
 	return new_hall;
 } // foc_hall_get_data

@@ -16,7 +16,7 @@
 
 /*****************************************************************************/
 static void init_hall_data( // Initialise Hall data structure for one motor
-	HALL_PARAM_S &hall_data_s, // Reference to structure containing HALL data for one motor
+	HALL_DATA_TYP &hall_data_s, // Reference to structure containing HALL data for one motor
 	int motor_id	// Unique motor id
 )
 {
@@ -26,7 +26,7 @@ static void init_hall_data( // Initialise Hall data structure for one motor
 } // init_hall_data
 /*****************************************************************************/
 static void service_hall_input_pins( // Process new Hall data
-	HALL_PARAM_S &hall_data_s, // Reference to structure containing HALL data for one motor
+	HALL_DATA_TYP &hall_data_s, // Reference to structure containing HALL data for one motor
 	unsigned inp_pins // Set of raw data values on input port pins
 )
 {
@@ -40,7 +40,7 @@ static void service_hall_input_pins( // Process new Hall data
 } // service_hall_input_pins
 /*****************************************************************************/
 static void service_hall_client_request( // Send processed HALL data to client
-	HALL_PARAM_S &hall_data_s, // Reference to structure containing HALL parameters for one motor
+	HALL_DATA_TYP &hall_data_s, // Reference to structure containing HALL data for one motor
 	streaming chanend c_hall // Data channel to client (carries processed HALL data)
 )
 {
@@ -54,7 +54,7 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	port in p4_hall[]					// Array of input port (carries raw Hall motor data)
 )
 {
-	HALL_PARAM_S all_hall_data[NUMBER_OF_MOTORS]; // Array of structure containing HALL parameters for one motor
+	HALL_DATA_TYP all_hall_data[NUMBER_OF_MOTORS]; // Array of structure containing HALL data for one motor
 	unsigned hall_bufs[NUMBER_OF_MOTORS]; // buffera raw hall data from input port pins
 	int motor_cnt; // Counts number of motors
 

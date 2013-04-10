@@ -1,36 +1,23 @@
 /**
- * Module:  module_dsc_adc
- * Version: 1v0alpha2
- * Build:   2a548667d36ce36c64c58f05b5390ec71cb253fa
- * File:    adc_client.xc
- * Modified by : Srikanth
- * Last Modified on : 26-May-2011
- *
  * The copyrights, all other intellectual and industrial 
  * property rights are retained by XMOS and/or its licensors. 
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
- * Copyright XMOS Ltd 2010
+ * Copyright XMOS Ltd 2013
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
  * below. The modifications to the code are still covered by the 
  * copyright notice above.
- *
  **/
-#include <xs1.h>
 
 #include "adc_client.h"
 
-#ifdef __dsc_config_h_exists__
-#include <dsc_config.h>
-#endif
-
 /*****************************************************************************/
-void get_adc_vals_calibrated_int16_mb( 
-	streaming chanend c_adc_cntrl, // channel connecting to ADC thread
-	ADC_DATA_TYP &adc_data_s // Reference to structure containing ADC data
+void foc_adc_get_data( // Read 2 of 3 ADC values from the motor, and convert them into signed 32-bit integer
+	ADC_PARAM_TYP &adc_data_s, // Reference to structure containing ADC data
+	streaming chanend c_adc_cntrl // channel connecting to ADC client and server
 )
 {
 	int phase_cnt; // ADC Phase counter
@@ -51,6 +38,5 @@ void get_adc_vals_calibrated_int16_mb(
 	adc_data_s.vals[(NUM_ADC_PHASES - 1)] = -adc_sum;
 
 	return;
-} // get_adc_vals_calibrated_int16_mb
+} // foc_adc_get_data
 /*****************************************************************************/
-// adc_client.xc

@@ -28,7 +28,7 @@ typedef struct QEI_PARAM_TAG //
 	int theta;		// Angular position
 	int veloc;		// Angular velocity
 	int rev_cnt;	// Revolution counter (No. of origin traversals)
-} QEI_PARAM_S;
+} QEI_PARAM_TYP;
 
 /*****************************************************************************/
 /** Returns New QEI data (speed, position, etc)
@@ -36,7 +36,7 @@ typedef struct QEI_PARAM_TAG //
  * \param c_qei	// Channel connecting QEI client & server
  */
 void foc_qei_get_data( // Returns New QEI data (speed, position, etc)
-	QEI_PARAM_S &qei_data_s,	// Reference to structure containing QEI data
+	QEI_PARAM_TYP &qei_data_s,	// Reference to structure containing QEI data
 	streaming chanend c_qei	// Channel connecting to QEI client & server
 ); // On returns qei_data_s is updated
 /*****************************************************************************/

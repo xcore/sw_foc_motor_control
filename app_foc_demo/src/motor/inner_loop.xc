@@ -159,13 +159,14 @@ typedef struct STRING_TAG // Structure containing string
 
 typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 {
-	QEI_PARAM_S qei_params; // QEI parameter structure 
+	ADC_PARAM_TYP adc_params; // Structure containing measured data from ADC
+	HALL_PARAM_TYP hall_params; // Structure containing measured data from Hall sensors
+	QEI_PARAM_TYP qei_params; // Structure containing measured data from QEI sensors
 	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array of error messages
 	MOTOR_STATE_TYP state; // Current motor state
 	PID_CONST_TYP pid_consts[NUM_IQ_ESTIMATES][NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
-	ADC_DATA_TYP meas_adc; // Structure containing measured data from ADC
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int est_Id;	// Estimated radial current value
 	int est_Iq;	// Estimated tangential current value
@@ -337,7 +338,7 @@ void init_motor( // initialise data structure for one motor
 
 	for (phase_cnt = 0; phase_cnt < NUM_PHASES; phase_cnt++)
 	{ 
-		motor_s.meas_adc.vals[phase_cnt] = -1;
+		motor_s.adc_params.vals[phase_cnt] = -1;
 	} // for phase_cnt
 
 	motor_s.temp = 0; // MB~ Dbg
@@ -395,14 +396,14 @@ int smooth_adc_maxima( // Smooths maximum ADC values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	int max_val = motor_s.meas_adc.vals[0]; // Initialise maximum to first phase
+	int max_val = motor_s.adc_params.vals[0]; // Initialise maximum to first phase
 	int phase_cnt; // phase counter
 	int out_val; // filtered output value
 
 
 	for (phase_cnt = 1; phase_cnt < NUM_PHASES; phase_cnt++)
 	{ 
-		if (max_val < motor_s.meas_adc.vals[phase_cnt]) max_val = motor_s.meas_adc.vals[phase_cnt]; // Update maximum
+		if (max_val < motor_s.adc_params.vals[phase_cnt]) max_val = motor_s.adc_params.vals[phase_cnt]; // Update maximum
 	} // for phase_cnt
 
 	out_val = filter_adc_extrema( motor_s ,max_val );
@@ -414,14 +415,14 @@ int smooth_adc_minima( // Smooths minimum ADC values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	int min_val = motor_s.meas_adc.vals[0]; // Initialise minimum to first phase
+	int min_val = motor_s.adc_params.vals[0]; // Initialise minimum to first phase
 	int phase_cnt; // phase counter
 	int out_val; // filtered output value
 
 
 	for (phase_cnt = 1; phase_cnt < NUM_PHASES; phase_cnt++)
 	{ 
-		if (min_val > motor_s.meas_adc.vals[phase_cnt]) min_val = motor_s.meas_adc.vals[phase_cnt]; // Update minimum
+		if (min_val > motor_s.adc_params.vals[phase_cnt]) min_val = motor_s.adc_params.vals[phase_cnt]; // Update minimum
 	} // for phase_cnt
 
 	out_val = filter_adc_extrema( motor_s ,min_val );
@@ -482,7 +483,7 @@ void estimate_Iq_using_transforms( // Calculate Id & Iq currents using transform
 #pragma xta label "foc_loop_clarke"
 
 	// To calculate alpha and beta currents from measured data
-	clarke_transform( motor_s.meas_adc.vals[PHASE_A], motor_s.meas_adc.vals[PHASE_B], motor_s.meas_adc.vals[PHASE_C], alpha_meas, beta_meas );
+	clarke_transform( motor_s.adc_params.vals[PHASE_A], motor_s.adc_params.vals[PHASE_B], motor_s.adc_params.vals[PHASE_C], alpha_meas, beta_meas );
 // if (motor_s.xscope) xscope_probe_data( 6 ,beta_meas );
 
 	// Update Phi estimate ...
@@ -607,7 +608,7 @@ void calc_foc_pwm( // Calculate FOC PWM output values
 
 	// Applying Speed PID.
 
-if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
+	if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED] ,motor_s.qei_params.veloc ,motor_s.req_veloc );
 
 	// Calculate velocity PID output
@@ -917,7 +918,6 @@ void use_motor ( // Start motor, and run step through different motor states
 
 	int phase_cnt; // phase counter
 	unsigned command;	// Command received from the control interface
-	unsigned new_hall;	// New Hall state
 
 
 	// initialise arrays
@@ -966,12 +966,12 @@ void use_motor ( // Start motor, and run step through different motor states
 			if(command == CMD_GET_VALS)
 			{
 				c_can_eth_shared <: motor_s.qei_params.veloc;
-				c_can_eth_shared <: motor_s.meas_adc.vals[PHASE_A];
-				c_can_eth_shared <: motor_s.meas_adc.vals[PHASE_B];
+				c_can_eth_shared <: motor_s.adc_params.vals[PHASE_A];
+				c_can_eth_shared <: motor_s.adc_params.vals[PHASE_B];
 			}
 			else if(command == CMD_GET_VALS2)
 			{
-				c_can_eth_shared <: motor_s.meas_adc.vals[PHASE_C];
+				c_can_eth_shared <: motor_s.adc_params.vals[PHASE_C];
 				c_can_eth_shared <: motor_s.pid_veloc;
 				c_can_eth_shared <: motor_s.pid_Id;
 				c_can_eth_shared <: motor_s.pid_Iq;
@@ -1011,16 +1011,16 @@ void use_motor ( // Start motor, and run step through different motor states
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 				} // if (motor_s.iters > DEMO_LIMIT)
 
-				new_hall = foc_hall_get_data( c_hall ); // Get new hall state
-// if (motor_s.xscope) xscope_probe_data( 5 ,(100 * (new_hall & 7)));
+				foc_hall_get_data( motor_s.hall_params ,c_hall ); // Get new hall state
+// if (motor_s.xscope) xscope_probe_data( 5 ,(100 * (motor_s.hall_params.hall_val & 7)));
 
 				// Check error status
-				if (!(new_hall & 0b1000))
+				if (!(motor_s.hall_params.hall_val & 0b1000))
 				{
 					motor_s.err_flgs |= ERROR_OVERCURRENT;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
-				} // if (!(new_hall & 0b1000))
+				} // if (!(motor_s.hall_params.hall_val & 0b1000))
 				else
 				{
 					/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
@@ -1036,14 +1036,14 @@ void use_motor ( // Start motor, and run step through different motor states
 if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
 if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 
-					/* Get ADC readings */
-					get_adc_vals_calibrated_int16_mb( c_adc_cntrl ,motor_s.meas_adc );
-// if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.meas_adc.vals[PHASE_A] );
-// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.meas_adc.vals[PHASE_B] );
-// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.meas_adc.vals[PHASE_C] );
+					// Get ADC sensor data
+					foc_adc_get_data( motor_s.adc_params ,c_adc_cntrl );
+// if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.adc_params.vals[PHASE_A] );
+// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.adc_params.vals[PHASE_B] );
+// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.adc_params.vals[PHASE_C] );
 
-					update_motor_state( motor_s ,new_hall );
-				} // else !(!(new_hall & 0b1000))
+					update_motor_state( motor_s ,motor_s.hall_params.hall_val );
+				} // else !(!(motor_s.hall_params.hall_val & 0b1000))
 
 				// Check if motor needs stopping
 				if (STOP == motor_s.state)
@@ -1069,8 +1069,8 @@ if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 				  	  xscope_probe_data(1, motor_s.set_Vq );
 	    				xscope_probe_data(2, pwm_vals[PHASE_A] );
 	    				xscope_probe_data(3, pwm_vals[PHASE_B]);
-							xscope_probe_data(4, motor_s.meas_adc.vals[PHASE_A] );
-							xscope_probe_data(5, motor_s.meas_adc.vals[PHASE_B]);
+							xscope_probe_data(4, motor_s.adc_params.vals[PHASE_A] );
+							xscope_probe_data(5, motor_s.adc_params.vals[PHASE_B]);
 */
 						} // if (0 == motor_s.id)
 					} // if ((motor_s.cnts[FOC] & 0x1) == 0) 

@@ -204,7 +204,7 @@ int main ( void ) // Program Entry Point
 
 		on tile[MOTOR_TILE] : foc_hall_do_multiple( c_hall ,p4_hall );
 
-		on tile[MOTOR_TILE] : adc_7265_triggered( c_adc_cntrl ,c_adc_trig ,p32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
+		on tile[MOTOR_TILE] : foc_adc_7265_triggered( c_adc_cntrl ,c_adc_trig ,p32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
 	} // par
 	return 0;
 } // main

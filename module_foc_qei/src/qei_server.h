@@ -137,7 +137,7 @@ typedef struct QEI_DATA_TAG //
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error
 	int scale_err; // Scaling diffusion error 
-} QEI_DATA_S;
+} QEI_DATA_TYP;
 
 /*****************************************************************************/
 /** Get QEI Sensor data from port (motor) and send to client
