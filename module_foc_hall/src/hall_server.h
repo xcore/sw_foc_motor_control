@@ -31,6 +31,10 @@ typedef struct HALL_PARAM_TAG //
 } HALL_PARAM_S;
 
 /*****************************************************************************/
+/** Get Hall Sensor data from port (motor) and send to client
+ * \param c_hall[]	// Array of data channels to client (carries processed Hall data)
+ * \param p4_hall[]	// Array of input ports (carries raw Hall motor data)
+ */
 void foc_hall_do_multiple( // Get Hall Sensor data from port (motor) and send to client
 	streaming chanend c_hall[],	// Array of data channels to client (carries processed Hall data)
 	port in p4_hall[]						// Array of input ports (carries raw Hall motor data)

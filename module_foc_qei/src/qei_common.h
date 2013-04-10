@@ -12,14 +12,16 @@
  * copyright notice above.
  **/                                   
 
-#ifndef __QEI_COMMON_H__
-#define __QEI_COMMON_H__
+#ifndef _QEI_COMMON_H_
+#define _QEI_COMMON_H_
 
-#include "app_global.h"
+#ifndef QEI_PER_REV 
+	#error Define. QEI_PER_REV in app_global.h
+#endif // QEI_PER_REV
 
-#define QEI_CMD_DATA_REQ	1	// QEI Data Request Command code
-
-#define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of rotation
 #define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK] 
 
-#endif /* __QEI_COMMON_H__ */
+// QEI Command Codes (Client --> Server) 
+#define QEI_CMD_DATA_REQ	1	// QEI Data Request
+
+#endif /* _QEI_COMMON_H_ */

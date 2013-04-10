@@ -159,7 +159,6 @@ int main ( void ) // Program Entry Point
 	streaming chan c_hall[NUMBER_OF_MOTORS];
 	streaming chan c_qei[NUMBER_OF_MOTORS];
 	streaming chan c_adc_cntrl[NUMBER_OF_MOTORS];
-	streaming chan c_dbg[NUMBER_OF_MOTORS];
 
 #ifdef USE_ETH
 	chan c_ethernet[1]; // NB Need to declare an array of 1 element, because ethernet_xtcp_server() expects array reference 

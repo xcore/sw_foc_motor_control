@@ -25,13 +25,15 @@
 
 #define NUM_POLE_PAIRS	4 // Define the number of pole-pairs
 
-// Define the number different QEI sensors (angular positions)
+// Define the number different QEI sensors (angular positions for one mechanical rotation)
 #ifdef FAULHABER_MOTOR
 #define QEI_PER_REV (1024 * 4)
+#define MAX_SPEC_RPM 14000 // Maximum specified motor speed
 #else
+// LDO Motor
 #define QEI_PER_REV (256 * 4)
+#define MAX_SPEC_RPM 4000 // Maximum specified motor speed
 #endif
 
-#define MAX_SPEC_RPM 4000 // Maximum specified motor speed
 
 #endif /* _APP_GLOBAL_H_ */

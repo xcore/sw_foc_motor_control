@@ -361,7 +361,7 @@ static void service_client_request( // Send processed QEI data to client
 	// Check if we have received sufficient data to estimate velocity
   if (START_UP_CHANGES < inp_qei_s.diff_time)
 	{
-		meas_veloc = inp_qei_s.spin_sign * (int)TICKS_PER_MIN_PER_QEI / (int)inp_qei_s.diff_time; // Calculate new speed estimate.
+		meas_veloc = inp_qei_s.spin_sign * (int)TICKS_PER_MIN_PER_QEI / (int)inp_qei_s.diff_time; // Calculate new velocity estimate.
   } // if (START_UP_CHANGES < inp_qei_s.diff_time)
 	else
 	{

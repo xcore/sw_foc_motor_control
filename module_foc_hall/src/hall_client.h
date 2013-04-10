@@ -21,6 +21,10 @@
 #include "hall_common.h"
 
 /*****************************************************************************/
+/** Returns (4-bit) Hall sensor data from channel
+ * \param c_hall // data channel to server (carries processed Hall data)
+ * \return // Hall sensor data (4 LS bits)
+ */
 unsigned foc_hall_get_data( // Returns (4-bit) Hall sensor data from channel
 	streaming chanend c_hall // Streaming channel for Hall sensor data
 );

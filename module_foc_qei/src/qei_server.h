@@ -70,9 +70,24 @@
 #define PLATFORM_REFERENCE_HZ 250000000 // NB Uses 28-bits
 #endif
 
-// Calculate speed definitions, preserving precision and preventing overflow !-)
+#include "app_global.h"
+
+#define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
+
+/* Calculate speed definitions, preserving precision and preventing overflow !-)
+ * 
+ * The time difference between changes in QEI data is measured in 'ticks'.
+ * For a Platform Reference frequency of 250 MHz, there will be 15000000000 ticks/minute
+ * If there are 1024 different QEI points per revolution, then angular velocity (in RPM) is 
+ * (60.250000000)/(1024.Tick_Diff) or (TICKS_PER_MIN_PER_QEI / Tick_Diff) 
+ */
 #define TICKS_PER_SEC_PER_QEI (PLATFORM_REFERENCE_HZ / QEI_PER_REV) // Ticks/sec/angular_increment // 18-bits
 #define TICKS_PER_MIN_PER_QEI (60 * TICKS_PER_SEC_PER_QEI) // Ticks/min/angular_increment // 24 bits
+
+#ifndef MAX_SPEC_RPM 
+	#error Define. MAX_SPEC_RPM in app_global.h
+#endif // MAX_SPEC_RPM
+
 #define MIN_TICKS_PER_QEI (TICKS_PER_MIN_PER_QEI / MAX_SPEC_RPM) // Min. expected Ticks/QEI // 12 bits
 #define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
 
@@ -125,6 +140,10 @@ typedef struct QEI_DATA_TAG //
 } QEI_DATA_S;
 
 /*****************************************************************************/
+/** Get QEI Sensor data from port (motor) and send to client
+ * \param c_qei // Array of channels connecting server & client
+ * \param p4_qei // Array of QEI data ports for each motor
+ */
 void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to client
 	streaming chanend c_qei[], // Array of channels connecting server & client
 	port in p4_qei[] // Array of QEI data ports for each motor
