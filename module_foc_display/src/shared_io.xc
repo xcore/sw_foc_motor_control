@@ -15,30 +15,7 @@
  *
  **/
 
-#include "xs1.h"
-#include <stdio.h>
-#include <assert.h>
-
-#ifdef __dsc_config_h_exists__
-#include "dsc_config.h"
-#endif
-
-#include "lcd.h"
 #include "shared_io.h"
-
-#ifndef NUMBER_OF_MOTORS
-#define NUMBER_OF_MOTORS 1
-#endif
-
-#ifndef MIN_RPM
-#define MIN_RPM 100
-#endif
-
-#ifndef MAX_RPM
-#define MAX_RPM 3000
-#endif
-
-#define ERR_LIM 10 // No. of consecutive button value errors allowed
 
 /*****************************************************************************/
 void update_speed_control( // Updates the speed control loop

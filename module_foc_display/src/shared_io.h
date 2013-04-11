@@ -14,11 +14,30 @@
  * copyright notice above.
  *
  **/                                   
-#ifndef SHARED_IO_H_
-#define SHARED_IO_H_
+#ifndef _SHARED_IO_H_
+#define _SHARED_IO_H_
 
+#include <stdio.h> // Required for sprintf()
+
+#include <xs1.h>
+#include <assert.h>
+#include <print.h>
 #include <xccompat.h>
+
+#include "app_global.h"
 #include "lcd.h"
+
+
+#ifndef MIN_RPM
+#define MIN_RPM 100
+#endif
+
+#ifndef MAX_RPM
+#define MAX_RPM 3000
+#endif
+
+#define ERR_LIM 10 // No. of consecutive button value errors allowed
+
 
 // Individual command interfaces
 
@@ -43,4 +62,4 @@
 	void display_shared_io_manager( chanend c_speed[], REFERENCE_PARAM(lcd_interface_t, p), in port btns, out port leds);
 #endif
 
-#endif /* SHARED_IO_H_ */
+#endif // _SHARED_IO_H_

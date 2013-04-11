@@ -169,7 +169,7 @@ int main ( void ) // Program Entry Point
 		// Loop through all motors
 		par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 		{
-			on tile[MOTOR_TILE] : do_pwm_inv_triggered( motor_cnt ,c_pwm[motor_cnt] ,p32_pwm_hi[motor_cnt] ,p32_pwm_lo[motor_cnt] ,c_adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
+			on tile[MOTOR_TILE] : foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,p32_pwm_hi[motor_cnt] ,p32_pwm_lo[motor_cnt] ,c_adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
 		}
 
 		on tile[MOTOR_TILE] : foc_qei_do_multiple( c_qei, p4_qei );

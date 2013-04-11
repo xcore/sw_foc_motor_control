@@ -122,15 +122,6 @@ typedef enum IQ_EST_TAG
 } IQ_EST_TYP;
 
 /** Different Motor Phases */
-typedef enum PHASE_TAG
-{
-  PHASE_A = 0,  // 1st Phase
-  PHASE_B,		  // 2nd Phase
-  PHASE_C,		  // 3rd Phase
-  NUM_PHASES    // Handy Value!-)
-} PHASE_TYP;
-
-/** Different Motor Phases */
 typedef enum MOTOR_STATE_TAG
 {
   START = 0,	// Initial entry state
@@ -161,6 +152,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 {
 	ADC_PARAM_TYP adc_params; // Structure containing measured data from ADC
 	HALL_PARAM_TYP hall_params; // Structure containing measured data from Hall sensors
+	PWM_PARAM_TYP pwm_params; // Structure containing PWM data for PWM output ports
 	QEI_PARAM_TYP qei_params; // Structure containing measured data from QEI sensors
 	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array of error messages
 	MOTOR_STATE_TYP state; // Current motor state
@@ -202,8 +194,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int adc_err;	// Error diffusion value for ADC extrema filter
 	int prev_angl; 	// previous angular position
 	unsigned prev_time; 	// previous time stamp
-	unsigned mem_addr; // Shared memory address
-	unsigned cur_buf; // Current double-buffer in use at shared memory address
 
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error
@@ -215,7 +205,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 static int dbg = 0; // Debug variable
 
 /*****************************************************************************/
-void init_motor( // initialise data structure for one motor
+static void init_motor( // initialise data structure for one motor
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
 	unsigned motor_id // Unique Motor identifier e.g. 0 or 1
 )
@@ -272,8 +262,8 @@ void init_motor( // initialise data structure for one motor
 	motor_s.xscope = 0; 	// Clear xscope print flag
 	motor_s.prev_time = 0; 	// previous time stamp
 	motor_s.prev_angl = 0; 	// previous angular position
-	motor_s.cur_buf = 0; 	// Initialise which double-buffer in use
-	motor_s.mem_addr = 0; 	// Signal unassigned address
+	motor_s.pwm_params.buf = 0; 	// Initialise which double-buffer in use
+	motor_s.pwm_params.mem_addr = 0; 	// Signal unassigned address
 	motor_s.coef_err = 0; // Clear Extrema Coef. diffusion error
 	motor_s.scale_err = 0; // Clear Extrema Scaling diffusion error
 	motor_s.Iq_err = 0; // Clear Error diffusion value for measured Iq
@@ -336,7 +326,7 @@ void init_motor( // initialise data structure for one motor
 	motor_s.req_Iq = motor_s.Iq_openloop; // Requested 'tangential' current
 	motor_s.filt_val = motor_s.Iq_openloop; // Preset filtered Iq value to something sensible
 
-	for (phase_cnt = 0; phase_cnt < NUM_PHASES; phase_cnt++)
+	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
 	{ 
 		motor_s.adc_params.vals[phase_cnt] = -1;
 	} // for phase_cnt
@@ -344,21 +334,45 @@ void init_motor( // initialise data structure for one motor
 	motor_s.temp = 0; // MB~ Dbg
 } // init_motor
 /*****************************************************************************/
-void error_pwm_values( // Set PWM values to error condition
-	unsigned pwm_vals[]	// Array of PWM variables
+static void init_pwm( // Initialise PWM parameters for one motor
+	PWM_PARAM_TYP &pwm_param_s, // reference to structure containing PWM parameters
+	chanend c_pwm, // PWM channel connecting Client & Server
+	unsigned motor_id // Unique Motor identifier e.g. 0 or 1
+)
+{
+	int phase_cnt; // phase counter
+
+
+	pwm_param_s.buf = 0; // Current double-buffer in use at shared memory address
+	pwm_param_s.id = motor_id; // Unique Motor identifier e.g. 0 or 1
+
+	// initialise arrays
+	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
+	{ 
+		pwm_param_s.widths[phase_cnt] = 0;
+	} // for phase_cnt
+
+	// Receive the address of PWM data structure from the PWM server, in case shared memory is used
+	c_pwm :> pwm_param_s.mem_addr; // Receive shared memory address from PWM server
+
+	return;
+}
+/*****************************************************************************/
+static void error_pwm_values( // Set PWM values to error condition
+	unsigned pwm_vals[]	// Array of PWM widths
 )
 {
 	int phase_cnt; // phase counter
 
 
 	// loop through all phases
-	for (phase_cnt = 0; phase_cnt < NUM_PHASES; phase_cnt++)
+	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
 	{ 
 		pwm_vals[phase_cnt] = -1;
 	} // for phase_cnt
 } // error_pwm_values
 /*****************************************************************************/
-int filter_adc_extrema( 		// Smooths adc extrema values using low-pass filter
+static int filter_adc_extrema( 		// Smooths adc extrema values using low-pass filter
 	MOTOR_DATA_TYP &motor_s,	// reference to structure containing motor data
 	int extreme_val						// Either a minimum or maximum ADC value
 ) // Returns filtered output value
@@ -392,7 +406,7 @@ int filter_adc_extrema( 		// Smooths adc extrema values using low-pass filter
 	return out_val; // return filtered output value
 } // filter_adc_extrema
 /*****************************************************************************/
-int smooth_adc_maxima( // Smooths maximum ADC values
+static int smooth_adc_maxima( // Smooths maximum ADC values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
@@ -401,7 +415,7 @@ int smooth_adc_maxima( // Smooths maximum ADC values
 	int out_val; // filtered output value
 
 
-	for (phase_cnt = 1; phase_cnt < NUM_PHASES; phase_cnt++)
+	for (phase_cnt = 1; phase_cnt < NUM_ADC_PHASES; phase_cnt++)
 	{ 
 		if (max_val < motor_s.adc_params.vals[phase_cnt]) max_val = motor_s.adc_params.vals[phase_cnt]; // Update maximum
 	} // for phase_cnt
@@ -411,7 +425,7 @@ int smooth_adc_maxima( // Smooths maximum ADC values
 	return out_val;
 } // smooth_adc_maxima
 /*****************************************************************************/
-int smooth_adc_minima( // Smooths minimum ADC values
+static int smooth_adc_minima( // Smooths minimum ADC values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
@@ -420,7 +434,7 @@ int smooth_adc_minima( // Smooths minimum ADC values
 	int out_val; // filtered output value
 
 
-	for (phase_cnt = 1; phase_cnt < NUM_PHASES; phase_cnt++)
+	for (phase_cnt = 1; phase_cnt < NUM_ADC_PHASES; phase_cnt++)
 	{ 
 		if (min_val > motor_s.adc_params.vals[phase_cnt]) min_val = motor_s.adc_params.vals[phase_cnt]; // Update minimum
 	} // for phase_cnt
@@ -430,7 +444,7 @@ int smooth_adc_minima( // Smooths minimum ADC values
 	return out_val;
 } // smooth_adc_minima
 /*****************************************************************************/
-void estimate_Iq_from_ADC_extrema( // Estimate Iq value from ADC signals. NB Assumes requested Id is Zero
+static void estimate_Iq_from_ADC_extrema( // Estimate Iq value from ADC signals. NB Assumes requested Id is Zero
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
@@ -450,7 +464,7 @@ void estimate_Iq_from_ADC_extrema( // Estimate Iq value from ADC signals. NB Ass
 	motor_s.est_Id = 0;
 } // estimate_Iq_from_ADC_extrema
 /*****************************************************************************/
-void estimate_Iq_from_velocity( // Estimates tangential coil current from measured velocity
+static void estimate_Iq_from_velocity( // Estimates tangential coil current from measured velocity
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 /* This function uses the following relationship
@@ -471,7 +485,7 @@ void estimate_Iq_from_velocity( // Estimates tangential coil current from measur
 	} // if (0 > motor_s.qei_params.veloc)
 } // estimate_Iq_from_velocity
 /*****************************************************************************/
-void estimate_Iq_using_transforms( // Calculate Id & Iq currents using transforms. NB Required if requested Id is NON-zero
+static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using transforms. NB Required if requested Id is NON-zero
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
@@ -483,7 +497,7 @@ void estimate_Iq_using_transforms( // Calculate Id & Iq currents using transform
 #pragma xta label "foc_loop_clarke"
 
 	// To calculate alpha and beta currents from measured data
-	clarke_transform( motor_s.adc_params.vals[PHASE_A], motor_s.adc_params.vals[PHASE_B], motor_s.adc_params.vals[PHASE_C], alpha_meas, beta_meas );
+	clarke_transform( motor_s.adc_params.vals[ADC_PHASE_A], motor_s.adc_params.vals[ADC_PHASE_B], motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
 // if (motor_s.xscope) xscope_probe_data( 6 ,beta_meas );
 
 	// Update Phi estimate ...
@@ -502,7 +516,7 @@ void estimate_Iq_using_transforms( // Calculate Id & Iq currents using transform
 
 } // estimate_Iq_using_transforms
 /*****************************************************************************/
-unsigned scale_to_12bit( // Returns coil current converted to 12-bit unsigned
+static unsigned scale_to_12bit( // Returns coil current converted to 12-bit unsigned
 	int inp_I  // Input coil current
 )
 {
@@ -524,15 +538,14 @@ unsigned scale_to_12bit( // Returns coil current converted to 12-bit unsigned
 	return out_pwm; // return clipped 12-bit PWM value
 } // scale_to_12bit
 /*****************************************************************************/
-void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values 
+static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values 
 	MOTOR_DATA_TYP &motor_s, // Reference to structure containing motor data
-	unsigned out_pwm[],	// Array of PWM variables
 	int set_Vd, // Demand Radial voltage from the Voltage control PIDs
 	int set_Vq, // Demand tangential voltage from the Voltage control PIDs
 	unsigned inp_theta	// Input demand theta
 )
 {
-	int volts[NUM_PHASES];	// array of intermediate demand voltages for each phase
+	int volts[NUM_PWM_PHASES];	// array of intermediate demand voltages for each phase
 	int alpha_set = 0, beta_set = 0; // New intermediate demand voltages as a 2D vector
 	int phase_cnt; // phase counter
 
@@ -544,20 +557,20 @@ void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 // if (motor_s.xscope) xscope_probe_data( 11 ,beta_set );
 
 	// Final voltages applied: 
-	inverse_clarke_transform( volts[PHASE_A] ,volts[PHASE_B] ,volts[PHASE_C] ,alpha_set ,beta_set ); // Correct order
+	inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
 
 	/* Scale to 12bit unsigned for PWM output */
-	for (phase_cnt = 0; phase_cnt < NUM_PHASES; phase_cnt++)
+	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
 	{ 
-		out_pwm[phase_cnt] = scale_to_12bit( volts[phase_cnt] );
+		motor_s.pwm_params.widths[phase_cnt] = scale_to_12bit( volts[phase_cnt] );
 	} // for phase_cnt
 
-// if (motor_s.xscope) xscope_probe_data( 0 ,out_pwm[PHASE_A] );
-// if (motor_s.xscope) xscope_probe_data( 1 ,out_pwm[PHASE_B] );
-// if (motor_s.xscope) xscope_probe_data( 2 ,out_pwm[PHASE_C] );
+// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.pwm_params.widths[PWM_PHASE_A] );
+// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.pwm_params.widths[PWM_PHASE_B] );
+// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.pwm_params.widths[PWM_PHASE_C] );
 } // dq_to_pwm
 /*****************************************************************************/
-void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spins magnetic field around (regardless of the encoder)
+static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spins magnetic field around (regardless of the encoder)
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
@@ -586,7 +599,7 @@ void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spins magn
 	} // else !(motor_s.req_veloc < 0)
 } // calc_open_loop_pwm
 /*****************************************************************************/
-void calc_foc_pwm( // Calculate FOC PWM output values
+static void calc_foc_pwm( // Calculate FOC PWM output values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 /* The estimated tangential coil current (Iq), is much less than the requested value (Iq)
@@ -706,7 +719,7 @@ if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 
 } // calc_foc_pwm
 /*****************************************************************************/
-MOTOR_STATE_TYP check_hall_state( // Inspect Hall-state and update motor-state if necessary
+static MOTOR_STATE_TYP check_hall_state( // Inspect Hall-state and update motor-state if necessary
 	MOTOR_DATA_TYP &motor_s, // Reference to structure containing motor data
 	unsigned hall_inp // Input Hall state
 ) // Returns new motor-state
@@ -772,7 +785,7 @@ if (dbg) { printint(motor_s.id); printstr( " SE- " ); printintln( motor_s.cnts[S
 	return motor_state; // Return updated motor state
 } // check_hall_state
 /*****************************************S************************************/
-void update_motor_state( // Update state of motor based on motor sensor data
+static void update_motor_state( // Update state of motor based on motor sensor data
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
 	unsigned hall_inp // Input Hall state
 )
@@ -904,7 +917,7 @@ if (dbg) { printint(motor_s.id); printstr( " SL: " ); printintln( motor_s.cnts[S
 } // update_motor_state
 /*****************************************************************************/
 #pragma unsafe arrays
-void use_motor ( // Start motor, and run step through different motor states
+static void use_motor ( // Start motor, and run step through different motor states
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
 	chanend c_pwm, 
 	streaming chanend c_hall, 
@@ -914,20 +927,8 @@ void use_motor ( // Start motor, and run step through different motor states
 	chanend c_can_eth_shared 
 )
 {
-	unsigned pwm_vals[NUM_PHASES]; // Array of PWM values
-
-	int phase_cnt; // phase counter
 	unsigned command;	// Command received from the control interface
 
-
-	// initialise arrays
-	for (phase_cnt = 0; phase_cnt < NUM_PHASES; phase_cnt++)
-	{ 
-		pwm_vals[phase_cnt] = 0;
-	} // for phase_cnt
-
-	// Receive the address of PWM data structure from the PWM server, in case shared memory is used
-	c_pwm :> motor_s.mem_addr; // Receive shared memory address from PWM server
 
 	/* Main loop */
 	while (STOP != motor_s.state)
@@ -965,12 +966,12 @@ void use_motor ( // Start motor, and run step through different motor states
 			if(command == CMD_GET_VALS)
 			{
 				c_can_eth_shared <: motor_s.qei_params.veloc;
-				c_can_eth_shared <: motor_s.adc_params.vals[PHASE_A];
-				c_can_eth_shared <: motor_s.adc_params.vals[PHASE_B];
+				c_can_eth_shared <: motor_s.adc_params.vals[ADC_PHASE_A];
+				c_can_eth_shared <: motor_s.adc_params.vals[ADC_PHASE_B];
 			}
 			else if(command == CMD_GET_VALS2)
 			{
-				c_can_eth_shared <: motor_s.adc_params.vals[PHASE_C];
+				c_can_eth_shared <: motor_s.adc_params.vals[ADC_PHASE_C];
 				c_can_eth_shared <: motor_s.pid_veloc;
 				c_can_eth_shared <: motor_s.pid_Id;
 				c_can_eth_shared <: motor_s.pid_Iq;
@@ -1037,9 +1038,9 @@ if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 
 					// Get ADC sensor data
 					foc_adc_get_data( motor_s.adc_params ,c_adc_cntrl );
-// if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.adc_params.vals[PHASE_A] );
-// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.adc_params.vals[PHASE_B] );
-// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.adc_params.vals[PHASE_C] );
+// if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.adc_params.vals[ADC_PHASE_A] );
+// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.adc_params.vals[ADC_PHASE_B] );
+// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.adc_params.vals[ADC_PHASE_C] );
 
 					update_motor_state( motor_s ,motor_s.hall_params.hall_val );
 				} // else !(!(motor_s.hall_params.hall_val & 0b1000))
@@ -1048,15 +1049,15 @@ if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 				if (STOP == motor_s.state)
 				{
 					// Set PWM values to stop motor
-					error_pwm_values( pwm_vals );
+					error_pwm_values( motor_s.pwm_params.widths );
 				} // if (STOP == motor_s.state)
 				else
 				{
 					// Convert new set DQ values to PWM values
 if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
-					dq_to_pwm( motor_s ,pwm_vals ,motor_s.set_Vd ,motor_s.set_Vq ,motor_s.set_theta ); // Convert Output DQ values to PWM values
+					dq_to_pwm( motor_s ,motor_s.set_Vd ,motor_s.set_Vq ,motor_s.set_theta ); // Convert Output DQ values to PWM values
 
-					update_pwm_inv( c_pwm ,pwm_vals ,motor_s.id ,motor_s.cur_buf ,motor_s.mem_addr ); // Update the PWM values
+					foc_pwm_put_data( motor_s.pwm_params ,c_pwm ); // Update the PWM values
 
 #ifdef USE_XSCOPE
 					if ((motor_s.cnts[FOC] & 0x1) == 0) // If even, (NB Forgotton why this works!-(
@@ -1066,10 +1067,8 @@ if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 /*
 							xscope_probe_data(0, motor_s.qei_params.veloc );
 				  	  xscope_probe_data(1, motor_s.set_Vq );
-	    				xscope_probe_data(2, pwm_vals[PHASE_A] );
-	    				xscope_probe_data(3, pwm_vals[PHASE_B]);
-							xscope_probe_data(4, motor_s.adc_params.vals[PHASE_A] );
-							xscope_probe_data(5, motor_s.adc_params.vals[PHASE_B]);
+							xscope_probe_data(4, motor_s.adc_params.vals[ADC_PHASE_A] );
+							xscope_probe_data(5, motor_s.adc_params.vals[ADC_PHASE_B]);
 */
 						} // if (0 == motor_s.id)
 					} // if ((motor_s.cnts[FOC] & 0x1) == 0) 
@@ -1084,7 +1083,7 @@ if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 
 } // use_motor
 /*****************************************************************************/
-void error_handling( // Prints out error messages
+static void error_handling( // Prints out error messages
 	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
 )
 {
@@ -1143,6 +1142,8 @@ void run_motor (
 	}
 
 	init_motor( motor_s ,motor_id );	// Initialise motor data
+
+	init_pwm( motor_s.pwm_params ,c_pwm ,motor_id );	// Initialise PWM parameters
 
 	if (0 == motor_id) printstrln( "Demo Starts" ); // NB Prevent duplicate display lines
 
