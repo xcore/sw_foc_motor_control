@@ -133,13 +133,13 @@ static void get_adc_port_data( // Get ADC data from one port
 	int_32 = ((int)word_16) >> ADC_DIFF_BITS; // Convert to int and recover original magnitude
 
 	// Check if filtering selected
-	if (1 == ADC_FILTER_7265)
+	if (1 == ADC_FILTER)
 	{
 		int sum_val = phase_data_s.adc_val; // get old value
 
 		// Create filtered value and store in int_32 ...
 		int_32 = (sum_val + (sum_val << 1) + int_32 + 2) >> 2; // 1st order filter (uncalibrated value)
-	} // if (1 == ADC_FILTER_7265)
+	} // if (1 == ADC_FILTER)
 
 	phase_data_s.adc_val = int_32; // Store uncalibrated value
 

@@ -22,6 +22,7 @@
 #include <print.h>
 #include <assert.h>
 
+#include "app_global.h"
 #include "adc_common.h"
 
 typedef struct ADC_PARAM_TAG // Structure containing ADC parameters

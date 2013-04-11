@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <print.h>
 
+#include "app_global.h"
 #include "hall_common.h"
 
 /** Structure containing HALL parameters for one motor */

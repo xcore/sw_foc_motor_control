@@ -14,27 +14,8 @@
  * copyright notice above.
  *
  **/                                   
-#ifndef __ADC_COMMON_H__
-#define __ADC_COMMON_H__
-
-#include <xs1.h>
-
-// Define this to include XSCOPE support
-#define USE_XSCOPE 1
-
-#ifdef USE_XSCOPE
-#include <xscope.h>
-#endif
-
-#ifdef __dsc_config_h_exists__
-#include <dsc_config.h>
-#endif
-
-#ifndef NUMBER_OF_MOTORS
-#define NUMBER_OF_MOTORS 1
-#endif
-
-#define NUM_ADC_TRIGGERS NUMBER_OF_MOTORS	// The number of trigger channels coming from PWM units
+#ifndef _ADC_COMMON_H_
+#define _ADC_COMMON_H_
 
 /** Different ADC Phases */
 typedef enum ADC_PHASE_ETAG
@@ -47,10 +28,6 @@ typedef enum ADC_PHASE_ETAG
 
 #define USED_ADC_PHASES (NUM_ADC_PHASES - 1) // NB 3rd Phase can be inferred as 3 phases sum to zero
 
-// Count of the number of elements in the ADC filter array
-#define ADC_FILT_SAMPLE_COUNT 31
-
-
 /** Different ADC Commands */
 typedef enum CMD_ADC_ETAG
 {
@@ -58,4 +35,4 @@ typedef enum CMD_ADC_ETAG
   NUM_ADC_CMDS    // Handy Value!-)
 } CMD_ADC_ENUM;
 
-#endif /* __ADC_COMMON_H__ */
+#endif /* _ADC_COMMON_H_ */

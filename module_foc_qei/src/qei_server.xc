@@ -395,7 +395,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	}
 
 	while (1) {
-pragma xta endpoint "qei_main_loop"
+#pragma xta endpoint "qei_main_loop"
 #pragma ordered // If multiple cases fire at same time, service top-most first
 		select {
 			// Service any change on input port pins

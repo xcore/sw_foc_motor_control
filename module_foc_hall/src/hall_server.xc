@@ -21,6 +21,7 @@ static void init_hall_data( // Initialise Hall data structure for one motor
 )
 {
 	hall_data_s.id = motor_id; // Set unique motor id
+	hall_data_s.out_val = 0;
 
 	return;
 } // init_hall_data

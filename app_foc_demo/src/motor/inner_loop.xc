@@ -28,12 +28,12 @@
 #include <print.h>
 #include <assert.h>
 
-#include "mathuint.h"
-#include "pid_regulator.h"
 #include "hall_client.h"
 #include "qei_client.h"
 #include "adc_client.h"
-#include "pwm_cli_inv.h"
+#include "pwm_client.h"
+#include "mathuint.h"
+#include "pid_regulator.h"
 #include "clarke.h"
 #include "park.h"
 #include "watchdog.h"
@@ -926,9 +926,8 @@ void use_motor ( // Start motor, and run step through different motor states
 		pwm_vals[phase_cnt] = 0;
 	} // for phase_cnt
 
-#ifdef SHARED_MEM
+	// Receive the address of PWM data structure from the PWM server, in case shared memory is used
 	c_pwm :> motor_s.mem_addr; // Receive shared memory address from PWM server
-#endif // #ifdef SHARED_MEM
 
 	/* Main loop */
 	while (STOP != motor_s.state)

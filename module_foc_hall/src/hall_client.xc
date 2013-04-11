@@ -20,12 +20,9 @@ void foc_hall_get_data( // Returns (4-bit) Hall sensor data from channel
 	streaming chanend c_hall // Streaming channel for Hall sensor data
 )
 {
-	unsigned new_hall; // new hall data
-
-
 	c_hall <: HALL_CMD_DATA_REQ;	// Request new hall sensor data
 	c_hall :> hall_data_s.hall_val; // Read new hall sensor data
 
-	return new_hall;
+	return;
 } // foc_hall_get_data
 /*****************************************************************************/

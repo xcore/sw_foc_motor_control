@@ -70,8 +70,6 @@
 #define PLATFORM_REFERENCE_HZ 250000000 // NB Uses 28-bits
 #endif
 
-#include "app_global.h"
-
 #define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
 
 /* Calculate speed definitions, preserving precision and preventing overflow !-)

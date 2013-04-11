@@ -18,17 +18,9 @@
  *
  **/
 
-#include <xs1.h>
-#include <print.h>
-#include "dsc_config.h"
-
-#ifdef USE_CAN
-
 #include "control_comms_can.h"
-#include "CanIncludes.h"
-#include "CanFunctions.h"
-#include "shared_io.h"
 
+#if (USE_CAN)
 
 #define COUNTER_MASK  0xfff
 
@@ -215,6 +207,4 @@ void do_comms_can( chanend c_commands[], chanend rxChan, chanend txChan)
 	}
 }
 
-
-
-#endif  //USE_CAN
+#endif // (USE_CAN)

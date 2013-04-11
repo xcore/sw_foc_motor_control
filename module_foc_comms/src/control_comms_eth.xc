@@ -18,16 +18,9 @@
  *
  **/
 
-#include <xs1.h>
-#include <print.h>
-#include "dsc_config.h"
-
-#ifdef USE_ETH
 #include "control_comms_eth.h"
-#include "ethernet_server.h"
-#include "uip_server.h"
-#include "xtcp_client.h"
-#include "shared_io.h"
+
+#if (USE_ETH)
 
 void to_hex_string(int number, char& lsb, char& msb)
 {
@@ -263,6 +256,6 @@ void do_comms_eth( chanend c_commands[], chanend tcp_svr )
 	}
 }
 
-#endif  //USE_ETH
+#endif // (USE_ETH)
 
 

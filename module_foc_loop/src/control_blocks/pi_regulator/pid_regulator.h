@@ -23,16 +23,11 @@
 #ifndef __PI_REGULATOR_H__
 #define __PI_REGULATOR_H__
 
-#include <stdio.h>
+#include <xs1.h>
 #include <assert.h>
+#include <print.h>
 
-#ifdef __dsc_config_h_exists__
-#include <dsc_config.h>
-#endif
-
-#ifdef USE_XSCOPE
-#include <xscope.h>
-#endif
+#include "app_global.h"
 
 #ifdef BLDC_FOC
 #define PID_RESOLUTION 13

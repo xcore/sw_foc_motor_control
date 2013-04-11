@@ -16,15 +16,22 @@
 #define _ADC_7265_H_
 
 #include <xs1.h>
-#include <platform.h>
-#include <xclib.h>
-#include <print.h>
+#include <xclib.h> // NB Contains bitrev()
 #include <assert.h>
+#include <print.h>
 
+//MB~ #include <platform.h>
+
+#include "app_global.h"
 #include "adc_common.h"
 
-/**  Default Filter Mode  1 == On */
-#define ADC_FILTER_7265 1
+#ifndef ADC_FILTER 
+	#error Define. ADC_FILTER in app_global.h
+#endif // ADC_FILTER
+
+#ifndef NUMBER_OF_MOTORS 
+	#error Define. NUMBER_OF_MOTORS in app_global.h
+#endif // NUMBER_OF_MOTORS
 
 /*	The AD7265 data-sheet refers to the following signals:-
  *		SCLK:				Serial Clock frequency (can be configured to between  4..16 MHz.)
@@ -78,6 +85,8 @@
 #define ADC_SCLK_MHZ 8 // ADC Serial Clock frequency (in MHz)
 
 #define NUM_ADC_DATA_PORTS 2 // The number of data ports on the ADC chip (AD7265)
+
+#define NUM_ADC_TRIGGERS NUMBER_OF_MOTORS	// The number of trigger channels coming from PWM units
 
 // ADC_TRIGGER_DELAY needs to be tuned to move the ADC trigger point into the centre of the 'OFF' period.
 #define ADC_TRIGGER_DELAY 1980

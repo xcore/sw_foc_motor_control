@@ -1,48 +1,18 @@
 /**
- *
  * The copyrights, all other intellectual and industrial 
  * property rights are retained by XMOS and/or its licensors. 
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
- * Copyright XMOS Ltd 2010
+ * Copyright XMOS Ltd 2013
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
  * below. The modifications to the code are still covered by the 
  * copyright notice above.
- *
  **/                                   
-#include <xs1.h>
-#include <platform.h>
 
-#include "dsc_config.h"
-#include "shared_io.h"
-#include "watchdog.h"
-#include "inner_loop.h"
-#include "pwm_service_inv.h"
-#include "hall_server.h"
-#include "qei_server.h"
-#include "adc_7265.h"
-
-#ifdef USE_ETH
-#include "control_comms_eth.h"
-#include "ethernet_xtcp_server.h"
-#include "ethernet_board_support.h"
-#endif
-
-#ifdef USE_CAN
-#include "control_comms_can.h"
-#include "CanPhy.h"
-#endif
-
-#ifdef USE_XSCOPE
-#include <xscope.h>
-#endif
-
-// Define where everything is
-#define INTERFACE_TILE 0
-#define MOTOR_TILE 1
+#include "main.h"
 
 // LCD & Button Ports
 on tile[INTERFACE_TILE]: lcd_interface_t lcd_ports = { PORT_SPI_CLK, PORT_SPI_MOSI, PORT_SPI_SS_DISPLAY, PORT_SPI_DSA };
@@ -74,7 +44,7 @@ on tile[MOTOR_TILE]: port p1_ready = PORT_ADC_CONV; // 1-bit port used to as rea
 on tile[MOTOR_TILE]: out port p4_adc_mux = PORT_ADC_MUX; // 4-bit port used to control multiplexor on ADC chip
 on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
 
-#ifdef USE_ETH
+#if (USE_ETH)
 	// These intializers are taken from the ethernet_board_support.h header for
 	// XMOS dev boards. If you are using a different board you will need to
 	// supply explicit port structure intializers for these values
@@ -91,9 +61,9 @@ on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
 		{ 0, 0, 0, 0 }, // netmask (eg 255,255,255,0)
 		{ 0, 0, 0, 0 } // gateway (eg 192,168,0,1)
 	};
-#endif
+#endif // (USE_ETH)
 
-#ifdef USE_CAN
+#if (USE_CAN)
 	// CAN
 	on tile[INTERFACE_TILE] : clock p_can_clk = XS1_CLKBLK_4;
 	on tile[INTERFACE_TILE] : buffered in port:32 p_can_rx = PORT_CAN_RX;
@@ -106,9 +76,10 @@ void init_can_phy( chanend c_rxChan, chanend c_txChan, clock p_can_clk, buffered
 
 	canPhyRxTx( c_rxChan, c_txChan, p_can_clk, p_can_rx, p_can_tx );
 } // init_can_phy 
-#endif
+/*****************************************************************************/
+#endif // (USE_CAN)
 
-#ifdef USE_XSCOPE
+#if (USE_XSCOPE)
 /*****************************************************************************/
 void xscope_user_init()
 {
@@ -147,7 +118,9 @@ void xscope_user_init()
 
 	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
 } // xscope_user_init
-#endif
+/*****************************************************************************/
+#endif // (USE_XSCOPE)
+
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {
@@ -160,26 +133,25 @@ int main ( void ) // Program Entry Point
 	streaming chan c_qei[NUMBER_OF_MOTORS];
 	streaming chan c_adc_cntrl[NUMBER_OF_MOTORS];
 
-#ifdef USE_ETH
+#if (USE_ETH)
 	chan c_ethernet[1]; // NB Need to declare an array of 1 element, because ethernet_xtcp_server() expects array reference 
-#endif
+#endif // (USE_ETH)
 
-#ifdef USE_CAN
+#if (USE_CAN)
 	chan c_rxChan, c_txChan;
-#endif
-
+#endif // (USE_CAN)
 
 	par
 	{
-#ifdef USE_ETH
+#if (USE_ETH)
 		on ETHERNET_DEFAULT_TILE: ethernet_xtcp_server( xtcp_ports ,ipconfig ,c_ethernet ,1 ); // The Ethernet & TCP/IP server core(thread)
 		on tile[INTERFACE_TILE] : do_comms_eth( c_commands, c_ethernet[0] ); // core(thread) to extract Motor commands from ethernet commands
-#endif
+#endif // (USE_ETH)
 
-#ifdef USE_CAN
+#if (USE_CAN)
 		on tile[INTERFACE_TILE] : do_comms_can( c_commands, c_rxChan, c_txChan);
 		on tile[INTERFACE_TILE] : init_can_phy( c_rxChan, c_txChan, p_can_clk, p_can_rx, p_can_tx, p_shared_rs );
-#endif
+#endif // (USE_CAN)
 
 		on tile[INTERFACE_TILE] : do_wd( c_wd, i2c_wd );
 		on tile[INTERFACE_TILE] : display_shared_io_manager( c_speed, lcd_ports, p_btns, p_leds);
@@ -206,6 +178,7 @@ int main ( void ) // Program Entry Point
 
 		on tile[MOTOR_TILE] : foc_adc_7265_triggered( c_adc_cntrl ,c_adc_trig ,p32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
 	} // par
+
 	return 0;
 } // main
 /*****************************************************************************/
