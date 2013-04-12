@@ -63,7 +63,7 @@ void itoa(int n, char s[])
 
 
 // Initiate the LCD ports
-void lcd_ports_init(REFERENCE_PARAM(lcd_interface_t, p))
+void lcd_ports_init(REFERENCE_PARAM(LCD_INTERFACE_TYP, p))
 {
 	p.p_lcd_cs_n <: 1;
 
@@ -104,7 +104,7 @@ void lcd_ports_init(REFERENCE_PARAM(lcd_interface_t, p))
 
 
 // Send a byte out to the LCD
-void lcd_byte_out(REFERENCE_PARAM(lcd_interface_t, p), unsigned char c, int is_data)
+void lcd_byte_out(REFERENCE_PARAM(LCD_INTERFACE_TYP, p), unsigned char c, int is_data)
 {
 	unsigned int i;
 	unsigned int data = (unsigned int) c;
@@ -147,7 +147,7 @@ void lcd_byte_out(REFERENCE_PARAM(lcd_interface_t, p), unsigned char c, int is_d
 
 
 // Clear the display
-void lcd_clear( REFERENCE_PARAM(lcd_interface_t, p) )
+void lcd_clear( REFERENCE_PARAM(LCD_INTERFACE_TYP, p) )
 {
 	unsigned int i, j, n = 0;
 	unsigned char page = 0xB0;						// Page Address + 0xB0
@@ -179,7 +179,7 @@ void lcd_clear( REFERENCE_PARAM(lcd_interface_t, p) )
 
 
 // Draw an image to the display
-void lcd_draw_image( const unsigned char image[], REFERENCE_PARAM(lcd_interface_t, p) )
+void lcd_draw_image( const unsigned char image[], REFERENCE_PARAM(LCD_INTERFACE_TYP, p) )
 {
 	unsigned int i, j, n = 0;
 	unsigned char page = 0xB0;						// Page Address + 0xB0
@@ -210,7 +210,7 @@ void lcd_draw_image( const unsigned char image[], REFERENCE_PARAM(lcd_interface_
 
 
 // Draw a row of text to the display
-void lcd_draw_text_row( const char string[], int lcd_row, REFERENCE_PARAM(lcd_interface_t, p) )
+void lcd_draw_text_row( const char string[], int lcd_row, REFERENCE_PARAM(LCD_INTERFACE_TYP, p) )
 {
 	unsigned int i = 0, offset, col_pos = 0;
 

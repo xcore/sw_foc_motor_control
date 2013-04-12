@@ -58,16 +58,8 @@
 #include "app_global.h"
 #include "qei_common.h"
 
-/* This is a bit of a cludge, we are using a non-standard configuration
- * where the timer on the tile for inner_loop() is running at 250 MHz,
- * but other timers are running at the default of 100 MHz.
- * Currently this flexibility to define timer frequencies for each tile does not exist.
- * Therefore, we set up the timer frequency here.
- */
 #ifndef PLATFORM_REFERENCE_MHZ
-#define PLATFORM_REFERENCE_MHZ 250
-#define PLATFORM_REFERENCE_KHZ 250000
-#define PLATFORM_REFERENCE_HZ 250000000 // NB Uses 28-bits
+	#error Define. PLATFORM_REFERENCE_MHZin app_global.h
 #endif
 
 #define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
@@ -138,7 +130,7 @@ typedef struct QEI_DATA_TAG //
 } QEI_DATA_TYP;
 
 /*****************************************************************************/
-/** Get QEI Sensor data from port (motor) and send to client
+/** \brief Get QEI Sensor data from port (motor) and send to client
  * \param c_qei // Array of channels connecting server & client
  * \param p4_qei // Array of QEI data ports for each motor
  */

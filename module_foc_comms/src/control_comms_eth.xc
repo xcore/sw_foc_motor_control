@@ -92,18 +92,18 @@ void do_comms_eth( chanend c_commands[], chanend tcp_svr )
                 	if (rx_buf[0] == '^' && rx_buf[1] == '2' && rx_buf[2] == '|')
                 	{
                 		for (unsigned m=0; m<NUMBER_OF_MOTORS; ++m) {
-                    		c_commands[m] <: CMD_GET_VALS;
+                    		c_commands[m] <: IO_CMD_GET_VALS;
                     		c_commands[m] :> speed[m];
                     		c_commands[m] :> Ia[m];
                     		c_commands[m] :> Ib[m];
 
-                    		c_commands[m] <: CMD_GET_VALS2;
+                    		c_commands[m] <: IO_CMD_GET_VALS2;
                     		c_commands[m] :> Ic[m];
                     		c_commands[m] :> Iq_set_point[m];
                     		c_commands[m] :> Id_out[m];
                     		c_commands[m] :> Iq_out[m];
 
-                    		c_commands[m] <: CMD_GET_FAULT;
+                    		c_commands[m] <: IO_CMD_GET_FAULT;
                     		c_commands[m] :> fault_flag[m];
                 		}
 
@@ -223,7 +223,7 @@ void do_comms_eth( chanend c_commands[], chanend tcp_svr )
 
                 			// Send it to the main control loop
                 			for (unsigned m=0; m<NUMBER_OF_MOTORS; ++m) {
-                    			c_commands[m] <: CMD_SET_SPEED;
+                    			c_commands[m] <: IO_CMD_SET_SPEED;
                     			c_commands[m] <: set_speed;
                 			}
 

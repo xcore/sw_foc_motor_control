@@ -15,7 +15,7 @@
 #include "main.h"
 
 // LCD & Button Ports
-on tile[INTERFACE_TILE]: lcd_interface_t lcd_ports = { PORT_SPI_CLK, PORT_SPI_MOSI, PORT_SPI_SS_DISPLAY, PORT_SPI_DSA };
+on tile[INTERFACE_TILE]: LCD_INTERFACE_TYP lcd_ports = { PORT_SPI_CLK, PORT_SPI_MOSI, PORT_SPI_SS_DISPLAY, PORT_SPI_DSA };
 on tile[INTERFACE_TILE]: in port p_btns = PORT_BUTTONS;
 on tile[INTERFACE_TILE]: out port p_leds = PORT_LEDS;
 
@@ -34,7 +34,7 @@ on tile[MOTOR_TILE]: buffered out port:32 p32_pwm_lo[NUMBER_OF_MOTORS][NUM_ADC_P
 on tile[MOTOR_TILE]: port in p4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER, PORT_M2_ENCODER };
 
 // Watchdog port
-on tile[INTERFACE_TILE]: out port i2c_wd = PORT_WATCHDOG;
+on tile[INTERFACE_TILE]: out port p_i2c_wd = PORT_WATCHDOG;
 
 // ADC ports
 on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
@@ -95,24 +95,11 @@ void xscope_user_init()
 		,XSCOPE_CONTINUOUS, "targ_Iq", XSCOPE_INT , "n"
 /*
 		,XSCOPE_CONTINUOUS, "rev_cnt", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "r_Iq", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "m_Iq", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "c_Iq", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "p_err", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "s_err", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "s_err", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "pwm_A", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "pwm_B", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "pwm_C", XSCOPE_INT , "n"
-
-		,XSCOPE_CONTINUOUS, "adc", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "filt", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "bits", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "calib", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "cnt", XSCOPE_INT , "n"
-		XSCOPE_CONTINUOUS, "Set Speed", XSCOPE_UINT , "n"
-		XSCOPE_CONTINUOUS, "Theta", XSCOPE_UINT , "n"
-		XSCOPE_CONTINUOUS, "PWM[0]", XSCOPE_UINT , "n"
 */
 	); // xscope_register 
 
@@ -144,17 +131,19 @@ int main ( void ) // Program Entry Point
 	par
 	{
 #if (USE_ETH)
+		// MB~ WARNING: Ethernet not yet tested
 		on ETHERNET_DEFAULT_TILE: ethernet_xtcp_server( xtcp_ports ,ipconfig ,c_ethernet ,1 ); // The Ethernet & TCP/IP server core(thread)
 		on tile[INTERFACE_TILE] : do_comms_eth( c_commands, c_ethernet[0] ); // core(thread) to extract Motor commands from ethernet commands
 #endif // (USE_ETH)
 
 #if (USE_CAN)
+		// MB~ WARNING: CAN not yet tested
 		on tile[INTERFACE_TILE] : do_comms_can( c_commands, c_rxChan, c_txChan);
 		on tile[INTERFACE_TILE] : init_can_phy( c_rxChan, c_txChan, p_can_clk, p_can_rx, p_can_tx, p_shared_rs );
 #endif // (USE_CAN)
 
-		on tile[INTERFACE_TILE] : do_wd( c_wd, i2c_wd );
-		on tile[INTERFACE_TILE] : display_shared_io_manager( c_speed, lcd_ports, p_btns, p_leds);
+		on tile[INTERFACE_TILE] : do_wd( c_wd, p_i2c_wd );
+		on tile[INTERFACE_TILE] : foc_display_shared_io_manager( c_speed ,lcd_ports ,p_btns, p_leds );
 
 		on tile[MOTOR_TILE] : 
 		{

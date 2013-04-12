@@ -1,24 +1,21 @@
 /**
- * Module:  module_dsc_display
- *
  * The copyrights, all other intellectual and industrial 
  * property rights are retained by XMOS and/or its licensors. 
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
- * Copyright XMOS Ltd 2011
+ * Copyright XMOS Ltd 2013
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
  * below. The modifications to the code are still covered by the 
  * copyright notice above.
- *
  **/
 
 #include "shared_io.h"
 
 /*****************************************************************************/
-void update_speed_control( // Updates the speed control loop
+static void update_speed_control( // Updates the speed control loop
 	chanend c_speed[], // speed channel
 	unsigned int cmd_id, // Command identifier
 	unsigned int cmd_val // Command value
@@ -34,11 +31,11 @@ void update_speed_control( // Updates the speed control loop
 	} // for motor_cnt
 } // update_speed_control 
 /*****************************************************************************/
-void display_shared_io_manager( // Manages the display, buttons and shared ports.
-	chanend c_speed[], 
-	REFERENCE_PARAM(lcd_interface_t, p), 
-	in port btns, 
-	out port leds
+void foc_display_shared_io_manager( // Manages the display, buttons and shared ports.
+	chanend c_speed[], // Display channel between Client & Server
+	LCD_INTERFACE_TYP &lcd_interface_s, // Reference to structure containing data for LCD display 
+	in port btns, // Input port buttons
+	out port leds // Output port LED's
 )
 {
 	char my_string[50]; // array of display characters
@@ -70,10 +67,10 @@ void display_shared_io_manager( // Manages the display, buttons and shared ports
 	leds <: 0;
 
 	/* Initiate the LCD ports */
-	lcd_ports_init(p);
+	lcd_ports_init( lcd_interface_s );
 
 	/* Output the default value to the port */
-	p.p_core1_shared <:0;
+	lcd_interface_s.p_core1_shared <:0;
 
 	/* Get the initial time value */
 	timer_10Hz :> time_10Hz_val;
@@ -89,11 +86,11 @@ void display_shared_io_manager( // Manages the display, buttons and shared ports
 				/* Get the motor speeds from channels. NB Do this as quickly as possible */
 				for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
 				{
-					c_speed[motor_cnt] <: CMD_GET_IQ;
+					c_speed[motor_cnt] <: IO_CMD_GET_IQ;
 					c_speed[motor_cnt] :> new_meas_speed[motor_cnt];
 					c_speed[motor_cnt] :> new_req_speed;
 
-					c_speed[motor_cnt] <: CMD_GET_FAULT;
+					c_speed[motor_cnt] <: IO_CMD_GET_FAULT;
 					c_speed[motor_cnt] :> fault[motor_cnt];
 				} // for motor_cnt
 
@@ -118,17 +115,21 @@ void display_shared_io_manager( // Manages the display, buttons and shared ports
 
 				if (speed_change) 
 				{
-#ifdef USE_CAN
-					lcd_draw_text_row( "  XMOS Demo 2013: CAN\n", 0, p );
-#endif
-#ifdef USE_ETH
-					lcd_draw_text_row( "  XMOS Demo 2013: ETH\n", 0, p );
-#endif
+					if (1 == USE_CAN)
+					{
+						lcd_draw_text_row( "  XMOS Demo 2013: CAN\n" ,0 ,lcd_interface_s );
+					} // if (1 == USE_CAN)
+
+					if (1 == USE_ETH)
+					{
+						lcd_draw_text_row( "  XMOS Demo 2013: ETH\n" ,0 ,lcd_interface_s );
+					} // if (1 == USE_ETH)
+
 					// update old speed parameters ...
 
 					old_req_speed = new_req_speed;
 					sprintf(my_string, "  SetVeloc:%5d RPM\n", old_req_speed );
-					lcd_draw_text_row( my_string, 1, p );
+					lcd_draw_text_row( my_string, 1, lcd_interface_s );
 
 					for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
 					{
@@ -143,7 +144,7 @@ void display_shared_io_manager( // Manages the display, buttons and shared ports
 							sprintf(my_string, "  Velocty%1d:%5d RPM\n" ,(motor_cnt + 1) ,old_meas_speed[motor_cnt] );
 						}
 
-						lcd_draw_text_row( my_string ,(motor_cnt + 2) ,p );
+						lcd_draw_text_row( my_string ,(motor_cnt + 2) ,lcd_interface_s );
 					} // for motor_cnt
 				} // if (speed_change)
 
@@ -165,7 +166,7 @@ void display_shared_io_manager( // Manages the display, buttons and shared ports
 							leds <: 1;
 			
 							old_req_speed += 100;
-							if (old_req_speed > MAX_RPM) old_req_speed = MAX_RPM;
+							if (old_req_speed > MAX_SPEC_RPM) old_req_speed = MAX_SPEC_RPM;
 						break; // case 1
 	
 						case 2 : // Decrease the speed, by the increment
@@ -174,9 +175,9 @@ void display_shared_io_manager( // Manages the display, buttons and shared ports
 			
 							old_req_speed -= 100;
 							/* Limit the speed to the minimum value */
-							if (old_req_speed < MIN_RPM)
+							if (old_req_speed < MIN_STALL_RPM)
 							{
-								old_req_speed = MIN_RPM;
+								old_req_speed = MIN_STALL_RPM;
 							}
 						break; // case 2
 	
@@ -188,29 +189,29 @@ void display_shared_io_manager( // Manages the display, buttons and shared ports
 							cur_speed = old_req_speed;
 			
 							/* to avoid jerks during the direction change*/
-							while(cur_speed > MIN_RPM)
+							while(cur_speed > MIN_STALL_RPM)
 							{
 								cur_speed -= STEP_SPEED;
 			
-								update_speed_control( c_speed ,CMD_SET_SPEED ,cur_speed ); // Decrease speed
+								update_speed_control( c_speed ,IO_CMD_SET_SPEED ,cur_speed ); // Decrease speed
 			
 								timer_30ms :> time_30ms_val;
-								timer_30ms when timerafter(time_30ms_val + _30_Msec) :> time_30ms_val;
+								timer_30ms when timerafter(time_30ms_val + UPDATE_WAIT_TICKS) :> time_30ms_val;
 							}
 			
-							update_speed_control( c_speed ,CMD_SET_SPEED ,0 ); // Set speed to zero
+							update_speed_control( c_speed ,IO_CMD_SET_SPEED ,0 ); // Set speed to zero
 			
-							update_speed_control( c_speed ,CMD_DIR ,toggle ); // Change direction
+							update_speed_control( c_speed ,IO_CMD_DIR ,toggle ); // Change direction
 			
 							/* to avoid jerks during the direction change*/
 							while(cur_speed < old_req_speed )
 							{
 								cur_speed += STEP_SPEED;
 			
-								update_speed_control( c_speed ,CMD_SET_SPEED ,cur_speed ); // Increase speed
+								update_speed_control( c_speed ,IO_CMD_SET_SPEED ,cur_speed ); // Increase speed
 			
 								timer_30ms :> time_30ms_val;
-								timer_30ms when timerafter(time_30ms_val + _30_Msec) :> time_30ms_val;
+								timer_30ms when timerafter(time_30ms_val + UPDATE_WAIT_TICKS) :> time_30ms_val;
 							} // while(old_req_speed < temp)
 						break; // case 8
 	
@@ -221,7 +222,7 @@ void display_shared_io_manager( // Manages the display, buttons and shared ports
 				    break;
 					} // switch( btns_val )
 
-					update_speed_control( c_speed ,CMD_SET_SPEED ,old_req_speed ); // Update the speed control loop
+					update_speed_control( c_speed ,IO_CMD_SET_SPEED ,old_req_speed ); // Update the speed control loop
 			
 					btn_en = 2;	// Set the debouncer
 				} // if (btns_val)
@@ -241,5 +242,4 @@ void display_shared_io_manager( // Manages the display, buttons and shared ports
 	} // while (1)
 } // display_shared_io_manager
 /*****************************************************************************/
-// shared_io.sc 
 

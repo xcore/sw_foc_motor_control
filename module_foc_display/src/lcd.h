@@ -1,19 +1,17 @@
 /**
- * Module:  module_dsc_display
- *
  * The copyrights, all other intellectual and industrial 
  * property rights are retained by XMOS and/or its licensors. 
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
- * Copyright XMOS Ltd 2010
+ * Copyright XMOS Ltd 2013
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
  * below. The modifications to the code are still covered by the 
  * copyright notice above.
- *
  **/                                   
+
 #ifndef _LCD_H_
 #define _LCD_H_
 
@@ -29,13 +27,13 @@
          *  read/write.  This extra signal is bit zero of the p_core1_shared
          *  member - which contains no other signals despite the name.
 	 */
-	typedef struct lcd_interface_t
+	typedef struct LCD_INTERFACE_TAG
 	{
 		out port p_lcd_sclk;      //!< i2c serial clock
 		out port p_lcd_mosi;      //!< i2c serial data
 		out port p_lcd_cs_n;      //!< i2c chip select
 		out port p_core1_shared;  //!< Display data/control select
-	} lcd_interface_t;
+	} LCD_INTERFACE_TYP;
 #endif
 
 /** \brief Reverse the order of bytes in the array
@@ -55,7 +53,7 @@ void itoa(int n, char s[]);
  *
  * \param p the LCD interface description
  */
-void lcd_ports_init( REFERENCE_PARAM(lcd_interface_t, p) );
+void lcd_ports_init( REFERENCE_PARAM(LCD_INTERFACE_TYP, p) );
 
 /** \brief Write a byte to the LCD
  *
@@ -63,13 +61,13 @@ void lcd_ports_init( REFERENCE_PARAM(lcd_interface_t, p) );
  * \param i the byte to write
  * \param is_data a boolean indicating if the write is data or control information
  */
-void lcd_byte_out( REFERENCE_PARAM(lcd_interface_t, p), unsigned char i, int is_data );
+void lcd_byte_out( REFERENCE_PARAM(LCD_INTERFACE_TYP, p), unsigned char i, int is_data );
 
 /** \brief Clear the LCD
  *
  * \param p the LCD interface description
  */
-void lcd_clear( REFERENCE_PARAM(lcd_interface_t, p) );
+void lcd_clear( REFERENCE_PARAM(LCD_INTERFACE_TYP, p) );
 
 /** \brief Draw an image on the LCD
  *
@@ -79,7 +77,7 @@ void lcd_clear( REFERENCE_PARAM(lcd_interface_t, p) );
  * \param image a byte array containing the image data.
  * \param p the LCD interface description
  */
-void lcd_draw_image( const unsigned char image[], REFERENCE_PARAM(lcd_interface_t, p) );
+void lcd_draw_image( const unsigned char image[], REFERENCE_PARAM(LCD_INTERFACE_TYP, p) );
 
 /** \brief Write text to a row on the LCD
  *
@@ -90,7 +88,7 @@ void lcd_draw_image( const unsigned char image[], REFERENCE_PARAM(lcd_interface_
  * \param lcd_row the character row on which to display the string
  * \param p the LCD interface description
  */
-void lcd_draw_text_row( const char string[], int lcd_row, REFERENCE_PARAM(lcd_interface_t, p) );
+void lcd_draw_text_row( const char string[], int lcd_row, REFERENCE_PARAM(LCD_INTERFACE_TYP, p) );
 
 /** \brief Macro for writing data to the LCD
  *

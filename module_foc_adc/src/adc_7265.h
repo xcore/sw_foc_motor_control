@@ -20,8 +20,6 @@
 #include <assert.h>
 #include <print.h>
 
-//MB~ #include <platform.h>
-
 #include "app_global.h"
 #include "adc_common.h"
 
@@ -32,6 +30,8 @@
 #ifndef NUMBER_OF_MOTORS 
 	#error Define. NUMBER_OF_MOTORS in app_global.h
 #endif // NUMBER_OF_MOTORS
+
+#define NUM_ADC_TRIGGERS NUMBER_OF_MOTORS	// The number of trigger channels coming from PWM units
 
 /*	The AD7265 data-sheet refers to the following signals:-
  *		SCLK:				Serial Clock frequency (can be configured to between  4..16 MHz.)
@@ -65,14 +65,17 @@
  *	    15                 2               1
  *	    16                 2               2
  */
-#define ADC_PAD_BITS 0 // 0..2 No. of padding bits after Least-Significant active bit of sample
 
+#define NUM_ADC_DATA_PORTS 2 // The number of data ports on the ADC chip (AD7265)
+
+#define ADC_PAD_BITS 0 // 0..2 No. of padding bits after Least-Significant active bit of sample
 #define ADC_ACTIVE_BITS 12 // No. of active bits in ADC Sample
 #define WORD16_BITS 16 // No. of bits in 16-bit word
-#define ADC_DIFF_BITS (WORD16_BITS - ADC_ACTIVE_BITS) //4 Difference between Word16 and active bits 
 #define ADC_MIN_BITS 14 // Minimum No. of bits to in ADC sample (including padding bits)
 
+#define ADC_DIFF_BITS (WORD16_BITS - ADC_ACTIVE_BITS) //4 Difference between Word16 and active bits 
 #define ADC_TOTAL_BITS (ADC_MIN_BITS + ADC_PAD_BITS) //14..16 Total No. of bits to in ADC sample (including padding bits)
+
 #define ADC_SHIFT_BITS (ADC_DIFF_BITS - ADC_PAD_BITS) //4..2 No. of bits to shift to get 16-bit word alignment
 #define ADC_MASK 0xFFF0 // Mask for 12 active bits in MS bits of 16-bit word
 
@@ -83,10 +86,6 @@
  *	Considering all above constraints. We set the ADC frequency to 8 MHz
  */
 #define ADC_SCLK_MHZ 8 // ADC Serial Clock frequency (in MHz)
-
-#define NUM_ADC_DATA_PORTS 2 // The number of data ports on the ADC chip (AD7265)
-
-#define NUM_ADC_TRIGGERS NUMBER_OF_MOTORS	// The number of trigger channels coming from PWM units
 
 // ADC_TRIGGER_DELAY needs to be tuned to move the ADC trigger point into the centre of the 'OFF' period.
 #define ADC_TRIGGER_DELAY 1980

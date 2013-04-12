@@ -1,208 +1,18 @@
 /**
- * File:    inner_loop.xc_motor() function initially runs in open loop, spinning the magnetic field around at a fixed
- * torque until the QEI reports that it has an accurate position measurement.  After this time,
- * it uses the hall sensors to calculate the phase difference between the QEI zero point and the
- * hall sectors, and therefore between the motors coils and the QEI disc.
+ * The copyrights, all other intellectual and industrial 
+ * property rights are retained by XMOS and/or its licensors. 
+ * Terms and conditions covering the use of this code can
+ * be found in the Xmos End User License Agreement.
  *
- * After this, the full field oriented control is used to commutate the rotor. Each iteration
- * of the control loop does the following actions:
+ * Copyright XMOS Ltd 2013
  *
- *   Reads the QEI and ADC state
- *   Calculate the Id and Iq values by transforming the coil currents reported by the ADC
- *   Use the speed value from the QEI in a speed control PID, producing a demand Iq value
- *   Use the demand Iq and the measured Iq and Id in two current control PIDs
- *   Transform the current control PID outputs into coil demand currents
- *   Use these to set the PWM duty cycles for the next PWM phase
- *
- * This is a standard FOC algorithm, with the current and speed control loops combined.
- *
- * Notes:
- *
- *   when theta=0, the Iq component (the major magnetic vector) transforms to the Ia current.
- *   therefore we want to have theta=0 aligned with the centre of the '001' state of hall effect
- *   detector.
+ * In the case where this code is a modification of existing code
+ * under a separate license, the separate license terms are shown
+ * below. The modifications to the code are still covered by the 
+ * copyright notice above.
  **/
-#include <stdlib.h>
-#include <safestring.h>
-#include <xs1.h>
-#include <print.h>
-#include <assert.h>
 
-#include "hall_client.h"
-#include "qei_client.h"
-#include "adc_client.h"
-#include "pwm_client.h"
-#include "mathuint.h"
-#include "pid_regulator.h"
-#include "clarke.h"
-#include "park.h"
-#include "watchdog.h"
-#include "shared_io.h"
 #include "inner_loop.h"
-
-#ifdef USE_XSCOPE
-#include <xscope.h>
-#endif
-
-#define SEC 100000000
-#define PWM_MAX_LIMIT 3800
-#define PWM_MIN_LIMIT 200
-#define OFFSET_14 16383
-
-#define STALL_SPEED 100
-#define STALL_TRIP_COUNT 5000
-
-#define LDO_MOTOR_SPIN 1 // Motor spins like an LDO Motor
-
-#define FIRST_HALL_STATE 0b001 // 1st Hall state of 6-state cycle
-
-#define INIT_HALL 0 // Initial Hall state
-#define INIT_THETA 0 // Initial start-up angle
-
-#define REQ_VELOCITY 4000 // Initial start-up speed
-#define REQ_IQ_OPENLOOP 2000 // Used in tuning
-#define REQ_ID_OPENLOOP 0		// Id value for open-loop mode
-
-// Set-up defines for scaling ...
-#define SHIFT_20 20
-#define SHIFT_16 16
-#define SHIFT_9   9
-
-#define PHASE_BITS SHIFT_20 // No of bits in phase offset scaling factor 
-#define PHASE_DENOM (1 << PHASE_BITS)
-#define HALF_PHASE (PHASE_DENOM >> 1)
-
-#define PHI_GRAD 11880 // 0.01133 as integer ratio PHI_GRAD/PHASE_DENOM
-#define PHI_INTERCEPT 35693527 // 34.04 as integer ratio PHI_INTERCEPT/PHASE_DENOM
-
-#define GAMMA_GRAD 7668 // 0.007313 as integer ratio GAMMA_GRAD/PHASE_DENOM
-#define GAMMA_INTERCEPT 33019658 // 31.49 as integer ratio GAMMA_INTERCEPT/PHASE_DENOM
-
-#define VEL_GRAD 10000 // (Estimated_Current)^2 = VEL_GRAD * Angular_Velocity
-
-#define XTR_SCALE_BITS SHIFT_16 // Used to generate 2^n scaling factor
-#define XTR_HALF_SCALE (1 << (XTR_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
-
-#define XTR_COEF_BITS SHIFT_9 // Used to generate filter coef divisor. coef_div = 1/2^n
-#define XTR_COEF_DIV (1 << XTR_COEF_BITS) // Coef divisor
-#define XTR_HALF_COEF (XTR_COEF_DIV >> 1) // Half of Coef divisor
-
-#define PROPORTIONAL 1 // Selects between 'proportional' and 'offset' error corrections
-#define VELOC_CLOSED 1 // Selects fully closed loop (both velocity, Iq and Id)
-#define IQ_ID_CLOSED 1 // Selcects Iq/Id closed-loop, velocity open-loop
-
-#ifdef USE_XSCOPE
-//	#define DEMO_LIMIT 100000 // XSCOPE
-	#define DEMO_LIMIT 200000 // XSCOPE
-#else // ifdef USE_XSCOPE
-	#define DEMO_LIMIT 9000000
-#endif // else !USE_XSCOPE
-
-#define STR_LEN 80 // String Length
-
-#define ERROR_OVERCURRENT 0x1
-#define ERROR_UNDERVOLTAGE 0x2
-#define ERROR_STALL 0x4
-#define ERROR_DIRECTION 0x8
-
-#pragma xta command "add exclusion foc_loop_motor_fault"
-#pragma xta command "add exclusion foc_loop_speed_comms"
-#pragma xta command "add exclusion foc_loop_shared_comms"
-#pragma xta command "add exclusion foc_loop_startup"
-#pragma xta command "analyze loop foc_loop"
-#pragma xta command "set required - 40 us"
-
-/** Different Estimation algorithms for coil currents Iq (and Id)*/
-typedef enum IQ_EST_TAG
-{
-  TRANSFORM = 0,	// Uses Park/Clarke transforms on measured ADC coil currents
-  EXTREMA,				// Uses Extrema of measured ADC coil currents
-  VELOCITY,				// Uses measured velocity
-  NUM_IQ_ESTIMATES    // Handy Value!-)
-} IQ_EST_TYP;
-
-/** Different Motor Phases */
-typedef enum MOTOR_STATE_TAG
-{
-  START = 0,	// Initial entry state
-  SEARCH,		// Turn motor until FOC start condition found
-  FOC,		  // Normal FOC state
-	STALL,		// state where motor stalled
-	STOP,			// Error state where motor stopped
-  NUM_MOTOR_STATES	// Handy Value!-)
-} MOTOR_STATE_TYP;
-
-// WARNING: If altering Error types. Also update error-message in init_motor()
-/** Different Motor Phases */
-typedef enum ERROR_TAG
-{
-	OVERCURRENT = 0,
-	UNDERVOLTAGE,
-	STALLED,
-	DIRECTION,
-  NUM_ERR_TYPS	// Handy Value!-)
-} ERROR_TYP;
-
-typedef struct STRING_TAG // Structure containing string
-{
-	char str[STR_LEN]; // Array of characters
-} STRING_TYP;
-
-typedef struct MOTOR_DATA_TAG // Structure containing motor state data
-{
-	ADC_PARAM_TYP adc_params; // Structure containing measured data from ADC
-	HALL_PARAM_TYP hall_params; // Structure containing measured data from Hall sensors
-	PWM_PARAM_TYP pwm_params; // Structure containing PWM data for PWM output ports
-	QEI_PARAM_TYP qei_params; // Structure containing measured data from QEI sensors
-	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array of error messages
-	MOTOR_STATE_TYP state; // Current motor state
-	PID_CONST_TYP pid_consts[NUM_IQ_ESTIMATES][NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
-	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
-	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
-	int meas_speed;	// speed, i.e. magnitude of angular velocity
-	int est_Id;	// Estimated radial current value
-	int est_Iq;	// Estimated tangential current value
-	int req_Id;	// Requested current producing radial magnetic field.
-	int req_Iq;	// Requested current producing tangential magnetic field
-	int req_veloc;	// Requested (target) angular velocity set by the user/comms interface
-	int half_veloc;	// Half requested angular velocity
-	int Id_openloop;	// Requested Id value when tuning open-loop
-	int Iq_openloop;	// Requested Iq value when tuning open-loop
-	int pid_veloc;	// Output of angular velocity PID
-	int pid_Id;	// Output of 'radial' current PID
-	int pid_Iq;	// Output of 'tangential' current PID
-	int set_Vd;	// Demand 'radial' voltage set by control loop
-	int set_Vq;	// Demand 'tangential' voltage set by control loop 
-	int set_theta;	// theta value
-	int start_theta; // Theta start position during warm-up (START and SEARCH states)
-
-	int iters; // Iterations of inner_loop
-	unsigned id; // Unique Motor identifier e.g. 0 or 1
-	unsigned prev_hall; // previous hall state value
-	unsigned end_hall; // hall state at end of cycle. I.e. next value is first value of cycle (001)
-	int Iq_alg;	// Algorithm used to estimate coil current Iq (and Id)
-	unsigned err_flgs;	// Fault detection flags
-	unsigned xscope;	// Flag set when xscope output required
-
-	int theta_offset;	// Phase difference between the QEI and the coils
-	int phi_err;	// Error diffusion value for Phi value
-	int phi_off;	// Phi value offset
-	int gamma_est;	// Estimate of leading-angle, used to 'pull' pole towards coil.
-	int gamma_off;	// Gamma value offset
-	int gamma_err;	// Error diffusion value for Gamma value
-	int Iq_err;	// Error diffusion value for scaling of measured Iq
-	int adc_err;	// Error diffusion value for ADC extrema filter
-	int prev_angl; 	// previous angular position
-	unsigned prev_time; 	// previous time stamp
-
-	int filt_val; // filtered value
-	int coef_err; // Coefficient diffusion error
-	int scale_err; // Scaling diffusion error 
-
-	int temp; // MB~ Dbg
-} MOTOR_DATA_TYP;
-
-static int dbg = 0; // Debug variable
 
 /*****************************************************************************/
 static void init_motor( // initialise data structure for one motor
@@ -775,7 +585,6 @@ static MOTOR_STATE_TYP check_hall_state( // Inspect Hall-state and update motor-
 				motor_s.err_flgs |= ERROR_DIRECTION;
 				motor_state = STOP; // Switch to stop state
 				motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
-if (dbg) { printint(motor_s.id); printstr( " SE- " ); printintln( motor_s.cnts[SEARCH] ); } 
 			} // else !(motor_s.prev_hall == motor_s.end_hall)
 		} // if (hall_inp == FIRST_HALL_STATE)
 
@@ -812,7 +621,6 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 			{
 				motor_s.state = SEARCH; // Switch to search state
 				motor_s.cnts[SEARCH] = 0; // Initialise search-state counter
-if (dbg) { printint(motor_s.id); printstr( " SA: " ); printintln( motor_s.cnts[START] ); } 
 			} // if (0 != motor_s.qei_params.rev_cnt)
 		break; // case START
 
@@ -823,7 +631,6 @@ if (dbg) { printint(motor_s.id); printstr( " SA: " ); printintln( motor_s.cnts[S
 	
 		case FOC : // Normal FOC state
 			// Check for a stall
-// if (dbg) { printint(motor_s.id); printchar(': '); printint( motor_s.qei_params.veloc ); printchar(' '); printint( motor_s.qei_params.theta ); printchar(' '); printintln( motor_s.valid ); }
 			// check for correct spin direction
       if (0 > motor_s.half_veloc)
 			{
@@ -848,7 +655,6 @@ if (dbg) { printint(motor_s.id); printstr( " SA: " ); printintln( motor_s.cnts[S
 			{
 				motor_s.state = STALL; // Switch to stall state
 				motor_s.cnts[STALL] = 0; // Initialise stall-state counter 
-if (dbg) { printint(motor_s.id); printstr( " FO: " ); printintln( motor_s.cnts[FOC] ); } 
 			} // if (motor_s.meas_speed < STALL_SPEED)
 		break; // case FOC
 	
@@ -862,14 +668,12 @@ if (dbg) { printint(motor_s.id); printstr( " FO: " ); printintln( motor_s.cnts[F
 					motor_s.err_flgs |= ERROR_STALL;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
-if (dbg) { printint(motor_s.id); printstr( " SL- " ); printintln( motor_s.cnts[STALL] ); } 
 				} // if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
 			} // if (motor_s.meas_speed < STALL_SPEED) 
 			else
 			{ // No longer stalled
 				motor_s.state = FOC; // Switch to main FOC state
 				motor_s.cnts[FOC] = 0; // Initialise FOC-state counter 
-if (dbg) { printint(motor_s.id); printstr( " SL: " ); printintln( motor_s.cnts[STALL] ); } 
 			} // else !(motor_s.meas_speed < STALL_SPEED) 
 		break; // case STALL
 	
@@ -940,19 +744,19 @@ static void use_motor ( // Start motor, and run step through different motor sta
 #pragma xta label "foc_loop_speed_comms"
 			switch(command)
 			{
-				case CMD_GET_IQ :
+				case IO_CMD_GET_IQ :
 					c_speed <: motor_s.qei_params.veloc;
 					c_speed <: motor_s.req_veloc;
-				break; // case CMD_GET_IQ
+				break; // case IO_CMD_GET_IQ
 	
-				case CMD_SET_SPEED :
+				case IO_CMD_SET_SPEED :
 					c_speed :> motor_s.req_veloc;
 					motor_s.half_veloc = (motor_s.req_veloc >> 1);
-				break; // case CMD_SET_SPEED 
+				break; // case IO_CMD_SET_SPEED 
 	
-				case CMD_GET_FAULT :
+				case IO_CMD_GET_FAULT :
 					c_speed <: motor_s.err_flgs;
-				break; // case CMD_GET_FAULT 
+				break; // case IO_CMD_GET_FAULT 
 	
 		    default: // Unsupported
 					assert(0 == 1); // command NOT supported
@@ -963,25 +767,25 @@ static void use_motor ( // Start motor, and run step through different motor sta
 
 		case c_can_eth_shared :> command:		//This case responds to CAN or ETHERNET commands
 #pragma xta label "foc_loop_shared_comms"
-			if(command == CMD_GET_VALS)
+			if(command == IO_CMD_GET_VALS)
 			{
 				c_can_eth_shared <: motor_s.qei_params.veloc;
 				c_can_eth_shared <: motor_s.adc_params.vals[ADC_PHASE_A];
 				c_can_eth_shared <: motor_s.adc_params.vals[ADC_PHASE_B];
 			}
-			else if(command == CMD_GET_VALS2)
+			else if(command == IO_CMD_GET_VALS2)
 			{
 				c_can_eth_shared <: motor_s.adc_params.vals[ADC_PHASE_C];
 				c_can_eth_shared <: motor_s.pid_veloc;
 				c_can_eth_shared <: motor_s.pid_Id;
 				c_can_eth_shared <: motor_s.pid_Iq;
 			}
-			else if (command == CMD_SET_SPEED)
+			else if (command == IO_CMD_SET_SPEED)
 			{
 				c_can_eth_shared :> motor_s.req_veloc;
 				motor_s.half_veloc = (motor_s.req_veloc >> 1);
 			}
-			else if (command == CMD_GET_FAULT)
+			else if (command == IO_CMD_GET_FAULT)
 			{
 				c_can_eth_shared <: motor_s.err_flgs;
 			}

@@ -25,6 +25,7 @@
 #include "app_global.h"
 #include "adc_common.h"
 
+/** Structure containing ADC parameters for one motor */
 typedef struct ADC_PARAM_TAG // Structure containing ADC parameters
 {
 	int vals[NUM_ADC_PHASES]; // Array of ADC values for each phase
