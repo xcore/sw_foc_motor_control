@@ -1,28 +1,25 @@
 /**
- * Module:  module_dsc_comms
- * Version: 1v0alpha1
- * Build:   73e3f5032a883e9f72779143401b3392bb65d5bb
- * File:    control_comms_eth.xc
- *
  * The copyrights, all other intellectual and industrial 
  * property rights are retained by XMOS and/or its licensors. 
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
- * Copyright XMOS Ltd 2010
+ * Copyright XMOS Ltd 2013
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
  * below. The modifications to the code are still covered by the 
  * copyright notice above.
- *
  **/
 
 #include "control_comms_eth.h"
 
-#if (USE_ETH)
-
-void to_hex_string(int number, char& lsb, char& msb)
+/*****************************************************************************/
+static void to_hex_string( 
+	int number, 
+	char& lsb, 
+	char& msb
+)
 {
 	int digit = number & 0xF;
 	if (digit <= 0x9) {
@@ -40,20 +37,34 @@ void to_hex_string(int number, char& lsb, char& msb)
 	} else {
 		msb = '-';
 	}
-}
-
-int from_hex_string(char digit)
+} // to_hex_string
+/*****************************************************************************/
+static int from_hex_string(
+	char digit
+)
 {
 	if (digit >= '0' && digit <= '9') return digit - '0';
 	if (digit >= 'A' && digit <= 'F') return digit - 'A' + 10;
 	return 0;
-}
-
-unsigned char tx_buf[128];
-unsigned char rx_buf[128];
-
-void do_comms_eth( chanend c_commands[], chanend tcp_svr )
+} // from_hex_string
+/*****************************************************************************/
+void foc_comms_init_eth(	// The Ethernet & TCP/IP server core
+	ethernet_xtcp_ports_t &xtcp_ports, // Reference to structure containing ethernet ports
+  xtcp_ipconfig_t &ipconfig, // Reference to structure containing IP addresses
+  chanend c_ethernet[] // array of channels to the TCP/IP cores
+)
 {
+	ethernet_xtcp_server( xtcp_ports ,ipconfig ,c_ethernet ,1 );
+} // foc_comms_init_eth  
+/*****************************************************************************/
+void foc_comms_do_eth( // Core to extract Motor commands from ethernet commands
+	chanend c_commands[], 
+	chanend tcp_svr 
+)
+{
+	unsigned char tx_buf[128];
+	unsigned char rx_buf[128];
+
 	xtcp_connection_t conn;
 	unsigned int speed[2] = {0,0};
 	unsigned int set_speed = 500;
@@ -61,7 +72,8 @@ void do_comms_eth( chanend c_commands[], chanend tcp_svr )
 
 	unsigned int Ia[2],Ib[2],Ic[2];
 	unsigned int Iq_set_point[2],Id_out[2],Iq_out[2];
-    unsigned int fault_flag[2];
+  unsigned int fault_flag[2];
+
 
 	slave xtcp_event(tcp_svr, conn);
 	if (conn.event != XTCP_IFDOWN)
@@ -254,8 +266,5 @@ void do_comms_eth( chanend c_commands[], chanend tcp_svr )
                     break;
         }
 	}
-}
-
-#endif // (USE_ETH)
-
-
+} // foc_comms_do_eth 
+/*****************************************************************************/

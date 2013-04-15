@@ -29,13 +29,11 @@
 
 #if (USE_ETH)
 #include "control_comms_eth.h"
-#include "ethernet_xtcp_server.h"
 #include "ethernet_board_support.h"
 #endif // (USE_ETH)
 
 #if (USE_CAN)
 #include "control_comms_can.h"
-#include "CanPhy.h"
 #endif // (USE_CAN)
 
 // Define where everything is

@@ -15,14 +15,39 @@
 #include "inner_loop.h"
 
 /*****************************************************************************/
+static void init_error_data( // Initialise Error-handling data
+	ERR_DATA_TYP &err_data_s // Reference to structure containing data for error-handling
+)
+{
+	int err_cnt; // phase counter
+
+
+	err_data_s.err_flgs = 0; 	// Clear fault detection flags
+
+	// Initialise error strings
+	for (err_cnt=0; err_cnt<NUM_ERR_TYPS; err_cnt++)
+	{
+		err_data_s.line[err_cnt] = -1; 	// Initialised to unassigned line number
+		safestrcpy( err_data_s.err_strs[err_cnt].str ,"No Message! Please add in function init_motor()" );
+	} // for err_cnt
+
+	safestrcpy( err_data_s.err_strs[OVERCURRENT].str ,"Over-Current Detected" );
+	safestrcpy( err_data_s.err_strs[UNDERVOLTAGE].str ,"Under-Voltage Detected" );
+	safestrcpy( err_data_s.err_strs[STALLED].str ,"Motor Stalled Persistently" );
+	safestrcpy( err_data_s.err_strs[DIRECTION].str ,"Motor Spinning In Wrong Direction!" );
+
+} // init_error_data 
+/*****************************************************************************/
 static void init_motor( // initialise data structure for one motor
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
 	unsigned motor_id // Unique Motor identifier e.g. 0 or 1
 )
 {
 	int phase_cnt; // phase counter
-	int err_cnt; // phase counter
 	int pid_cnt; // PID counter
+
+
+	init_error_data( motor_s.err_data );
 
 
 	// Initialise PID constants [ K_p ,K_i ,Kd, ,resolution ] ...
@@ -45,7 +70,8 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.iters = 0;
 	motor_s.cnts[START] = 0;
 	motor_s.state = START;
-	motor_s.prev_hall = INIT_HALL;
+	motor_s.hall_params.hall_val = HALL_ERR_MASK; // Initialise to 'No Errors'
+	motor_s.prev_hall = (!HALL_ERR_MASK); // Arbitary value different to above
 
 // Choose last Hall state of 6-state cycle, depending on spin direction
 #if (LDO_MOTOR_SPIN == 1)
@@ -68,7 +94,6 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.set_Vd = 0;	// Ideal current producing radial magnetic field (NB never update as no radial force is required)
 	motor_s.set_Vq = 0;	// Ideal current producing tangential magnetic field. (NB Updated based on the speed error)
 	motor_s.est_Iq = 0;	// Clear Iq value estimated from measured angular velocity
-	motor_s.err_flgs = 0; 	// Clear fault detection flags
 	motor_s.xscope = 0; 	// Clear xscope print flag
 	motor_s.prev_time = 0; 	// previous time stamp
 	motor_s.prev_angl = 0; 	// previous angular position
@@ -80,17 +105,6 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.gamma_est = 0;	// Estimate of leading-angle, used to 'pull' pole towards coil.
 	motor_s.gamma_off = 0;	// Gamma value offset
 	motor_s.gamma_err = 0;	// Error diffusion value for Gamma value
-
-	// Initialise error strings
-	for (err_cnt=0; err_cnt<NUM_ERR_TYPS; err_cnt++)
-	{
-		safestrcpy( motor_s.err_strs[err_cnt].str ,"No Message! Please add in function init_motor()" );
-	} // for err_cnt
-
-	safestrcpy( motor_s.err_strs[OVERCURRENT].str ,"Over-Current Detected" );
-	safestrcpy( motor_s.err_strs[UNDERVOLTAGE].str ,"Under-Voltage Detected" );
-	safestrcpy( motor_s.err_strs[STALLED].str ,"Motor Stalled Persistently" );
-	safestrcpy( motor_s.err_strs[DIRECTION].str ,"Motor Spinning In Wrong Direction!" );
 
 	// NB Display will require following variables, before we have measured them! ...
 	motor_s.qei_params.veloc = motor_s.req_veloc;
@@ -166,7 +180,7 @@ static void init_pwm( // Initialise PWM parameters for one motor
 	c_pwm :> pwm_param_s.mem_addr; // Receive shared memory address from PWM server
 
 	return;
-}
+} // init_pwm 
 /*****************************************************************************/
 static void error_pwm_values( // Set PWM values to error condition
 	unsigned pwm_vals[]	// Array of PWM widths
@@ -525,7 +539,7 @@ if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.set_Vq );
 	// Update 'demand' theta value for next dq_to_pwm iteration
 	motor_s.set_theta = motor_s.qei_params.theta + motor_s.theta_offset + motor_s.gamma_est;
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
-if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
+// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 
 } // calc_foc_pwm
 /*****************************************************************************/
@@ -556,7 +570,7 @@ static MOTOR_STATE_TYP check_hall_state( // Inspect Hall-state and update motor-
 	MOTOR_STATE_TYP motor_state = motor_s.state; // Initialise to old motor state
 
 
-	hall_inp &= 0x7; // Clear Over-Current bit
+	hall_inp &= HALL_PHASE_MASK; // Mask out 3 Hall Sensor Phase Bits
 
 	// Check for change in Hall state
 	if (motor_s.prev_hall != hall_inp)
@@ -582,7 +596,8 @@ static MOTOR_STATE_TYP check_hall_state( // Inspect Hall-state and update motor-
 			} // if (motor_s.prev_hall == motor_s.end_hall)
 			else
 			{ // We are probably spinning in the wrong direction!-(
-				motor_s.err_flgs |= ERROR_DIRECTION;
+				motor_s.err_data.err_flgs |= (1 << DIRECTION);
+				motor_s.err_data.line[DIRECTION] = __LINE__;
 				motor_state = STOP; // Switch to stop state
 				motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 			} // else !(motor_s.prev_hall == motor_s.end_hall)
@@ -636,7 +651,8 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 			{
 				if (motor_s.qei_params.veloc > -motor_s.half_veloc)
 				{	// Spinning in wrong direction
-					motor_s.err_flgs |= ERROR_DIRECTION;
+					motor_s.err_data.err_flgs |= (1 << DIRECTION);
+					motor_s.err_data.line[DIRECTION] = __LINE__;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 				} // if (motor_s.qei_params.veloc > -motor_s.half_veloc)
@@ -645,7 +661,8 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 			{
 				if (motor_s.qei_params.veloc < -motor_s.half_veloc)
 				{	// Spinning in wrong direction
-					motor_s.err_flgs |= ERROR_DIRECTION;
+					motor_s.err_data.err_flgs |= (1 << DIRECTION);
+					motor_s.err_data.line[DIRECTION] = __LINE__;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 				} // if (motor_s.qei_params.veloc < -motor_s.half_veloc)
@@ -665,7 +682,8 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 				// Check if too many stalled states
 				if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
 				{
-					motor_s.err_flgs |= ERROR_STALL;
+					motor_s.err_data.err_flgs |= (1 << STALL);
+					motor_s.err_data.line[STALL] = __LINE__;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 				} // if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
@@ -755,7 +773,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 				break; // case IO_CMD_SET_SPEED 
 	
 				case IO_CMD_GET_FAULT :
-					c_speed <: motor_s.err_flgs;
+					c_speed <: motor_s.err_data.err_flgs;
 				break; // case IO_CMD_GET_FAULT 
 	
 		    default: // Unsupported
@@ -787,7 +805,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 			}
 			else if (command == IO_CMD_GET_FAULT)
 			{
-				c_can_eth_shared <: motor_s.err_flgs;
+				c_can_eth_shared <: motor_s.err_data.err_flgs;
 			}
 
 		break; // case c_can_eth_shared :> command:
@@ -816,15 +834,16 @@ static void use_motor ( // Start motor, and run step through different motor sta
 				} // if (motor_s.iters > DEMO_LIMIT)
 
 				foc_hall_get_data( motor_s.hall_params ,c_hall ); // Get new hall state
-// if (motor_s.xscope) xscope_probe_data( 5 ,(100 * (motor_s.hall_params.hall_val & 7)));
+xscope_probe_data( 0 ,(100 * motor_s.hall_params.hall_val) );
 
 				// Check error status
-				if (!(motor_s.hall_params.hall_val & 0b1000))
+				if (!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
 				{
-					motor_s.err_flgs |= ERROR_OVERCURRENT;
+					motor_s.err_data.err_flgs |= (1 << OVERCURRENT);
+					motor_s.err_data.line[OVERCURRENT] = __LINE__;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
-				} // if (!(motor_s.hall_params.hall_val & 0b1000))
+				} // if (!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
 				else
 				{
 					/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
@@ -847,7 +866,7 @@ if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 // if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.adc_params.vals[ADC_PHASE_C] );
 
 					update_motor_state( motor_s ,motor_s.hall_params.hall_val );
-				} // else !(!(motor_s.hall_params.hall_val & 0b1000))
+				} // else !(!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
 
 				// Check if motor needs stopping
 				if (STOP == motor_s.state)
@@ -858,7 +877,7 @@ if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 				else
 				{
 					// Convert new set DQ values to PWM values
-if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
+// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 					dq_to_pwm( motor_s ,motor_s.set_Vd ,motor_s.set_Vq ,motor_s.set_theta ); // Convert Output DQ values to PWM values
 
 					foc_pwm_put_data( motor_s.pwm_params ,c_pwm ); // Update the PWM values
@@ -888,11 +907,12 @@ if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 } // use_motor
 /*****************************************************************************/
 static void error_handling( // Prints out error messages
-	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
+	ERR_DATA_TYP &err_data_s // Reference to structure containing data for error-handling
 )
 {
 	int err_cnt; // counter for different error types 
-	unsigned cur_flgs = motor_s.err_flgs; // local copy of error flags
+	unsigned cur_flgs = err_data_s.err_flgs; // local copy of error flags
+
 
 	// Loop through error types
 	for (err_cnt=0; err_cnt<NUM_ERR_TYPS; err_cnt++)
@@ -900,7 +920,10 @@ static void error_handling( // Prints out error messages
 		// Test LS-bit for active flag
 		if (cur_flgs & 1)
 		{
-			printstrln( motor_s.err_strs[err_cnt].str );
+			printstr( "Line " );
+			printint( err_data_s.line[err_cnt] );
+			printstr( ": " );
+			printstrln( err_data_s.err_strs[err_cnt].str );
 		} // if (cur_flgs & 1)
 
 		cur_flgs >>= 1; // Discard flag
@@ -949,26 +972,29 @@ void run_motor (
 
 	init_pwm( motor_s.pwm_params ,c_pwm ,motor_id );	// Initialise PWM parameters
 
-	if (0 == motor_id) printstrln( "Demo Starts" ); // NB Prevent duplicate display lines
+	if (motor_id) 
+	{
+		printstrln( "Demo Starts" ); // NB Prevent duplicate display lines
+	}	if (motor_id)
 
 	// start-and-run motor
 	use_motor( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl ,c_speed ,c_can_eth_shared );
 
-	if (1 == motor_id)
+	if (motor_id)
 	{
-		if (motor_s.err_flgs)
+		if (motor_s.err_data.err_flgs)
 		{
 			printstr( "Demo Ended Due to Following Errors on Motor " );
 			printintln(motor_s.id);
-			error_handling( motor_s );
-		} // if (motor_s.err_flgs)
+			error_handling( motor_s.err_data );
+		} // if (motor_s.err_data.err_flgs)
 		else
 		{
 			printstrln( "Demo Ended Normally" );
-		} // else !(motor_s.err_flgs)
+		} // else !(motor_s.err_data.err_flgs)
 
 		_Exit(1); // Exit without flushing buffers
-	} // if (0 == motor_id)
+	} // if (motor_id)
 } // run_motor
 /*****************************************************************************/
 // inner_loop.xc

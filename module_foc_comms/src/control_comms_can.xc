@@ -1,30 +1,35 @@
 /**
- * Module:  module_dsc_comms
- * Version: 1v0alpha1
- * Build:   73e3f5032a883e9f72779143401b3392bb65d5bb
- * File:    control_comms_can.xc
- *
  * The copyrights, all other intellectual and industrial 
  * property rights are retained by XMOS and/or its licensors. 
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
- * Copyright XMOS Ltd 2010
+ * Copyright XMOS Ltd 2013
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
  * below. The modifications to the code are still covered by the 
  * copyright notice above.
- *
  **/
 
 #include "control_comms_can.h"
 
-#if (USE_CAN)
+/*****************************************************************************/
+void foc_comms_init_can( // Initialise CAN Interface
+	chanend c_rxChan, 						// CAN Receive Channel
+	chanend c_txChan, 						// CAN Transmit Channel 
+	clock p_can_clk,							// CAN clock
+	buffered in port:32 p_can_rx,	// CAN 32-Input port
+	port p_can_tx,  							// CAN Output port
+	out port p_shared_rs					// CAN reset port
+)
+{
+	p_shared_rs <: 0;
 
-#define COUNTER_MASK  0xfff
-
-void do_comms_can( chanend c_commands[], chanend rxChan, chanend txChan)
+	canPhyRxTx( c_rxChan, c_txChan, p_can_clk, p_can_rx, p_can_tx );
+} // foc_comms_init_can
+/*****************************************************************************/
+void foc_comms_do_can( chanend c_commands[], chanend rxChan, chanend txChan)
 {
 	struct CanPacket p;
 	unsigned int sender_address, count = 1, value;
@@ -205,6 +210,5 @@ void do_comms_can( chanend c_commands[], chanend rxChan, chanend txChan)
 			}
 		}
 	}
-}
-
-#endif // (USE_CAN)
+} // foc_comms_do_can
+/*****************************************************************************/

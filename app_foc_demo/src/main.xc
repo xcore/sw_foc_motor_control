@@ -64,19 +64,9 @@ on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
 #endif // (USE_ETH)
 
 #if (USE_CAN)
-	// CAN
 	on tile[INTERFACE_TILE] : clock p_can_clk = XS1_CLKBLK_4;
 	on tile[INTERFACE_TILE] : buffered in port:32 p_can_rx = PORT_CAN_RX;
 	on tile[INTERFACE_TILE] : port p_can_tx = PORT_CAN_TX;
-
-/*****************************************************************************/
-void init_can_phy( chanend c_rxChan, chanend c_txChan, clock p_can_clk, buffered in port:32 p_can_rx, port p_can_tx, out port p_shared_rs)
-{
-	p_shared_rs <: 0;
-
-	canPhyRxTx( c_rxChan, c_txChan, p_can_clk, p_can_rx, p_can_tx );
-} // init_can_phy 
-/*****************************************************************************/
 #endif // (USE_CAN)
 
 #if (USE_XSCOPE)
@@ -132,14 +122,14 @@ int main ( void ) // Program Entry Point
 	{
 #if (USE_ETH)
 		// MB~ WARNING: Ethernet not yet tested
-		on ETHERNET_DEFAULT_TILE: ethernet_xtcp_server( xtcp_ports ,ipconfig ,c_ethernet ,1 ); // The Ethernet & TCP/IP server core(thread)
-		on tile[INTERFACE_TILE] : do_comms_eth( c_commands, c_ethernet[0] ); // core(thread) to extract Motor commands from ethernet commands
+		on ETHERNET_DEFAULT_TILE: foc_comms_init_eth( xtcp_ports ,ipconfig ,c_ethernet ); // Ethernet & TCP/IP server core
+		on tile[INTERFACE_TILE] : foc_comms_do_eth( c_commands, c_ethernet[0] ); // Core to extract Motor commands from ethernet commands
 #endif // (USE_ETH)
 
 #if (USE_CAN)
 		// MB~ WARNING: CAN not yet tested
-		on tile[INTERFACE_TILE] : do_comms_can( c_commands, c_rxChan, c_txChan);
-		on tile[INTERFACE_TILE] : init_can_phy( c_rxChan, c_txChan, p_can_clk, p_can_rx, p_can_tx, p_shared_rs );
+		on tile[INTERFACE_TILE] : foc_comms_init_can( c_rxChan, c_txChan, p_can_clk, p_can_rx, p_can_tx, p_shared_rs ); // Can server core
+		on tile[INTERFACE_TILE] : foc_comms_do_can( c_commands, c_rxChan, c_txChan ); // Core to extract Motor commands from CAN commands
 #endif // (USE_CAN)
 
 		on tile[INTERFACE_TILE] : do_wd( c_wd, p_i2c_wd );

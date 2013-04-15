@@ -15,6 +15,15 @@
 #ifndef _HALL_COMMON_H_
 #define _HALL_COMMON_H_
 
+/** Used to mask out 4-bits of Hall Sensor Data */
+#define HALL_ALL_MASK (0b1111)	// Used to mask out all 4-bits of Hall Sensor Data
+
+/** Used to mask out Hall error-bit */
+#define HALL_ERR_MASK (0b1000) // Used to mask out Hall Error Bit(s)
+
+/** Hall Request Data Command */
 #define HALL_CMD_DATA_REQ 1 // Request new hall sensor data
+
+#define HALL_PHASE_MASK (HALL_ALL_MASK & (~HALL_ERR_MASK)) // Used to mask out 3 Hall Sensor Phase Bits
 
 #endif /* _HALL_COMMON_H_ */

@@ -93,7 +93,6 @@
 
 #define FIRST_HALL_STATE 0b001 // 1st Hall state of 6-state cycle
 
-#define INIT_HALL 0 // Initial Hall state
 #define INIT_THETA 0 // Initial start-up angle
 
 #define REQ_VELOCITY 4000 // Initial start-up speed
@@ -137,11 +136,6 @@
 
 #define STR_LEN 80 // String Length
 
-#define ERROR_OVERCURRENT 0x1
-#define ERROR_UNDERVOLTAGE 0x2
-#define ERROR_STALL 0x4
-#define ERROR_DIRECTION 0x8
-
 #pragma xta command "add exclusion foc_loop_motor_fault"
 #pragma xta command "add exclusion foc_loop_speed_comms"
 #pragma xta command "add exclusion foc_loop_shared_comms"
@@ -169,21 +163,28 @@ typedef enum MOTOR_STATE_TAG
   NUM_MOTOR_STATES	// Handy Value!-)
 } MOTOR_STATE_TYP;
 
-// WARNING: If altering Error types. Also update error-message in init_motor()
+// WARNING: If altering Error types. Also update error-message in init_error_data()
 /** Different Motor Phases */
-typedef enum ERROR_TAG
+typedef enum ERROR_ETAG
 {
 	OVERCURRENT = 0,
 	UNDERVOLTAGE,
 	STALLED,
 	DIRECTION,
   NUM_ERR_TYPS	// Handy Value!-)
-} ERROR_TYP;
+} ERROR_ENUM;
 
 typedef struct STRING_TAG // Structure containing string
 {
 	char str[STR_LEN]; // Array of characters
 } STRING_TYP;
+
+typedef struct ERR_DATA_TAG // Structure containing Error handling data
+{
+	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array messages for each error type 
+	int line[NUM_ERR_TYPS];	// Array of line number for NEWEST occurance of error type.
+	unsigned err_flgs;	// Set of Fault detection flags for each error type
+} ERR_DATA_TYP;
 
 typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 {
@@ -191,10 +192,10 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	HALL_PARAM_TYP hall_params; // Structure containing measured data from Hall sensors
 	PWM_PARAM_TYP pwm_params; // Structure containing PWM data for PWM output ports
 	QEI_PARAM_TYP qei_params; // Structure containing measured data from QEI sensors
-	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array of error messages
 	MOTOR_STATE_TYP state; // Current motor state
 	PID_CONST_TYP pid_consts[NUM_IQ_ESTIMATES][NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
+	ERR_DATA_TYP err_data; // Structure containing data for error-handling
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int est_Id;	// Estimated radial current value
@@ -218,7 +219,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	unsigned prev_hall; // previous hall state value
 	unsigned end_hall; // hall state at end of cycle. I.e. next value is first value of cycle (001)
 	int Iq_alg;	// Algorithm used to estimate coil current Iq (and Id)
-	unsigned err_flgs;	// Fault detection flags
 	unsigned xscope;	// Flag set when xscope output required
 
 	int theta_offset;	// Phase difference between the QEI and the coils
@@ -239,11 +239,17 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int temp; // MB~ Dbg
 } MOTOR_DATA_TYP;
 
-
-
-
-/* run the motor inner loop */
-void run_motor ( unsigned motor_id ,chanend? c_wd ,chanend c_pwm ,streaming chanend c_hall 
-	,streaming chanend c_qei ,streaming chanend c_adc ,chanend c_speed ,chanend c_can_eth_shared );
+/*****************************************************************************/
+void run_motor ( // run the motor inner loop
+	unsigned motor_id,
+	chanend? c_wd,
+	chanend c_pwm,
+	streaming chanend c_hall,
+	streaming chanend c_qei,
+	streaming chanend c_adc,
+	chanend c_speed,
+	chanend c_can_eth_shared 
+);
+/*****************************************************************************/
 
 #endif /* _INNER_LOOP_H_ */

@@ -31,7 +31,7 @@ static void service_hall_input_pins( // Process new Hall data
 	unsigned inp_pins // Set of raw data values on input port pins
 )
 {
-	hall_data_s.inp_val = inp_pins & 0xF; // Mask out LS 4 bits
+	hall_data_s.inp_val = inp_pins & HALL_ALL_MASK; // Mask out active bits of Hall Sensor data
 
 //MB~ TODO: Insert filter here
 
