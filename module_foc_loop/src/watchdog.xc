@@ -36,17 +36,18 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 	// Initialise	WatchDog ...
 	chronometer :> wd_data_s.time;	// Get 'enable' time (first tick)
 
-	wd_data_s.shared_out &= (~ENABLE_MASK); // Clear Bit_0 (for FlipFlop Chip)
+	wd_data_s.shared_out &= (~ENABLE_MASK); // Clear Bit_0 (start of rising Edge for FlipFlop Chip)
 	wd_data_s.shared_out |= TICK_MASK;			// Set Bit_1 to switch On WatchDog Chip
 
-	p2_wd <: wd_data_s.shared_out; // Go low, for start of rising FlipFLop Edge
+	p2_wd <: wd_data_s.shared_out; // NB Switches on WatchDog chip
 	
 	// FlipFlop pulse width minimum in 3 ns. Therefore, stay low for a micro-second
 	chronometer :> pulse_width;
 	chronometer when timerafter(pulse_width + MICRO_SEC) :> void;
 	
-	wd_data_s.shared_out |= ENABLE_MASK; ; // Set Bit_0 to switch on FlipFlop Chip
-	p2_wd <: wd_data_s.shared_out; // Go high, for end of rising FlipFLop edge
+	wd_data_s.shared_out |= ENABLE_MASK; ; // Set Bit_0 (end of rising Edge for FlipFlop Chip)
+	p2_wd <: wd_data_s.shared_out; // NB Switches on FlipFlop chip
+
 } // init_wd
 /*****************************************************************************/
 static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have warmed-up
