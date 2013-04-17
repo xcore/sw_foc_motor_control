@@ -87,4 +87,8 @@
 #define PLATFORM_REFERENCE_HZ  (1000 * PLATFORM_REFERENCE_KHZ) // NB Uses 28-bits
 #endif
 
+#define SECOND PLATFORM_REFERENCE_HZ // One Second in Clock ticks
+#define MILLI_SEC (PLATFORM_REFERENCE_KHZ) // One milli-second in clock ticks
+#define MICRO_SEC (PLATFORM_REFERENCE_MHZ) // One micro-second in clock ticks
+
 #endif /* _APP_GLOBAL_H_ */

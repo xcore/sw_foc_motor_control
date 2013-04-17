@@ -34,7 +34,7 @@ on tile[MOTOR_TILE]: buffered out port:32 p32_pwm_lo[NUMBER_OF_MOTORS][NUM_ADC_P
 on tile[MOTOR_TILE]: port in p4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER, PORT_M2_ENCODER };
 
 // Watchdog port
-on tile[INTERFACE_TILE]: out port p_i2c_wd = PORT_WATCHDOG;
+on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used to control WatchDog chip
 
 // ADC ports
 on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
@@ -74,16 +74,21 @@ on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
 void xscope_user_init()
 {
 	xscope_register( 9
-		,XSCOPE_CONTINUOUS, "s_theta", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "m_theta", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "temp", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "wd", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "m_veloc", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "set_Vq", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "revs", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "pid_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "req_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "est_Iq", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "pid_Iq", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "targ_Iq", XSCOPE_INT , "n"
 /*
+		,XSCOPE_CONTINUOUS, "s_theta", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "m_theta", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "m_veloc", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "set_Vq", XSCOPE_INT , "n"
+
 		,XSCOPE_CONTINUOUS, "rev_cnt", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "p_err", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "s_err", XSCOPE_INT , "n"
@@ -101,7 +106,7 @@ void xscope_user_init()
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {
-	chan c_wd;
+	chan c_wd; // WatchDog Channel connecting Client & Server 
 	chan c_speed[NUMBER_OF_MOTORS];
 	chan c_commands[NUMBER_OF_MOTORS];
 	chan c_adc_trig[NUMBER_OF_MOTORS];
@@ -132,17 +137,17 @@ int main ( void ) // Program Entry Point
 		on tile[INTERFACE_TILE] : foc_comms_do_can( c_commands, c_rxChan, c_txChan ); // Core to extract Motor commands from CAN commands
 #endif // (USE_CAN)
 
-		on tile[INTERFACE_TILE] : do_wd( c_wd, p_i2c_wd );
+		on tile[INTERFACE_TILE] : foc_loop_do_wd( c_wd, p2_i2c_wd );
 		on tile[INTERFACE_TILE] : foc_display_shared_io_manager( c_speed ,lcd_ports ,p_btns, p_leds );
 
 		on tile[MOTOR_TILE] : 
 		{
-			run_motor( 0 ,c_wd ,c_pwm[0] ,c_hall[0] ,c_qei[0] ,c_adc_cntrl[0] ,c_speed[0] ,c_commands[0] ); // Special case of 1st Motor
+			run_motor( 0 ,null ,c_pwm[0] ,c_hall[0] ,c_qei[0] ,c_adc_cntrl[0] ,c_speed[0] ,c_commands[0] ); // Special case of 1st Motor
 		} // on tile[MOTOR_TILE]
 
 		// Loop through remaining motors
 		par (int motor_cnt=1; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-			on tile[MOTOR_TILE] : run_motor( motor_cnt ,null ,c_pwm[motor_cnt] ,c_hall[motor_cnt] ,c_qei[motor_cnt] 
+			on tile[MOTOR_TILE] : run_motor( motor_cnt ,c_wd ,c_pwm[motor_cnt] ,c_hall[motor_cnt] ,c_qei[motor_cnt] 
 				,c_adc_cntrl[motor_cnt] ,c_speed[motor_cnt] ,c_commands[motor_cnt] );
 
 		// Loop through all motors

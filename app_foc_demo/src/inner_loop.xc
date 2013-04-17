@@ -155,7 +155,7 @@ static void init_motor( // initialise data structure for one motor
 		motor_s.adc_params.vals[phase_cnt] = -1;
 	} // for phase_cnt
 
-	motor_s.temp = 0; // MB~ Dbg
+	motor_s.temp = 1; // MB~ Dbg
 } // init_motor
 /*****************************************************************************/
 static void init_pwm( // Initialise PWM parameters for one motor
@@ -529,8 +529,8 @@ if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
 		calc_open_loop_pwm( motor_s );
 	} // if (IQ_ID_CLOSED)
 
-if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.set_Vq );
-
+// if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.set_Vq );
+ 
 	// Update Gamma estimate ...
 	scaled_phase = motor_s.qei_params.veloc * GAMMA_GRAD + motor_s.gamma_off + motor_s.gamma_err;
 	motor_s.gamma_est = (scaled_phase + HALF_PHASE) >> PHASE_BITS;
@@ -543,7 +543,7 @@ if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.set_Vq );
 
 } // calc_foc_pwm
 /*****************************************************************************/
-static MOTOR_STATE_TYP check_hall_state( // Inspect Hall-state and update motor-state if necessary
+static MOTOR_STATE_ENUM check_hall_state( // Inspect Hall-state and update motor-state if necessary
 	MOTOR_DATA_TYP &motor_s, // Reference to structure containing motor data
 	unsigned hall_inp // Input Hall state
 ) // Returns new motor-state
@@ -567,7 +567,7 @@ static MOTOR_STATE_TYP check_hall_state( // Inspect Hall-state and update motor-
  * the transition from the last-state to the first-state.
  */
 {
-	MOTOR_STATE_TYP motor_state = motor_s.state; // Initialise to old motor state
+	MOTOR_STATE_ENUM motor_state = motor_s.state; // Initialise to old motor state
 
 
 	hall_inp &= HALL_PHASE_MASK; // Mask out 3 Hall Sensor Phase Bits
@@ -625,7 +625,7 @@ static void update_motor_state( // Update state of motor based on motor sensor d
  * If too long a time is spent in the STALL state, this becomes an error and the motor is stopped.
  */
 {
-	MOTOR_STATE_TYP motor_state; // local motor state
+	MOTOR_STATE_ENUM motor_state; // local motor state
 
 
 	// Update motor state based on new sensor data
@@ -746,7 +746,8 @@ static void use_motor ( // Start motor, and run step through different motor sta
 	streaming chanend c_qei, 
 	streaming chanend c_adc_cntrl, 
 	chanend c_speed, 
-	chanend c_can_eth_shared 
+	chanend c_can_eth_shared,
+	chanend? c_wd
 )
 {
 	unsigned command;	// Command received from the control interface
@@ -834,7 +835,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 				} // if (motor_s.iters > DEMO_LIMIT)
 
 				foc_hall_get_data( motor_s.hall_params ,c_hall ); // Get new hall state
-xscope_probe_data( 0 ,(100 * motor_s.hall_params.hall_val) );
+// xscope_probe_data( 0 ,(100 * motor_s.hall_params.hall_val) );
 
 				// Check error status
 				if (!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
@@ -856,8 +857,10 @@ xscope_probe_data( 0 ,(100 * motor_s.hall_params.hall_val) );
 							motor_s.state= STOP;
 					} // if (4100 < motor_s.qei_params.veloc)
 
-if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
+if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.temp );
+// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
 if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
+if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.qei_params.rev_cnt );
 
 					// Get ADC sensor data
 					foc_adc_get_data( motor_s.adc_params ,c_adc_cntrl );
@@ -902,8 +905,13 @@ if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 
 		}	// select
 
-	}	// while (STOP != motor_s.state)
+		// Check which core has WatchDog channel
+		if (!isnull(c_wd)) 
+		{
+			c_wd <: WD_CMD_TICK; // Keep WatchDog alive
+		} // if (!isnull(c_wd)) 
 
+	}	// while (STOP != motor_s.state)
 } // use_motor
 /*****************************************************************************/
 static void error_handling( // Prints out error messages
@@ -952,20 +960,20 @@ void run_motor (
 	{
 		unsigned thread_id = get_logical_core_id();
 		t :> ts1;
-		t when timerafter(ts1+2*SEC+256*thread_id) :> void;
+		t when timerafter(ts1 + (MILLI_400_SECS << 1) + (256 * thread_id)) :> void;
 	}
 
-	/* allow the WD to get going */
-	if (!isnull(c_wd)) 
+	// Check which core has WatchDog channel
+	if (!isnull(c_wd))
 	{
-		c_wd <: WD_CMD_START;
-	}
+		c_wd <: WD_CMD_INIT;	// Signal WatchDog to Initialise ...
+	}	// if (!isnull(c_wd))
 
 	// Pause to allow the rest of the system to settle
 	{
 		unsigned thread_id = get_logical_core_id();
 		t :> ts1;
-		t when timerafter(ts1+1*SEC) :> void;
+		t when timerafter(ts1 + MILLI_400_SECS) :> void;
 	}
 
 	init_motor( motor_s ,motor_id );	// Initialise motor data
@@ -978,8 +986,9 @@ void run_motor (
 	}	if (motor_id)
 
 	// start-and-run motor
-	use_motor( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl ,c_speed ,c_can_eth_shared );
+	use_motor( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl ,c_speed ,c_can_eth_shared ,c_wd );
 
+	// NB At present only Motor_1 works
 	if (motor_id)
 	{
 		if (motor_s.err_data.err_flgs)
@@ -995,6 +1004,7 @@ void run_motor (
 
 		_Exit(1); // Exit without flushing buffers
 	} // if (motor_id)
+
 } // run_motor
 /*****************************************************************************/
 // inner_loop.xc

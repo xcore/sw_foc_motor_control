@@ -81,7 +81,7 @@
 #include "shared_io.h"
 
 
-#define SEC 100000000
+#define MILLI_400_SECS (400 * MILLI_SEC)
 #define PWM_MAX_LIMIT 3800
 #define PWM_MIN_LIMIT 200
 #define OFFSET_14 16383
@@ -153,7 +153,7 @@ typedef enum IQ_EST_TAG
 } IQ_EST_TYP;
 
 /** Different Motor Phases */
-typedef enum MOTOR_STATE_TAG
+typedef enum MOTOR_STATE_ETAG
 {
   START = 0,	// Initial entry state
   SEARCH,		// Turn motor until FOC start condition found
@@ -161,7 +161,7 @@ typedef enum MOTOR_STATE_TAG
 	STALL,		// state where motor stalled
 	STOP,			// Error state where motor stopped
   NUM_MOTOR_STATES	// Handy Value!-)
-} MOTOR_STATE_TYP;
+} MOTOR_STATE_ENUM;
 
 // WARNING: If altering Error types. Also update error-message in init_error_data()
 /** Different Motor Phases */
@@ -192,11 +192,11 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	HALL_PARAM_TYP hall_params; // Structure containing measured data from Hall sensors
 	PWM_PARAM_TYP pwm_params; // Structure containing PWM data for PWM output ports
 	QEI_PARAM_TYP qei_params; // Structure containing measured data from QEI sensors
-	MOTOR_STATE_TYP state; // Current motor state
 	PID_CONST_TYP pid_consts[NUM_IQ_ESTIMATES][NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
 	ERR_DATA_TYP err_data; // Structure containing data for error-handling
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
+	MOTOR_STATE_ENUM state; // Current motor state
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int est_Id;	// Estimated radial current value
 	int est_Iq;	// Estimated tangential current value
