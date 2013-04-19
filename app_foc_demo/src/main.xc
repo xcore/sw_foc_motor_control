@@ -74,20 +74,17 @@ on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
 void xscope_user_init()
 {
 	xscope_register( 9
-		,XSCOPE_CONTINUOUS, "temp", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "wd", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "s_theta", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "m_theta", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "m_veloc", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "revs", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "set_Vq", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "pid_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "req_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "est_Iq", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "pid_Iq", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "targ_Iq", XSCOPE_INT , "n"
 /*
-		,XSCOPE_CONTINUOUS, "s_theta", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "m_theta", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "m_veloc", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "set_Vq", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "hall_0", XSCOPE_INT , "n"
 
 		,XSCOPE_CONTINUOUS, "rev_cnt", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "p_err", XSCOPE_INT , "n"
@@ -137,8 +134,12 @@ int main ( void ) // Program Entry Point
 		on tile[INTERFACE_TILE] : foc_comms_do_can( c_commands, c_rxChan, c_txChan ); // Core to extract Motor commands from CAN commands
 #endif // (USE_CAN)
 
-		on tile[INTERFACE_TILE] : foc_loop_do_wd( c_wd, p2_i2c_wd );
 		on tile[INTERFACE_TILE] : foc_display_shared_io_manager( c_speed ,lcd_ports ,p_btns, p_leds );
+
+		/* NB Ideally WatchDog Server Core should be on Tile most likely to Hang,
+		 * However, unfortunately p2_i2c_wd port is on INTERFACE_TILE
+		 */
+		on tile[INTERFACE_TILE] : foc_loop_do_wd( c_wd, p2_i2c_wd );
 
 		on tile[MOTOR_TILE] : 
 		{

@@ -16,12 +16,14 @@
 
 /*****************************************************************************/
 static void init_hall_data( // Initialise Hall data structure for one motor
+	int motor_id,	// Unique motor id
 	HALL_DATA_TYP &hall_data_s, // Reference to structure containing HALL data for one motor
-	int motor_id	// Unique motor id
+	unsigned &hall_buf // Reference to buffer of  raw hall data for one motor
 )
 {
 	hall_data_s.id = motor_id; // Set unique motor id
 	hall_data_s.out_val = 0;
+	hall_buf = 0;
 
 	return;
 } // init_hall_data
@@ -56,14 +58,15 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 )
 {
 	HALL_DATA_TYP all_hall_data[NUMBER_OF_MOTORS]; // Array of structure containing HALL data for one motor
-	unsigned hall_bufs[NUMBER_OF_MOTORS]; // buffera raw hall data from input port pins
+	unsigned hall_bufs[NUMBER_OF_MOTORS]; // odd and even buffers for raw hall data from input port pins for each motor
 	int motor_cnt; // Counts number of motors
+// int id = 1; //MB~ Dbg
 
 
 	// Initialise Hall data for each motor
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{ 
-		init_hall_data( all_hall_data[motor_cnt] ,motor_cnt );
+		init_hall_data( motor_cnt ,all_hall_data[motor_cnt] ,hall_bufs[motor_cnt] );
 	} // for motor_cnt
 
 	// Loop forever
@@ -74,6 +77,15 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) p4_hall[motor_id] when pinsneq(hall_bufs[motor_id]) :> hall_bufs[motor_id] :
 			{
+#ifdef MB
+if (motor_id)
+{
+	int tmp = 1 + (id << 1);
+
+	xscope_probe_data( tmp ,( 100 * hall_bufs[motor_id] ) );
+	id = 1 - id;
+} // if (motor_id)
+#endif //MB~
 				service_hall_input_pins( all_hall_data[motor_id] ,hall_bufs[motor_id] );
 			} // case
 			break;

@@ -445,7 +445,7 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 
 	// Applying Speed PID.
 
-	if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
+//	if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED] ,motor_s.qei_params.veloc ,motor_s.req_veloc );
 
 	// Calculate velocity PID output
@@ -458,7 +458,7 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 		motor_s.pid_veloc = motor_s.req_Iq + corr_veloc;
 	} // else !(PROPORTIONAL)
 
-if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.pid_veloc );
+// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.pid_veloc );
 
 	if (VELOC_CLOSED)
 	{ // Evaluate set IQ from velocity PID
@@ -497,11 +497,11 @@ if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.pid_veloc );
     break;
 	} // switch (motor_s.Iq_alg)
 
-if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.est_Iq );
+// if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.est_Iq );
 
 	// Apply PID control to Iq and Id
 
-if (motor_s.xscope) xscope_probe_data( 8 ,targ_Iq );
+// if (motor_s.xscope) xscope_probe_data( 8 ,targ_Iq );
 	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[I_Q] ,motor_s.pid_consts[motor_s.Iq_alg][I_Q] ,motor_s.est_Iq ,targ_Iq );
 	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[I_D] ,motor_s.pid_consts[motor_s.Iq_alg][I_D] ,motor_s.est_Id ,motor_s.req_Id  );
 
@@ -515,7 +515,7 @@ if (motor_s.xscope) xscope_probe_data( 8 ,targ_Iq );
 		motor_s.pid_Id = motor_s.set_Vd + corr_Id;
 		motor_s.pid_Iq = motor_s.set_Vq + corr_Iq;
 	} // else !(PROPORTIONAL)
-if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
+// if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
 
 	if (IQ_ID_CLOSED)
 	{ // Update set DQ values
@@ -539,7 +539,6 @@ if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
 	// Update 'demand' theta value for next dq_to_pwm iteration
 	motor_s.set_theta = motor_s.qei_params.theta + motor_s.theta_offset + motor_s.gamma_est;
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
-// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 
 } // calc_foc_pwm
 /*****************************************************************************/
@@ -835,7 +834,6 @@ static void use_motor ( // Start motor, and run step through different motor sta
 				} // if (motor_s.iters > DEMO_LIMIT)
 
 				foc_hall_get_data( motor_s.hall_params ,c_hall ); // Get new hall state
-// xscope_probe_data( 0 ,(100 * motor_s.hall_params.hall_val) );
 
 				// Check error status
 				if (!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
@@ -857,10 +855,8 @@ static void use_motor ( // Start motor, and run step through different motor sta
 							motor_s.state= STOP;
 					} // if (4100 < motor_s.qei_params.veloc)
 
-if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.temp );
 // if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
-if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
-if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.qei_params.rev_cnt );
+// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 
 					// Get ADC sensor data
 					foc_adc_get_data( motor_s.adc_params ,c_adc_cntrl );
@@ -871,6 +867,8 @@ if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.qei_params.rev_cnt );
 					update_motor_state( motor_s ,motor_s.hall_params.hall_val );
 				} // else !(!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
 
+// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
+
 				// Check if motor needs stopping
 				if (STOP == motor_s.state)
 				{
@@ -880,7 +878,6 @@ if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.qei_params.rev_cnt );
 				else
 				{
 					// Convert new set DQ values to PWM values
-// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 					dq_to_pwm( motor_s ,motor_s.set_Vd ,motor_s.set_Vq ,motor_s.set_theta ); // Convert Output DQ values to PWM values
 
 					foc_pwm_put_data( motor_s.pwm_params ,c_pwm ); // Update the PWM values
