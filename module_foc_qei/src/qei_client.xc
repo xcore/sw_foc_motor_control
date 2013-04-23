@@ -24,7 +24,11 @@ void foc_qei_get_data( // Returns New QEI data (speed, position, etc)
 	c_qei :> qei_data_s.theta; // Read QEI Angular position
 	c_qei :> qei_data_s.veloc; // Read QEI Angular Velocity
 	c_qei :> qei_data_s.rev_cnt; // Read QEI revolution count
-
+/*
+printstr("C>"); //MB~
+printint( qei_data_s.theta );
+printstrln("<C");
+*/
 	return;
 } // get_qei_data 
 /*****************************************************************************/

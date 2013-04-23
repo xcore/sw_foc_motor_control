@@ -20,7 +20,9 @@
 
 	 bit_3   bit_2   bit_1    bit_0
 	-------  -----  -------  -------
-  Un-used  Index  Phase_B  Phase_A
+  N_Error  Index  Phase_B  Phase_A
+
+	N_Error = 1 for No Errors
 
 	In normal operation the B and A bits change as a grey-code,
 	with the following convention
@@ -59,7 +61,11 @@
 #include "qei_common.h"
 
 #ifndef PLATFORM_REFERENCE_MHZ
-	#error Define. PLATFORM_REFERENCE_MHZin app_global.h
+	#error Define. PLATFORM_REFERENCE_MHZ in app_global.h
+#endif
+
+#ifndef QEI_FILTER
+	#error Define. QEI_FILTER in app_global.h
 #endif
 
 #define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation

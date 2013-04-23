@@ -17,15 +17,18 @@
 /*****************************************************************************/
 static void init_qei_data( // Initialise  QEI data for one motor
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	unsigned &inp_pins, // raw data value on input port pins
 	int inp_id  // Input unique motor identifier
 )
 {
+	inp_pins = 0xFF; // Set buffer for reading input pins to impossible value
+
 	inp_qei_s.diff_time = 0; // NB Initially this is used to count input-pin changes
 	inp_qei_s.id = inp_id; // Clear Previous phase values
 	inp_qei_s.orig_cnt = 0; // Reset counter indicating how many times motor has passed origin (index)
 	inp_qei_s.ang_cnt = 0; // Reset counter indicating angular position of motor (from origin)
 	inp_qei_s.theta = 0; // Reset angular position returned to client
-	inp_qei_s.spin_sign; // Clear Sign of spin direction
+	inp_qei_s.spin_sign = 0; // Clear Sign of spin direction
 	inp_qei_s.prev_state = QEI_STALL; // Initialise previous QEI state
 	inp_qei_s.err_cnt = 0; // Initialise counter for invalid QEI states
 	inp_qei_s.confid = 1; // Initialise confidence value
@@ -203,8 +206,8 @@ static void service_input_pins( // Get QEI data from motor and send to client
 )
 {
 /* get_spin is a table for converting pins values to spin values
- *	Order is 00 -> 01 -> 11 -> 10  Clockwise direction
- *	Order is 00 -> 10 -> 11 -> 01  Anti-Clockwise direction
+ *	[BA} order is 00 -> 10 -> 11 -> 01  Clockwise direction
+ *	[BA] order is 00 -> 01 -> 11 -> 10  Anti-Clockwise direction
  *
  *	Spin-state is
  *		-1: CLOCK Clocwise rotation, 
@@ -236,8 +239,8 @@ static const signed char get_spin_state[QEI_PHASES][QEI_PHASES] = {
 	timer my_tymer;
 
 
-// if (inp_qei_s.id) xscope_probe_data( 5 ,(inp_pins << 10));
-	cur_phases = inp_pins & 0x3; // Extract Phase bits
+// xscope_probe_data( 5 ,(100 * inp_pins));
+	cur_phases = inp_pins & QEI_PHASE_MASK; // Extract Phase bits
 
 	// Check if phases have changed
 	if (cur_phases != inp_qei_s.prev_phases) 
@@ -267,7 +270,7 @@ static const signed char get_spin_state[QEI_PHASES][QEI_PHASES] = {
 
 			inp_qei_s.ang_cnt += cur_spin; // Increment/Decrement angular position
 	
-			orig_flg = inp_pins & 0x4; 		// Extract origin flag 
+			orig_flg = inp_pins & QEI_ORIG_MASK; 		// Extract origin flag 
 	
 			// Check if motor at origin
 			if (orig_flg != inp_qei_s.prev_orig)
@@ -368,7 +371,16 @@ static void service_client_request( // Send processed QEI data to client
 		meas_veloc = inp_qei_s.spin_sign; // Default value
   } // if else !(START_UP_CHANGES < inp_qei_s.diff_time)
 
-	smooth_veloc = filter_velocity( inp_qei_s ,meas_veloc );
+	// Check if filter selected
+	if (QEI_FILTER)
+	{
+		smooth_veloc = filter_velocity( inp_qei_s ,meas_veloc );
+	} // if (QEI_FILTER)
+	else
+	{
+		smooth_veloc = meas_veloc;
+	} // else !(QEI_FILTER)
+
 // if (inp_qei_s.id) xscope_probe_data( 1 ,smooth_veloc);
 // if (inp_qei_s.id) xscope_probe_data( 1 ,smooth_veloc);
 
@@ -391,7 +403,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 
 	for (int motor_id=0; motor_id<NUMBER_OF_MOTORS; ++motor_id) 
 	{
-		init_qei_data( all_qei_s[motor_id] ,motor_id ); // Initialise QEI data for current motor
+		init_qei_data( all_qei_s[motor_id] ,inp_pins[motor_id] ,motor_id ); // Initialise QEI data for current motor
 	}
 
 	while (1) {
@@ -401,6 +413,12 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pQEI[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] :
 			{
+/*
+printint( motor_id );
+printstr("S>"); //MB~
+printint( inp_pins[motor_id] );
+printstrln("<S");
+*/
 				service_input_pins( all_qei_s[motor_id] ,inp_pins[motor_id] );
 			} // case
 			break;

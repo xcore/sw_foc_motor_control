@@ -15,15 +15,21 @@
 #ifndef _CHECK_QEI_TESTS_H_
 #define _CHECK_QEI_TESTS_H_
 
+#include <stdlib.h>
+
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
 
 #include "app_global.h"
+#include "use_locks.h"
 #include "test_qei_common.h"
 #include "qei_client.h"
 
 /*****************************************************************************/
+/** Display QEI results for all motors
+ * \param c_qei[]	// Array of channels connecting QEI client & server
+ */
 void disp_all_qei_client_data( // Display QEI results for all motors
 	streaming chanend c_qei[] // Array of QEI channels between Client and Server
 );

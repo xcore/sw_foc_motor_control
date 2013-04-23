@@ -855,7 +855,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 							motor_s.state= STOP;
 					} // if (4100 < motor_s.qei_params.veloc)
 
-// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
+if (motor_s.id) xscope_probe_data( 1 ,motor_s.qei_params.theta );
 // if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 
 					// Get ADC sensor data

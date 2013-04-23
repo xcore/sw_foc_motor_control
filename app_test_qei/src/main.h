@@ -21,12 +21,17 @@
 #include <platform.h>
 
 #include "app_global.h"
+#include "use_locks.h"
 #include "qei_server.h"
 #include "check_qei_tests.h"
 #include "generate_qei_tests.h"
 
 // Define where everything is
+
+/** Define Interface Tile */
 #define INTERFACE_TILE 0
+
+/** Define Motor Tile */
 #define MOTOR_TILE 1
 
 #endif /* _MAIN_H_ */

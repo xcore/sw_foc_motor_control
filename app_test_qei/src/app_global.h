@@ -14,24 +14,11 @@
 #ifndef _APP_GLOBAL_H_
 #define _APP_GLOBAL_H_
 
-/** Define this to include XSCOPE support */
-#define USE_XSCOPE 0
-
-#if (USE_XSCOPE)
-#include <xscope.h>
-#endif // (USE_XSCOPE)
-
 /** Define this to switch on error checks */
 #define CHECK_ERRORS 1
 
-/**  Default Filter Mode  1 == On */
-#define ADC_FILTER 1
-
 /** Define the number of motors */
 #define NUMBER_OF_MOTORS 2
-
-
-// Motor specific definitions ... (Currently Set for LDO Motors)
 
 /** Define the number of pole-pairs in motor */
 #define NUM_POLE_PAIRS 4
@@ -39,24 +26,14 @@
 /** Define the number of different QEI sensor positions per pole-pair */
 #define QEI_PER_POLE 256
 
-/** Define Maximum specified motor speed. WARNING: Safety critical */
-#define MAX_SPEC_RPM 4000
-
-/** Define Minimum motor speed, below which motor stalls. WARNING: Safety critical */
-#define MIN_STALL_RPM 500
-
+/**  Default No. OF QEI positions per Revolution */
 #define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
 
+/**  Default Filter Mode  1 == On */
+#define QEI_FILTER 0
 
-// PWM specific definitions ...
-
-// If locked, the ADC sampling will occur in the middle of the  switching sequence.
-// It is triggered over a channel. Set this define to 0 to disable this feature
-/** Define if ADC sampling is locked to PWM switching */
-#define LOCK_ADC_TO_PWM 1
-
-/** Define if Shared Memory is used to transfer PWM data from Client to Server */
-#define PWM_SHARED_MEM 0 // 0: Use c_pwm channel for pwm data transfer
+/** Define Maximum specified motor speed. WARNING: Safety critical */
+#define MAX_SPEC_RPM 4000
 
 /* This is a bit of a cludge, we are using a non-standard configuration
  * where the timer on the tile for inner_loop() is running at 250 MHz,
@@ -67,6 +44,8 @@
 #ifndef PLATFORM_REFERENCE_MHZ
 #define PLATFORM_REFERENCE_MHZ 250
 #define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ) 
+
+/** Define Referency Frequency to Match that in platform configuration (.XN) file */
 #define PLATFORM_REFERENCE_HZ  (1000 * PLATFORM_REFERENCE_KHZ) // NB Uses 28-bits
 #endif
 

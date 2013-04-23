@@ -15,13 +15,5 @@
 #ifndef _TEST_QEI_COMMON_H_
 #define _TEST_QEI_COMMON_H_
 
-#include <xs1.h>
-#include <assert.h>
-#include <print.h>
 
-#include "app_global.h"
-
-#define NUM_TESTS 200
-
-/*****************************************************************************/
 #endif /* _TEST_QEI_COMMON_H_ */

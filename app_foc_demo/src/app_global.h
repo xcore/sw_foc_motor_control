@@ -27,6 +27,9 @@
 /**  Default Filter Mode  1 == On */
 #define ADC_FILTER 1
 
+/**  Default Filter Mode  1 == On */
+#define QEI_FILTER 1
+
 /** Define the number of motors */
 #define NUMBER_OF_MOTORS 2
 
