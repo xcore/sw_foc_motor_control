@@ -26,13 +26,11 @@
 #include "qei_common.h"
 #include "test_qei_common.h"
 
-#define QEI_PHASE_NUM (QEI_PHASE_MASK + 1) // Number of QEI Phases
-
 #define HIGH_SPEED 4000
 #define LOW_SPEED  50
 
 #define MAX_TESTS 30 // No. of tests used for Max. speed check
-#define MIN_TESTS 3  // No. of tests used for Min. speed check
+#define MIN_TESTS 5  // No. of tests used for Min. speed check
 #define ACC_TESTS 18 // No. of tests used for Acceleration check
 #define DEC_TESTS 18 // No. of tests used for Deceleration check
 
@@ -46,7 +44,7 @@
 
 typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
 {
-	int vals[QEI_PHASE_NUM];	// Array of QEI Phase values
+	int vals[NUM_QEI_PHASES];	// Array of QEI Phase values
 } QEI_PHASE_TYP;
 
 typedef struct TEST_QEI_TAG // Structure containing QEI test data
@@ -58,6 +56,7 @@ typedef struct TEST_QEI_TAG // Structure containing QEI test data
 	int lo_ticks;			// No. of ticks/QEI at low speed
 	int off;			// offset into QEI Phase cycle
 	int cnt; // QEI position counter
+	int nerr; // QEI error flag (Bit_3 is 1 for NO errors)
 	unsigned time; // previous timer value
 	unsigned period; // period (in ticks) between tests
 } TEST_QEI_TYP;

@@ -1,0 +1,379 @@
+ Start Test Gen. For Motor_0
+                             Start Checks For Motor_0
+ Accelerate Clockwise 
+                             0: R=0  A=0  V=0 
+0:QEI:11
+0:QEI:9
+                             0: R=0  A=1  V=1 
+0:QEI:8
+                             0: R=0  A=2  V=0 
+0:QEI:10
+                             0: R=0  A=3  V=0 
+0:QEI:11
+                             0: R=0  A=4  V=6 
+0:QEI:9
+                             0: R=0  A=5  V=11 
+0:QEI:8
+                             0: R=0  A=6  V=14 
+0:QEI:10
+                             0: R=0  A=7  V=18 
+0:QEI:11
+                             0: R=0  A=8  V=23 
+0:QEI:9
+                             0: R=0  A=9  V=26 
+0:QEI:8
+                             0: R=0  A=10  V=30 
+0:QEI:10
+                             0: R=0  A=11  V=35 
+0:QEI:11
+                             0: R=0  A=12  V=40 
+0:QEI:9
+                             0: R=0  A=13  V=45 
+0:QEI:8
+                             0: R=0  A=14  V=50 
+0:QEI:10
+0:QEI:11
+                             0: R=0  A=16  V=59 
+0:QEI:9
+ Max_Speed Clockwise 
+0:QEI:8
+                             0: R=0  A=18  V=74 
+0:QEI:10
+0:QEI:11
+0:QEI:9
+                             0: R=0  A=21  V=90 
+0:QEI:8
+0:QEI:10
+0:QEI:11
+                             0: R=0  A=24  V=105 
+0:QEI:9
+0:QEI:8
+                             0: R=0  A=26  V=120 
+0:QEI:10
+0:QEI:11
+0:QEI:9
+                             0: R=0  A=29  V=134 
+0:QEI:12
+0:QEI:10
+0:QEI:11
+                             0: R=1  A=2  V=150 
+0:QEI:9
+0:QEI:8
+0:QEI:10
+                             0: R=1  A=5  V=165 
+0:QEI:11
+0:QEI:9
+                             0: R=1  A=7  V=180 
+0:QEI:8
+0:QEI:10
+0:QEI:11
+                             0: R=1  A=10  V=194 
+0:QEI:9
+0:QEI:8
+0:QEI:10
+                             0: R=1  A=13  V=209 
+0:QEI:11
+0:QEI:9
+0:QEI:8
+                             0: R=1  A=16  V=224 
+0:QEI:10
+ Decelerate Clockwise 
+0:QEI:11
+                             0: R=1  A=18  V=238 
+0:QEI:9
+0:QEI:8
+                             0: R=1  A=20  V=247 
+0:QEI:10
+                             0: R=1  A=21  V=253 
+0:QEI:11
+                             0: R=1  A=22  V=258 
+0:QEI:9
+                             0: R=1  A=23  V=263 
+0:QEI:8
+                             0: R=1  A=24  V=269 
+0:QEI:10
+                             0: R=1  A=25  V=274 
+0:QEI:11
+                             0: R=1  A=26  V=277 
+0:QEI:9
+                             0: R=1  A=27  V=280 
+0:QEI:8
+                             0: R=1  A=28  V=282 
+0:QEI:10
+                             0: R=1  A=29  V=284 
+0:QEI:11
+                             0: R=1  A=30  V=284 
+0:QEI:9
+                             0: R=1  A=31  V=282 
+0:QEI:8
+                             0: R=1  A=32  V=278 
+0:QEI:10
+                             0: R=1  A=33  V=271 
+0:QEI:11
+                             0: R=1  A=34  V=261 
+0:QEI:9
+ Accelerate Anti-Clockwise 
+                             0: R=1  A=35  V=249 
+0:QEI:8
+                             0: R=1  A=36  V=231 
+0:QEI:9
+                             0: R=1  A=37  V=218 
+0:QEI:11
+                             0: R=1  A=38  V=208 
+0:QEI:10
+                             0: R=1  A=39  V=204 
+0:QEI:8
+                             0: R=1  A=38  V=199 
+0:QEI:9
+                             0: R=1  A=37  V=187 
+0:QEI:11
+                             0: R=1  A=36  V=179 
+0:QEI:10
+                             0: R=1  A=35  V=170 
+0:QEI:8
+                             0: R=1  A=34  V=163 
+0:QEI:9
+                             0: R=1  A=33  V=157 
+0:QEI:11
+                             0: R=1  A=32  V=149 
+0:QEI:10
+                             0: R=1  A=31  V=143 
+0:QEI:8
+                             0: R=1  A=30  V=140 
+0:QEI:9
+                             0: R=1  A=29  V=134 
+0:QEI:11
+                             0: R=1  A=28  V=127 
+0:QEI:10
+                             0: R=1  A=27  V=120 
+0:QEI:8
+0:QEI:9
+ Max_Speed Anti-Clockwise 
+                             0: R=1  A=25  V=107 
+0:QEI:11
+0:QEI:10
+0:QEI:8
+                             0: R=1  A=22  V=90 
+0:QEI:9
+0:QEI:11
+0:QEI:10
+                             0: R=1  A=19  V=75 
+0:QEI:8
+0:QEI:9
+0:QEI:11
+                             0: R=1  A=17  V=59 
+0:QEI:10
+0:QEI:8
+                             0: R=1  A=14  V=42 
+0:QEI:9
+0:QEI:11
+0:QEI:10
+                             0: R=1  A=11  V=27 
+0:QEI:8
+0:QEI:9
+0:QEI:11
+                             0: R=1  A=8  V=10 
+0:QEI:10
+0:QEI:8
+                             0: R=1  A=6  V=-5 
+0:QEI:9
+0:QEI:11
+0:QEI:10
+                             0: R=1  A=3  V=-20 
+0:QEI:8
+0:QEI:9
+0:QEI:11
+                             0: R=1  A=0  V=-36 
+0:QEI:10
+0:QEI:8
+0:QEI:9
+                             0: R=1  A=1021  V=-51 
+0:QEI:11
+0:QEI:10
+ Decelerate Anti-Clockwise 
+                             0: R=1  A=1019  V=-66 
+0:QEI:8
+0:QEI:9
+                             0: R=1  A=1017  V=-79 
+0:QEI:11
+0:QEI:10
+                             0: R=1  A=1015  V=-86 
+0:QEI:8
+                             0: R=1  A=1014  V=-91 
+0:QEI:9
+                             0: R=1  A=1013  V=-101 
+0:QEI:11
+                             0: R=1  A=1012  V=-104 
+0:QEI:10
+                             0: R=1  A=1011  V=-109 
+0:QEI:8
+                             0: R=1  A=1010  V=-114 
+0:QEI:9
+                             0: R=1  A=1009  V=-120 
+0:QEI:11
+                             0: R=1  A=1008  V=-127 
+0:QEI:10
+                             0: R=1  A=1007  V=-131 
+0:QEI:8
+                             0: R=1  A=1006  V=-135 
+0:QEI:9
+                             0: R=1  A=1005  V=-139 
+0:QEI:11
+                             0: R=1  A=1004  V=-139 
+0:QEI:10
+                             0: R=1  A=1003  V=-140 
+0:QEI:8
+                             0: R=1  A=1002  V=-135 
+0:QEI:9
+ Min_Speed Anti-Clockwise 
+                             0: R=1  A=1001  V=-131 
+0:QEI:11
+                             0: R=1  A=1000  V=-124 
+0:QEI:10
+                             0: R=1  A=999  V=-115 
+0:QEI:8
+ Start Test Gen. For Motor_1
+                             0: R=1  A=998  V=-106 
+ Accelerate Clockwise 
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+ Max_Speed Clockwise 
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:12
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+ Decelerate Clockwise 
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+1:QEI:8
+1:QEI:10
+1:QEI:11
+1:QEI:9
+ Accelerate Anti-Clockwise 
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+ Max_Speed Anti-Clockwise 
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+ Decelerate Anti-Clockwise 
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+1:QEI:11
+1:QEI:10
+1:QEI:8
+1:QEI:9
+ Min_Speed Anti-Clockwise 
+1:QEI:11
+1:QEI:10
+1:QEI:8
+Test Generation Ends 

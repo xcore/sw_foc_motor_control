@@ -22,14 +22,6 @@
 #ifndef _QEI_CLIENT_H_
 #define _QEI_CLIENT_H_
 
-/** Structure containing QEI parameters for one motor */
-typedef struct QEI_PARAM_TAG // 
-{
-	int theta;		// Angular position
-	int veloc;		// Angular velocity
-	int rev_cnt;	// Revolution counter (No. of origin traversals)
-} QEI_PARAM_TYP;
-
 /*****************************************************************************/
 /** Returns New QEI data (speed, position, etc)
  * \param qei_data_s	// Reference to structure containing QEI data

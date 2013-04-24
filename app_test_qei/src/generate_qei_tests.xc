@@ -14,8 +14,8 @@
 
 #include "generate_qei_tests.h"
 
-/*	Order is 00 -> 01 -> 11 -> 10  Clockwise direction
- *	Order is 00 -> 10 -> 11 -> 01  Anti-Clockwise direction
+/*	[BA] order is 00 -> 01 -> 11 -> 10  Clockwise direction
+ *	[BA] order is 00 -> 10 -> 11 -> 01  Anti-Clockwise direction
  */
 /*****************************************************************************/
 static unsigned veloc_to_ticks( // Convert Velocity (in RPM) to ticks (in Reference Frequency Cycles)
@@ -39,6 +39,7 @@ static void init_qei_data( // Initialise QEI Test data
 
 	tst_data_s.hi_ticks = veloc_to_ticks( HIGH_SPEED ); // Convert HIGH_SPEED to ticks
 	tst_data_s.lo_ticks = veloc_to_ticks( LOW_SPEED ); // Convert LOW_SPEED to ticks
+
 } // init_qei_data
 /*****************************************************************************/
 static void do_qei_test( // Performs one QEI test
@@ -57,7 +58,7 @@ static void do_qei_test( // Performs one QEI test
 
 	qei_val = tst_data_s.phase.vals[tst_data_s.off]; // Initialise QEI Value with phase bits
 	if (!tst_data_s.cnt) qei_val |= QEI_ORIG_MASK; // If zero position, OR with Flag for Origin
-	qei_val |= QEI_NERR_MASK; // OR with Flag for 'No Errors'
+	qei_val |= tst_data_s.nerr; // OR with error flag (Bit_3)
 
 	p4_tst <: qei_val;
 
@@ -79,22 +80,23 @@ static void steady_speed( // Holds steady speed for a number of tests
 
 	// Initial start-up, spin at full speed
 	acquire_lock(); // Acquire Display Mutex
-	printstrln( str_val );
+	printstrln( str_val ); // Print test title
 	release_lock(); // Release Display Mutex
 
+	// Loop until all tests done
 	while(test_cnt)
 	{
-		// Wait till period elapsed
+		// Wait till test period elapsed
 		chronometer when timerafter(tst_data_s.time + tst_data_s.period) :> tst_data_s.time;
 
-		do_qei_test( tst_data_s ,motor_id ,p4_tst );
+		do_qei_test( tst_data_s ,motor_id ,p4_tst ); // Performs one QEI test
 
 		test_cnt--; // Decrement test counter
 	} // while(test_cnt)
 
 } // steady_speed
 /*****************************************************************************/
-static void change_speed( // Changes speed for a number of tests
+static void change_speed( // Changes speed over a number of tests
 	TEST_QEI_TYP &tst_data_s, // Reference to structure of QEI test data
 	int motor_id, // Motors Identifier
 	port out p4_tst,  // current port on which to transmit test data
@@ -108,15 +110,15 @@ static void change_speed( // Changes speed for a number of tests
 
 	// Decelerate
 	acquire_lock(); // Acquire Display Mutex
-	printstrln( str_val );
+	printstrln( str_val ); // Print test title
 	release_lock(); // Release Display Mutex
 
 	while(test_cnt)
 	{
-		// Wait till period elapsed
+		// Wait till test period elapsed
 		chronometer when timerafter(tst_data_s.time + tst_data_s.period) :> tst_data_s.time;
 
-		do_qei_test( tst_data_s ,motor_id ,p4_tst );
+		do_qei_test( tst_data_s ,motor_id ,p4_tst ); // Performs one QEI test
 
 		// Alter period to change speed
 		tst_data_s.period = (scale * tst_data_s.period + HALF_SCALE) >> SCALE_PRECISION;
@@ -139,13 +141,13 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 
 	// NB These tests assume QEI_FILTER = 0
 
+	tst_data_s.nerr = QEI_NERR_MASK; // Initialise error flag to NO errors (Bit_3 = 1)
 	tst_data_s.phase = tst_data_s.clk_wise; // Test Clock-Wise direction
 	tst_data_s.period = tst_data_s.lo_ticks; // Set period for Low start speed
 	change_speed( tst_data_s ,motor_id ,p4_tst ,ACC_TESTS ," Accelerate Clockwise " ,ACC_SCALE );
 
 	tst_data_s.period = tst_data_s.hi_ticks; // Set period for High speed
 	steady_speed( tst_data_s ,motor_id ,p4_tst ,MAX_TESTS ," Max_Speed Clockwise ");
-
 	change_speed( tst_data_s ,motor_id ,p4_tst ,DEC_TESTS ," Decelerate Clockwise " ,DEC_SCALE );
 
 	tst_data_s.phase = tst_data_s.anti_clk; // Test Anti-Clockwise direction
@@ -156,7 +158,10 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 	change_speed( tst_data_s ,motor_id ,p4_tst ,DEC_TESTS ," Decelerate Anti-Clockwise " ,DEC_SCALE );
 
 	tst_data_s.period = tst_data_s.lo_ticks; // Low finish speed
-	steady_speed( tst_data_s ,motor_id ,p4_tst ,MIN_TESTS ," Min_Speed Anti-Clockwise ");
+	steady_speed( tst_data_s ,motor_id ,p4_tst ,1 ," Min_Speed Anti-Clockwise ");
+
+	tst_data_s.nerr = 0; // Clear (Bit_3) to Signal error condition
+	steady_speed( tst_data_s ,motor_id ,p4_tst ,(MIN_TESTS - 1) ," Generate Error Flags ");
 
 } // gen_motor_qei_test_data
 /*****************************************************************************/

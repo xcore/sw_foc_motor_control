@@ -21,9 +21,7 @@ void foc_qei_get_data( // Returns New QEI data (speed, position, etc)
 ) // On returns qei_data_s is updated
 {
 	c_qei <: QEI_CMD_DATA_REQ; // Request data from QEI server
-	c_qei :> qei_data_s.theta; // Read QEI Angular position
-	c_qei :> qei_data_s.veloc; // Read QEI Angular Velocity
-	c_qei :> qei_data_s.rev_cnt; // Read QEI revolution count
+	c_qei :> qei_data_s; // Read QEI Parameter structure
 /*
 printstr("C>"); //MB~
 printint( qei_data_s.theta );

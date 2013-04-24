@@ -88,11 +88,9 @@
 #define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
 
 #define MAX_CONFID 2 // Maximum confidence value
-#define MAX_QEI_ERR 8 // Maximum number of consecutive QEI errors allowed
+#define MAX_QEI_STATE_ERR 8 // Maximum number of consecutive QEI state-transition errors allowed
 
 #define QEI_CNT_LIMIT (QEI_PER_REV + HALF_QEI_CNT) // 540 degrees of rotation
-
-#define QEI_PHASES 4	// 4 combinatations of Phases_B & Phases_A  E.g. [ 00 01 11 10 ]
 
 #define START_UP_CHANGES 3 // Must see this number of pin changes before calculating velocity
 
@@ -103,6 +101,8 @@
 #define QEI_COEF_DIV (1 << QEI_COEF_BITS) // Coef divisor
 #define QEI_HALF_COEF (QEI_COEF_DIV >> 1) // Half of Coef divisor
 
+#define MAX_QEI_STATUS_ERR 3  // Maximum number of consecutive QEI status errors allowed
+
 /** Different Motor Phases */
 typedef enum QEI_ENUM_TAG
 {
@@ -112,16 +112,19 @@ typedef enum QEI_ENUM_TAG
   QEI_JUMP = 2,		// Jumped 2 Phases
 } QEI_ENUM_TYP;
 
+typedef signed char ANG_INC_TYP; // Angular Increment type
+
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_DATA_TAG // 
 {
+	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
 	unsigned inp_pins; // Raw data values on input port pins
 	unsigned prev_phases; // Previous phase values
 	unsigned prev_time; // Previous angular position time stamp
 	unsigned diff_time; // Difference between 2 adjacent time stamps. NB Must be unsigned due to clock-wrap 
 	QEI_ENUM_TYP prev_state; // Previous QEI state
-	int err_cnt; // counter for invalid QEI states
-	int orig_cnt; // Increment every time motor passes origin (index)
+	int state_errs; // counter for invalid QEI state transistions
+	int status_errs; // counter for invalid QEI status errors
 	int ang_cnt; // Counts angular position of motor (from origin)
 	int theta; // angular position returned to client
 	int spin_sign; // Sign of spin direction

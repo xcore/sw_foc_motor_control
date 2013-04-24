@@ -25,7 +25,18 @@
 #define QEI_ORIG_MASK 0x4 // Bit_2 contain origin info.
 #define QEI_NERR_MASK 0x8 // Bit_3 contains error status (1 == No Errors)
 
+#define NUM_QEI_PHASES (QEI_PHASE_MASK + 1) // Number of QEI Phases
+
 // QEI Command Codes (Client --> Server) 
 #define QEI_CMD_DATA_REQ	1	// QEI Data Request
+
+/** Structure containing QEI parameters for one motor */
+typedef struct QEI_PARAM_TAG // 
+{
+	int theta;		// Angular position
+	int veloc;		// Angular velocity
+	int rev_cnt;	// Revolution counter (No. of origin traversals)
+	int err; 			// Flag set when Error condition detected
+} QEI_PARAM_TYP;
 
 #endif /* _QEI_COMMON_H_ */
