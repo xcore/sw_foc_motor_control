@@ -22,11 +22,7 @@ void foc_qei_get_data( // Returns New QEI data (speed, position, etc)
 {
 	c_qei <: QEI_CMD_DATA_REQ; // Request data from QEI server
 	c_qei :> qei_data_s; // Read QEI Parameter structure
-/*
-printstr("C>"); //MB~
-printint( qei_data_s.theta );
-printstrln("<C");
-*/
+
 	return;
 } // get_qei_data 
 /*****************************************************************************/

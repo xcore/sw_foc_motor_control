@@ -32,6 +32,8 @@ Quadrature Encoder Interface (QEI) Xcore Simulator
 --------------------------------------------------
 
 To get started with this application, run through the instructions in the quickstart guide.
+The application is in app_test_qei
+The quickstart guide is in doc_quickstart/quickstart_test_qei.rst
 
 This application uses module_foc_qei to process simulated QEI input test data.
 The QEI input data is received on a 4-bit port.
@@ -65,39 +67,16 @@ To start the test type
 
 Test results will be printed to standard-out.
 Remember this is a simulator, and is very slow.
-There may be gaps of upto 1 minute between ouput lines.
+There may be gaps of upto 1 minute between each printed line.
 The whole test takes upto 10 minutes to run.
 
-An example of test output is shown in qei_results.txt.
-There are two columns of output.
-The left hand column is the test input data.
-The right hand column is the QEI output data.
-
-First Motor_0 is tested, this is indicated by a prefix of '0:'
-Second Motor_1 is tested, this is indicated by a prefix of '1:'
-
-For each Motor, first the clock-wise direction is tested,
-secondly the anti-clockwise direction is tested.
-
-For each spin direction, the following tests are done:-
-1) Accelerate upto maximum speed (approx. 4000 RPM)
-2) Hold steady at maximum speed, while origin detected (see below)
-3) Decelerate to minimum speed, (approx. 50 RPM)
-
-Initally the motor's origin is unknown, 
-but the initial QEI position (A) is assumed to be zero.
-When the motor origin is detected (QEI & 4) = 1
+For a explanation of the test results refer to the README in application directory app_test_qei
 
 Trouble-shooting
 ................
 
-During initialisation, and when the system is reconfigured, 
-there may be audible clicks in the audio. This is expected.
+The information in the 'check results' column may disappear.
+This and almost any other problem are probably due to NOT setting the port configuration correctly when calling xsim
 
-The filter may produce output audio that is louder than the input,
-especially when high value for Quality_Factor are selected.
-This in turn may produce audible distortion in the output audio.
-If this occurs, try one of the following:
-
-   * Turning down the volume of the audio source (i.e. the volume level input to the application), 
-   * Reduce the value of DEF_QUAL_FACT
+The printout may stop.
+As mentioned above, depending on the speed of your PC (or Mac), there can be upto 1 minute gap between printed lines.

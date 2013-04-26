@@ -96,8 +96,10 @@
 #define INIT_THETA 0 // Initial start-up angle
 
 #define REQ_VELOCITY 4000 // Initial start-up speed
-#define REQ_IQ_OPENLOOP 2000 // Used in tuning
-#define REQ_ID_OPENLOOP 0		// Id value for open-loop mode
+#define START_VQ_OPENLOOP 2000 // Vq value for open-loop startup phase
+#define START_VD_OPENLOOP 0		// Vd value for open-loop startup phase
+#define REQ_VQ_OPENLOOP 6500 // Vq value for open-loop tuning
+#define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value
 
 // Set-up defines for scaling ...
 #define SHIFT_20 20
@@ -200,17 +202,18 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int est_Id;	// Estimated radial current value
 	int est_Iq;	// Estimated tangential current value
-	int req_Id;	// Requested current producing radial magnetic field.
-	int req_Iq;	// Requested current producing tangential magnetic field
+	int req_Vd;	// Requested voltage producing radial magnetic field.
+	int req_Vq;	// Requested voltage producing tangential magnetic field
 	int req_veloc;	// Requested (target) angular velocity set by the user/comms interface
 	int half_veloc;	// Half requested angular velocity
-	int Id_openloop;	// Requested Id value when tuning open-loop
-	int Iq_openloop;	// Requested Iq value when tuning open-loop
+	int Vd_openloop;	// Requested Id value when tuning open-loop
+	int Vq_openloop;	// Requested Iq value when tuning open-loop
 	int pid_veloc;	// Output of angular velocity PID
 	int pid_Id;	// Output of 'radial' current PID
 	int pid_Iq;	// Output of 'tangential' current PID
 	int set_Vd;	// Demand 'radial' voltage set by control loop
 	int set_Vq;	// Demand 'tangential' voltage set by control loop 
+	int prev_Vq;	// Previous Demand 'tangential' voltage
 	int set_theta;	// theta value
 	int start_theta; // Theta start position during warm-up (START and SEARCH states)
 
@@ -227,6 +230,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int gamma_est;	// Estimate of leading-angle, used to 'pull' pole towards coil.
 	int gamma_off;	// Gamma value offset
 	int gamma_err;	// Error diffusion value for Gamma value
+	int gamma_ramp;	// Gamma ramp value used to smoothly change between different Gamma values
+	int phi_ramp;	// Phi ramp value used to smoothly change between different Phi values (phase lag)
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter
 	int prev_angl; 	// previous angular position

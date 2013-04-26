@@ -7,33 +7,33 @@ API
 
 Configuration Defines
 ---------------------
-.. doxygendefine:: DEF_FILT_MODE
-.. doxygendefine:: DEF_SAMP_FREQ 
-.. doxygendefine:: DEF_SIG_FREQ 
-.. doxygendefine:: QUAL_BITS 
-.. doxygendefine:: DEF_QUAL_FACT 
+.. doxygendefine:: NUMBER_OF_MOTORS 
+.. doxygendefine:: NUM_POLE_PAIRS 
+.. doxygendefine:: QEI_PER_POLE 
+.. doxygendefine:: MAX_SPEC_RPM 
+.. doxygendefine:: QEI_FILTER 
+.. doxygendefine:: PLATFORM_REFERENCE_HZ  
 
 Functions
 ---------
 
 Data Types
 ++++++++++
-.. doxygentypedef:: S32_T
 
 Data Structures
 +++++++++++++++
-.. doxygenstruct:: BIQUAD_PARAM_TAG
+.. doxygenstruct:: QEI_PARAM_TAG
 
 Configuration Functions
 +++++++++++++++++++++++
-.. doxygenfunction:: config_biquad_filter
 
 Receive Functions
 +++++++++++++++++
+.. doxygenfunction:: foc_qei_get_data
 
 Transmit Functions
 ++++++++++++++++++
+.. doxygenfunction:: foc_qei_do_multiple
 
 DSP Processing Functions
 ++++++++++++++++++++++++
-.. doxygenfunction:: use_biquad_filter

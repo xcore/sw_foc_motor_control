@@ -60,6 +60,7 @@ Configure And Run The Simulator
    There may be pauses of upto 1 minute in console output.
    The test lasts upto 10 minutes. It is completed when the following 2 message have appeared.
    'Test Generation Ends'        'Test Check Ends'
+   For a full description of the test results, refer to the README in the application directory app_foc_qei
 
 Look at the Code
 ++++++++++++++++

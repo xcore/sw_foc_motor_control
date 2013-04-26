@@ -39,7 +39,7 @@ static void print_qei_data( // Print elements of QEI structure
 	printint( qei_param_s.err );
 	printstr( ":  R=" );
 	printint( qei_param_s.rev_cnt );
-	printstr( "  A=" );
+	printstr( "  P=" );
 	printint( qei_param_s.theta );
 	printstr( "  V=" );
 	printint( qei_param_s.veloc );

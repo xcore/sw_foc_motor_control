@@ -40,4 +40,7 @@
 #define INTERFACE_TILE 0
 #define MOTOR_TILE 1
 
+/**  Default Filter Mode  1 == On */
+#define ADC_FILTER 1
+
 #endif /* _MAIN_H_ */

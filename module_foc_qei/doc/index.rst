@@ -1,5 +1,5 @@
-XMOS xSOFTip Audio BiQuad Function Library
-==========================================
+XMOS xSOFTip FOC Motor Control QEI Function Library
+===================================================
 
 .. toctree::
 
