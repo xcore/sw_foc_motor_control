@@ -246,7 +246,6 @@ static void update_qei_state( // Update QEI state
 	unsigned err_flg // Flag set when Error condition detected
 )
 {
-	int cur_theta; // current theta value (returned to client)
 	ANG_INC_TYP ang_inc; // angular increment value
 
 

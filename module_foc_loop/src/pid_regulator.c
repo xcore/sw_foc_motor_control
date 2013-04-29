@@ -33,8 +33,8 @@ void init_pid_consts( // Initialise a set of PID Constants
 )
 {
 	pid_const_p->K_p = inp_K_p;
-	pid_const_p->K_i = inp_K_i;
 	pid_const_p->K_d = inp_K_d;
+	pid_const_p->K_i = inp_K_i;
 	pid_const_p->resolution = inp_resolution;
 
 	// Calculate rounding error based on resolution
@@ -52,12 +52,35 @@ void initialise_pid( // Initialise PID regulator
 	pid_regul_p->rem = 0;
 } // initialise_pid
 /*****************************************************************************/
+void preset_pid( // Preset PID ready for first iteration
+	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
+	PID_CONST_TYP * pid_const_p, // Local pointer to PID constants data structure
+	int open_val, // Open-loop requested value
+	int closed_val, // Closed-loop requested value
+	int meas_val // measured value
+)
+{
+	S64_T tmp_64; // temporary 64-bit precision velue
+
+
+	// Prevent divide by zero (by unused I_D PID)
+	if (pid_const_p->K_i)
+	{
+		tmp_64 = ((S64_T)open_val << pid_const_p->resolution); // Up-scale requested open-loop value
+		tmp_64 -= ((S64_T)pid_const_p->K_p * (S64_T)(closed_val - meas_val)); // Subtract up-scaled proportional error
+
+		// Integer division (with rounding) by up-scaled Integral constant
+		pid_regul_p->sum_err = (int)((tmp_64 + (pid_const_p->K_i >> 1)) / (S64_T)pid_const_p->K_i);
+	} //if (pid_const_p->K_i)
+} // preset_pid 
+/*****************************************************************************/
 int get_pid_regulator_correction( // Computes new PID correction based on input error
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
 	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
 	PID_CONST_TYP * pid_const_p, // Local pointer to PID constants data structure
-	int meas_val, // measured value
-	int requ_val // request value
+	int requ_val, // request value
+	int meas_val // measured value
 )
 {
 	int inp_err = (requ_val - meas_val); // Compute input error
@@ -101,6 +124,6 @@ pid_regul_p->prev_err = inp_err; // MB~ Dbg
 	pid_regul_p->qnt_err = res_64 - ((S64_T)res_32 << pid_const_p->resolution); // Update diffusion error
 
 	return res_32;
-}
+} // get_pid_regulator_correction 
 /*****************************************************************************/
 // pid_regulator.c

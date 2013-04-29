@@ -34,8 +34,3 @@ Receive Functions
 Transmit Functions
 ++++++++++++++++++
 .. doxygenfunction:: foc_qei_do_multiple
-
-DSP Processing Functions
-++++++++++++++++++++++++
-
-FIXME - this heading is empty

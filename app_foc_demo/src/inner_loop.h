@@ -216,6 +216,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int prev_Vq;	// Previous Demand 'tangential' voltage
 	int set_theta;	// theta value
 	int start_theta; // Theta start position during warm-up (START and SEARCH states)
+	int first_foc; // Flag set until first FOC (closed-loop) iteration completed
 
 	int iters; // Iterations of inner_loop
 	unsigned id; // Unique Motor identifier e.g. 0 or 1

@@ -52,16 +52,15 @@ static void init_motor( // initialise data structure for one motor
 
 	// Initialise PID constants [ K_p ,K_i ,Kd, ,resolution ] ...
 
-//MB~	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED]	,20000	,(3 << PID_RESOLUTION)		,0 ,PID_RESOLUTION );
-	init_pid_consts( motor_s.pid_consts[TRANSFORM][I_D]		,580000 ,(384 << PID_RESOLUTION) ,0 ,PID_RESOLUTION );
+	init_pid_consts( motor_s.pid_consts[TRANSFORM][I_D] ,0 ,0 ,0 ,PID_RESOLUTION );
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][I_Q]		,580000 ,(384 << PID_RESOLUTION) ,0 ,PID_RESOLUTION );
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED]	,20000	,(4 << PID_RESOLUTION) ,0 ,PID_RESOLUTION );
 
-	init_pid_consts( motor_s.pid_consts[EXTREMA][I_D]		,400000 ,(256 << PID_RESOLUTION)	,0 ,PID_RESOLUTION );
+	init_pid_consts( motor_s.pid_consts[EXTREMA][I_D] ,0 ,0 ,0 ,PID_RESOLUTION );
 	init_pid_consts( motor_s.pid_consts[EXTREMA][I_Q]		,400000 ,(256 << PID_RESOLUTION)	,0 ,PID_RESOLUTION );
 	init_pid_consts( motor_s.pid_consts[EXTREMA][SPEED]	,20000	,(3 << PID_RESOLUTION)		,0 ,PID_RESOLUTION );
 
-	init_pid_consts( motor_s.pid_consts[VELOCITY][I_D]		,12000 ,(8 << PID_RESOLUTION) ,0 ,PID_RESOLUTION );
+	init_pid_consts( motor_s.pid_consts[VELOCITY][I_D] ,0 ,0 ,0 ,PID_RESOLUTION );
 	init_pid_consts( motor_s.pid_consts[VELOCITY][I_Q]		,12000 ,(8 << PID_RESOLUTION) ,0 ,PID_RESOLUTION );
 	init_pid_consts( motor_s.pid_consts[VELOCITY][SPEED]	,11200 ,(8 << PID_RESOLUTION) ,0 ,PID_RESOLUTION );
 
@@ -89,6 +88,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 
 	motor_s.Iq_alg = TRANSFORM; // [TRANSFORM VELOCITY EXTREMA] Assign algorithm used to estimate coil current Iq (and Id)
+	motor_s.first_foc = 1; // Set flag until first FOC (closed-loop) iteration completed
 	motor_s.set_theta = 0;
 	motor_s.start_theta = 0; // Theta start position during warm-up (START and SEARCH states)
 	motor_s.theta_offset = 0; // Offset between Hall-state and QEI origin
@@ -493,14 +493,18 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	int smooth_gamma;	// Smoothed Gamma value (Leading angle)
 
 
-//MB~	assert(motor_s.Iq_alg != TRANSFORM ); // Currently Unsupported. (PID tuning required for TRANSFORM)
-
 #pragma xta label "foc_loop_speed_pid"
 
 	// Applying Speed PID.
 
 //	if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
-	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED] ,motor_s.qei_params.veloc ,motor_s.req_veloc );
+	// Check if PID's need presetting
+	if (motor_s.first_foc)
+	{
+		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED] ,motor_s.qei_params.veloc ,motor_s.req_veloc ,motor_s.qei_params.veloc );
+	}; // if (motor_s.first_foc)
+
+	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED] ,motor_s.req_veloc ,motor_s.qei_params.veloc );
 
 	// Calculate velocity PID output
 	if (PROPORTIONAL)
@@ -558,8 +562,16 @@ if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.est_Iq );
 	// Apply PID control to Iq and Id
 
 if (motor_s.xscope) xscope_probe_data( 8 ,targ_Iq );
-	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[I_Q] ,motor_s.pid_consts[motor_s.Iq_alg][I_Q] ,motor_s.est_Iq ,targ_Iq );
-	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[I_D] ,motor_s.pid_consts[motor_s.Iq_alg][I_D] ,motor_s.est_Id ,motor_s.req_Vd  );
+
+	// Check if PID's need presetting
+	if (motor_s.first_foc)
+	{
+		preset_pid( motor_s.id ,motor_s.pid_regs[I_Q] ,motor_s.pid_consts[motor_s.Iq_alg][I_Q] ,motor_s.Vq_openloop ,targ_Iq ,motor_s.est_Iq );
+		preset_pid( motor_s.id ,motor_s.pid_regs[I_D] ,motor_s.pid_consts[motor_s.Iq_alg][I_D] ,motor_s.Vd_openloop ,motor_s.req_Vd ,motor_s.est_Id );
+	}; // if (motor_s.first_foc)
+
+	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[I_Q] ,motor_s.pid_consts[motor_s.Iq_alg][I_Q] ,targ_Iq ,motor_s.est_Iq );
+	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[I_D] ,motor_s.pid_consts[motor_s.Iq_alg][I_D] ,motor_s.req_Vd ,motor_s.est_Id );
 
 	if (PROPORTIONAL)
 	{ // Proportional update
@@ -575,21 +587,11 @@ if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
 
 	if (IQ_ID_CLOSED)
 	{ // Update set DQ values
-		motor_s.set_Vd = motor_s.pid_Id; //MB~ Need to tune Id PID
-		motor_s.set_Vd = motor_s.req_Vd; 
-
+		motor_s.set_Vd = motor_s.pid_Id;
 		motor_s.set_Vq = motor_s.pid_Iq;
-
-		/* While Iq PID is accumulating it's sum-of-errors, the set_Vq may drop below Vq_openloop,
-		 * Therefore, check new Vq magnitue is larger than open-loop value
-		 */
-		if ( abs(motor_s.set_Vq) < abs(motor_s.Vq_openloop) )
-		{
-			motor_s.set_Vq = motor_s.Vq_openloop;
-		} // if ( abs(motor_s.set_Vq) < abs(motor_s.Vq_openloop) )
 	} // if (IQ_ID_CLOSED)
 	else
-	{ 
+	{ // Open-loop
 		// If necessary, smoothly change open-loop Vq to requested value
 		if (motor_s.Vq_openloop > REQ_VQ_OPENLOOP )
 		{
@@ -604,7 +606,7 @@ if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
 		} // else !(motor_s.Vq_openloop > REQ_VQ_OPENLOOP )
 
 		calc_open_loop_pwm( motor_s );
-	} // if (IQ_ID_CLOSED)
+	} // else !(IQ_ID_CLOSED)
 
 	// Update Gamma estimate ...
 	scaled_phase = motor_s.qei_params.veloc * GAMMA_GRAD + motor_s.gamma_off + motor_s.gamma_err;
@@ -640,6 +642,7 @@ if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
 	motor_s.set_theta = motor_s.qei_params.theta + motor_s.theta_offset + smooth_gamma;
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 
+	motor_s.first_foc = 0; // Clear 'first FOC' flag
 } // calc_foc_pwm
 /*****************************************************************************/
 static MOTOR_STATE_ENUM check_hall_state( // Inspect Hall-state and update motor-state if necessary
@@ -689,9 +692,6 @@ static MOTOR_STATE_ENUM check_hall_state( // Inspect Hall-state and update motor
            * depending on the number of pole pairs. E.g. [0, 256, 512, 768] are equivalent.
 					 */
 					motor_s.theta_offset = motor_s.set_theta - motor_s.qei_params.theta;
-
-// preset_pid( motor_s.id ,motor_s.pid_regs[I_Q] ,motor_s.pid_consts[motor_s.Iq_alg][I_Q] ,motor_s.est_Iq ,targ_Iq );
-
 
 					motor_state = FOC; // Switch to main FOC state
 					motor_s.cnts[FOC] = 0; // Initialise FOC-state counter 
