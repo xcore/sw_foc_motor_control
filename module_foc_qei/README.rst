@@ -1,9 +1,9 @@
-﻿Quadrature Encoder Interface (QEI)  Function Library
-====================================================
+﻿Quadrature Encoder Interface (QEI) Component
+============================================
 
-:scope: Example
-:description: The QEI module is a xSoftIP component of the FOC Motor control suite, It processess raw QEI data supplied by the motor.
-:keywords: Field-Oriented-Control FOC Quadrature-Encoder-Interface QEI Motor-Control
+:scope: Early Development
+:description: The QEI module is a xSoftIP component of the FOC Motor control suite for processing raw QEI data supplied by the motor
+:keywords: FOC, QEI, Motor Control
 :boards: XP-MC-CTRL-L2, XA-MC-PWR-DLV
 
 Features
@@ -18,5 +18,4 @@ Evaluation
 
 This module can be evaluated using the following demo applications:
 
-   * QEI test harness ``app_test_qei``
-   * FOC Motor Control demo ``app_foc_demo``
+   * QEI test harness ``Quadrature Encoder Interface (QEI) Test Harness``

@@ -4,8 +4,8 @@ Programming Guide
 Key Files
 ---------
 
-   * ``qei_client.xc``: Contains 'XC' function library for QEI Client
-   * ``qei_server.xc``: Contains 'XC' function library for QEI Server
+   * ``qei_client.xc``: Contains the XC implementation of the QEI Client API
+   * ``qei_server.xc``: Contains the XC implementation of the QEI Server task
 
 Usage
 -----
