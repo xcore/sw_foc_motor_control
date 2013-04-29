@@ -15,6 +15,8 @@
 #ifndef _QEI_COMMON_H_
 #define _QEI_COMMON_H_
 
+#include "app_global.h"
+
 #ifndef QEI_PER_REV 
 	#error Define. QEI_PER_REV in app_global.h
 #endif // QEI_PER_REV
@@ -33,7 +35,7 @@
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_PARAM_TAG // 
 {
-	int theta;		// Angular position
+	int theta;		/* Angular position */
 	int veloc;		// Angular velocity
 	int rev_cnt;	// Revolution counter (No. of origin traversals)
 	int err; 			// Flag set when Error condition detected

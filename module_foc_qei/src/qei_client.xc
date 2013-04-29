@@ -15,13 +15,13 @@
 #include "qei_client.h"
 
 /*****************************************************************************/
-void foc_qei_get_data( // Returns New QEI data (speed, position, etc)
-	QEI_PARAM_TYP &qei_data_s,	// Reference to structure containing QEI data
+void foc_qei_get_parameters( // Returns New QEI data (speed, position, etc)
+	QEI_PARAM_TYP &qei_param_s,	// Reference to structure containing QEI parameters
 	streaming chanend c_qei	// Channel connecting to QEI client & server
-) // On returns qei_data_s is updated
+) // On return, qei_param_s is updated
 {
 	c_qei <: QEI_CMD_DATA_REQ; // Request data from QEI server
-	c_qei :> qei_data_s; // Read QEI Parameter structure
+	c_qei :> qei_param_s; // Read QEI Parameter structure
 
 	return;
 } // get_qei_data 

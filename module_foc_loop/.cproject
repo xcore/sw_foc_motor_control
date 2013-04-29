@@ -161,112 +161,62 @@ targetID="org.eclipse.cdt.build.MakeTargetBuilder">
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/gcc&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/c++/4.2.1&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/c++/4.2.1/xcore-xmos-elf&quot;' />
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/util}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;' />
 
                                 </option>
                                 <inputType id = "com.xmos.cdt.xc.compiler.input.69854783" name="XC Sources" superClass="com.xmos.cdt.xc.compiler.input" />
                                 <option id = "gnu.c.compiler.option.include.paths.27112922" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/util}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;' />
 
                                 </option>
                             </tool>
                             <tool id = "com.xmos.cdt.xc.compiler.base.46338161" name="com.xmos.cdt.xc.compiler.base" superClass="com.xmos.cdt.xc.compiler.base">
                                 <option id = "gnu.c.compiler.option.include.paths.69206003" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/util}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;' />
 
                                 </option>
                                 <option id = "com.xmos.c.compiler.option.include.paths.61214416" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/util}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;' />
 
                                 </option>
                             </tool>
                             <tool id = "com.xmos.cdt.c.compiler.base.72319099" name="com.xmos.cdt.c.compiler.base" superClass="com.xmos.cdt.c.compiler.base">
                                 <option id = "gnu.c.compiler.option.include.paths.78387460" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/util}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;' />
 
                                 </option>
                                 <option id = "com.xmos.c.compiler.option.include.paths.99933767" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/util}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;' />
 
                                 </option>
                             </tool>
                             <tool id = "com.xmos.cdt.cpp.compiler.base.19775442" name="com.xmos.cdt.cpp.compiler.base" superClass="com.xmos.cdt.cpp.compiler.base">
                                 <option id = "gnu.c.compiler.option.include.paths.22316034" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/util}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;' />
 
                                 </option>
                                 <option id = "com.xmos.c.compiler.option.include.paths.77386333" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/util}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;' />
 
                                 </option>
                             </tool>
                             <tool id = "com.xmos.cdt.core.assembler.base.87337419" name="com.xmos.cdt.core.assembler.base" superClass="com.xmos.cdt.core.assembler.base">
                                 <option id = "gnu.c.compiler.option.include.paths.26133643" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/util}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;' />
 
                                 </option>
                                 <option id = "com.xmos.c.compiler.option.include.paths.99658468" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/util}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;' />
 
                                 </option>
                             </tool>

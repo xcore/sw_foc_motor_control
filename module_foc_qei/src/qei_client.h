@@ -16,21 +16,20 @@
 #include <assert.h>
 #include <print.h>
 
-#include "app_global.h"
 #include "qei_common.h"
 
 #ifndef _QEI_CLIENT_H_
 #define _QEI_CLIENT_H_
 
 /*****************************************************************************/
-/** Returns New QEI data (speed, position, etc)
- * \param qei_data_s	// Reference to structure containing QEI data
+/** Returns New QEI parameters (speed, position, etc)
+ * \param qei_param_s	// Reference to structure containing QEI parameters
  * \param c_qei	// Channel connecting QEI client & server
  */
-void foc_qei_get_data( // Returns New QEI data (speed, position, etc)
-	QEI_PARAM_TYP &qei_data_s,	// Reference to structure containing QEI data
+void foc_qei_get_parameters( // Returns New QEI data (speed, position, etc)
+	QEI_PARAM_TYP &qei_param_s,	// Reference to structure containing QEI parameters
 	streaming chanend c_qei	// Channel connecting to QEI client & server
-); // On returns qei_data_s is updated
+); // On return, qei_param_s is updated
 /*****************************************************************************/
 
 #endif /* _QEI_CLIENT_H_ */

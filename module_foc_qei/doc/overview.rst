@@ -1,4 +1,4 @@
-Overview
+﻿Overview
 ========
 
 This module contains a Quadrature Encoder Interface (QEI) component for a Motor Control system.
@@ -17,6 +17,6 @@ The raw QEI data consists of 4 bits. [E I B A], with the following functionality
 
 There are 2 possible pattern sequences for the phase bits, and these are used to determine the direction in which the motor is spinning:
 
-   *        ----------->  Counter-Clockwise
+   *        ------------------------->  Counter-Clockwise
    *	BA:  00 01 11 10 00
-   *			  <-----------  Clockwise
+   *        <------------------------  Clockwise

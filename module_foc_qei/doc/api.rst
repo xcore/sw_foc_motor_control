@@ -1,4 +1,4 @@
-.. _sec_api:
+﻿.. _sec_api:
 
 API
 ===
@@ -29,7 +29,7 @@ Configuration Functions
 
 Receive Functions
 +++++++++++++++++
-.. doxygenfunction:: foc_qei_get_data
+.. doxygenfunction:: foc_qei_get_parameters
 
 Transmit Functions
 ++++++++++++++++++

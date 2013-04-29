@@ -57,7 +57,6 @@
 #include <assert.h>
 #include <print.h>
 
-#include "app_global.h"
 #include "qei_common.h"
 
 #ifndef PLATFORM_REFERENCE_MHZ

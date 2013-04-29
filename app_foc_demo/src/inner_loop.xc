@@ -946,7 +946,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 				else
 				{
 					/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
-					foc_qei_get_data( motor_s.qei_params ,c_qei );
+					foc_qei_get_parameters( motor_s.qei_params ,c_qei );
 					motor_s.meas_speed = abs( motor_s.qei_params.veloc ); // NB Used to spot stalling behaviour
 
 					if (4400 < motor_s.meas_speed) // Safety

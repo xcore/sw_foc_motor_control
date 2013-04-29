@@ -1,4 +1,4 @@
-
+﻿
 Evaluation Platforms
 ====================
 
@@ -15,7 +15,8 @@ Motor Control Boards
 This module may be evaluated using the Motor Control Development Platform. 
 Minimum Required board SKUs are:
 
-   * XP-MC-CNTL-L2 (Motor Control Board) plus XA-MC-PWR-DLV (Motor Power Board) plus XA-SK-XTAG2 (Slicekit XTAG adaptor) 
+   * XP-MC-CNTL-L2 (Motor Control Board) plus XA-MC-PWR-DLV (Motor Power Board) plus 
+   * XA-SK-XTAG2 (Slicekit XTAG adaptor) 
 
 Demonstration Applications
 --------------------------

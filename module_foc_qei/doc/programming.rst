@@ -12,10 +12,10 @@ Usage
 
 There following 2 functions are designed to be called from an XC file.
 
-   * ``foc_qei_get_data()`` Client function designed to be called from an XC file each time a new set of QEI data is required.
+   * ``foc_qei_get_parameters()`` Client function designed to be called from an XC file each time a new set of QEI parameters are required.
    * ``foc_qei_do_multiple()``, Server function designed to be called from an XC file. It runs on its own core, and receives data from all QEI motor ports.
 
-To set the filter parameters, edit the following defines in the include file module_dsp_biquad/src/biquad_simple.h
+The following QEI definitions are required. These are set in ``qei_common.h`` or ``app_global.h``
 
    * QEI_PER_REV  // No of QEI positions per Revolution
    * QEI_PHASE_MASK // Bit Mask for [B A] phase info.
