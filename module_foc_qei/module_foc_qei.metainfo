@@ -92,6 +92,6 @@ generatedCode = {
   body = ""
 }
 
-api = {'foc_qei_get_data','foc_qei_do_multiple'}
+api = {'foc_qei_get_parameters','foc_qei_do_multiple'}
 
 files = {["module_foc_qei/src/module_foc_qei_example_conf.h"] = "src/app_global.h"}

@@ -77,7 +77,7 @@ static void disp_motor_qei_client_data( // Display QEI results for one motor
 	// Loop until end condition found
 	while( do_loop )
 	{
-		foc_qei_get_data( qei_param_s ,c_qei ); // Client function under test
+		foc_qei_get_parameters( qei_param_s ,c_qei ); // Client function under test
 
 		// Check for difference in Angle supplied by Client
 		if (prev_ang != qei_param_s.theta)

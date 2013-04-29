@@ -689,6 +689,10 @@ static MOTOR_STATE_ENUM check_hall_state( // Inspect Hall-state and update motor
            * depending on the number of pole pairs. E.g. [0, 256, 512, 768] are equivalent.
 					 */
 					motor_s.theta_offset = motor_s.set_theta - motor_s.qei_params.theta;
+
+// preset_pid( motor_s.id ,motor_s.pid_regs[I_Q] ,motor_s.pid_consts[motor_s.Iq_alg][I_Q] ,motor_s.est_Iq ,targ_Iq );
+
+
 					motor_state = FOC; // Switch to main FOC state
 					motor_s.cnts[FOC] = 0; // Initialise FOC-state counter 
 				} // if (0 < motor_s.qei_params.rev_cnt)
