@@ -1,0 +1,98 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>UnderStanding Test Results &mdash; XMOS xSOFTip FOC Motor Control QEI Test Application v documentation</title>
+
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/framework.css"  type="text/css" />
+    <link rel="stylesheet" href="_static/xde.css"
+    type="text/css" /><script type="text/javascript" src="_static/scripts.js"></script>
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="XMOS xSOFTip FOC Motor Control QEI Test Application v documentation" href="index.html" />
+    <link rel="prev" title="XMOS xSOFTip FOC Motor Control QEI Test Application" href="index.html" /> 
+  </head>
+  <body class="indented-content" onload="prepareContents();">
+    <div id="menubar">
+    <div id="breadcrumbs">
+      <ul>
+        
+
+<!--        <li><a href="index.html">XMOS xSOFTip FOC Motor Control QEI Test Application</a></li>-->
+          <li>UnderStanding Test Results</li> 
+      </ul>
+    </div>
+    </div>  
+          <div id="body">
+             <div id="content">
+             <h1>UnderStanding Test Results</h1>
+
+             <div class='content'>
+            
+  <h2 class="topic" id="test-output">Test Output</h2>
+<div><p>For background on the QEI protocol see the overview document in directory module_foc_qei/doc</p>
+<p>An example of test output from a working QEI component is held in qei_results.txt</p>
+<p>There are two columns of output.
+The left hand column is the test input data.
+The right hand column is the QEI output data.</p>
+<blockquote>
+<div><ul>
+<li>First, Motor_0 is tested, this is indicated by a prefix of &#8216;0:&#8217;</li>
+<li>Second, Motor_1 is tested, this is indicated by a prefix of &#8216;1:&#8217;</li>
+</ul>
+</div></blockquote>
+<dl class="docutils">
+<dt>For each Motor,</dt>
+<dd><ul class="first last">
+<li>first the clock-wise direction is tested,</li>
+<li>secondly the anti-clockwise direction is tested, and</li>
+<li>finally the error bit is tested.</li>
+</ul>
+</dd>
+<dt>For each spin direction, the following tests are done:-</dt>
+<dd><ul class="first last">
+<li>Accelerate up to maximum speed (approx. 4000 RPM)</li>
+<li>Hold steady at maximum speed, while origin detected (see below)</li>
+<li>Decelerate to minimum speed, (approx. 50 RPM)</li>
+</ul>
+</dd>
+</dl>
+<p>In the left hand column of the printout, is printed the value of the 4 raw QEI bits used for each test, as a number in the range [0..15]
+In the right hand column of the printout, are printed the 4 QEI parameters [Error_status, Revolution_Counter, angular_Position, angular_Velocity]</p>
+<p>At start-up,  the motor&#8217;s origin is unknown, so the initial QEI position (P) is assumed to be zero, and P increments from zero.
+During the acceleration test, the velocity(V) increases to its maximum value.
+During the Maximum Speed test, the Origin-bit is tested. When the origin is detected, the angular position is reset to zero, and the rev. counter is updated.
+During the deceleration test, the velocity(V) decreases to its minimum value.</p>
+<p>Notice that the Velocity values do NOT appear to update immediately; this is due to filtering. The QEI values can be unreliable, therefore the following filter is used. At start-up, or when the spin direction changes, 3 consecutive movements in the same direction are required before a new spin direction is established.</p>
+<p>When both clock-wise and anti-clock wise tests have been done. The Error-bit is tested. Three consecutive detections of a low(0) raw Error-bit are required before the Error_status parameter flag is switched on(1).</p>
+<p>The receipt of the Error_status flag by the QEI client is used by the test harness to terminate testing of the current motor, and switch to a different motor (or end the program).</p>
+</div>
+
+             </div>
+             </div>
+
+
+          </div>
+
+          <div>
+             <!--seealsos-->
+          </div>
+    <div class="footer">
+    </div>
+  </body>
+</html>

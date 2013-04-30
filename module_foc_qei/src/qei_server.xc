@@ -420,6 +420,9 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	streaming chanend c_qei[], // Array of data channel to client (carries processed QEI data)
 	port in pQEI[] 						 // Array of input port (carries raw QEI motor data)
 )
+#define STAT_BITS 12
+#define NUM_STATS (1 << STAT_BITS)
+#define HALF_STATS (NUM_STATS >> 1)
 {
 	QEI_DATA_TYP all_qei_s[NUMBER_OF_MOTORS]; // Array of structures containing QEI parameters for all motor
 	unsigned inp_pins[NUMBER_OF_MOTORS]; // Set of raw data values on input port pins
@@ -437,12 +440,6 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pQEI[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] :
 			{
-/*
-printint( motor_id );
-printstr("S>"); //MB~
-printint( inp_pins[motor_id] );
-printstrln("<S");
-*/
 				service_input_pins( all_qei_s[motor_id] ,inp_pins[motor_id] );
 			} // case
 			break;
