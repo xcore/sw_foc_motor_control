@@ -80,8 +80,10 @@
 #include "watchdog.h"
 #include "shared_io.h"
 
+// Timing definitions
+#define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
+#define OPEN_LOOP_PERIOD (262 * MICRO_SEC) // 262us. Time between open-loop theta increments
 
-#define MILLI_400_SECS (400 * MILLI_SEC)
 #define PWM_MAX_LIMIT 3800
 #define PWM_MIN_LIMIT 200
 #define OFFSET_14 16383
@@ -236,7 +238,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter
 	int prev_angl; 	// previous angular position
-	unsigned prev_time; 	// previous time stamp
+	unsigned prev_time; 	// previous open-loop time stamp
 
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error

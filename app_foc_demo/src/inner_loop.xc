@@ -101,7 +101,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.prev_Vq = 0;	// Previous voltage producing tangential magnetic field.
 	motor_s.est_Iq = 0;	// Clear Iq value estimated from measured angular velocity
 	motor_s.xscope = 0; 	// Clear xscope print flag
-	motor_s.prev_time = 0; 	// previous time stamp
+	motor_s.prev_time = 0; 	// previous open-loop time stamp
 	motor_s.prev_angl = 0; 	// previous angular position
 	motor_s.pwm_params.buf = 0; 	// Initialise which double-buffer in use
 	motor_s.pwm_params.mem_addr = 0; 	// Signal unassigned address
@@ -164,7 +164,7 @@ static void init_motor( // initialise data structure for one motor
 		motor_s.adc_params.vals[phase_cnt] = -1;
 	} // for phase_cnt
 
-	motor_s.temp = 1; // MB~ Dbg
+	motor_s.temp = 0; // MB~ Dbg
 } // init_motor
 /*****************************************************************************/
 static void init_pwm( // Initialise PWM parameters for one motor
@@ -451,15 +451,32 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
+	timer chronometer; // timer
+	unsigned cur_time; // current time value
+	int diff_time; // time since last theta update
+
+
 	motor_s.set_Vd = motor_s.Vd_openloop;
 	motor_s.set_Vq = motor_s.Vq_openloop;
 
+	chronometer :> cur_time;
+	diff_time = (int)(cur_time - motor_s.prev_time); 
+
+	// Check if theta needs incrementing
+	if (OPEN_LOOP_PERIOD < diff_time)
+	{
+		motor_s.set_theta++; // Increment demand theta value
+
+		motor_s.prev_time = cur_time; // Update previous time
+	} // if (OPEN_LOOP_PERIOD < diff_time)
+
+#ifdef MB
 #if PLATFORM_REFERENCE_MHZ == 100
-	assert ( 0 == 1 ); // MB~ 100 MHz Untested
 	motor_s.set_theta = motor_s.start_theta >> 2;
 #else
 	motor_s.set_theta = motor_s.start_theta >> 4;
 #endif
+#endif //MB~
 
 	// NB QEI_REV_MASK correctly maps -ve values into +ve range 0 <= theta < QEI_PER_REV;
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
@@ -1053,15 +1070,15 @@ void run_motor (
 )
 {
 	MOTOR_DATA_TYP motor_s; // Structure containing motor data
-	timer t;	/* Timer */
+	timer chronometer;	/* Timer */
 	unsigned ts1;	/* timestamp */
 
 
 	// Pause to allow the rest of the system to settle
 	{
 		unsigned thread_id = get_logical_core_id();
-		t :> ts1;
-		t when timerafter(ts1 + (MILLI_400_SECS << 1) + (256 * thread_id)) :> void;
+		chronometer :> ts1;
+		chronometer when timerafter(ts1 + (MILLI_400_SECS << 1) + (256 * thread_id)) :> void;
 	}
 
 	// Check which core has WatchDog channel
@@ -1073,8 +1090,8 @@ void run_motor (
 	// Pause to allow the rest of the system to settle
 	{
 		unsigned thread_id = get_logical_core_id();
-		t :> ts1;
-		t when timerafter(ts1 + MILLI_400_SECS) :> void;
+		chronometer :> ts1;
+		chronometer when timerafter(ts1 + MILLI_400_SECS) :> void;
 	}
 
 	init_motor( motor_s ,motor_id );	// Initialise motor data

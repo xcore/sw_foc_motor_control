@@ -59,7 +59,7 @@ xsi:schemaLocation="http://www.xmos.com http://www.xmos.com">
    	   	
     	</Tile>
     </Node>
-   	<Node Id="1" InPackageId="1" Type="XS1-L1A" Oscillator="25MHz" SystemFrequency="500MHz" ReferenceFrequency="250MHz">
+   	<Node Id="1" InPackageId="1" Type="XS1-L1A" Oscillator="25MHz" SystemFrequency="500MHz" ReferenceFrequency="100MHz">
    		<Boot>
      		<Source Location="XMOSLINK"/>
    		</Boot>
