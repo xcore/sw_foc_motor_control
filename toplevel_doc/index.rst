@@ -1,9 +1,9 @@
 Advanced Motor Control 
 .......................
 
-:Version: e1d6a1ca3e5e6266918c95a7ac0a2a8ec74d961a
+:Version: 4e3f585818010327c64697ae7bc7473bcdc528d4
 :Vendor: XMOS
-:Description: XMOS motor control platform
+:Description: motor control
 
 
 
@@ -66,13 +66,11 @@ If you have purchased one of the XMOS motor control kits (available from digikey
 Required software (dependencies)
 ================================
 
-  * sc_pwm
-  * sc_can
-  * xcommon (if using development tools earlier than 11.11.0)
   * sc_xtcp
   * sc_ethernet
-  * sc_lib_fixed_point
+  * sc_pwm
   * sc_util
+  * sc_can
 
 Support
 =======

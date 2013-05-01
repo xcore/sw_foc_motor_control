@@ -38,6 +38,12 @@
         <githash>3ec6bf50a5de2b5e9dbd57400b69439f30ee7e02</githash>
         <uri>https://github.com/xcore/sc_can</uri>
     </dependency>
+    <exclude_dir>module_foc_adc</exclude_dir>
+    <exclude_dir>module_foc_comms</exclude_dir>
+    <exclude_dir>module_foc_display</exclude_dir>
+    <exclude_dir>module_foc_hall</exclude_dir>
+    <exclude_dir>module_foc_loop</exclude_dir>
+    <exclude_dir>app_foc_demo</exclude_dir>
     <description>motor control</description>
     <location>https://github.com/xcore/sw_foc_motor_control</location>
     <name>sw_foc_motor_control</name>
