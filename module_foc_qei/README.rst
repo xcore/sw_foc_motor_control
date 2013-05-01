@@ -1,4 +1,4 @@
-﻿Quadrature Encoder Interface (QEI) Component
+Quadrature Encoder Interface (QEI) Component
 ============================================
 
 :scope: Early Development
