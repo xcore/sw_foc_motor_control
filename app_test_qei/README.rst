@@ -1,4 +1,4 @@
-﻿Quadrature Encoder Interface Test Harness
+Quadrature Encoder Interface Test Harness
 =========================================
 
 :scope: Example

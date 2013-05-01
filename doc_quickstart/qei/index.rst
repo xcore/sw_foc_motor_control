@@ -32,36 +32,40 @@ Configure And Run The Simulator
    #. In ``Run Configurations`` window, double click on ``xCORE Application``.
    #. You should find that the left hand side of the ``Run Configurations`` window, should be populated with details from the ``app_test_qei`` project. If the details are blank, this is probably because the project was not selected correctly in the first step. If this has happened, and the problem persists, browse to the correct project, and select the executable.
    #. Select the ``run on simulator`` button.
-   #. Now setup the loopbacks between the stimulus generator and teh QEI component.
+   #. Now setup the loopbacks between the stimulus generator and the
+      QEI component.
+
       #. Select the ``Simulator`` tab.
       #. Select the ``Loopback`` tab.
-      #. Click ``Enable pin connections``
+      #. Click ``Enable pin connections``.
       #. Click ``Add`` and dialogue boxes will appear for Tile, Port, Offset and Width. These should be filled in with the following information and steps shown in the table below. The second time the simulator is run, it is only necessary to click on the ``Run`` icon (the white arrow in the green circle) in the top menu.
 
-+-------+--------+------------+-------+------+
-|       |  Tile  |    Port    | Offset| Width|
-+=======+========+============+=======+======+
-| From: |    1   | XS1_PORT_4B|   0   |   4  |
-+-------+--------+------------+-------+------+
-| To:   |    1   | XS1_PORT_4F|   0   |   4  |
-+-------+--------+------------+-------+------+
-| Click ``Add`` again and then do the below  |
-+-------+--------+------------+-------+------+
-| From: |    1   | XS1_PORT_4A|   0   |   4  |
-+-------+--------+------------+-------+------+
-| To:   |    1   | XS1_PORT_4E|   0   |   4  |
-+-------+--------+------------+-------+------+
-| Click ``Apply``                            | 
-+-------+--------+------------+-------+------+
-| Click ``Run``                              |
-+-------+--------+------------+-------+------+
+                +-------+--------+------------+-------+------+
+                | From: |    1   | XS1_PORT_4B|   0   |   4  |
+                +-------+--------+------------+-------+------+
+                | To:   |    1   | XS1_PORT_4F|   0   |   4  |
+                +-------+--------+------------+-------+------+
+
+      #. Click ``Add`` again and then do the below
+
+                +-------+--------+------------+-------+------+
+                | From: |    1   | XS1_PORT_4A|   0   |   4  |
+                +-------+--------+------------+-------+------+
+                | To:   |    1   | XS1_PORT_4E|   0   |   4  |
+                +-------+--------+------------+-------+------+
+
+      #. Click ``Apply``
+      #. Click ``Run``
+
 
 Results 
 --------
 
-After a few seconds, test results will start to appear in the console window, and note that ther may be pauses of upto 1 minute in console output. The test lasts upto 10 minutes. It is completed when the following 2 messages have appeared:
+After a few seconds, test results will start to appear in the console
+window, and note that ther may be pauses of upto 1 minute in console
+output. The test lasts upto 10 minutes. It is completed when the
+following 2 messages have appeared::
 
-::
    Test Generation Ends       
    Test Check Ends
 
