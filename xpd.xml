@@ -44,6 +44,10 @@
     <exclude_dir>module_foc_hall</exclude_dir>
     <exclude_dir>module_foc_loop</exclude_dir>
     <exclude_dir>app_foc_demo</exclude_dir>
+    <exclude_dir>doc</exclude_dir>
+    <docdir>module_foc_qei/doc</docdir>
+    <docdir>doc_quickstart/qei</docdir>
+    <docdir>doc_quickstart/pwm</docdir>
     <description>motor control</description>
     <location>https://github.com/xcore/sw_foc_motor_control</location>
     <name>sw_foc_motor_control</name>

@@ -1,7 +1,7 @@
-.. _test_qei_Quickstart:
-
 Quadrature Encoder (QEI) Simulator Testbench
 ============================================
+
+.. _test_qei_Quickstart:
 
 This application is an xSIM test harness for the quadrature encoder interface using xTIMEcomposer Studio. It tests the QEI functions in the ``Quadrature Encoder Interface (QEI) Component`` xSOFTip component and directs test results to STDOUT.
 
@@ -12,21 +12,17 @@ No hardware is required to run it.
 Import and Build the Application
 --------------------------------
 
-1. Open xTIMEcomposer and check that it is operating in online mode. 
-   Open the edit perspective (Window->Open Perspective->XMOS Edit).
-#. Locate the ``'Test QEI Application'`` item in the xSOFTip pane on the bottom left of the window, 
-   and drag it into the Project Explorer window in the xTIMEcomposer. 
-   This will also cause the modules on which this application depends to be imported as well. 
-   These modules are: ``module_test_qei``, and ``module_locks``.
-#. Click on the app_foc_qei item in the Explorer pane then click on the build icon (hammer) in xTIMEcomposer. 
-   Check the console window to verify that the application has built successfully. 
+   1. Open xTIMEcomposer and check that it is operating in online mode. Open the edit perspective (Window->Open Perspective->XMOS Edit).
+   #. Locate the ``Test QEI Application`` item in the xSOFTip pane on the bottom left of the window and drag it into the Project Explorer window in the xTIMEcomposer. This will also cause the modules on which this application depends to be imported as well. These modules are: ``module_test_qei``, and ``module_locks``.
+   #. Click on the app_foc_qei item in the Explorer pane then click on the build icon (hammer) in xTIMEcomposer. 
+   #. Check the console window to verify that the application has built successfully. 
 
 For help in using xTIMEcomposer, try the xTIMEcomposer tutorial, that can be found by selecting Help->Tutorials from the xTIMEcomposer menu.
 
 Note that the Developer Column in the xTIMEcomposer on the right hand side of your screen 
 provides information on the xSOFTip components you are using. 
 Select the ``module_test_qei`` component in the Project Explorer, and you will see its description together with API documentation. 
-Having done this, click the `back` icon until you return to this quickstart guide within the Developer Column.
+Having done this, click the ``back`` icon until you return to this quickstart guide within the Developer Column.
 
 Configure And Run The Simulator
 -------------------------------
@@ -49,8 +45,7 @@ Configure And Run The Simulator
 +-------+--------+------------+-------+------+
 | To:   |    1   | XS1_PORT_4F|   0   |   4  |
 +-------+--------+------------+-------+------+
-| Click ``Add`` again,                       |
-| and fill in another set of data            |
+| Click ``Add`` again and then do the below  |
 +-------+--------+------------+-------+------+
 | From: |    1   | XS1_PORT_4A|   0   |   4  |
 +-------+--------+------------+-------+------+
@@ -66,13 +61,10 @@ Results
 
 After a few seconds, test results will start to appear in the console window, and note that ther may be pauses of upto 1 minute in console output. The test lasts upto 10 minutes. It is completed when the following 2 messages have appeared:
 
-   ``Test Generation Ends``        
-   ``Test Check Ends``
+::
+   Test Generation Ends       
+   Test Check Ends
 
-FIXME - the discussion of test results in the module README.rst needs to be put in here and removed from the module README.rst
-
-Interpreting the Results
-++++++++++++++++++++++++
 
 Look at the Code
 ----------------
