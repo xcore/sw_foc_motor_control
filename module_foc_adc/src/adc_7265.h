@@ -90,7 +90,8 @@
 /* ADC_TRIGGER_DELAY needs to be tuned to move the ADC trigger point into the centre of the PWM 'OFF' period.
  * This value is related to the PWM_MAX_VALUE (in module_pwm_foc) and is independent of the Reference Frequency
  */
-#define ADC_TRIGGER_DELAY 1980
+#define ADC_TRIGGER_CORR 68 // Timing correction
+#define ADC_TRIGGER_DELAY ((PWM_MAX_VALUE >> 1) - ADC_TRIGGER_CORR) // MB~ Re-tune
 
 #define ADC_SCALE_BITS 16 // Used to generate 2^n scaling factor
 #define ADC_HALF_SCALE (1 << (ADC_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)

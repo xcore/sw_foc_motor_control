@@ -21,7 +21,7 @@ The following QEI definitions are required. These are set in ``qei_common.h`` or
    * QEI_PHASE_MASK // Bit Mask for [B A] phase info.
    * QEI_ORIG_MASK // Bit Mask for origin bit.
    * QEI_NERR_MASK // Bit Mask for error status bit (1 == No Errors)
-   * PLATFORM_REFERENCE_HZ // Platform Reference Frequency (250 MHz)
+   * PLATFORM_REFERENCE_HZ // Platform Reference Frequency
    * QEI_FILTER // QEI filter switch (0 == Off)
    * MAX_SPEC_RPM // Maximium specified motor speed
 

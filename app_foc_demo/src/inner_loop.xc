@@ -373,27 +373,32 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 
 } // estimate_Iq_using_transforms
 /*****************************************************************************/
-static unsigned scale_to_12bit( // Returns coil current converted to 12-bit unsigned
-	int inp_I  // Input coil current
+static unsigned convert_volts_to_pwm_width( // Converted voltages to PWM pulse-widths
+	int inp_V  // Input voltage
 )
 {
-	unsigned out_pwm; // output 12bit PWM value
+	unsigned out_pwm; // output PWM pulse-width
 
 
-	out_pwm = (inp_I + OFFSET_14) >> 3; // Convert coil current to PWM value. NB Always +ve
+	out_pwm = (inp_V + VOLT_OFFSET) >> VOLT_TO_PWM_BITS; // Convert voltage to PWM value. NB Always +ve
 
-	// Clip PWM value into 12-bit range
+	// Clip PWM value into allowed range
 	if (out_pwm > PWM_MAX_LIMIT)
-	{ 
+	{
+xscope_probe_data( 1 ,out_pwm );
 		out_pwm = PWM_MAX_LIMIT;
 	} // if (out_pwm > PWM_MAX_LIMIT)
 	else
 	{
-		if (out_pwm < PWM_MIN_LIMIT) out_pwm = PWM_MIN_LIMIT;
+		if (out_pwm < PWM_MIN_LIMIT)
+		{
+xscope_probe_data( 1 ,out_pwm );
+			out_pwm = PWM_MIN_LIMIT;
+		} // if (out_pwm < PWM_MIN_LIMIT)
 	} // else !(out_pwm > PWM_MAX_LIMIT)
 
-	return out_pwm; // return clipped 12-bit PWM value
-} // scale_to_12bit
+	return out_pwm; // return clipped PWM value
+} // convert_volts_to_pwm_width
 /*****************************************************************************/
 static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values 
 	MOTOR_DATA_TYP &motor_s, // Reference to structure containing motor data
@@ -437,7 +442,7 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	/* Scale to 12bit unsigned for PWM output */
 	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
 	{ 
-		motor_s.pwm_comms.params.widths[phase_cnt] = scale_to_12bit( volts[phase_cnt] );
+		motor_s.pwm_comms.params.widths[phase_cnt] = convert_volts_to_pwm_width( volts[phase_cnt] );
 	} // for phase_cnt
 
 // if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.pwm_comms.params.widths[PWM_PHASE_A] );

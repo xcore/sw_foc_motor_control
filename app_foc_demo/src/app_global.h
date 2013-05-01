@@ -53,6 +53,10 @@
 
 // PWM specific definitions ...
 
+/** Define the resolution of PWM (WARNING: effects update rate as tied to ref clock) */
+#define PWM_RES_BITS 12 // Number of bits used to define number of different PWM pulse-widths
+#define PWM_MAX_VALUE (1 << PWM_RES_BITS) // No.of different PWM pulse-widths
+
 // If locked, the ADC sampling will occur in the middle of the  switching sequence.
 // It is triggered over a channel. Set this define to 0 to disable this feature
 /** Define if ADC sampling is locked to PWM switching */
@@ -86,7 +90,6 @@
  */
 #ifndef PLATFORM_REFERENCE_MHZ
 #define PLATFORM_REFERENCE_MHZ 100
-//MB~ #define PLATFORM_REFERENCE_MHZ 250
 #define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ) 
 #define PLATFORM_REFERENCE_HZ  (1000 * PLATFORM_REFERENCE_KHZ) // NB Uses 28-bits
 #endif

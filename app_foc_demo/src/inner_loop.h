@@ -84,9 +84,20 @@
 #define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
 #define OPEN_LOOP_PERIOD (262 * MICRO_SEC) // 262us. Time between open-loop theta increments
 
-#define PWM_MAX_LIMIT 3800
-#define PWM_MIN_LIMIT 200
-#define OFFSET_14 16383
+#define PWM_MIN_LIMIT (PWM_MAX_VALUE >> 4) // Min PWM value allowed (1/16th of max range)
+#define PWM_MAX_LIMIT (PWM_MAX_VALUE - PWM_MIN_LIMIT) // Max. PWM value allowed
+
+#define VOLT_RES_BITS 14 // No. of bits used to define No. of different Voltage magnitude levels
+#define VOLT_MAX_MAG (1 << VOLT_RES_BITS) // No.of different Voltage Magnitudes. NB Voltage is -VOLT_MAX_MAG..(VOLT_MAX_MAG-1)
+
+// Check precision data
+#if (VOLT_RES_BITS < PWM_RES_BITS)  
+#error  VOLT_RES_BITS < PWM_RES_BITS  
+#endif // (VOLT_RES_BITS < PWM_RES_BITS)  
+
+#define VOLT_TO_PWM_BITS (VOLT_RES_BITS - PWM_RES_BITS + 1) // bit shift required for converting volts to PWM pulse-widths
+#define HALF_VOLT_TO_PWM (1 << (VOLT_TO_PWM_BITS - 1)) // Used for rounding
+#define VOLT_OFFSET (VOLT_MAX_MAG + HALF_VOLT_TO_PWM) // Offset required to make PWM pulse-width +ve
 
 #define STALL_SPEED 100
 #define STALL_TRIP_COUNT 5000
