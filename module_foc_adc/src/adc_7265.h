@@ -87,7 +87,9 @@
  */
 #define ADC_SCLK_MHZ 8 // ADC Serial Clock frequency (in MHz)
 
-// ADC_TRIGGER_DELAY needs to be tuned to move the ADC trigger point into the centre of the 'OFF' period.
+/* ADC_TRIGGER_DELAY needs to be tuned to move the ADC trigger point into the centre of the PWM 'OFF' period.
+ * This value is related to the PWM_MAX_VALUE (in module_pwm_foc) and is independent of the Reference Frequency
+ */
 #define ADC_TRIGGER_DELAY 1980
 
 #define ADC_SCALE_BITS 16 // Used to generate 2^n scaling factor
@@ -112,8 +114,9 @@ typedef struct ADC_FILT_TAG // Structure containing data for one ADC Trigger
 	int half_div; // half coef_div (used for rounding)
 } ADC_FILT_TYP;
 
-typedef struct ADC_TRIG_TAG // Structure containing data for one ADC Trigger
+typedef struct ADC_DATA_TAG // Structure containing data for one ADC Trigger
 {
+	ADC_PARAM_TYP params; // Structure containing ADC parameters (for Client)
 	ADC_PHASE_TYP phase_data[USED_ADC_PHASES];
 	ADC_FILT_TYP filt; // Filter parameters. NB Need to have separate structure to satisfy XC rules on aliasing
 	timer my_timer;	// timer
@@ -121,12 +124,7 @@ typedef struct ADC_TRIG_TAG // Structure containing data for one ADC Trigger
 	char guard_off;	// Guard
 	int mux_id; // Mux input identifier
 	int filt_cnt; // Counter used in filter
-} ADC_TRIG_TYP;
-
-typedef struct ADC_7265_TAG // Structure containing ADC-7265 data
-{
-	ADC_TRIG_TYP trig_data[NUM_ADC_TRIGGERS];
-} ADC_7265_TYP;
+} ADC_DATA_TYP;
 
 /*****************************************************************************/
 /** \brief Implements the AD7265 triggered ADC service

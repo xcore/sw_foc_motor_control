@@ -15,27 +15,13 @@
 #include "adc_client.h"
 
 /*****************************************************************************/
-void foc_adc_get_data( // Read 2 of 3 ADC values from the motor, and convert them into signed 32-bit integer
-	ADC_PARAM_TYP &adc_data_s, // Reference to structure containing ADC data
+void foc_adc_get_parameters( // Read 2 of 3 ADC values from the motor, and convert them into signed 32-bit integer
+	ADC_PARAM_TYP &adc_param_s, // Reference to structure containing ADC parameters
 	streaming chanend c_adc_cntrl // channel connecting to ADC client and server
 )
 {
-	int phase_cnt; // ADC Phase counter
-	int adc_sum = 0; // Accumulator for transmitted ADC Phases
-
-
-	c_adc_cntrl <: ADC_CMD_REQ;	// Request ADC data */
-
-	// Loop through used phases of ADC data
-	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
-	{
-		c_adc_cntrl :> adc_data_s.vals[phase_cnt];	// Receive One phase of ADC data
-
-		adc_sum += adc_data_s.vals[phase_cnt]; // Add adc value to sum
-	} // for phase_cnt
-
-	// Calculate last ADC phase from previous phases (NB Sum of phases is zero)
-	adc_data_s.vals[(NUM_ADC_PHASES - 1)] = -adc_sum;
+	c_adc_cntrl <: ADC_CMD_REQ;	// Request ADC data
+	c_adc_cntrl :> adc_param_s;	// Receive ADC parameters
 
 	return;
 } // foc_adc_get_data

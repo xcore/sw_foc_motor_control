@@ -15,13 +15,13 @@
 #include "hall_client.h"
 
 /*****************************************************************************/
-void foc_hall_get_data( // Returns (4-bit) Hall sensor data from channel
-	HALL_PARAM_TYP &hall_data_s,	// Reference to structure containing Hall parameters
+void foc_hall_get_parameters( // Returns (4-bit) Hall sensor parameters from channel
+	HALL_PARAM_TYP &hall_param_s,	// Reference to structure containing Hall parameters
 	streaming chanend c_hall // Streaming channel for Hall sensor data
 )
 {
 	c_hall <: HALL_CMD_DATA_REQ;	// Request new hall sensor data
-	c_hall :> hall_data_s.hall_val; // Read new hall sensor data
+	c_hall :> hall_param_s; // Read new hall sensor parameters
 
 	return;
 } // foc_hall_get_data

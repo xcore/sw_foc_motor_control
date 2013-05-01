@@ -25,19 +25,13 @@
 #include "app_global.h"
 #include "adc_common.h"
 
-/** Structure containing ADC parameters for one motor */
-typedef struct ADC_PARAM_TAG // Structure containing ADC parameters
-{
-	int vals[NUM_ADC_PHASES]; // Array of ADC values for each phase
-} ADC_PARAM_TYP;
-
 /*****************************************************************************/
 /** Get 12-bit ADC values and convert to signed 32-bit integer
- * \param adc_data_s // Structure containing ADC data
+ * \param adc_param_s // Structure containing ADC parameters
  * \param c_adc  // channel connecting ADC client and server
  */
-void foc_adc_get_data( // Get 12-bit ADC values and convert to signed 32-bit integer
-	ADC_PARAM_TYP &adc_data_s, // Structure containing ADC data
+void foc_adc_get_parameters( // Get 12-bit ADC values and convert to signed 32-bit integer
+	ADC_PARAM_TYP &adc_param_s, // Structure containing ADC parameters
 	streaming chanend c_adc
 );
 /*****************************************************************************/

@@ -21,19 +21,13 @@
 #include "app_global.h"
 #include "hall_common.h"
 
-/** Structure containing HALL parameters for one motor */
-typedef struct HALL_PARAM_TAG // 
-{
-	unsigned hall_val; // Hall sensor value (4 LS bits)
-} HALL_PARAM_TYP;
-
 /*****************************************************************************/
 /** On return structure contains new Hall data (4-bit value)
- * \param qei_data_s	// Reference to structure containing QEI data
+ * \param qei_param_s	// Reference to structure containing Hall parameters
  * \param c_hall // data channel to server (carries processed Hall data)
  */
-void foc_hall_get_data( // On return structure contains new Hall data (4-bit value)
-	HALL_PARAM_TYP &hall_data_s,	// Reference to structure containing Hall parameters
+void foc_hall_get_parameters( // On return structure contains new Hall parameters (4-bit value)
+	HALL_PARAM_TYP &hall_param_s,	// Reference to structure containing Hall parameters
 	streaming chanend c_hall // Streaming channel for Hall sensor data
 );
 /*****************************************************************************/

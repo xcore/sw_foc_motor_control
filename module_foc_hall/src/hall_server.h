@@ -25,8 +25,8 @@
 /** Structure containing HALL data for one motor */
 typedef struct HALL_DATA_TAG // 
 {
+	HALL_PARAM_TYP params;	// structure containing Hall parameters (for Client)
 	unsigned inp_val; // Raw value on input port pins
-	unsigned out_val; // Filtered output value
 	int id; // Unique motor identifier
 } HALL_DATA_TYP;
 

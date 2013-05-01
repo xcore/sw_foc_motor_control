@@ -103,8 +103,6 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.xscope = 0; 	// Clear xscope print flag
 	motor_s.prev_time = 0; 	// previous open-loop time stamp
 	motor_s.prev_angl = 0; 	// previous angular position
-	motor_s.pwm_params.buf = 0; 	// Initialise which double-buffer in use
-	motor_s.pwm_params.mem_addr = 0; 	// Signal unassigned address
 	motor_s.coef_err = 0; // Clear Extrema Coef. diffusion error
 	motor_s.scale_err = 0; // Clear Extrema Scaling diffusion error
 	motor_s.Iq_err = 0; // Clear Error diffusion value for measured Iq
@@ -168,7 +166,7 @@ static void init_motor( // initialise data structure for one motor
 } // init_motor
 /*****************************************************************************/
 static void init_pwm( // Initialise PWM parameters for one motor
-	PWM_PARAM_TYP &pwm_param_s, // reference to structure containing PWM parameters
+	PWM_COMMS_TYP &pwm_comms_s, // reference to structure containing PWM data
 	chanend c_pwm, // PWM channel connecting Client & Server
 	unsigned motor_id // Unique Motor identifier e.g. 0 or 1
 )
@@ -176,17 +174,17 @@ static void init_pwm( // Initialise PWM parameters for one motor
 	int phase_cnt; // phase counter
 
 
-	pwm_param_s.buf = 0; // Current double-buffer in use at shared memory address
-	pwm_param_s.id = motor_id; // Unique Motor identifier e.g. 0 or 1
+	pwm_comms_s.buf = 0; // Current double-buffer in use at shared memory address
+	pwm_comms_s.params.id = motor_id; // Unique Motor identifier e.g. 0 or 1
 
 	// initialise arrays
 	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
 	{ 
-		pwm_param_s.widths[phase_cnt] = 0;
+		pwm_comms_s.params.widths[phase_cnt] = 0;
 	} // for phase_cnt
 
 	// Receive the address of PWM data structure from the PWM server, in case shared memory is used
-	c_pwm :> pwm_param_s.mem_addr; // Receive shared memory address from PWM server
+	c_pwm :> pwm_comms_s.mem_addr; // Receive shared memory address from PWM server
 
 	return;
 } // init_pwm 
@@ -424,7 +422,7 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 
 	motor_s.prev_Vq = set_Vq; // Store smoothed Vq value
 
-if (motor_s.xscope) xscope_probe_data( 3 ,set_Vq );
+// if (motor_s.xscope) xscope_probe_data( 3 ,set_Vq );
 
 	// Inverse park  [d, q, theta] --> [alpha, beta]
 	inverse_park_transform( alpha_set, beta_set, set_Vd, set_Vq, inp_theta  );
@@ -439,12 +437,12 @@ if (motor_s.xscope) xscope_probe_data( 3 ,set_Vq );
 	/* Scale to 12bit unsigned for PWM output */
 	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
 	{ 
-		motor_s.pwm_params.widths[phase_cnt] = scale_to_12bit( volts[phase_cnt] );
+		motor_s.pwm_comms.params.widths[phase_cnt] = scale_to_12bit( volts[phase_cnt] );
 	} // for phase_cnt
 
-// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.pwm_params.widths[PWM_PHASE_A] );
-// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.pwm_params.widths[PWM_PHASE_B] );
-// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.pwm_params.widths[PWM_PHASE_C] );
+// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.pwm_comms.params.widths[PWM_PHASE_A] );
+// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.pwm_comms.params.widths[PWM_PHASE_B] );
+// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.pwm_comms.params.widths[PWM_PHASE_C] );
 } // dq_to_pwm
 /*****************************************************************************/
 static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spins magnetic field around (regardless of the encoder)
@@ -533,7 +531,7 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 		motor_s.pid_veloc = motor_s.req_Vq + corr_veloc;
 	} // else !(PROPORTIONAL)
 
-if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.pid_veloc );
+// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.pid_veloc );
 
 	if (VELOC_CLOSED)
 	{ // Evaluate set IQ from velocity PID
@@ -544,7 +542,7 @@ if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.pid_veloc );
 		motor_s.req_Vq = motor_s.Vq_openloop;
 	} // if (VELOC_CLOSED)
 
-if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
+// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
 
 #pragma xta label "foc_loop_id_iq_pid"
 
@@ -574,11 +572,11 @@ if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
     break;
 	} // switch (motor_s.Iq_alg)
 
-if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.est_Iq );
+// if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.est_Iq );
 
 	// Apply PID control to Iq and Id
 
-if (motor_s.xscope) xscope_probe_data( 8 ,targ_Iq );
+// if (motor_s.xscope) xscope_probe_data( 8 ,targ_Iq );
 
 	// Check if PID's need presetting
 	if (motor_s.first_foc)
@@ -600,7 +598,7 @@ if (motor_s.xscope) xscope_probe_data( 8 ,targ_Iq );
 		motor_s.pid_Id = motor_s.set_Vd + corr_Id;
 		motor_s.pid_Iq = motor_s.set_Vq + corr_Iq;
 	} // else !(PROPORTIONAL)
-if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
+// if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
 
 	if (IQ_ID_CLOSED)
 	{ // Update set DQ values
@@ -954,7 +952,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 				} // if (motor_s.iters > DEMO_LIMIT)
 
-				foc_hall_get_data( motor_s.hall_params ,c_hall ); // Get new hall state
+				foc_hall_get_parameters( motor_s.hall_params ,c_hall ); // Get new hall state
 
 				// Check error status
 				if (!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
@@ -976,11 +974,11 @@ static void use_motor ( // Start motor, and run step through different motor sta
 							motor_s.state= STOP;
 					} // if (4100 < motor_s.qei_params.veloc)
 
-if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
-if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
+// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
+// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 
 					// Get ADC sensor data
-					foc_adc_get_data( motor_s.adc_params ,c_adc_cntrl );
+					foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
 // if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.adc_params.vals[ADC_PHASE_A] );
 // if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.adc_params.vals[ADC_PHASE_B] );
 // if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.adc_params.vals[ADC_PHASE_C] );
@@ -988,20 +986,20 @@ if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 					update_motor_state( motor_s ,motor_s.hall_params.hall_val );
 				} // else !(!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
 
-if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
+// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 
 				// Check if motor needs stopping
 				if (STOP == motor_s.state)
 				{
 					// Set PWM values to stop motor
-					error_pwm_values( motor_s.pwm_params.widths );
+					error_pwm_values( motor_s.pwm_comms.params.widths );
 				} // if (STOP == motor_s.state)
 				else
 				{
 					// Convert new set DQ values to PWM values
 					dq_to_pwm( motor_s ,motor_s.set_Vd ,motor_s.set_Vq ,motor_s.set_theta ); // Convert Output DQ values to PWM values
 
-					foc_pwm_put_data( motor_s.pwm_params ,c_pwm ); // Update the PWM values
+					foc_pwm_put_parameters( motor_s.pwm_comms ,c_pwm ); // Update the PWM values
 
 #ifdef USE_XSCOPE
 					if ((motor_s.cnts[FOC] & 0x1) == 0) // If even, (NB Forgotton why this works!-(
@@ -1096,7 +1094,7 @@ void run_motor (
 
 	init_motor( motor_s ,motor_id );	// Initialise motor data
 
-	init_pwm( motor_s.pwm_params ,c_pwm ,motor_id );	// Initialise PWM parameters
+	init_pwm( motor_s.pwm_comms ,c_pwm ,motor_id );	// Initialise PWM communication data
 
 	if (motor_id) 
 	{

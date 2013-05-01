@@ -22,7 +22,7 @@ static void init_hall_data( // Initialise Hall data structure for one motor
 )
 {
 	hall_data_s.id = motor_id; // Set unique motor id
-	hall_data_s.out_val = 0;
+	hall_data_s.params.hall_val = 0;
 	hall_buf = 0;
 
 	return;
@@ -37,7 +37,7 @@ static void service_hall_input_pins( // Process new Hall data
 
 //MB~ TODO: Insert filter here
 
-	hall_data_s.out_val = hall_data_s.inp_val; // NB Filtering not yet implemented
+	hall_data_s.params.hall_val = hall_data_s.inp_val; // NB Filtering not yet implemented
 
 	return;
 } // service_hall_input_pins
@@ -47,7 +47,7 @@ static void service_hall_client_request( // Send processed HALL data to client
 	streaming chanend c_hall // Data channel to client (carries processed HALL data)
 )
 {
-	c_hall <: hall_data_s.out_val;
+	c_hall <: hall_data_s.params;
 
 	return;
 } // service_hall_client_request

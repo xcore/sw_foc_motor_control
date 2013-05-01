@@ -132,10 +132,9 @@
 #define IQ_ID_CLOSED 1 // Selcects Iq/Id closed-loop, velocity open-loop
 
 #ifdef USE_XSCOPE
-//	#define DEMO_LIMIT 100000 // XSCOPE
-	#define DEMO_LIMIT 200000 // XSCOPE
+	#define DEMO_LIMIT 100000 // XSCOPE
 #else // ifdef USE_XSCOPE
-	#define DEMO_LIMIT 9000000
+	#define DEMO_LIMIT 4000000
 #endif // else !USE_XSCOPE
 
 #define STR_LEN 80 // String Length
@@ -194,7 +193,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 {
 	ADC_PARAM_TYP adc_params; // Structure containing measured data from ADC
 	HALL_PARAM_TYP hall_params; // Structure containing measured data from Hall sensors
-	PWM_PARAM_TYP pwm_params; // Structure containing PWM data for PWM output ports
+	PWM_COMMS_TYP pwm_comms; // Structure containing PWM communication data between Client/Server.
 	QEI_PARAM_TYP qei_params; // Structure containing measured data from QEI sensors
 	PID_CONST_TYP pid_consts[NUM_IQ_ESTIMATES][NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control

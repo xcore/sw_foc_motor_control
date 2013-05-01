@@ -35,4 +35,10 @@ typedef enum CMD_ADC_ETAG
   NUM_ADC_CMDS    // Handy Value!-)
 } CMD_ADC_ENUM;
 
+/** Structure containing ADC parameters for one motor */
+typedef struct ADC_PARAM_TAG // Structure containing ADC parameters
+{
+	int vals[NUM_ADC_PHASES]; // Array of ADC values for each phase
+} ADC_PARAM_TYP;
+
 #endif /* _ADC_COMMON_H_ */

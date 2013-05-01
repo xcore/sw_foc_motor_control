@@ -26,4 +26,10 @@
 
 #define HALL_PHASE_MASK (HALL_ALL_MASK & (~HALL_ERR_MASK)) // Used to mask out 3 Hall Sensor Phase Bits
 
+/** Structure containing HALL parameters for one motor */
+typedef struct HALL_PARAM_TAG // 
+{
+	unsigned hall_val; // Hall sensor value (4 LS bits)
+} HALL_PARAM_TYP;
+
 #endif /* _HALL_COMMON_H_ */
