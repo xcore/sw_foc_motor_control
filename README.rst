@@ -1,11 +1,12 @@
 Advanced Motor Control 
 .......................
 
-:Stable release:  2.0
+:Latest release: 0.0.1beta0
+:Maintainer: XMOS
+:Description: motor control
 
-:Status:  Design Ready
 
-:Maintainer: https://github.com/DavidNorman
+
 
 Firmware and documentation to go with the XMOS XK-MC-LVM2 and XP-MC-CTRL-L2 Motor Control Development Kits.
 
@@ -41,12 +42,6 @@ Component      module_dsc_hall         Interface to Hall sensors (only used for 
 Component      module_dsc_qei          A quadrature encoder interface                 
 ============== ======================= =====================================================================
 
-
-Required Modules
-================
-
-In addition, the code imports and uses the following components from the xcore github repos:
-
 ============ ======================================= ============================================
 Type         Name                                    Description
 ------------ --------------------------------------- --------------------------------------------
@@ -78,7 +73,13 @@ Support
 
 Issues may be submitted via the Issues tab in this github repo. Response to any issues submitted as at the discretion of the manitainer for this line.
 
+Required software (dependencies)
+================================
 
-
-
+  * sc_xtcp (https://github.com/beaumontm/sc_xtcp.git)
+  * sc_ethernet (https://github.com/beaumontm/sc_ethernet.git)
+  * sc_pwm (https://github.com/xcore/sc_pwm)
+  * sc_lib_fixed_point (https://github.com/xcore/sc_lib_fixed_point)
+  * sc_util (https://github.com/xcore/sc_util)
+  * sc_can (https://github.com/xcore/sc_can)
 

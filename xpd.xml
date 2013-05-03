@@ -59,6 +59,7 @@
     <name>sw_foc_motor_control</name>
     <maintainer>XMOS</maintainer>
     <partnumber>XM-002894-DH</partnumber>
+    <release parenthash = "cd6d1cc0aa5caf773dfe466c5ce81d2efb7f78bd" version = "0.0.1beta0"></release>
     <subpartnumber>XM-002895-SM</subpartnumber>
     <vendor>XMOS</vendor>
     <xcore_repo>sw_foc_motor_control</xcore_repo>
