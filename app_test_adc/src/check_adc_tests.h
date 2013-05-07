@@ -12,18 +12,26 @@
  * copyright notice above.
  **/                                   
 
-#include "hall_client.h"
+#ifndef _CHECK_ADC_TESTS_H_
+#define _CHECK_ADC_TESTS_H_
+
+#include <stdlib.h>
+
+#include <xs1.h>
+#include <assert.h>
+#include <print.h>
+
+#include "app_global.h"
+#include "use_locks.h"
+#include "test_adc_common.h"
+#include "adc_client.h"
 
 /*****************************************************************************/
-void foc_hall_get_parameters( // Returns (4-bit) Hall sensor parameters from channel
-	HALL_PARAM_TYP &hall_param_s,	// Reference to structure containing Hall parameters
-	streaming chanend c_hall // Streaming channel for Hall sensor data
-)
-{
-	c_hall <: HALL_CMD_DATA_REQ;	// Request new hall sensor data
-	c_hall :> hall_param_s; // Read new hall sensor parameters
-// printstr("C:"); printintln( hall_param_s.hall_val );
-
-	return;
-} // foc_hall_get_data
+/** Display ADC results for all motors
+ * \param c_adc[]	// Array of channels connecting ADC client & server
+ */
+void disp_all_adc_client_data( // Display ADC results for all motors
+	streaming chanend c_adc[] // Array of ADC channels between Client and Server
+);
 /*****************************************************************************/
+#endif /* _CHECK_ADC_TESTS_H_ */

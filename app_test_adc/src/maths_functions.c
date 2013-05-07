@@ -10,20 +10,33 @@
  * under a separate license, the separate license terms are shown
  * below. The modifications to the code are still covered by the 
  * copyright notice above.
- **/                                   
+ **/ 
 
-#include "hall_client.h"
+#include "maths_functions.h"
 
 /*****************************************************************************/
-void foc_hall_get_parameters( // Returns (4-bit) Hall sensor parameters from channel
-	HALL_PARAM_TYP &hall_param_s,	// Reference to structure containing Hall parameters
-	streaming chanend c_hall // Streaming channel for Hall sensor data
+int get_sine_value( // Returns scaled sine value value
+	int index, // Index into sample-set
+	int wave_len, // Sine wavelength measured in samples
+	int amplitude // Sine-wave amplitude
 )
 {
-	c_hall <: HALL_CMD_DATA_REQ;	// Request new hall sensor data
-	c_hall :> hall_param_s; // Read new hall sensor parameters
-// printstr("C:"); printintln( hall_param_s.hall_val );
+	double inp_rad = PIx2 * (double)index / (double)wave_len; // Input to sine in radians
+	double out_val; // floating-point output value
 
-	return;
-} // foc_hall_get_data
+
+	out_val = (double)amplitude * sin( inp_rad );
+
+	// Check sign of result
+	if (0 > out_val)
+	{
+		out_val -= 0.5;
+	} // if (0 > out_val)
+	else
+	{
+		out_val += 0.5;
+	} // else !(0 > out_val)
+
+	return (int)out_val;
+} // get_sine_value
 /*****************************************************************************/

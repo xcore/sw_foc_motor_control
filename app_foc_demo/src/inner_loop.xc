@@ -74,8 +74,8 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.iters = 0;
 	motor_s.cnts[START] = 0;
 	motor_s.state = START;
-	motor_s.hall_params.hall_val = HALL_ERR_MASK; // Initialise to 'No Errors'
-	motor_s.prev_hall = (!HALL_ERR_MASK); // Arbitary value different to above
+	motor_s.hall_params.hall_val = HALL_NERR_MASK; // Initialise to 'No Errors'
+	motor_s.prev_hall = (!HALL_NERR_MASK); // Arbitary value different to above
 
 // Choose last Hall state of 6-state cycle, depending on spin direction
 #if (LDO_MOTOR_SPIN == 1)
@@ -958,15 +958,16 @@ static void use_motor ( // Start motor, and run step through different motor sta
 				} // if (motor_s.iters > DEMO_LIMIT)
 
 				foc_hall_get_parameters( motor_s.hall_params ,c_hall ); // Get new hall state
+if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.hall_params.hall_val );
 
 				// Check error status
-				if (!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
+				if (motor_s.hall_params.err)
 				{
 					motor_s.err_data.err_flgs |= (1 << OVERCURRENT);
 					motor_s.err_data.line[OVERCURRENT] = __LINE__;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
-				} // if (!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
+				} // if (motor_s.hall_params.err)
 				else
 				{
 					/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
@@ -979,8 +980,8 @@ static void use_motor ( // Start motor, and run step through different motor sta
 							motor_s.state= STOP;
 					} // if (4100 < motor_s.qei_params.veloc)
 
-// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
-// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
+if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
+if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 
 					// Get ADC sensor data
 					foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
@@ -989,7 +990,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 // if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.adc_params.vals[ADC_PHASE_C] );
 
 					update_motor_state( motor_s ,motor_s.hall_params.hall_val );
-				} // else !(!(motor_s.hall_params.hall_val & HALL_ERR_MASK))
+				} // else !(motor_s.hall_params.err)
 
 // if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 

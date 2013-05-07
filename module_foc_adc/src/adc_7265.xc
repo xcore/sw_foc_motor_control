@@ -125,6 +125,7 @@ static void get_adc_port_data( // Get ADC data from one port
 
 
 	endin( inp_data_port ); // End the previous input on this buffered port
+
 	inp_data_port :> inp_val; // Get new input
 
 	// This section extracts active bits from sample with padding zeros
@@ -269,7 +270,7 @@ static void service_control_token( // Services client control token for this tri
 {
 	switch(inp_token)
 	{
-		case XS1_CT_END : // Request for ADC values
+		case XS1_CT_END : // ADC values ready for capture
 			enable_adc_capture( adc_data_s ); // Enable capture of ADC values
 		break; // case XS1_CT_END
 	
@@ -355,6 +356,7 @@ void foc_adc_7265_triggered( // Thread for ADC server
 		{
 			// Service any Control Tokens that are received
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) inct_byref( c_trigger[trig_id], cntrl_token ):
+//MB~  printstr("                                        SCT_1:"); printintln( trig_id );
 				service_control_token( all_adc_data[trig_id] ,trig_id ,cntrl_token );
 #ifdef USE_XSCOPE
 		if (0 == trig_id) // Check if 1st Motor
@@ -367,11 +369,13 @@ void foc_adc_7265_triggered( // Thread for ADC server
 	
 			// If guard is OFF, load 'my_timer' at time 'time_stamp' 
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) all_adc_data[trig_id].guard_off => all_adc_data[trig_id].my_timer when timerafter( all_adc_data[trig_id].time_stamp ) :> void:
+//MB~  printstr("                                        UATD_1:"); printintln( trig_id );
 				update_adc_trigger_data( all_adc_data[trig_id] ,p32_data ,p1_ready ,trig_id ,p4_mux ); 
 			break;
 	
 			// Service any client request for ADC data
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) c_control[trig_id] :> cmd_id:
+//MB~ printstr("                                        SDR_1:"); printintln( trig_id );
 				service_data_request( all_adc_data[trig_id] ,c_control[trig_id] ,trig_id ,cmd_id );
 			break;
 		} // select
