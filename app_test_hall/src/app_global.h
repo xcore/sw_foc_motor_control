@@ -20,30 +20,14 @@
 /** Define the number of motors */
 #define NUMBER_OF_MOTORS 2
 
-/** Default ADC Filter Mode  1 == On */
-#define ADC_FILTER 0
-
-#ifdef MB
 /** Define the number of pole-pairs in motor */
 #define NUM_POLE_PAIRS 4
 
-/** Define the number of different QEI sensor positions per pole-pair */
-#define QEI_PER_POLE 256
-
-/**  Default No. OF QEI positions per Revolution */
-#define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
-
+/**  Default Filter Mode  1 == On */
+#define HALL_FILTER 0
 
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000
-
-#endif //MB~
-
-// PWM specific definitions ...
-
-/** Define the resolution of PWM (WARNING: effects update rate as tied to ref clock) */
-#define PWM_RES_BITS 12 // Number of bits used to define number of different PWM pulse-widths
-#define PWM_MAX_VALUE (1 << PWM_RES_BITS) // No.of different PWM pulse-widths
 
 /* This is a bit of a cludge, we are using a non-standard configuration
  * where the timer on the tile for inner_loop() is running at 250 MHz,
