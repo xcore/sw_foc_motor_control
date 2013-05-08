@@ -12,18 +12,26 @@
  * copyright notice above.
  **/                                   
 
+#ifndef _CHECK_HALL_TESTS_H_
+#define _CHECK_HALL_TESTS_H_
+
+#include <stdlib.h>
+
+#include <xs1.h>
+#include <assert.h>
+#include <print.h>
+
+#include "app_global.h"
+#include "use_locks.h"
+#include "test_hall_common.h"
 #include "hall_client.h"
 
 /*****************************************************************************/
-void foc_hall_get_parameters( // Returns (4-bit) Hall sensor parameters from channel
-	HALL_PARAM_TYP &hall_param_s,	// Reference to structure containing Hall parameters
-	streaming chanend c_hall // Streaming channel for Hall sensor data
-)
-{
-	c_hall <: HALL_CMD_DATA_REQ;	// Request new hall sensor data
-	c_hall :> hall_param_s; // Read new hall sensor parameters
-// printstr("C:"); printintln( hall_param_s.hall_val );
-
-	return;
-} // foc_hall_get_data
+/** Display HALL results for all motors
+ * \param c_hall[]	// Array of channels connecting HALL client & server
+ */
+void disp_all_hall_client_data( // Display HALL results for all motors
+	streaming chanend c_hall[] // Array of HALL channels between Client and Server
+);
 /*****************************************************************************/
+#endif /* _CHECK_HALL_TESTS_H_ */

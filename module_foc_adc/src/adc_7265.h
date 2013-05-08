@@ -39,7 +39,7 @@
  *		A[0..2]:		Multiplexer Select. Selects inputs to be sampled.
  *		SGL/DIFF:		Selects between Single-ended/Differential mode.
  *		RANGE:			Selects between 0..Vref and 0..2xVref.
- *		Vdrive:			Max. analogue voltage corresponding to Max. 12-bit sample (Hardwired tp 3.3V)
+ *		Vdrive:			Max. analogue voltage corresponding to Max. 12-bit sample (Hardwired to 3.3V)
  *		REF_SELECT:	Selects internal/external ref. (Hardwired to 2.5V internal)
  *
  *	The Motor-Control Board has been hardwired for differential mode.

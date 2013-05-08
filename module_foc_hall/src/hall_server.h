@@ -22,11 +22,13 @@
 #include "app_global.h"
 #include "hall_common.h"
 
+#define MAX_HALL_STATUS_ERR 2  // Maximum number of consecutive HALL status errors allowed
+
 /** Structure containing HALL data for one motor */
 typedef struct HALL_DATA_TAG // 
 {
 	HALL_PARAM_TYP params;	// structure containing Hall parameters (for Client)
-	unsigned inp_val; // Raw value on input port pins
+	int status_errs; // counter for invalid HALL status errors
 	int id; // Unique motor identifier
 } HALL_DATA_TYP;
 

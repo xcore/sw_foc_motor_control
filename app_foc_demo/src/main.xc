@@ -25,9 +25,9 @@ on tile[INTERFACE_TILE] : out port p_shared_rs = PORT_SHARED_RS;
 // Motor ports
 on tile[MOTOR_TILE]: port in p4_hall[NUMBER_OF_MOTORS] = { PORT_M1_HALLSENSOR ,PORT_M2_HALLSENSOR };
 on tile[MOTOR_TILE]: clock pwm_clk[NUMBER_OF_MOTORS] = { XS1_CLKBLK_5 ,XS1_CLKBLK_4 };
-on tile[MOTOR_TILE]: buffered out port:32 p32_pwm_hi[NUMBER_OF_MOTORS][NUM_ADC_PHASES] 
+on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_ADC_PHASES] 
 	= {	{PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
-on tile[MOTOR_TILE]: buffered out port:32 p32_pwm_lo[NUMBER_OF_MOTORS][NUM_ADC_PHASES] 
+on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_lo[NUMBER_OF_MOTORS][NUM_ADC_PHASES] 
 	= {	{PORT_M1_LO_A, PORT_M1_LO_B, PORT_M1_LO_C} ,{PORT_M2_LO_A, PORT_M2_LO_B, PORT_M2_LO_C} };
 
 // QEI ports
@@ -38,9 +38,9 @@ on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used 
 
 // ADC ports
 on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
-on tile[MOTOR_TILE]: buffered in port:32 p32_adc_data[NUM_ADC_DATA_PORTS] = { PORT_ADC_MISOA ,PORT_ADC_MISOB }; 
+on tile[MOTOR_TILE]: buffered in port:32 pb32_adc_data[NUM_ADC_DATA_PORTS] = { PORT_ADC_MISOA ,PORT_ADC_MISOB }; 
 on tile[MOTOR_TILE]: out port p1_adc_sclk = PORT_ADC_CLK; // 1-bit port connecting to external ADC serial clock
-on tile[MOTOR_TILE]: port p1_ready = PORT_ADC_CONV; // 1-bit port used to as ready signal for p32_adc_data ports and ADC chip
+on tile[MOTOR_TILE]: port p1_ready = PORT_ADC_CONV; // 1-bit port used to as ready signal for pb32_adc_data ports and ADC chip
 on tile[MOTOR_TILE]: out port p4_adc_mux = PORT_ADC_MUX; // 4-bit port used to control multiplexor on ADC chip
 on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
 
@@ -65,7 +65,7 @@ on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
 
 #if (USE_CAN)
 	on tile[INTERFACE_TILE] : clock p_can_clk = XS1_CLKBLK_4;
-	on tile[INTERFACE_TILE] : buffered in port:32 p_can_rx = PORT_CAN_RX;
+	on tile[INTERFACE_TILE] : buffered in port:32 pb32_can_rx = PORT_CAN_RX;
 	on tile[INTERFACE_TILE] : port p_can_tx = PORT_CAN_TX;
 #endif // (USE_CAN)
 
@@ -106,7 +106,7 @@ int main ( void ) // Program Entry Point
 	chan c_wd; // WatchDog Channel connecting Client & Server 
 	chan c_speed[NUMBER_OF_MOTORS];
 	chan c_commands[NUMBER_OF_MOTORS];
-	chan c_adc_trig[NUMBER_OF_MOTORS];
+	chan c_pwm2adc_trig[NUMBER_OF_MOTORS];
 	chan c_pwm[NUMBER_OF_MOTORS];
 	streaming chan c_hall[NUMBER_OF_MOTORS];
 	streaming chan c_qei[NUMBER_OF_MOTORS];
@@ -130,7 +130,7 @@ int main ( void ) // Program Entry Point
 
 #if (USE_CAN)
 		// MB~ WARNING: CAN not yet tested
-		on tile[INTERFACE_TILE] : foc_comms_init_can( c_rxChan, c_txChan, p_can_clk, p_can_rx, p_can_tx, p_shared_rs ); // Can server core
+		on tile[INTERFACE_TILE] : foc_comms_init_can( c_rxChan, c_txChan, p_can_clk, pb32_can_rx, p_can_tx, p_shared_rs ); // Can server core
 		on tile[INTERFACE_TILE] : foc_comms_do_can( c_commands, c_rxChan, c_txChan ); // Core to extract Motor commands from CAN commands
 #endif // (USE_CAN)
 
@@ -154,14 +154,14 @@ int main ( void ) // Program Entry Point
 		// Loop through all motors
 		par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 		{
-			on tile[MOTOR_TILE] : foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,p32_pwm_hi[motor_cnt] ,p32_pwm_lo[motor_cnt] ,c_adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
+			on tile[MOTOR_TILE] : foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
 		}
 
 		on tile[MOTOR_TILE] : foc_qei_do_multiple( c_qei, p4_qei );
 
 		on tile[MOTOR_TILE] : foc_hall_do_multiple( c_hall ,p4_hall );
 
-		on tile[MOTOR_TILE] : foc_adc_7265_triggered( c_adc_cntrl ,c_adc_trig ,p32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
+		on tile[MOTOR_TILE] : foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
 	} // par
 
 	return 0;

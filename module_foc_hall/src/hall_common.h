@@ -15,21 +15,31 @@
 #ifndef _HALL_COMMON_H_
 #define _HALL_COMMON_H_
 
-/** Used to mask out 4-bits of Hall Sensor Data */
-#define HALL_ALL_MASK (0b1111)	// Used to mask out all 4-bits of Hall Sensor Data
+#ifndef NUM_POLE_PAIRS 
+	#error Define. NUM_POLE_PAIRS in app_global.h
+#endif // NUM_POLE_PAIRS
+
+/** Define the number of different HALL sensor positions per pole-pair */
+#define NUM_HALL_PHASES 6 // Number of HALL Phases (per pole-pair)
 
 /** Used to mask out Hall error-bit */
-#define HALL_ERR_MASK (0b1000) // Used to mask out Hall Error Bit(s)
+#define HALL_NERR_MASK (0b1000) // Used to mask out Hall Error Bit(s)
+
+/** Used to mask out 3 Hall Sensor Phase Bits */
+#define HALL_PHASE_MASK (0b0111) // Used to mask out 3 Hall Sensor Phase Bits
 
 /** Hall Request Data Command */
 #define HALL_CMD_DATA_REQ 1 // Request new hall sensor data
 
-#define HALL_PHASE_MASK (HALL_ALL_MASK & (~HALL_ERR_MASK)) // Used to mask out 3 Hall Sensor Phase Bits
+#define HALL_ALL_MASK (HALL_NERR_MASK | HALL_PHASE_MASK) // Used to mask out all 4-bits of Hall Sensor Data
+
+#define HALL_PER_REV (NUM_HALL_PHASES * NUM_POLE_PAIRS) // No. of HALL positions per Revolution
 
 /** Structure containing HALL parameters for one motor */
 typedef struct HALL_PARAM_TAG // 
 {
 	unsigned hall_val; // Hall sensor value (4 LS bits)
+	int err; // Error Status
 } HALL_PARAM_TYP;
 
 #endif /* _HALL_COMMON_H_ */
