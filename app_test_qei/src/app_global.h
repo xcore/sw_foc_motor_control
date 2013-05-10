@@ -42,7 +42,7 @@
  * Therefore, we set up the timer frequency here.
  */
 #ifndef PLATFORM_REFERENCE_MHZ
-#define PLATFORM_REFERENCE_MHZ 250
+#define PLATFORM_REFERENCE_MHZ 100
 #define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ) 
 
 /** Define Referency Frequency to Match that in platform configuration (.XN) file */

@@ -20,21 +20,17 @@
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
+#include <safestring.h>
 
 #include "app_global.h"
 #include "use_locks.h"
 #include "qei_common.h"
 #include "test_qei_common.h"
 
-#define HIGH_SPEED 4000
-#define LOW_SPEED  50
-
 #define MAX_TESTS 30 // No. of tests used for Max. speed check
 #define MIN_TESTS 5  // No. of tests used for Min. speed check
 #define ACC_TESTS 18 // No. of tests used for Acceleration check
 #define DEC_TESTS 18 // No. of tests used for Deceleration check
-
-#define STR_LEN 256
 
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
 #define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
@@ -49,23 +45,30 @@ typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
 
 typedef struct TEST_QEI_TAG // Structure containing QEI test data
 {
+	char names[NUM_VECT_COMPS][STR_LEN]; // Array of names for each component of test vector
+	TEST_VECT_TYP vector; // Structure of containing QEI test vector (QEI conditions to be tested)
 	QEI_PHASE_TYP clk_wise;	// Structure of QEI phase values for clockwise rotation
 	QEI_PHASE_TYP anti_clk;	// Structure of QEI phase values for anti-clockwise rotation
 	QEI_PHASE_TYP phase;	// Structure of currently used QEI phase values
+	int id;			// Current motor identifier
 	int hi_ticks;			// No. of ticks/QEI at high speed
 	int lo_ticks;			// No. of ticks/QEI at low speed
 	int off;			// offset into QEI Phase cycle
 	int cnt; // QEI position counter
+	int orig; // QEI origin flag (Bit_2 is 1 at origin)
 	int nerr; // QEI error flag (Bit_3 is 1 for NO errors)
+	int scale; // velocity scaling factor (used for acceleration and deceleration)
 	unsigned time; // previous timer value
 	unsigned period; // period (in ticks) between tests
 } TEST_QEI_TYP;
 
 /*****************************************************************************/
 /** Generate QEI test data for all motors
+ * \param c_tst // Channel for sending test vecotrs to test checker
  * \param p4_tst[]  // Array of ports on which to transmit test data
  */
 void gen_all_qei_test_data( // Generate QEI Test data for all motors
+	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
 	port out p4_tst[]  // Array of ports on which to transmit test data
 );
 /*****************************************************************************/

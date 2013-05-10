@@ -13,28 +13,22 @@ information while I indicates a return to 0 or origin. The signals A and B are p
 Configuration
 +++++++++++++
 
-The QEI module provides one or multiple QEI device versions of the server. If more than one QEI device is interfaced to the XMOS device, then the designer can
-opt to use multiple single-device QEI server threads, or one multi-device thread.
+The QEI module provides a multiple QEI device version of the server. All devices run in the same core. It can be confiquired for one device. 
 
-The multiple-QEI service loop has a worst-case timing of 1.4us, therefore being able to service two 1024 position QEI devices spinning at 20kRPM.
+The multiple-QEI service loop has a worst-case timing of 2us per motor. Therefore it can service one 1024 position QEI device spinning at 30K RPM, or 2 devices at 15K RPM.
 
 |newpage|
 
 QEI Server Usage
 ++++++++++++++++
 
-To initiate the service the following include is required as well as the function call shown. This defines the ports that are required to read the interface and
-the channel that will be utilised by the client thread.  The compile time constant *NUMBER_OF_MOTORS* is used to determine how many clients and ports are
-serviced by the multi-device QEI server.
+To initiate the service the following include is required as well as the function call shown. This defines the ports that are required to read the interface and the channel that will be utilised by the client thread.  The compile time constant *NUMBER_OF_MOTORS* is used to determine how many clients and ports are serviced by the multi-device QEI server.
 
 ::
 
   #include "qei_server.h"
 
-  void do_qei( streaming chanend c_qei, port in pQEI);
-
-  void do_qei_multiple( streaming chanend c_qei[NUMBER_OF_MOTORS], port in pQEI[NUMBER_OF_MOTORS]);
- 
+  void foc_qei_do_multiple( streaming chanend c_qei[NUMBER_OF_MOTORS], port in p4_qei[NUMBER_OF_MOTORS] );
 
 
 QEI Client Usage
@@ -46,13 +40,8 @@ To access the information provided by the quadrature encoder the functions liste
 
   #include "qei_client.h"
 
-  { unsigned, unsigned, unsigned } get_qei_data( chanend c_qei );
+  void foc_qei_get_parameters( QEI_PARAM_TYP &qei_param_s,	streaming chanend c_qei	);
 
+The parameters are angular_velocity, angular_position, revolution_count and error_status. The position value is returned as a count from the 'index equals zero' position (once it has been detected) and velocity is returned in revolutions per minute (RPM). 
 
-The three values are the speed, position and valid state. The position value is returned as a count
-from the index zero position and speed is returned in revolutions per minute (RPM). 
-
-The third value indicates whether the QEI interface has received an index signal and therefore that the position is
-valid.
-
-
+The error_status indicates whether the QEI parameters are valid.

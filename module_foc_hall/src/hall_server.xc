@@ -129,18 +129,14 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) p4_hall[motor_id] when pinsneq(hall_bufs[motor_id]) :> hall_bufs[motor_id] :
 			{
-// printint(motor_id); printstr(":S0:"); printintln( all_hall_data[motor_id].params.hall_val );
 				service_hall_input_pins( all_hall_data[motor_id] ,hall_bufs[motor_id] );
-// printint(motor_id); printstr(":S3:"); printintln( all_hall_data[motor_id].params.hall_val );
 			} // case
 			break;
 
 			// Service any client request for data
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) c_hall[motor_id] :> int :
 			{
-// printint(motor_id); printstr(":S4:"); printintln( all_hall_data[motor_id].params.hall_val );
 				service_hall_client_request( all_hall_data[motor_id] ,c_hall[motor_id] );
-// printint(motor_id); printstr(":S7:"); printintln( all_hall_data[motor_id].params.hall_val );
 			} // case
 			break;
 		} // select

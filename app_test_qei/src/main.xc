@@ -23,7 +23,8 @@ on tile[MOTOR_TILE]: port out p4_tst[NUMBER_OF_MOTORS] = { PORT_M1_HALLSENSOR ,P
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {
-	streaming chan c_qei[NUMBER_OF_MOTORS];
+	streaming chan c_qei[NUMBER_OF_MOTORS]; // Channel connecting Client and Server
+	streaming chan c_tst; // Channel for sending test vectors from Generator to Checker core
 
 
 	par
@@ -34,11 +35,11 @@ int main ( void ) // Program Entry Point
 
 			par
 			{
-				gen_all_qei_test_data( p4_tst ); // Generate test data
+				gen_all_qei_test_data( c_tst ,p4_tst ); // Generate test data
 		
 				foc_qei_do_multiple( c_qei, p4_qei ); // Server function under test
 		
-				disp_all_qei_client_data( c_qei ); // Check results using QEI Client
+				check_all_qei_client_data( c_tst ,c_qei ); // Check results using QEI Client
 			} // par
 		
 		  free_locks(); // Free Mutex for display
