@@ -27,18 +27,31 @@
 #include "test_qei_common.h"
 #include "qei_client.h"
 
+#define ORIG_THR 1 // Allowed QEI origin position error
+#define QEI_PERIOD (40 * MICRO_SEC) // Time period between QEI Client requests for data
+
 typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 {
 	char names[NUM_VECT_COMPS][STR_LEN]; // Array of names for each component of test vector
-	TEST_VECT_TYP vector; // Structure of containing QEI test vector (QEI conditions to be tested)
-	QEI_PARAM_TYP params;	// Structure containing QEI parameters (received from Client)
+	char padstr1[STR_LEN]; // Padding string used to format display output
+	char padstr2[STR_LEN]; // Padding string used to format display output
+	TEST_VECT_TYP curr_vect; // Structure of containing current QEI test vector (QEI conditions to be tested)
+	TEST_VECT_TYP prev_vect; // Structure of containing previous QEI test vector
+	QEI_PARAM_TYP curr_params;	// Structure containing current QEI parameters (received from Client)
+	QEI_PARAM_TYP prev_params;	// Structure containing previouis QEI parameters (received from Client)
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
 	int all_errs[NUMBER_OF_MOTORS]; // Array of Error accumulators for each motor
 	int all_tsts[NUMBER_OF_MOTORS]; // Array of Test accumulators for each motor
  	int id; // Unique motor identifier
- 	int prev_ang; // Previous QEI angular position
 	int fail_cnt;	// Counter of failed tests
+	int orig_cnt;	// Counter used in origin test
+	int orig_tst;	// Flag set when testing origin-bit
+	int speed_sum; // Accumulator for speed tests
+	int speed_num; // No of accumulations for speed tests
+	int hi_bound; // error bound for high speed test
+	int lo_bound; // error bound for low speed test
+	unsigned time; // time value when new QEI parameters received
 } CHECK_QEI_TYP;
 
 /*****************************************************************************/

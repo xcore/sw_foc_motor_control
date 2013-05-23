@@ -17,9 +17,27 @@
 
 #include "app_global.h"
 
+#ifndef PLATFORM_REFERENCE_MHZ
+	#error Define. PLATFORM_REFERENCE_MHZ in app_global.h
+#endif
+
+#ifndef SECS_PER_MIN
+	#error Define. SECS_PER_MIN in app_global.h
+#endif
+
 #ifndef QEI_PER_REV 
 	#error Define. QEI_PER_REV in app_global.h
 #endif // QEI_PER_REV
+
+/* Calculate speed definitions, preserving precision and preventing overflow !-)
+ * 
+ * The time difference between changes in QEI data is measured in 'ticks'.
+ * For a Platform Reference frequency of 100 MHz, there will be 6,000,000,000 ticks/minute
+ * If there are 1024 different QEI points per revolution, then angular velocity (in RPM) is 
+ * (60 * 100000000)/(1024 * Tick_Diff) or (TICKS_PER_MIN_PER_QEI / Tick_Diff) 
+ */
+#define TICKS_PER_SEC_PER_QEI ((PLATFORM_REFERENCE_HZ + (QEI_PER_REV >> 1)) / QEI_PER_REV) // Ticks/sec/angular_position (rounded) // 18-bits
+#define TICKS_PER_MIN_PER_QEI (SECS_PER_MIN * TICKS_PER_SEC_PER_QEI) // Ticks/min/angular_position // 24 bits
 
 #define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK] 
 
@@ -32,6 +50,8 @@
 // QEI Command Codes (Client --> Server) 
 #define QEI_CMD_DATA_REQ	1	// QEI Data Request
 
+typedef unsigned short PORT_TIME_TYP;
+
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_PARAM_TAG // 
 {
@@ -39,6 +59,7 @@ typedef struct QEI_PARAM_TAG //
 	int veloc;		// Angular velocity
 	int rev_cnt;	// Revolution counter (No. of origin traversals)
 	int err; 			// Flag set when Error condition detected
+	// WARNING: If editing this structure, also edit parameter_compare() in check_qei_test.xc 
 } QEI_PARAM_TYP;
 
 #endif /* _QEI_COMMON_H_ */

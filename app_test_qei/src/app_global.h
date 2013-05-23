@@ -32,6 +32,9 @@
 /**  Default Filter Mode  1 == On */
 #define QEI_FILTER 0
 
+/**  Seconds in a minute */
+#define SECS_PER_MIN 60
+
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000
 

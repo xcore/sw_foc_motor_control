@@ -44,6 +44,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.filt_val = 0; // filtered value
 	inp_qei_s.coef_err = 0; // Coefficient diffusion error
 	inp_qei_s.scale_err = 0; // Scaling diffusion error 
+	inp_qei_s.speed_err = 0; // Speed diffusion error 
 
 	inp_qei_s.dbg = 0;
 
@@ -60,9 +61,9 @@ static ANG_INC_TYP estimate_angular_increment( // Estimate angular position incr
  *	[BA] order is 00 -> 01 -> 11 -> 10  Anti-Clockwise direction
  *
  *	Spin-state is
- *		-1: CLOCK Clocwise rotation, 
+ *		-1: ANTI Anti-Clocwise rotation, 
  *		 0: STALL (The motor has probably stopped)
- *		 1: ANTI Anti-Clocwise rotation, 
+ *		 1: CLOCK Clockwise rotation, 
  *		 2: JUMP (The motor has probably jumped 2 phases)
  *
  *	NB We are going to use a convention that a Clock-wise spin has +ve value.
@@ -72,10 +73,10 @@ static ANG_INC_TYP estimate_angular_increment( // Estimate angular position incr
  *		Spin = get_spin_state[Old_Phase][New_phase]
  */
 static const ANG_INC_TYP get_spin_state[NUM_QEI_PHASES][NUM_QEI_PHASES] = {
-		{ QEI_STALL,	QEI_CLOCK,	QEI_ANTI,		QEI_JUMP	}, // 00
-		{ QEI_ANTI,		QEI_STALL,	QEI_JUMP,		QEI_CLOCK	}, // 01
-		{ QEI_CLOCK,	QEI_JUMP,		QEI_STALL,	QEI_ANTI	}, // 10
-		{ QEI_JUMP,		QEI_ANTI,		QEI_CLOCK,	QEI_STALL	}  // 11
+		{ QEI_STALL,	QEI_ANTI,		QEI_CLOCK,	QEI_JUMP	},
+		{ QEI_CLOCK,	QEI_STALL,	QEI_JUMP,		QEI_ANTI	},
+		{ QEI_ANTI,		QEI_JUMP,		QEI_STALL,	QEI_CLOCK	},
+		{ QEI_JUMP,		QEI_CLOCK,	QEI_ANTI,		QEI_STALL	}
 };
 
 	QEI_ENUM_TYP cur_state = get_spin_state[inp_qei_s.prev_phases][cur_phases]; // Estimated new spin-state fom phase info.
@@ -110,7 +111,7 @@ static const ANG_INC_TYP get_spin_state[NUM_QEI_PHASES][NUM_QEI_PHASES] = {
 				} // else !(0 < inp_qei_s.confid)
 			} // if (cur_state != prev_state)
 			else
-			{ // Normal Case: Maintainig same valid spin direction
+			{ // Normal Case: Maintaining same valid spin direction
 				if (MAX_CONFID > inp_qei_s.confid) inp_qei_s.confid++; // Increase confidence level
 			} // else !(cur_state != prev_state)
 		} // if (cur_state & 0x1)
@@ -145,7 +146,7 @@ static const ANG_INC_TYP get_spin_state[NUM_QEI_PHASES][NUM_QEI_PHASES] = {
 		{ // Valid current spin state (CLOCK or ANTI)
 			out_ang_inc = cur_state; // Use new state value
 
-			inp_qei_s.confid++; // Increase confidence level
+			if (MAX_CONFID > inp_qei_s.confid) inp_qei_s.confid++; // Increase confidence level
 		} // if (cur_state & 0x1)
 		else
 		{ // Invalid current spin state (STALL or JUMP)
@@ -287,6 +288,17 @@ static void update_qei_state( // Update QEI state
 	return;
 } // update_qei_state
 /*****************************************************************************/
+static void update_speed( // Update speed estimate with from time period. (Angular_speed in RPM) 
+	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
+)
+{
+	unsigned ticks = inp_qei_s.diff_time; // ticks per QEI position (in Reference Frequency Cycles)
+	int const_val = TICKS_PER_MIN_PER_QEI + inp_qei_s.speed_err; // Add diffusion error to constant;
+
+	inp_qei_s.ang_speed = (const_val + (ticks >> 1)) / ticks;  // Evaluate speed
+	inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
+}	// update_speed
+/*****************************************************************************/
 static void service_input_pins( // Service detected change on input pins
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	unsigned inp_pins // Set of raw data values on input port pins
@@ -295,9 +307,7 @@ static void service_input_pins( // Service detected change on input pins
 	unsigned cur_phases; // Current set of phase values
 	unsigned orig_flg; // Flag set when motor at origin position 
 	unsigned err_flg; // Flag set when Error condition detected
-	unsigned ang_time; // time when angular position measured
 	int test_diff; // test time difference for sensible value
-	timer chronometer; // H/W timer
 
 
 	cur_phases = inp_pins & QEI_PHASE_MASK; // Extract Phase bits from input pins
@@ -306,8 +316,7 @@ static void service_input_pins( // Service detected change on input pins
 	if (cur_phases != inp_qei_s.prev_phases) 
 	{
 		// Get new time stamp ..
-		chronometer :> ang_time;	// Get new time stamp
-		test_diff = (int)(ang_time - inp_qei_s.prev_time);
+		test_diff = (int)(inp_qei_s.curr_time - inp_qei_s.prev_time);
 
 		// Check for sensible time
 		if (THR_TICKS_PER_QEI < test_diff)
@@ -322,13 +331,16 @@ static void service_input_pins( // Service detected change on input pins
 			if (START_UP_CHANGES <= inp_qei_s.diff_time)
 			{
 				inp_qei_s.diff_time = test_diff; // Store sensible time difference
+
+				update_speed( inp_qei_s ); // Update speed value with new time difference
 			} // if (START_UP_CHANGES <= inp_qei_s.diff_time)
 			else
 			{
 				inp_qei_s.diff_time++; // Update number of input pin changes
+				inp_qei_s.ang_speed = 1;	// Default speed value
 			} // if (START_UP_CHANGES <= inp_qei_s.diff_time)
 		
-			inp_qei_s.prev_time = ang_time; // Store time stamp
+			inp_qei_s.prev_time = inp_qei_s.curr_time; // Store time stamp
 			inp_qei_s.prev_phases = cur_phases; // Store phase value
 		} // if (THR_TICKS_PER_QEI < test_diff)
 	}	// if (cur_phases != inp_qei_s.prev_phases)
@@ -383,18 +395,8 @@ static void service_client_request( // Send processed QEI data to client
  *	NB If angular position has NOT updated since last transmission, then the same data is re-transmitted
  */
 {
-	int meas_veloc; // Angular velocity of motor measured in Ticks/angle_position
+	int meas_veloc = (inp_qei_s.spin_sign * inp_qei_s.ang_speed); // Angular_velocity of motor in RPM
 
-
-	// Check if we have received sufficient data to estimate velocity
-  if (START_UP_CHANGES < inp_qei_s.diff_time)
-	{
-		meas_veloc = inp_qei_s.spin_sign * (int)TICKS_PER_MIN_PER_QEI / (int)inp_qei_s.diff_time; // Calculate new velocity estimate.
-  } // if (START_UP_CHANGES < inp_qei_s.diff_time)
-	else
-	{
-		meas_veloc = inp_qei_s.spin_sign; // Default value
-  } // if else !(START_UP_CHANGES < inp_qei_s.diff_time)
 
 	// Check if filter selected
 	if (QEI_FILTER)
@@ -426,12 +428,13 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 {
 	QEI_DATA_TYP all_qei_s[NUMBER_OF_MOTORS]; // Array of structures containing QEI parameters for all motor
 	unsigned inp_pins[NUMBER_OF_MOTORS]; // Set of raw data values on input port pins
+	timer chronometer; // H/W timer
 
 
 	for (int motor_id=0; motor_id<NUMBER_OF_MOTORS; ++motor_id) 
 	{
 		init_qei_data( all_qei_s[motor_id] ,inp_pins[motor_id] ,motor_id ); // Initialise QEI data for current motor
-	}
+	} // for motor_id
 
 	while (1) {
 #pragma xta endpoint "qei_main_loop"
@@ -440,6 +443,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pQEI[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] :
 			{
+				chronometer :> all_qei_s[motor_id].curr_time;	// Get new time stamp as soon as possible
 				service_input_pins( all_qei_s[motor_id] ,inp_pins[motor_id] );
 			} // case
 			break;

@@ -57,27 +57,14 @@
 #include <assert.h>
 #include <print.h>
 
+#include "use_locks.h" //MB~ Dbg
 #include "qei_common.h"
-
-#ifndef PLATFORM_REFERENCE_MHZ
-	#error Define. PLATFORM_REFERENCE_MHZ in app_global.h
-#endif
 
 #ifndef QEI_FILTER
 	#error Define. QEI_FILTER in app_global.h
 #endif
 
 #define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
-
-/* Calculate speed definitions, preserving precision and preventing overflow !-)
- * 
- * The time difference between changes in QEI data is measured in 'ticks'.
- * For a Platform Reference frequency of 250 MHz, there will be 15000000000 ticks/minute
- * If there are 1024 different QEI points per revolution, then angular velocity (in RPM) is 
- * (60.250000000)/(1024.Tick_Diff) or (TICKS_PER_MIN_PER_QEI / Tick_Diff) 
- */
-#define TICKS_PER_SEC_PER_QEI (PLATFORM_REFERENCE_HZ / QEI_PER_REV) // Ticks/sec/angular_increment // 18-bits
-#define TICKS_PER_MIN_PER_QEI (60 * TICKS_PER_SEC_PER_QEI) // Ticks/min/angular_increment // 24 bits
 
 #ifndef MAX_SPEC_RPM 
 	#error Define. MAX_SPEC_RPM in app_global.h
@@ -105,9 +92,9 @@
 /** Different Motor Phases */
 typedef enum QEI_ENUM_TAG
 {
-  QEI_CLOCK = -1, // Clockwise Phase change
+  QEI_ANTI = -1,		// Anti-Clockwise Phase change
   QEI_STALL = 0,  // Same Phase
-  QEI_ANTI = 1,		// Anti-Clockwise Phase change
+  QEI_CLOCK = 1, // Clockwise Phase change
   QEI_JUMP = 2,		// Jumped 2 Phases
 } QEI_ENUM_TYP;
 
@@ -119,14 +106,16 @@ typedef struct QEI_DATA_TAG //
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
 	unsigned inp_pins; // Raw data values on input port pins
 	unsigned prev_phases; // Previous phase values
-	unsigned prev_time; // Previous angular position time stamp
-	unsigned diff_time; // Difference between 2 adjacent time stamps. NB Must be unsigned due to clock-wrap 
+	unsigned curr_time; // Time when port-pins read
+	unsigned prev_time; // Previous port time-stamp
+	unsigned diff_time; // Difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	QEI_ENUM_TYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
 	int status_errs; // counter for invalid QEI status errors
 	int ang_cnt; // Counts angular position of motor (from origin)
 	int theta; // angular position returned to client
 	int spin_sign; // Sign of spin direction
+	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
 	int prev_orig; // Previous origin flag
 	int confid; // Confidence in current qei-state
 	int id; // Unique motor identifier
@@ -135,6 +124,7 @@ typedef struct QEI_DATA_TAG //
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error
 	int scale_err; // Scaling diffusion error 
+	int speed_err; // Speed diffusion error 
 } QEI_DATA_TYP;
 
 /*****************************************************************************/

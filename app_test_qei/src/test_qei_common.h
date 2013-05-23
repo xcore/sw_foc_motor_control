@@ -20,6 +20,10 @@
 #define HIGH_SPEED 4000
 #define LOW_SPEED  50
 
+#define MAX_TIME 100000000 // Used in print formatting
+
+#define PRINT 0 // Flag set for verbose printing
+
 /** Different QEI Test Vector Components */
 typedef enum VECT_COMP_ETAG
 {
@@ -49,9 +53,9 @@ typedef enum ORIG_QEI_ETAG
 /** Different QEI Spin states */
 typedef enum SPIN_QEI_ETAG
 {
-  CLOCK = 0,	// Clock-wise
-  ANTI,			// Anti-clockwise
-  NUM_QEI_SPINS	// Handy Value!-)
+  ANTI = -1,				// Anti-clockwise
+  CLOCK = 1,				// Clock-wise
+  NUM_QEI_SPINS = 2	// Handy Value!-)
 } SPIN_QEI_ENUM;
 
 /** Different QEI Speed-states */
@@ -64,13 +68,22 @@ typedef enum SPEED_QEI_ETAG
   NUM_QEI_SPEEDS	// Handy Value!-)
 } SPEED_QEI_ENUM;
 
+/** Different QEI Control-states */
+typedef enum CNTRL_QEI_ETAG
+{
+	QUIT = 0,	// Quit testing (for current motor)
+  VALID,		// Valid test
+  SKIP,			// Skip this test (test set-up)
+  NUM_QEI_CNTRLS	// Handy Value!-)
+} CNTRL_QEI_ENUM;
+
 typedef struct TEST_VECT_TAG // Structure containing test vector (QEI conditions to be tested)
 {
 	ERROR_QEI_ENUM err;		// Error-state to be tested
 	ORIG_QEI_ENUM orig;		// Origin-state to be tested
 	SPIN_QEI_ENUM spin;		// Spin-state to be tested
 	SPEED_QEI_ENUM speed;	// Speed-state to be tested
-	int valid;						// Flag set if valid test
+	CNTRL_QEI_ENUM cntrl;	// Test Command & Control value
 } TEST_VECT_TYP;
 
 #endif /* _TEST_QEI_COMMON_H_ */

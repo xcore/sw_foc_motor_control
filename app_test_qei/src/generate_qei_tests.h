@@ -25,12 +25,15 @@
 #include "app_global.h"
 #include "use_locks.h"
 #include "qei_common.h"
+#include "qei_server.h"
 #include "test_qei_common.h"
 
-#define MAX_TESTS 30 // No. of tests used for Max. speed check
-#define MIN_TESTS 5  // No. of tests used for Min. speed check
+#define MAX_TESTS 31 // No. of tests used for Max. speed check
+#define MIN_TESTS 3  // No. of tests used for Min. speed check
 #define ACC_TESTS 18 // No. of tests used for Acceleration check
 #define DEC_TESTS 18 // No. of tests used for Deceleration check
+
+#define NUM_PORT_TIMES (1 << 16) // No. of port timer values (16-bit)
 
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
 #define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
@@ -58,8 +61,9 @@ typedef struct TEST_QEI_TAG // Structure containing QEI test data
 	int orig; // QEI origin flag (Bit_2 is 1 at origin)
 	int nerr; // QEI error flag (Bit_3 is 1 for NO errors)
 	int scale; // velocity scaling factor (used for acceleration and deceleration)
-	unsigned time; // previous timer value
+	PORT_TIME_TYP time; // port timer value
 	unsigned period; // period (in ticks) between tests
+	int prev_qei;  // Previous QEI value
 } TEST_QEI_TYP;
 
 /*****************************************************************************/
