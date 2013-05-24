@@ -20,9 +20,7 @@
 #define HIGH_SPEED 4000
 #define LOW_SPEED  50
 
-#define MAX_TIME 100000000 // Used in print formatting
-
-#define PRINT 1 // Flag set for verbose printing
+#define PRINT 0 // Flag set for verbose printing
 
 /** Different QEI Test Vector Components */
 typedef enum VECT_COMP_ETAG
@@ -33,14 +31,6 @@ typedef enum VECT_COMP_ETAG
   SPEED,			// Speed-state
   NUM_VECT_COMPS	// Handy Value!-)
 } VECT_COMP_ENUM;
-
-/** Different QEI Error states */
-typedef enum ERROR_QEI_ETAG
-{
-  ERR_OFF = 0,	// No Error
-  ERR_ON,			// Error
-  NUM_QEI_ERRS	// Handy Value!-)
-} ERROR_QEI_ENUM;
 
 /** Different QEI Origin states */
 typedef enum ORIG_QEI_ETAG

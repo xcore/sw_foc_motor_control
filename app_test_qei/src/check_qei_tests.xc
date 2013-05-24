@@ -83,6 +83,9 @@ static void init_check_data( // Initialise check data for QEI tests
 	chk_data_s.hi_bound = eval_speed_bound( HIGH_SPEED ); 
 	chk_data_s.lo_bound = eval_speed_bound( LOW_SPEED ); 
 
+	chk_data_s.print = PRINT; // Set print mode
+	chk_data_s.dbg = 0; // Set debug mode
+
 	// Clear error and test accumulators
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{
@@ -102,8 +105,12 @@ static void init_motor_checks( // Initialise QEI parameter structure
 
 	chk_data_s.id = motor_id; // Assign Motor identifier
 
+	chk_data_s.err_cnt = 0; // Clear count-down counter used in error_status test
+	chk_data_s.err_chk = ERR_OFF; // Initialise expected error_status test result
+
 	chk_data_s.orig_tst = 0;	// Clear flag indicating test of origin-bit
 	chk_data_s.orig_cnt = 0; // Clear count-down counter used in origin-bit test
+	chk_data_s.orig_chk = ORIG_OFF; // Initialise expected origin-bit test result
 
 	chk_data_s.curr_params.rev_cnt = 0;
 	chk_data_s.curr_params.theta = 0;
@@ -121,7 +128,6 @@ static void init_motor_checks( // Initialise QEI parameter structure
 
 } // init_motor_checks
 /*****************************************************************************/
-#if (PRINT)
 static void print_test_vector( // Print state of test vector components 
 	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
 )
@@ -228,28 +234,6 @@ static void print_qei_parameters( // Print QEI parameters
 	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-#ifdef MB // Depreciated
-{
-	unsigned tmp_time;
-	char time_str[STR_LEN];
-
-
-	// Build formated time string
-	tmp_time = chk_data_s.time;
-	safestrcpy( time_str ,"T:" );
-
-	while (MAX_TIME > tmp_time)
-	{ 
-		safestrcat( time_str ," " );
-		tmp_time *= 10;
-	} // while (MAX_TIME > tmp_time)
-
-	acquire_lock(); // Acquire Display Mutex
-	printstr( time_str ); printint( chk_data_s.time ); 
-	printstr( chk_data_s.padstr2 );
-}
-#endif //MB
-
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
 
@@ -265,53 +249,6 @@ static void print_qei_parameters( // Print QEI parameters
 	printcharln(' ');
 	release_lock(); // Release Display Mutex
 } // print_qei_parameters
-#endif // (PRINT)
-/*****************************************************************************/
-static void check_qei_error_status( // Check for correct update of error status due to QEI error-bit changes
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
-)
-{
-	int inp_err = chk_data_s.curr_params.err; // local copy of error_status parameter
-
-
-	switch( chk_data_s.curr_vect.err )
-	{
-		case ERR_OFF: // No Errors
-			chk_data_s.motor_tsts[ERROR]++;
-			if (ERR_OFF != inp_err)
-			{
-				chk_data_s.motor_errs[ERROR]++;
-
-				acquire_lock(); // Acquire Display Mutex
-				printstr( chk_data_s.padstr1 );
-				printstrln("ERR_OFF FAILURE");
-				release_lock(); // Release Display Mutex
-			} // if (ERR_OFF != inp_err)
-		break; // case ERR_OFF:
-
-		case ERR_ON: // Force Error
-			chk_data_s.motor_tsts[ERROR]++;
-			if (ERR_ON != inp_err)
-			{
-				chk_data_s.motor_errs[ERROR]++;
-
-				acquire_lock(); // Acquire Display Mutex
-				printstr( chk_data_s.padstr1 );
-				printstrln("ERR_ON FAILURE");
-				release_lock(); // Release Display Mutex
-			} // if (ERR_OFF != inp_err)
-		break; // case ERR_OFF:
-
-		default:
-			acquire_lock(); // Acquire Display Mutex
-			printstr( chk_data_s.padstr1 );
-			printstrln("ERROR: Unknown QEI Error-state");
-			release_lock(); // Release Display Mutex
-			assert(0 == 1);
-		break; // default:
-	} // switch( chk_data_s.curr_vect.err )
-
-} // check_qei_error_status
 /*****************************************************************************/
 static void check_qei_position_reset( // Check for correct position reset after origin detection
 	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
@@ -325,6 +262,7 @@ static void check_qei_position_reset( // Check for correct position reset after 
 	if ((FAST != chk_data_s.curr_vect.speed) && (SLOW != chk_data_s.curr_vect.speed))
 	{ // NOT Steady Speed
 		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
 		printstr( chk_data_s.padstr1 );
 		printstrln("INVALID POSITION RESET TEST. ABORTIMNG");
 		release_lock(); // Release Display Mutex
@@ -352,6 +290,7 @@ static void check_qei_position_reset( // Check for correct position reset after 
 	if (ang_bound < abs(chk_data_s.curr_params.theta))
 	{
 		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
 		printstr( chk_data_s.padstr1 );
 		printstrln("ORIG_ANG_POS FAILURE");
 		release_lock(); // Release Display Mutex
@@ -405,8 +344,8 @@ static void check_qei_origin_detection( // Check correct update of QEI parameter
 			{
 				chk_data_s.motor_errs[ORIGIN]++;
 				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
-				printint( orig_fail ); //MB~
 				printstrln("ORIG_OFF FAILURE");
 				release_lock(); // Release Display Mutex
 
@@ -424,6 +363,7 @@ static void check_qei_origin_detection( // Check correct update of QEI parameter
 				{ // Illegal rev. change
 					chk_data_s.motor_errs[ORIGIN]++;
 					acquire_lock(); // Acquire Display Mutex
+					printcharln(' ');
 					printstr( chk_data_s.padstr1 );
 					printstrln("ORIG_ON FAILURE");
 					release_lock(); // Release Display Mutex
@@ -439,6 +379,7 @@ static void check_qei_origin_detection( // Check correct update of QEI parameter
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
 			printstr( chk_data_s.padstr1 );
 			printstrln("ERROR: Unknown QEI Origin-state");
 			release_lock(); // Release Display Mutex
@@ -447,6 +388,58 @@ static void check_qei_origin_detection( // Check correct update of QEI parameter
 	} // switch( chk_data_s.curr_vect.orig )
 
 } // check_qei_origin_detection
+/*****************************************************************************/
+static void check_qei_error_status( // Check for correct update of error status due to QEI error-bit changes
+	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int inp_err = chk_data_s.curr_params.err; // local copy of error_status parameter
+
+
+	chk_data_s.motor_tsts[ERROR]++;
+
+	// Check for expected value
+	if (inp_err == chk_data_s.err_chk)
+	{ // Found expected value (Test passed)
+		chk_data_s.err_cnt = 0; // Clear Time-out
+	} // if (inp_err == chk_data_s.err_chk)
+	else
+	{ // Not expected value
+		if (0 < chk_data_s.err_cnt)
+		{ // test NOT yet timed-out
+			chk_data_s.err_cnt--; // Decrement 'timer'
+		} // if (0 < chk_data_s.err_cnt)
+		else
+		{ // test timed-out (Test failed)
+			chk_data_s.motor_errs[ERROR]++;
+
+			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
+			printstr( chk_data_s.padstr1 );
+
+			switch( chk_data_s.curr_vect.err )
+			{
+				case ERR_OFF:
+					printstrln("ERR_OFF FAILURE");
+				break; // case ERR_OFF:
+		
+				case ERR_ON: // Start error_status test
+					printstrln("ERR_ON FAILURE");
+				break; // case ERR_ON:
+		
+				default:
+					printstrln("ERROR: Unknown QEI Error-state");
+					assert(0 == 1);
+				break; // default:
+			} // switch( chk_data_s.curr_vect.err )
+
+			release_lock(); // Release Display Mutex
+
+			chk_data_s.err_cnt = 0; //  // Clear Time-out
+		} // if (0 < chk_data_s.err_cnt)
+	} // else !(inp_err == chk_data_s.err_chk)
+
+} // check_qei_error_status
 /*****************************************************************************/
 static void check_qei_spin_direction( // Check correct update of QEI spin direction
 	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
@@ -464,6 +457,7 @@ static void check_qei_spin_direction( // Check correct update of QEI spin direct
 				chk_data_s.motor_errs[SPIN]++;
 
 				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
 				printstrln("Clock-Wise FAILURE");
 				release_lock(); // Release Display Mutex
@@ -477,6 +471,7 @@ static void check_qei_spin_direction( // Check correct update of QEI spin direct
 				chk_data_s.motor_errs[SPIN]++;
 
 				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
 				printstrln("Anti-Clock FAILURE");
 				release_lock(); // Release Display Mutex
@@ -485,6 +480,7 @@ static void check_qei_spin_direction( // Check correct update of QEI spin direct
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
 			printstr( chk_data_s.padstr1 );
 			printstrln("ERROR: Unknown QEI Spin-state");
 			release_lock(); // Release Display Mutex
@@ -514,6 +510,7 @@ static void update_qei_angular_speed( // Update accumulators for calculating QEI
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
 			printstr( chk_data_s.padstr1 );
 			printstrln("ERROR: Unknown QEI Speed-state");
 			release_lock(); // Release Display Mutex
@@ -554,6 +551,7 @@ static void check_qei_angular_speed( // Check all QEI speed as motor accelerates
 				chk_data_s.motor_errs[SPEED]++;
 
 				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
 				printstrln("ACCEL FAILURE");
 				release_lock(); // Release Display Mutex
@@ -568,6 +566,7 @@ static void check_qei_angular_speed( // Check all QEI speed as motor accelerates
 				chk_data_s.motor_errs[SPEED]++;
 
 				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
 				printstrln("FAST FAILURE");
 				release_lock(); // Release Display Mutex
@@ -582,6 +581,7 @@ static void check_qei_angular_speed( // Check all QEI speed as motor accelerates
 				chk_data_s.motor_errs[SPEED]++;
 
 				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
 				printstrln("DECEL FAILURE");
 				release_lock(); // Release Display Mutex
@@ -596,6 +596,7 @@ static void check_qei_angular_speed( // Check all QEI speed as motor accelerates
 				chk_data_s.motor_errs[SPEED]++;
 
 				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
 				printstrln("SLOW FAILURE");
 				release_lock(); // Release Display Mutex
@@ -604,6 +605,7 @@ static void check_qei_angular_speed( // Check all QEI speed as motor accelerates
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
 			printstr( chk_data_s.padstr1 );
 			printstrln("ERROR: Unknown QEI Speed-state");
 			release_lock(); // Release Display Mutex
@@ -657,9 +659,11 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 	// Check for parameter change
 	if (do_test)
 	{ // Parameters changed
-#if (PRINT)
-		print_qei_parameters( chk_data_s ); // Print new QEI parameters
-#endif // (PRINT)
+
+		if (chk_data_s.print)
+		{
+			print_qei_parameters( chk_data_s ); // Print new QEI parameters
+		} // if (chk_data_s.print)
 
 		// Check if this current test vector is valid
 		if (VALID == chk_data_s.curr_vect.cntrl)
@@ -692,27 +696,77 @@ static void process_new_test_vector( // Process new test vector
 	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-	// Check if origin test
+	int change = 0; // Clear flag indicating change in test vector detected
+
+
+	// Check if error_status test
+	if (chk_data_s.curr_vect.err != chk_data_s.prev_vect.err)
+	{ // Initialise error_status test
+
+		// Check if test already running
+		if (0 < chk_data_s.err_cnt)
+		{
+			acquire_lock(); // Acquire Display Mutex
+			printstr( chk_data_s.padstr1 );
+			printstrln("ERROR: Previous Error-status test NOT completed");
+			release_lock(); // Release Display Mutex
+			assert(0 == 1); // Abort
+		} // if (0 < chk_data_s.err_cnt)
+		else
+		{ // Start new test
+			chk_data_s.err_chk = chk_data_s.curr_vect.err; // Expected error_status value
+			chk_data_s.err_cnt = ERR_TIMEOUT; // Start count-down
+		} // else !(0 < chk_data_s.err_tst)
+
+		change = 1; // Set flag indicating change in test vector detected
+	} // if (chk_data_s.curr_vect.err != chk_data_s.prev_vect.err)
+
+	// Check if origin-bit test
 	if (ORIG_ON == chk_data_s.curr_vect.orig)
 	{ // Initialise origin test
-		chk_data_s.orig_tst = 1; // set origin-bit test flag
-		chk_data_s.orig_cnt = ORIG_THR; // Start count-down
+
+		// Check if test already running
+		if (chk_data_s.orig_tst)
+		{
+			acquire_lock(); // Acquire Display Mutex
+			printstr( chk_data_s.padstr1 );
+			printstrln("ERROR: Previous Origin test NOT completed");
+			release_lock(); // Release Display Mutex
+			assert( 0 == 1); // Abort
+		} // if (chk_data_s.orig_tst)
+		else
+		{ // Start new test
+			chk_data_s.orig_tst = 1; // set origin-bit test flag
+			chk_data_s.orig_chk = chk_data_s.curr_vect.spin; // Expected origin-bit test result
+			chk_data_s.orig_cnt = ORIG_TIMEOUT; // Start count-down
+		} // else !(chk_data_s.orig_tst)
+
+		change = 1; // Set flag indicating change in test vector detected
 	} // if (ORIG_ON == chk_data_s.curr_vect.orig)
 
 	// Check for change in speed test
 	if ((chk_data_s.curr_vect.speed != chk_data_s.prev_vect.speed)
-		||	(chk_data_s.curr_vect.spin != chk_data_s.prev_vect.spin))
+		|| (chk_data_s.curr_vect.spin != chk_data_s.prev_vect.spin))
 	{
 		finalise_speed_test_vector( chk_data_s ,chk_data_s.prev_vect.speed );
 
+// if ((chk_data_s.curr_vect.speed == FAST) &&	(chk_data_s.curr_vect.spin == ANTI)) chk_data_s.print = 1; //MB~
+
 		initialise_speed_test_vector( chk_data_s );
 
-		chk_data_s.prev_vect = chk_data_s.curr_vect; // Update previous test-vector
+		change = 1; // Set flag indicating change in test vector detected
 	} // if ((chk_data_s.curr_vect.speed ...
 
-#if (PRINT)
-	print_test_vector( chk_data_s ); // Print new test vector details
-#endif // (PRINT)
+	// Check if test vector changed
+	if (change)
+	{
+		chk_data_s.prev_vect = chk_data_s.curr_vect; // Update previous test-vector
+	} // if (change)
+
+	if (chk_data_s.print)
+	{
+		print_test_vector( chk_data_s ); // Print new test vector details
+	} // if (chk_data_s.print)
 
 } // process_new_test_vector
 /*****************************************************************************/
@@ -762,9 +816,11 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 			// Pace QEI Client requests, so as NOT to overload QEI server
 			case chronometer when timerafter(chk_data_s.time + QEI_PERIOD) :> chk_data_s.time :
 				get_new_qei_client_data( chk_data_s ,c_qei ); // Request data from server & check
-#if (0 == PRINT)
-				printchar('.'); // Progress indicator
-#endif //(0 == PRINT)
+
+				if (0 == chk_data_s.print)
+				{
+					printchar('.'); // Progress indicator
+				} // if (0 == chk_data_s.print)
 			break; // case chronometer
 		} // select
 	} // while( loop )
@@ -783,7 +839,7 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 	chk_data_s.all_tsts[chk_data_s.id] += motor_tsts;
 
 	acquire_lock(); // Acquire Display Mutex
-
+	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
 	printint( motor_tsts );
 	printstrln( " tests run" );
@@ -877,3 +933,57 @@ void check_all_qei_client_data( // Display QEI results for all motors
 	release_lock(); // Release Display Mutex
 } // check_all_qei_client_data
 /*****************************************************************************/
+#ifdef MB
+static void check_qei_origin_detection( // Check correct update of QEI parameters due to origin detection
+	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int rev_diff = chk_data_s.curr_params.rev_cnt - chk_data_s.prev_params.rev_cnt; // Change in rev. counter
+
+
+	chk_data_s.motor_tsts[ORIGIN]++;
+
+	// Check for expected value
+	if (rev_diff == chk_data_s.orig_chk)
+	{ // Found expected value (Test passed)
+		chk_data_s.orig_cnt = 0; // Clear Time-out
+	} // if (rev_diff == chk_data_s.orig_chk)
+	else
+	{ // Not expected value
+		if (0 < chk_data_s.orig_cnt)
+		{ // test NOT yet timed-out
+			chk_data_s.orig_cnt--; // Decrement 'timer'
+		} // if (0 < chk_data_s.orig_cnt)
+		else
+		{ // test timed-out (Test failed)
+			chk_data_s.motor_errs[ORIGIN]++;
+
+			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
+			printstr( chk_data_s.padstr1 );
+
+			switch( chk_data_s.curr_vect.orig )
+			{
+				case ORIG_OFF:
+					printstrln("ORIG_OFF FAILURE");
+				break; // case ORIG_OFF:
+		
+				case ORIG_ON: // Start origin-bit test
+					printstrln("ORIG_ON FAILURE");
+				break; // case ORIG_ON:
+		
+				default:
+					printstrln("ERROR: Unknown QEI Origin-state");
+					assert(0 == 1);
+				break; // default:
+			} // switch( chk_data_s.curr_vect.orig )
+
+			release_lock(); // Release Display Mutex
+
+			chk_data_s.orig_cnt = 0; // Clear Time-out
+		} // if (0 < chk_data_s.orig_cnt)
+	} // else !(rev_diff == chk_data_s.orig_chk)
+
+} // check_qei_origin_detection
+/*****************************************************************************/
+#endif //MB~

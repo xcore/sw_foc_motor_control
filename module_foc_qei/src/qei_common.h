@@ -52,13 +52,21 @@
 
 typedef unsigned short PORT_TIME_TYP;
 
+/** Different QEI Error states */
+typedef enum ERROR_QEI_ETAG
+{
+  ERR_OFF = 0,	// No Error
+  ERR_ON,			// Error
+  NUM_QEI_ERRS	// Handy Value!-)
+} ERROR_QEI_ENUM;
+
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_PARAM_TAG // 
 {
 	int theta;		// Angular position
 	int veloc;		// Angular velocity
 	int rev_cnt;	// Revolution counter (No. of origin traversals)
-	int err; 			// Flag set when Error condition detected
+	ERROR_QEI_ENUM err;	// Flag set when Error condition detected
 	// WARNING: If editing this structure, also edit parameter_compare() in check_qei_test.xc 
 } QEI_PARAM_TYP;
 

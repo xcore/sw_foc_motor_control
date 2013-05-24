@@ -44,6 +44,9 @@ static void init_test_data( // Initialise QEI Test data
 	tst_data_s.hi_ticks = speed_to_ticks( HIGH_SPEED ); // Convert HIGH_SPEED to ticks
 	tst_data_s.lo_ticks = speed_to_ticks( LOW_SPEED ); // Convert LOW_SPEED to ticks
 
+	tst_data_s.print = PRINT; // Set print mode
+	tst_data_s.dbg = 0; // Set debug mode
+
 } // init_test_data
 /*****************************************************************************/
 static void init_motor_tests( // Initialisation for each set of motor tests
@@ -214,32 +217,12 @@ static void do_qei_test( // Performs one QEI test
 	p4_tst @ tst_data_s.time <: qei_val; // Now send new value
 	tst_data_s.prev_qei = qei_val; // Store QEI value
 
-#ifdef MB // Depreciated
-{
-	unsigned tmp_time;
-	char time_str[STR_LEN];
-
-	// Build formated time string
-	tmp_time = tst_data_s.time;
-	safestrcpy( time_str ,"T:" );
-
-	while (MAX_TIME > tmp_time)
-	{ 
-		safestrcat( time_str ," " );
-		tmp_time *= 10;
-	} // while (MAX_TIME > tmp_time)
-
-	acquire_lock(); // Acquire Display Mutex
-	printstr( time_str ); printint( tst_data_s.time ); printstr("  "); printint( tst_data_s.id ); printstr( ":QEI:" ); printintln( qei_val); 
-	release_lock(); // Release Display Mutex
-}
-#endif //MB
-
-#if (PRINT)
-	acquire_lock(); // Acquire Display Mutex
-	printint( tst_data_s.id ); printstr( ":QEI:" ); printintln( qei_val); 
-	release_lock(); // Release Display Mutex
-#endif // (PRINT)
+	if (tst_data_s.print)
+	{
+		acquire_lock(); // Acquire Display Mutex
+		printint( tst_data_s.id ); printstr( ":QEI:" ); printintln( qei_val); 
+		release_lock(); // Release Display Mutex
+	} // if (tst_data_s.print)
 
 } // do_qei_test
 /*****************************************************************************/
@@ -253,20 +236,19 @@ static void do_qei_vector( // Do all tests for one QEI test vector
 	c_tst <: tst_data_s.vector; // transmit test vector details to test checker
 
 	// Decelerate
-#if (PRINT)
-{
-	int comp_cnt; // Counter for Test Vector components
-
-
-	acquire_lock(); // Acquire Display Mutex
-	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+	if (tst_data_s.print)
 	{
-		printstr( tst_data_s.names[comp_cnt] ); // Print component status
-	} // for comp_cnt
-	printcharln( ':' );
-	release_lock(); // Release Display Mutex
-}
-#endif // (PRINT)
+		int comp_cnt; // Counter for Test Vector components
+
+
+		acquire_lock(); // Acquire Display Mutex
+		for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+		{
+			printstr( tst_data_s.names[comp_cnt] ); // Print component status
+		} // for comp_cnt
+		printcharln( ':' );
+		release_lock(); // Release Display Mutex
+	} // if (tst_data_s.print)
 
 	// Loop through tests for current test vector
 	while(test_cnt)
@@ -309,11 +291,12 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 	port out p4_tst  // current port on which to transmit test data
 )
 {
-#if (PRINT)
-	acquire_lock(); // Acquire Display Mutex
-	printstr( " Start Test Gen. For Motor_"); printintln( tst_data_s.id );
-	release_lock(); // Release Display Mutex
-#endif // (PRINT)
+	if (tst_data_s.print)
+	{
+		acquire_lock(); // Acquire Display Mutex
+		printstr( " Start Test Gen. For Motor_"); printintln( tst_data_s.id );
+		release_lock(); // Release Display Mutex
+	} // if (tst_data_s.print)
 
 	p4_tst <: 0 @ tst_data_s.time; // Get start time
 
@@ -370,16 +353,16 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 	assign_test_vector_speed( tst_data_s ,FAST ); // Set test vector to constant Fast speed
 	tst_data_s.vector.cntrl = SKIP; // Switch off testing while motor settles
 	do_qei_vector( tst_data_s ,c_tst ,p4_tst ,2 );
-
+// tst_data_s.print = 1; //MB~
 	tst_data_s.vector.cntrl = VALID; // Settling complete, Switch on testing
-	do_qei_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
+	do_qei_vector( tst_data_s ,c_tst ,p4_tst ,((MAX_TESTS >> 1) - MAX_QEI_STATUS_ERR) );
 
 	assign_test_vector_error( tst_data_s ,ERR_ON ); // Switch on error-bit
 	tst_data_s.vector.cntrl = SKIP; // Switch off testing, while server counts required consecutive errors
 	do_qei_vector( tst_data_s ,c_tst ,p4_tst ,MAX_QEI_STATUS_ERR );
 
 	tst_data_s.vector.cntrl = VALID; // Switch on testing, now error-status should be set
-	do_qei_vector( tst_data_s ,c_tst ,p4_tst ,1 );
+	do_qei_vector( tst_data_s ,c_tst ,p4_tst ,MAX_QEI_STATUS_ERR );
 
 	assign_test_vector_error( tst_data_s ,ERR_OFF ); // Switch off error-bit
 	tst_data_s.vector.cntrl = SKIP; // Switch off testing, while server counts required consecutive non-errors
@@ -415,10 +398,11 @@ void gen_all_qei_test_data( // Generate QEI Test data
 		gen_motor_qei_test_data( tst_data_s ,c_tst ,p4_tst[motor_cnt] );
 	} // for motor_cnt
 
-#if (PRINT)
-	acquire_lock(); // Acquire Display Mutex
-	printstrln( "Test Generation Ends " );
-	release_lock(); // Release Display Mutex
-#endif // (PRINT)
+	if (tst_data_s.print)
+	{
+		acquire_lock(); // Acquire Display Mutex
+		printstrln( "Test Generation Ends " );
+		release_lock(); // Release Display Mutex
+	} // if (tst_data_s.print)
 } // gen_all_qei_test_data
 /*****************************************************************************/

@@ -26,7 +26,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.params.theta = 0; // Reset angular position returned to client
 	inp_qei_s.params.rev_cnt = 0; // Reset revolution counter  returned to client
 	inp_qei_s.params.veloc = 0; // Clear velocity returned to client
-	inp_qei_s.params.err = 0; // Clear error status flag returned to client
+	inp_qei_s.params.err = ERR_OFF; // Clear error status flag returned to client
 
 	inp_qei_s.diff_time = 0; // NB Initially this is used to count input-pin changes
 	inp_qei_s.id = inp_id; // Clear Previous phase values
@@ -165,41 +165,41 @@ static const ANG_INC_TYP get_spin_state[NUM_QEI_PHASES][NUM_QEI_PHASES] = {
 /*****************************************************************************/
 static void estimate_error_status( // Update estimate of error status based on new data
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	unsigned new_err // Newly acquired error flag
+	ERROR_QEI_ENUM new_err // Newly acquired error flag
 )
 // We require MAX_QEI_STATUS_ERR consecutive new errors before error estimate is set
 {
 	// Check if status changed
-	if (new_err)
+	if (ERR_ON == new_err)
 	{ // new error detected
 
 		// Check previous error estimate
-		if (0 == inp_qei_s.params.err)
+		if (ERR_OFF == inp_qei_s.params.err)
 		{ // NO previous detected Error
 			inp_qei_s.status_errs++; // Increment new error count
 
 			// Check if too many errors occured
 			if (MAX_QEI_STATUS_ERR <=  inp_qei_s.status_errs)
 			{
-				inp_qei_s.params.err = 1; // Switch ON Error Estimate
+				inp_qei_s.params.err = ERR_ON; // Switch ON Error Estimate
 			} // if (MAX_QEI_STATUS_ERR <=  inp_qei_s.status_errs)
-		} // if (0 == inp_qei_s.params.err)
-	} // if (new_err != inp_qei_s.prev_err)
+		} // if (ERR_OFF == inp_qei_s.params.err)
+	} // if (ERR_ON == new_err)
 	else
 	{ // NO new error detected
 
 		// Check previous error estimate
-		if (inp_qei_s.params.err)
+		if (ERR_ON == inp_qei_s.params.err)
 		{ // Already detected Error
 			inp_qei_s.status_errs--; // Decrement new error count
 
 			// Check if all errors cleared
 			if (0 >=  inp_qei_s.status_errs)
 			{
-				inp_qei_s.params.err = 0; // Switch OFF Error Estimate
+				inp_qei_s.params.err = ERR_OFF; // Switch OFF Error Estimate
 			} // if (0 >=  inp_qei_s.status_errs)
-		} // if (inp_qei_s.params.err)
-	} // if (new_err != inp_qei_s.prev_err)
+		} // if (ERR_ON == inp_qei_s.params.err)
+	} // else !(ERR_ON == new_err)
 
 } // estimate_error_status
 /*****************************************************************************/
@@ -244,7 +244,7 @@ static void update_qei_state( // Update QEI state
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	unsigned cur_phases, // Current set of phase values
 	unsigned orig_flg, // Flag set when motor at origin position 
-	unsigned err_flg // Flag set when Error condition detected
+	ERROR_QEI_ENUM err_flg // Flag set when Error condition detected
 )
 {
 	ANG_INC_TYP ang_inc; // angular increment value

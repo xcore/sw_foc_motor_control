@@ -64,6 +64,8 @@ typedef struct TEST_QEI_TAG // Structure containing QEI test data
 	PORT_TIME_TYP time; // port timer value
 	unsigned period; // period (in ticks) between tests
 	int prev_qei;  // Previous QEI value
+	int print;  // Print flag
+	int dbg;  // Debug flag
 } TEST_QEI_TYP;
 
 /*****************************************************************************/

@@ -24,10 +24,13 @@
 
 #include "app_global.h"
 #include "use_locks.h"
-#include "test_qei_common.h"
+#include "qei_common.h"
 #include "qei_client.h"
+#include "test_qei_common.h"
 
-#define ORIG_THR 1 // Allowed QEI origin position error
+#define ERR_TIMEOUT 1 // Allowed error-status delay
+#define ORIG_TIMEOUT 1 // Allowed QEI origin-test delay
+
 #define QEI_PERIOD (40 * MICRO_SEC) // Time period between QEI Client requests for data
 
 typedef struct CHECK_QEI_TAG // Structure containing QEI check data
@@ -45,6 +48,9 @@ typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 	int all_tsts[NUMBER_OF_MOTORS]; // Array of Test accumulators for each motor
  	int id; // Unique motor identifier
 	int fail_cnt;	// Counter of failed tests
+	int err_chk;	// error check value
+	int err_cnt;	// Counter used in error test
+	int orig_chk;	// origin check value
 	int orig_cnt;	// Counter used in origin test
 	int orig_tst;	// Flag set when testing origin-bit
 	int speed_sum; // Accumulator for speed tests
@@ -52,6 +58,8 @@ typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 	int hi_bound; // error bound for high speed test
 	int lo_bound; // error bound for low speed test
 	unsigned time; // time value when new QEI parameters received
+	int print;  // Print flag
+	int dbg;  // Debug flag
 } CHECK_QEI_TYP;
 
 /*****************************************************************************/
