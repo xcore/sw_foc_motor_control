@@ -22,7 +22,7 @@
 
 #define MAX_TIME 100000000 // Used in print formatting
 
-#define PRINT 0 // Flag set for verbose printing
+#define PRINT 1 // Flag set for verbose printing
 
 /** Different QEI Test Vector Components */
 typedef enum VECT_COMP_ETAG
