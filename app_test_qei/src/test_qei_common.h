@@ -20,7 +20,7 @@
 #define HIGH_SPEED 4000
 #define LOW_SPEED  50
 
-#define PRINT 0 // Flag set for verbose printing
+#define PRINT 1 // Flag set for verbose printing
 
 /** Different QEI Test Vector Components */
 typedef enum VECT_COMP_ETAG

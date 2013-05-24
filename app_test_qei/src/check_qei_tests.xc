@@ -108,7 +108,6 @@ static void init_motor_checks( // Initialise QEI parameter structure
 	chk_data_s.err_cnt = 0; // Clear count-down counter used in error_status test
 	chk_data_s.err_chk = ERR_OFF; // Initialise expected error_status test result
 
-	chk_data_s.orig_tst = 0;	// Clear flag indicating test of origin-bit
 	chk_data_s.orig_cnt = 0; // Clear count-down counter used in origin-bit test
 	chk_data_s.orig_chk = ORIG_OFF; // Initialise expected origin-bit test result
 
@@ -296,7 +295,6 @@ static void check_qei_position_reset( // Check for correct position reset after 
 		release_lock(); // Release Display Mutex
 	} // if (ang_bound < abs(chk_data_s.curr_params.theta))
 
-	chk_data_s.orig_tst = 0; // End origin-bit test
 } // check_qei_position_reset
 /*****************************************************************************/
 static void check_qei_origin_detection( // Check correct update of QEI parameters due to origin detection
@@ -304,88 +302,59 @@ static void check_qei_origin_detection( // Check correct update of QEI parameter
 )
 {
 	int rev_diff = chk_data_s.curr_params.rev_cnt - chk_data_s.prev_params.rev_cnt; // Change in rev. counter
-	int orig_fail = 0; // Preset flag to origin-bit test passed
 
 
-	switch( chk_data_s.curr_vect.orig )
-	{
-		case ORIG_OFF:
-			chk_data_s.motor_tsts[ORIGIN]++;
+	chk_data_s.motor_tsts[ORIGIN]++;
 
-			// Check for rev counter change
-			if (0 == rev_diff)
-			{ // No change in rev. counter
-				if (chk_data_s.orig_tst)
-				{ // Searching for origin
-					if (chk_data_s.orig_cnt)
-					{ // test NOT timed-out
-						chk_data_s.orig_cnt--; // Decrement 'timer'
-					} // if (chk_data_s.orig_cnt)
-					else
-					{ // test timed-out 
-						orig_fail = 1; // Set failed flag
-					} // if (chk_data_s.orig_cnt)
-				} // if (chk_data_s.orig_tst)
-			} // if (0 == rev_diff)
-			else
-			{ // Change in rev. counter
-				if ((chk_data_s.orig_tst) && (chk_data_s.curr_vect.spin == rev_diff))
-				{ // Found origin
-					check_qei_position_reset( chk_data_s ); // Check angular position has been correctly reset
-				} // if (chk_data_s.orig_tst)
-				else 
-				{ // NOT searching for origin
-					orig_fail = 2; // Set failed flag
-				} // else !((chk_data_s.orig_tst) && (chk_data_s.curr_vect.spin: == rev_diff))
-			} // else !(0 == rev_diff)
+	// Check for expected value
+	if (rev_diff == chk_data_s.orig_chk)
+	{ // Found expected value (Test passed)
 
-			// Check for failed test
-			if (orig_fail)
-			{
-				chk_data_s.motor_errs[ORIGIN]++;
-				acquire_lock(); // Acquire Display Mutex
-				printcharln(' ');
-				printstr( chk_data_s.padstr1 );
-				printstrln("ORIG_OFF FAILURE");
-				release_lock(); // Release Display Mutex
+		// Check if position reset expected
+		if (0 != chk_data_s.orig_chk)
+		{
+			check_qei_position_reset( chk_data_s ); // Check angular position has been correctly reset
+		} // if (0 != chk_data_s.orig_chk)
 
-				chk_data_s.orig_tst = 0; // End origin-bit test
-			} // if (orig_fail)
-		break; // case ORIG_OFF:
+		chk_data_s.orig_cnt = 0; // Clear Time-out
+		chk_data_s.orig_chk = 0; // Set new expected origin-bit test result
+	} // if (rev_diff == chk_data_s.orig_chk)
+	else
+	{ // Not expected value
+		if (0 < chk_data_s.orig_cnt)
+		{ // test NOT yet timed-out
+			chk_data_s.orig_cnt--; // Decrement 'timer'
+		} // if (0 < chk_data_s.orig_cnt)
+		else
+		{ // test timed-out (Test failed)
+			chk_data_s.motor_errs[ORIGIN]++;
 
-		case ORIG_ON: // Start Origin test
-			chk_data_s.motor_tsts[ORIGIN]++;
-
-			// Check for rev counter change
-			if (chk_data_s.curr_vect.spin != rev_diff)
-			{ // Origin NOT yet found
-				if (rev_diff)
-				{ // Illegal rev. change
-					chk_data_s.motor_errs[ORIGIN]++;
-					acquire_lock(); // Acquire Display Mutex
-					printcharln(' ');
-					printstr( chk_data_s.padstr1 );
-					printstrln("ORIG_ON FAILURE");
-					release_lock(); // Release Display Mutex
-
-					chk_data_s.orig_tst = 0; // End origin-bit test
-				} // if (rev_diff)
-			} // if (chk_data_s.curr_vect.spin != rev_diff)
-			else
-			{ // Found Origin
-				check_qei_position_reset( chk_data_s ); // Check angular position has been correctly reset
-			} // else !(chk_data_s.curr_vect.spin != rev_diff)
-		break; // case ORIG_ON:
-
-		default:
 			acquire_lock(); // Acquire Display Mutex
 			printcharln(' ');
 			printstr( chk_data_s.padstr1 );
-			printstrln("ERROR: Unknown QEI Origin-state");
+
+			switch( chk_data_s.curr_vect.orig )
+			{
+				case ORIG_OFF:
+					printstrln("ORIG_OFF FAILURE");
+				break; // case ORIG_OFF:
+		
+				case ORIG_ON: // Start origin-bit test
+					printstrln("ORIG_ON FAILURE");
+				break; // case ORIG_ON:
+		
+				default:
+					printstrln("ERROR: Unknown QEI Origin-state");
+					assert(0 == 1);
+				break; // default:
+			} // switch( chk_data_s.curr_vect.orig )
+
 			release_lock(); // Release Display Mutex
-			assert(0 == 1);
-		break; // default:
-	} // switch( chk_data_s.curr_vect.orig )
+
+			chk_data_s.orig_cnt = 0; // Clear Time-out
+			chk_data_s.orig_chk = 0; // Set new expected origin-bit test result
+		} // if (0 < chk_data_s.orig_cnt)
+	} // else !(rev_diff == chk_data_s.orig_chk)
 
 } // check_qei_origin_detection
 /*****************************************************************************/
@@ -726,20 +695,19 @@ static void process_new_test_vector( // Process new test vector
 	{ // Initialise origin test
 
 		// Check if test already running
-		if (chk_data_s.orig_tst)
+		if (0 < chk_data_s.orig_cnt)
 		{
 			acquire_lock(); // Acquire Display Mutex
 			printstr( chk_data_s.padstr1 );
 			printstrln("ERROR: Previous Origin test NOT completed");
 			release_lock(); // Release Display Mutex
 			assert( 0 == 1); // Abort
-		} // if (chk_data_s.orig_tst)
+		} // if (0 < chk_data_s.orig_cnt)
 		else
 		{ // Start new test
-			chk_data_s.orig_tst = 1; // set origin-bit test flag
 			chk_data_s.orig_chk = chk_data_s.curr_vect.spin; // Expected origin-bit test result
 			chk_data_s.orig_cnt = ORIG_TIMEOUT; // Start count-down
-		} // else !(chk_data_s.orig_tst)
+		} // else !(0 < chk_data_s.orig_cnt)
 
 		change = 1; // Set flag indicating change in test vector detected
 	} // if (ORIG_ON == chk_data_s.curr_vect.orig)
@@ -933,57 +901,3 @@ void check_all_qei_client_data( // Display QEI results for all motors
 	release_lock(); // Release Display Mutex
 } // check_all_qei_client_data
 /*****************************************************************************/
-#ifdef MB
-static void check_qei_origin_detection( // Check correct update of QEI parameters due to origin detection
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
-)
-{
-	int rev_diff = chk_data_s.curr_params.rev_cnt - chk_data_s.prev_params.rev_cnt; // Change in rev. counter
-
-
-	chk_data_s.motor_tsts[ORIGIN]++;
-
-	// Check for expected value
-	if (rev_diff == chk_data_s.orig_chk)
-	{ // Found expected value (Test passed)
-		chk_data_s.orig_cnt = 0; // Clear Time-out
-	} // if (rev_diff == chk_data_s.orig_chk)
-	else
-	{ // Not expected value
-		if (0 < chk_data_s.orig_cnt)
-		{ // test NOT yet timed-out
-			chk_data_s.orig_cnt--; // Decrement 'timer'
-		} // if (0 < chk_data_s.orig_cnt)
-		else
-		{ // test timed-out (Test failed)
-			chk_data_s.motor_errs[ORIGIN]++;
-
-			acquire_lock(); // Acquire Display Mutex
-			printcharln(' ');
-			printstr( chk_data_s.padstr1 );
-
-			switch( chk_data_s.curr_vect.orig )
-			{
-				case ORIG_OFF:
-					printstrln("ORIG_OFF FAILURE");
-				break; // case ORIG_OFF:
-		
-				case ORIG_ON: // Start origin-bit test
-					printstrln("ORIG_ON FAILURE");
-				break; // case ORIG_ON:
-		
-				default:
-					printstrln("ERROR: Unknown QEI Origin-state");
-					assert(0 == 1);
-				break; // default:
-			} // switch( chk_data_s.curr_vect.orig )
-
-			release_lock(); // Release Display Mutex
-
-			chk_data_s.orig_cnt = 0; // Clear Time-out
-		} // if (0 < chk_data_s.orig_cnt)
-	} // else !(rev_diff == chk_data_s.orig_chk)
-
-} // check_qei_origin_detection
-/*****************************************************************************/
-#endif //MB~

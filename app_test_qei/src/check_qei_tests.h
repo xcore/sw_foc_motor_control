@@ -52,7 +52,6 @@ typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 	int err_cnt;	// Counter used in error test
 	int orig_chk;	// origin check value
 	int orig_cnt;	// Counter used in origin test
-	int orig_tst;	// Flag set when testing origin-bit
 	int speed_sum; // Accumulator for speed tests
 	int speed_num; // No of accumulations for speed tests
 	int hi_bound; // error bound for high speed test
