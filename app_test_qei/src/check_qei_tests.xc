@@ -669,6 +669,7 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 	chronometer when timerafter(chk_data_s.time + (MICRO_SEC << 1)) :> chk_data_s.time; // Wait for Test Generation to Start
 
 	acquire_lock(); // Acquire Display Mutex
+	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
 	printstr("Start Checks For Motor_"); printintln( chk_data_s.id ); 
 	release_lock(); // Release Display Mutex

@@ -57,7 +57,6 @@
 #include <assert.h>
 #include <print.h>
 
-#include "use_locks.h" //MB~ Dbg
 #include "qei_common.h"
 
 #ifndef QEI_FILTER
