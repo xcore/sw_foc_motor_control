@@ -35,7 +35,7 @@
 
 typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 {
-	char names[NUM_VECT_COMPS][STR_LEN]; // Array of names for each component of test vector
+	COMMON_QEI_TYP common; // Structure of QEI data common to Generator and Checker
 	char padstr1[STR_LEN]; // Padding string used to format display output
 	char padstr2[STR_LEN]; // Padding string used to format display output
 	TEST_VECT_TYP curr_vect; // Structure of containing current QEI test vector (QEI conditions to be tested)

@@ -15,12 +15,18 @@
 #ifndef _TEST_QEI_COMMON_H_
 #define _TEST_QEI_COMMON_H_
 
+#include <xs1.h>
+#include <assert.h>
+#include <print.h>
+#include <safestring.h>
+
+#include "use_locks.h"
+#include "qei_server.h"
+
 #define STR_LEN 256
 
 #define HIGH_SPEED 4000
 #define LOW_SPEED  50
-
-#define PRINT 1 // Flag set for verbose printing
 
 /** Different QEI Test Vector Components */
 typedef enum VECT_COMP_ETAG
@@ -29,8 +35,11 @@ typedef enum VECT_COMP_ETAG
   ORIGIN,			// Origin-state
   SPIN,				// Spin-state
   SPEED,			// Speed-state
+  CNTRL,			// Control/Comunications state
   NUM_VECT_COMPS	// Handy Value!-)
 } VECT_COMP_ENUM;
+
+// NB Error States (ERROR_QEI_ENUM) defined in module_foc_qei/src/qei_common.h
 
 /** Different QEI Origin states */
 typedef enum ORIG_QEI_ETAG
@@ -43,7 +52,7 @@ typedef enum ORIG_QEI_ETAG
 /** Different QEI Spin states */
 typedef enum SPIN_QEI_ETAG
 {
-  ANTI = -1,				// Anti-clockwise
+  ANTI = 0,				// Anti-clockwise
   CLOCK = 1,				// Clock-wise
   NUM_QEI_SPINS = 2	// Handy Value!-)
 } SPIN_QEI_ENUM;
@@ -67,13 +76,39 @@ typedef enum CNTRL_QEI_ETAG
   NUM_QEI_CNTRLS	// Handy Value!-)
 } CNTRL_QEI_ENUM;
 
+#define MAX_COMP_STATES NUM_QEI_SPEEDS	// Edit this line
+
+typedef struct STRING_TAG // Structure containing QEI test data
+{
+	char str[STR_LEN]; // String array (NB Structure allows easy string copy)
+} STRING_TYP;
+
 typedef struct TEST_VECT_TAG // Structure containing test vector (QEI conditions to be tested)
 {
-	ERROR_QEI_ENUM err;		// Error-state to be tested
-	ORIG_QEI_ENUM orig;		// Origin-state to be tested
-	SPIN_QEI_ENUM spin;		// Spin-state to be tested
-	SPEED_QEI_ENUM speed;	// Speed-state to be tested
-	CNTRL_QEI_ENUM cntrl;	// Test Command & Control value
+	int comp_state[NUM_VECT_COMPS]; // array containing current states for each test vector component 
 } TEST_VECT_TYP;
 
+typedef struct VECT_COMP_TAG // Structure containing common QEI test data for one test vector component
+{
+	STRING_TYP state_names[MAX_COMP_STATES]; // Array of names for each state of test vector component 
+	STRING_TYP comp_name; // names for test vector component
+	int num_states; // number of states for this test vector component
+} VECT_COMP_TYP;
+
+typedef struct COMMON_QEI_TAG // Structure containing all common QEI test data
+{
+	VECT_COMP_TYP comp_data[NUM_VECT_COMPS]; // Array of data for each component of test vector
+} COMMON_QEI_TYP;
+
+/*****************************************************************************/
+void init_common_data( // Initialise QEI Test data
+	COMMON_QEI_TYP &comm_qei_s // Reference to structure of common QEI data
+);
+/*****************************************************************************/
+void print_test_vector( // print test vector details
+	COMMON_QEI_TYP &comm_qei_s, // Reference to structure of common QEI data
+	TEST_VECT_TYP inp_vect, // Structure containing current QEI test vector to be printed
+	const char prefix_str[] // prefix string
+);
+/*****************************************************************************/
 #endif /* _TEST_QEI_COMMON_H_ */

@@ -43,21 +43,20 @@
 
 typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
 {
-	int vals[NUM_QEI_PHASES];	// Array of QEI Phase values
+	int vals[NUM_QEI_PHASES];	// Array of QEI Phase values (NB Increment for clockwise rotation)
 } QEI_PHASE_TYP;
 
-typedef struct TEST_QEI_TAG // Structure containing QEI test data
+typedef struct GENERATE_QEI_TAG // Structure containing QEI test data
 {
-	char names[NUM_VECT_COMPS][STR_LEN]; // Array of names for each component of test vector
+	COMMON_QEI_TYP common; // Structure of QEI data common to Generator and Checker
 	TEST_VECT_TYP vector; // Structure of containing QEI test vector (QEI conditions to be tested)
-	QEI_PHASE_TYP clk_wise;	// Structure of QEI phase values for clockwise rotation
-	QEI_PHASE_TYP anti_clk;	// Structure of QEI phase values for anti-clockwise rotation
-	QEI_PHASE_TYP phase;	// Structure of currently used QEI phase values
+	QEI_PHASE_TYP phases;	// Structure containing all possible QEI phase values;
+	int inc;			// QEI rotation increment (+1 for clock-wise, -1 for anti-clockwise)
 	int id;			// Current motor identifier
 	int hi_ticks;			// No. of ticks/QEI at high speed
 	int lo_ticks;			// No. of ticks/QEI at low speed
-	int off;			// offset into QEI Phase cycle
-	int cnt; // QEI position counter
+	unsigned cnt;			// QEI position counter
+	unsigned off;			// offset into QEI Phase cycle
 	int orig; // QEI origin flag (Bit_2 is 1 at origin)
 	int nerr; // QEI error flag (Bit_3 is 1 for NO errors)
 	int scale; // velocity scaling factor (used for acceleration and deceleration)
@@ -66,7 +65,7 @@ typedef struct TEST_QEI_TAG // Structure containing QEI test data
 	int prev_qei;  // Previous QEI value
 	int print;  // Print flag
 	int dbg;  // Debug flag
-} TEST_QEI_TYP;
+} GENERATE_QEI_TYP;
 
 /*****************************************************************************/
 /** Generate QEI test data for all motors

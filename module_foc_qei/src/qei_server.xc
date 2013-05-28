@@ -160,6 +160,8 @@ static const ANG_INC_TYP get_spin_state[NUM_QEI_PHASES][NUM_QEI_PHASES] = {
 
 	inp_qei_s.prev_state = cur_state; // Store old QEI state value
 
+// acquire_lock(); printstr("CL="); printint( inp_qei_s.confid ); printstr(" ST="); printint( cur_state ); printstr(" AI="); printintln( out_ang_inc ); release_lock(); //MB~
+
 	return out_ang_inc; // Return output increment value
 } // estimate_angular_increment
 /*****************************************************************************/
