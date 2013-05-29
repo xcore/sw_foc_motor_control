@@ -28,25 +28,39 @@
 #include "qei_server.h"
 #include "test_qei_common.h"
 
+/** Define No. of tests used for Max. speed check */
 #define MAX_TESTS 31 // No. of tests used for Max. speed check
+
+/** Define No. of tests used for Min. speed check */
 #define MIN_TESTS 3  // No. of tests used for Min. speed check
+
+/** Define No. of tests used for Acceleration check */
 #define ACC_TESTS 18 // No. of tests used for Acceleration check
+
+/** Define No. of tests used for Deceleration check */
 #define DEC_TESTS 18 // No. of tests used for Deceleration check
 
+/** Define No. of port timer values (16-bit) */
 #define NUM_PORT_TIMES (1 << 16) // No. of port timer values (16-bit)
 
+/** Define Scaling factor Used for Acceleration */
+#define ACC_SCALE 807 // Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
+
+/** Define Scaling factor Used for Deceleration */
+#define DEC_SCALE 1300 // Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+
+/** Define No. of Bits for Scaling Factor Divisor */
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
 #define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
 
-#define ACC_SCALE 807 // Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
-#define DEC_SCALE 1300 // Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
-
+/** Type containing array of QEI Phase values */
 typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
 {
 	int vals[NUM_QEI_PHASES];	// Array of QEI Phase values (NB Increment for clockwise rotation)
 } QEI_PHASE_TYP;
 
-typedef struct GENERATE_QEI_TAG // Structure containing QEI test data
+/** Type containing all QEI test generation data */
+typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 {
 	COMMON_QEI_TYP common; // Structure of QEI data common to Generator and Checker
 	TEST_VECT_TYP vector; // Structure of containing QEI test vector (QEI conditions to be tested)

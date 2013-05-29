@@ -38,7 +38,7 @@ int main ( void ) // Program Entry Point
 		
 				foc_hall_do_multiple( c_hall, p4_hall ); // Server function under test
 		
-				disp_all_hall_client_data( c_hall ); // Check results using HALL Client
+				check_all_hall_client_data( c_hall ); // Check results using HALL Client
 			} // par
 		
 		  free_locks(); // Free Mutex for display

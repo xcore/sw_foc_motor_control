@@ -26,19 +26,19 @@
 /** Define the number of different QEI sensor positions per pole-pair */
 #define QEI_PER_POLE 256
 
-/**  Default No. OF QEI positions per Revolution */
+/** Define default No. OF QEI positions per Revolution */
 #define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
 
-/**  Default Filter Mode  1 == On */
+/** Define default Filter Mode  1 == On */
 #define QEI_FILTER 1
 
-/**  Seconds in a minute */
+/** Define seconds in a minute */
 #define SECS_PER_MIN 60
 
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000
 
-/** Set flag for verbose printing*/
+/** Define flag for verbose printing */
 #define PRINT_TST_QEI 0
 
 /* This is a bit of a cludge, we are using a non-standard configuration

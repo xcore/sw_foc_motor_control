@@ -15,98 +15,804 @@
 #include "check_hall_tests.h"
 
 /*****************************************************************************/
-static void init_hall_params( // Initialise HALL parameter structure
-	HALL_PARAM_TYP &hall_param_s,	// Reference to structure containing HALL data
-	int motor_id // Motors Identifier
-)
+static unsigned eval_speed_bound( // Evaluate error bounds for given speed 
+	int veloc_val // input velocity
+) // Returns error_bound
+/* The Maths for this is a bit complicated as it used non-linear arithmetic.
+ * However, here goes ...
+ * 
+ * The Speed (S) and time-period between Hall phase changes (T) are related by the following equation: 
+ *		Cf = S * T   (where Cf is a floating-point constant, but in this code
+ * is represented as an integer with rounding errors (Ci + dC), 
+ * Ci is TICKS_PER_MIN_PER_HALL , and  dC = SECS_PER_MIN/2 (currently 5859360 +/- 30 in hall_common.h)
+ * 
+ * The test-generator chooses a test Speed (Sg), this is converted to a time-period (T + dT) with rounding errors
+ * which is used to generate raw Hall phase changes at the appropriate time.
+ * 
+ * The Hall Server, converts the time-period between Hall phase changes into a angular_velocity estimate,
+ * this too has a rounding error.
+ * 
+ * The test-checker reads the Hall velocity parameter and converts it into a speed with rounding errors (Sc + dS).
+ * The checker needs to calculate dS, in order to know the required error-bounds for Sc.
+ * 
+ *		T = C / Sg  ,  Therefore dT = dC/Sg. 			(NB Sg has no error)     --- (1)
+ * Using integer division, and rounding-up:   dT = (dC + Sg - 1)/(int)Sg  or  dT ~= 1 + dC/(int)Sg    --- (2)
+ * 
+ *		Sc = C / T  ,  Therefore  dS ~= (T.dC + C.dT)/(T.T)  (differentiation of product rule)
+ * Substituting for T for (1) gives:  dS = Sg(dC + Sg.dT)/Ci
+ * Substituting for dT for (2) gives:  dS = Sg(2.dC + Sg)/Ci
+ * Using integer division, and rounding-up:   dS = (Sg(2.dC + Sg) + Ci - 1)/(int)Ci  or  ...
+ * 
+ *		dS ~= 1 + (Sg(2.dC + Sg))/(int)Ci  --- (3)
+ * 		----------------------------
+ * 
+ *  NB Currently, for all values of Sg <= 2390, dS is always 1
+ */
 {
-	hall_param_s.hall_val = 0;
-	hall_param_s.err = 0; // No Errors
-} // print_hall_data
+	unsigned bound; // Output error_bound
+
+
+	bound = veloc_val * (SECS_PER_MIN + veloc_val); // Compute numerator for integer division
+	bound = 1 + (bound / TICKS_PER_MIN_PER_HALL);		// NB we already rounded-up in (3)
+
+	/* When using the simulator, Occasionally Hall phases changes are not generated at the appropriate time
+	 * This introduces another source of error, which has yet to be quantfied, 
+	 * so an empirically found fudge factor is used!-(
+	 */
+	return (2 * bound); // Multiply by fudge factor
+}	// eval_speed_bound
 /*****************************************************************************/
-static void print_hall_data( // Print elements of HALL structure
-	HALL_PARAM_TYP &hall_param_s,	// Reference to structure containing HALL data
-	int test_id, // Test Identifier
-	int motor_id // Motors Identifier
-)
-{
-	acquire_lock(); // Acquire Display Mutex
-	printstr( "                             " );
-	printint( motor_id );
-	printstr( ":  E=" );
-	printint( hall_param_s.err );
-	printstr( "  H=" );
-	printint( hall_param_s.hall_val );
-	printcharln(' ');
-	release_lock(); // Release Display Mutex
-} // print_hall_data
-/*****************************************************************************/
-static void disp_motor_hall_client_data( // Display HALL results for one motor
-	int motor_id, // Motors Identifier
-	streaming chanend c_hall // HALL channel between Client and Server
-)
-{
-	HALL_PARAM_TYP hall_param_s;	// Structure containing HALL parameters
-	int test_cnt;
-	int prev_hall = 0; // Set to Illegal value
-	timer chronometer; // XMOS timer
-	unsigned time_val;   // time value
-	unsigned time_inc;   // time increment
-	int do_loop = 1;   // Flag set until loop-end condition found 
-
-
-	init_hall_params( hall_param_s ,motor_id ); // Initialise HALL parameter structure
-	
-	chronometer :> time_val; // Get start time
-	chronometer when timerafter(time_val + (MICRO_SEC << 1)) :> time_val; // Wait for Test Generation to Start
-
-	acquire_lock(); // Acquire Display Mutex
-	printstr( "                             " );
-	printstr("Start Checks For Motor_"); printintln( motor_id ); 
-	release_lock(); // Release Display Mutex
-
-	time_inc = (40 * MICRO_SEC); // time increment between HALL Client requests. (Typical value when using real motor)
-
-	// Loop until end condition found
-	while( do_loop )
-	{
-		foc_hall_get_parameters( hall_param_s ,c_hall ); // Client function under test
-
-		// Check for difference in Angle supplied by Client
-		if (prev_hall != hall_param_s.hall_val)
-		{
-			print_hall_data( hall_param_s ,test_cnt ,motor_id ); // Print new HALL data
-			prev_hall = hall_param_s.hall_val; // Store angle
-
-			if (hall_param_s.err)
-			{
-				do_loop = 0; // Error flag signals end-of-loop
-			} // if (hall_param_s.err)
-		} // if (prev_hall != hall_param_s.hall_val)
-
-		// Pace HALL Client requests, so as NOT to overload HALL server
-		chronometer when timerafter(time_val + time_inc) :> time_val;
-	} // while( loop )
-
-	chronometer when timerafter(time_val + MILLI_SEC) :> time_val; // Wait for Test Generation to End
-} // disp_motor_hall_client_data
-/*****************************************************************************/
-void disp_all_hall_client_data( // Display HALL results for all motors
-	streaming chanend c_hall[] // Array of HALL channel between Client and Server
+static void init_check_data( // Initialise check data for Hall tests
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int motor_cnt; // counts Motors 
 
 
+	init_common_data( chk_data_s.common ); // Initialise data common to Generator and Checker
+
+	safestrcpy( chk_data_s.padstr1 ,"                                             " );
+	safestrcpy( chk_data_s.padstr2 ,"                              " );
+
+	chk_data_s.fail_cnt = 0; // Clear count of failed tests.
+
+	// Evaluate error bounds for speed checks
+	chk_data_s.hi_bound = eval_speed_bound( HIGH_SPEED ); 
+	chk_data_s.lo_bound = eval_speed_bound( LOW_SPEED ); 
+
+	chk_data_s.print = PRINT_TST_HALL; // Set print mode
+	chk_data_s.dbg = 0; // Set debug mode
+
+	// Clear error and test accumulators
+	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	{
+		chk_data_s.all_errs[motor_cnt] = 0;
+		chk_data_s.all_tsts[motor_cnt] = 0;
+	} // for motor_cnt
+
+} // init_motor_checks
+/*****************************************************************************/
+static void init_motor_checks( // Initialise Hall parameter structure
+	CHECK_HALL_TYP &chk_data_s, // Reference to structure containing test check data
+	int motor_id	// Unique Motor identifier
+)
+{
+	int comp_cnt; // Counter for Test Vector components
+
+
+	chk_data_s.id = motor_id; // Assign Motor identifier
+
+	chk_data_s.err_cnt = 0; // Clear count-down counter used in error_status test
+	chk_data_s.err_chk = ERR_OFF; // Initialise expected error_status test result
+
+	chk_data_s.orig_cnt = 0; // Clear count-down counter used in origin-bit test
+	chk_data_s.orig_chk = ORIG_OFF; // Initialise expected origin-bit test result
+
+	chk_data_s.curr_params.rev_cnt = 0;
+	chk_data_s.curr_params.theta = 0;
+	chk_data_s.curr_params.veloc = 0;
+	chk_data_s.curr_params.err = 0; // No Errors
+
+	chk_data_s.prev_params = chk_data_s.curr_params; // Initialise previous parameter values
+
+	// Clear error and test counters for current motor
+	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+	{
+		chk_data_s.motor_errs[comp_cnt] = 0; 
+		chk_data_s.motor_tsts[comp_cnt] = 0; 
+	} // for comp_cnt
+
+} // init_motor_checks
+/*****************************************************************************/
+static void print_hall_parameters( // Print Hall parameters
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	acquire_lock(); // Acquire Display Mutex
+	printstr( chk_data_s.padstr1 );
+
+	printint( chk_data_s.id );
+	printstr( ":  E=" );
+	printint( chk_data_s.curr_params.err );
+	printstr( ":  R=" );
+	printint( chk_data_s.curr_params.rev_cnt );
+	printstr( "  P=" );
+	printint( chk_data_s.curr_params.theta );
+	printstr( "  V=" );
+	printint( chk_data_s.curr_params.veloc );
+	printcharln(' ');
+	release_lock(); // Release Display Mutex
+} // print_hall_parameters
+/*****************************************************************************/
+static void check_hall_position_reset( // Check for correct position reset after origin detection
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int tmp_val;	// temporary manipulation variable
+	int ang_bound;	// angular_position margin of error
+
+
+	// Check for steady speed
+	if ((FAST != chk_data_s.curr_vect.comp_state[SPEED]) && (SLOW != chk_data_s.curr_vect.comp_state[SPEED]))
+	{ // NOT Steady Speed
+		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstrln("INVALID POSITION RESET TEST. ABORTIMNG");
+		release_lock(); // Release Display Mutex
+		assert(0 == 1);
+	} // if ((FAST != chk_data_s.curr_vect.comp_state[SPEED]) && (SLOW != chk_data_s.curr_vect.comp_state[SPEED]))
+
+	// Steady Speed
+
+	/* Calculate error bounds for angular position after reset: 
+		 In the worst case, the angular position may not be measured until 
+		 a whole HALL_PERIOD after the reset. The amount the position changes during this time
+     depends on the STEADY speed used for the test. We need to calculate the following
+
+		 ang_mar = (HALL_PERIOD / PLATFORM_REFERENCE_HZ) * (RPM / 60) * HALL_PER_REV
+
+		 This has to be done without overflow, and retaining as much precision as possible.
+     So it is done in the following order ...
+	*/ 
+	tmp_val = HALL_PERIOD * abs(chk_data_s.curr_params.veloc); // ~24 bits
+	tmp_val = (tmp_val + (SECS_PER_MIN - 1)) / SECS_PER_MIN; // division with round-up // ~19 bits
+	tmp_val *= HALL_PER_REV; // ~29 bits
+	ang_bound = (tmp_val + (PLATFORM_REFERENCE_HZ - 1)) / PLATFORM_REFERENCE_HZ; // division with round-up // ~2 bits
+
+	// Check for out-of-bounds angular position
+	if (ang_bound < abs(chk_data_s.curr_params.theta))
+	{
+		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstrln("ORIG_ANG_POS FAILURE");
+		release_lock(); // Release Display Mutex
+	} // if (ang_bound < abs(chk_data_s.curr_params.theta))
+
+} // check_hall_position_reset
+/*****************************************************************************/
+static void check_hall_origin_detection( // Check correct update of Hall parameters due to origin detection
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int rev_diff = chk_data_s.curr_params.rev_cnt - chk_data_s.prev_params.rev_cnt; // Change in rev. counter
+
+
+	chk_data_s.motor_tsts[ORIGIN]++;
+
+	// Check for expected value
+	if (rev_diff == chk_data_s.orig_chk)
+	{ // Found expected value (Test passed)
+
+		// Check if position reset expected
+		if (0 != chk_data_s.orig_chk)
+		{
+			check_hall_position_reset( chk_data_s ); // Check angular position has been correctly reset
+		} // if (0 != chk_data_s.orig_chk)
+
+		chk_data_s.orig_cnt = 0; // Clear Time-out
+		chk_data_s.orig_chk = 0; // Set new expected origin-bit test result
+	} // if (rev_diff == chk_data_s.orig_chk)
+	else
+	{ // Not expected value
+		if (0 < chk_data_s.orig_cnt)
+		{ // test NOT yet timed-out
+			chk_data_s.orig_cnt--; // Decrement 'timer'
+		} // if (0 < chk_data_s.orig_cnt)
+		else
+		{ // test timed-out (Test failed)
+			chk_data_s.motor_errs[ORIGIN]++;
+
+			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
+			printstr( chk_data_s.padstr1 );
+
+			switch( chk_data_s.curr_vect.comp_state[ORIGIN] )
+			{
+				case ORIG_OFF:
+					printstrln("ORIG_OFF FAILURE");
+				break; // case ORIG_OFF:
+		
+				case ORIG_ON: // Start origin-bit test
+					printstrln("ORIG_ON FAILURE");
+				break; // case ORIG_ON:
+		
+				default:
+					printstrln("ERROR: Unknown Hall Origin-state");
+					assert(0 == 1);
+				break; // default:
+			} // switch( chk_data_s.curr_vect.comp_state[ORIGIN] )
+
+			release_lock(); // Release Display Mutex
+
+			chk_data_s.orig_cnt = 0; // Clear Time-out
+			chk_data_s.orig_chk = 0; // Set new expected origin-bit test result
+		} // if (0 < chk_data_s.orig_cnt)
+	} // else !(rev_diff == chk_data_s.orig_chk)
+
+} // check_hall_origin_detection
+/*****************************************************************************/
+static void check_hall_error_status( // Check for correct update of error status due to Hall error-bit changes
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int inp_err = chk_data_s.curr_params.err; // local copy of error_status parameter
+
+
+	chk_data_s.motor_tsts[ERROR]++;
+
+	// Check for expected value
+	if (inp_err == chk_data_s.err_chk)
+	{ // Found expected value (Test passed)
+		chk_data_s.err_cnt = 0; // Clear Time-out
+	} // if (inp_err == chk_data_s.err_chk)
+	else
+	{ // Not expected value
+		if (0 < chk_data_s.err_cnt)
+		{ // test NOT yet timed-out
+			chk_data_s.err_cnt--; // Decrement 'timer'
+		} // if (0 < chk_data_s.err_cnt)
+		else
+		{ // test timed-out (Test failed)
+			chk_data_s.motor_errs[ERROR]++;
+
+			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
+			printstr( chk_data_s.padstr1 );
+
+			switch( chk_data_s.curr_vect.comp_state[ERROR] )
+			{
+				case ERR_OFF:
+					printstrln("ERR_OFF FAILURE");
+				break; // case ERR_OFF:
+		
+				case ERR_ON: // Start error_status test
+					printstrln("ERR_ON FAILURE");
+				break; // case ERR_ON:
+		
+				default:
+					printstrln("ERROR: Unknown Hall Error-state");
+					assert(0 == 1);
+				break; // default:
+			} // switch( chk_data_s.curr_vect.comp_state[ERROR] )
+
+			release_lock(); // Release Display Mutex
+
+			chk_data_s.err_cnt = 0; //  // Clear Time-out
+		} // if (0 < chk_data_s.err_cnt)
+	} // else !(inp_err == chk_data_s.err_chk)
+
+} // check_hall_error_status
+/*****************************************************************************/
+static void check_hall_spin_direction( // Check correct update of Hall spin direction
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int inp_vel = chk_data_s.curr_params.veloc; // local copy of angular_velocity parameter
+
+
+	switch( chk_data_s.curr_vect.comp_state[SPIN] )
+	{
+		case CLOCK: // Clock-wise
+			chk_data_s.motor_tsts[SPIN]++;
+			if (0 > inp_vel)
+			{
+				chk_data_s.motor_errs[SPIN]++;
+
+				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
+				printstr( chk_data_s.padstr1 );
+				printstrln("Clock-Wise FAILURE");
+				release_lock(); // Release Display Mutex
+			} // if (0 > inp_vel)
+		break; // case CLOCK:
+
+		case ANTI: // Anti-clockwise
+			chk_data_s.motor_tsts[SPIN]++;
+			if (0 < inp_vel)
+			{
+				chk_data_s.motor_errs[SPIN]++;
+
+				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
+				printstr( chk_data_s.padstr1 );
+				printstrln("Anti-Clock FAILURE");
+				release_lock(); // Release Display Mutex
+			} // if (0 < inp_vel)
+		break; // case ANTI:
+
+		default:
+			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
+			printstr( chk_data_s.padstr1 );
+			printstrln("ERROR: Unknown Hall Spin-state");
+			release_lock(); // Release Display Mutex
+			assert(0 == 1);
+		break; // default:
+	} // switch( chk_data_s.curr_vect.comp_state[SPIN] )
+
+} // check_hall_spin_direction
+/*****************************************************************************/
+static void update_hall_angular_speed( // Update accumulators for calculating Hall speed
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int curr_speed = abs( chk_data_s.curr_params.veloc ); // current angular speed
+	int prev_speed = abs( chk_data_s.prev_params.veloc ); // previous angular speed
+
+
+	switch( chk_data_s.curr_vect.comp_state[SPEED] )
+	{
+ 		case ACCEL: case DECEL: // Speed change
+			chk_data_s.speed_sum += (curr_speed - prev_speed); // Accumulate speed-change
+		break; // case ACCEL: DECEL: 
+
+		case FAST: case SLOW: // Constant Speed
+			chk_data_s.speed_sum += curr_speed; // Accumulate constant-speed
+		break; // case FAST: SLOW: 
+
+		default:
+			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
+			printstr( chk_data_s.padstr1 );
+			printstrln("ERROR: Unknown Hall Speed-state");
+			release_lock(); // Release Display Mutex
+			assert(0 == 1);
+		break; // default:
+	} // switch( chk_data_s.curr_vect.comp_state[SPEED] )
+
+	chk_data_s.speed_num++; // Update No. of samples in accumulator
+} // update_hall_angular_speed
+/*****************************************************************************/
+static void check_hall_angular_speed( // Check all Hall speed as motor accelerates/decelerates
+	CHECK_HALL_TYP &chk_data_s, // Reference to structure containing test check data
+	const SPEED_HALL_ENUM cur_speed	// Speed-state to check
+)
+{
+	int mean; // Mean speed parameter under-test
+
+
+	// Calculate mean from accumulated data (with rounding to -infinity)
+	if (0 > chk_data_s.speed_sum)
+	{  // -ve Rounding
+		mean = (chk_data_s.speed_sum - (chk_data_s.speed_num >> 1)) / chk_data_s.speed_num;
+	} // if (0 > chk_data_s.speed_sum)
+	else
+	{  // +ve Rounding
+		mean = (chk_data_s.speed_sum + (chk_data_s.speed_num >> 1)) / chk_data_s.speed_num;
+	} // else !(0 > chk_data_s.speed_sum)
+
+// acquire_lock(); printstr("NUM="); printint( chk_data_s.speed_num ); printstr("  MEAN="); printintln( mean ); release_lock(); // MB~
+
+	switch( cur_speed )
+	{
+		case ACCEL: // Accelerate
+			chk_data_s.motor_tsts[SPEED]++;
+
+			if (0 >= mean)
+			{
+				chk_data_s.motor_errs[SPEED]++;
+
+				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
+				printstr( chk_data_s.padstr1 );
+				printstrln("ACCEL FAILURE");
+				release_lock(); // Release Display Mutex
+			} // if (0 > mean)
+		break; // case ACCEL:
+
+		case FAST: // Constant Fast Speed
+			chk_data_s.motor_tsts[SPEED]++;
+
+			if (chk_data_s.hi_bound < abs(mean - HIGH_SPEED))
+			{
+				chk_data_s.motor_errs[SPEED]++;
+
+				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
+				printstr( chk_data_s.padstr1 );
+				printstrln("FAST FAILURE");
+				release_lock(); // Release Display Mutex
+			} // if (chk_data_s.hi_bound < abs(mean - HIGH_SPEED))
+		break; // case FAST:
+
+		case DECEL: // Accelerate
+			chk_data_s.motor_tsts[SPEED]++;
+
+			if (0 <= mean)
+			{
+				chk_data_s.motor_errs[SPEED]++;
+
+				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
+				printstr( chk_data_s.padstr1 );
+				printstrln("DECEL FAILURE");
+				release_lock(); // Release Display Mutex
+			} // if (0 < mean)
+		break; // case DECEL:
+
+		case SLOW: // Constant Slow Speed
+			chk_data_s.motor_tsts[SPEED]++;
+
+			if (chk_data_s.lo_bound < abs(mean - LOW_SPEED))
+			{
+				chk_data_s.motor_errs[SPEED]++;
+
+				acquire_lock(); // Acquire Display Mutex
+				printcharln(' ');
+				printstr( chk_data_s.padstr1 );
+				printstrln("SLOW FAILURE");
+				release_lock(); // Release Display Mutex
+			} // if (chk_data_s.hi_bound < abs(mean - HIGH_SPEED))
+		break; // case SLOW:
+
+		default:
+			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
+			printstr( chk_data_s.padstr1 );
+			printstrln("ERROR: Unknown Hall Speed-state");
+			release_lock(); // Release Display Mutex
+			assert(0 == 1);
+		break; // default:
+	} // switch( cur_speedspeed )
+
+} // check_hall_angular_speed
+/*****************************************************************************/
+static void check_hall_parameters( // Check all Hall parameters
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	check_hall_error_status( chk_data_s ); // Check Hall error status
+
+	check_hall_origin_detection( chk_data_s ); // Check Hall origin detection
+
+	check_hall_spin_direction( chk_data_s ); // Check Hall spin direction
+
+	update_hall_angular_speed( chk_data_s ); // Update data on Hall angular speed
+} // check_hall_parameters
+/*****************************************************************************/
+static int parameter_compare( // Check if 2 sets of Hall parameters are different
+	HALL_PARAM_TYP &params_a,	// Structure containing 1st set of Hall parameters
+	HALL_PARAM_TYP &params_b	// Structure containing 2nd set of Hall parameters
+) // return TRUE (1) if sets are different, FALSE(0) if equal
+{
+	if (params_a.theta != params_b.theta) return 1;	// Check angular_position
+
+	if (params_a.rev_cnt != params_b.rev_cnt) return 1;	// Check rev. counter
+
+	if (params_a.err != params_b.err) return 1;	// Check error_status
+
+	return 0; // No differences found
+} // parameter_compare
+/*****************************************************************************/
+static void get_new_hall_client_data( // Get next set of Hall parameters
+	CHECK_HALL_TYP &chk_data_s, // Reference to structure containing test check data
+	streaming chanend c_hall // Hall channel between Client and Server
+)
+{
+	int do_test = 0;	// Flag set when next test required
+
+
+	// Get new parameter values from Client function under test
+	foc_hall_get_parameters( chk_data_s.curr_params ,c_hall );
+
+	// Check for change in non-speed parameters
+	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
+
+	// Check for parameter change
+	if (do_test)
+	{ // Parameters changed
+
+		if (chk_data_s.print)
+		{
+			print_hall_parameters( chk_data_s ); // Print new Hall parameters
+		} // if (chk_data_s.print)
+
+		// Check if this current test vector is valid
+		if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
+		{
+			check_hall_parameters( chk_data_s ); // Check new Hall parameters
+		} // if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
+
+		chk_data_s.prev_params = chk_data_s.curr_params; // Store previous parameter values
+	} // if (chk_data_s.curr_params.theta != chk_data_s.curr_params.theta)
+} // get_new_hall_client_data
+/*****************************************************************************/
+static void initialise_speed_test_vector( // Initialise data for new speed test
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	// Clear accumulated data
+	chk_data_s.speed_sum = 0; 
+	chk_data_s.speed_num = 0; 
+} // initialise_speed_test_vector 
+/*****************************************************************************/
+static void finalise_speed_test_vector( // terminate speed test and check results
+	CHECK_HALL_TYP &chk_data_s, // Reference to structure containing test check data
+	const SPEED_HALL_ENUM cur_speed	// Speed-state to finalise
+)
+{
+	check_hall_angular_speed( chk_data_s ,cur_speed ); // Check Hall angular speed
+} // finalise_speed_test_vector 
+/*****************************************************************************/
+static void process_new_test_vector( // Process new test vector
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int change = 0; // Clear flag indicating change in test vector detected
+
+
+	// Check if error_status test
+	if (chk_data_s.curr_vect.comp_state[ERROR] != chk_data_s.prev_vect.comp_state[ERROR])
+	{ // Initialise error_status test
+
+		// Check if test already running
+		if (0 < chk_data_s.err_cnt)
+		{
+			acquire_lock(); // Acquire Display Mutex
+			printstr( chk_data_s.padstr1 );
+			printstrln("ERROR: Previous Error-status test NOT completed");
+			release_lock(); // Release Display Mutex
+			assert(0 == 1); // Abort
+		} // if (0 < chk_data_s.err_cnt)
+		else
+		{ // Start new test
+			chk_data_s.err_chk = chk_data_s.curr_vect.comp_state[ERROR]; // Expected error_status value
+			chk_data_s.err_cnt = ERR_TIMEOUT; // Start count-down
+		} // else !(0 < chk_data_s.err_tst)
+
+		change = 1; // Set flag indicating change in test vector detected
+	} // if (chk_data_s.curr_vect.comp_state[ERROR] != chk_data_s.prev_vect.comp_state[ERROR])
+
+	// Check if origin-bit test
+	if (ORIG_ON == chk_data_s.curr_vect.comp_state[ORIGIN])
+	{ // Initialise origin test
+
+		// Check if test already running
+		if (0 < chk_data_s.orig_cnt)
+		{
+			acquire_lock(); // Acquire Display Mutex
+			printstr( chk_data_s.padstr1 );
+			printstrln("ERROR: Previous Origin test NOT completed");
+			release_lock(); // Release Display Mutex
+			assert( 0 == 1); // Abort
+		} // if (0 < chk_data_s.orig_cnt)
+		else
+		{ // Start new test
+			switch( chk_data_s.curr_vect.comp_state[SPIN] )
+			{
+				case CLOCK: // Clock-wise
+					chk_data_s.orig_chk = 1; // Expected increment in rev. counter
+				break; // case CLOCK:
+		
+				case ANTI: // Anti-clockwise
+					chk_data_s.orig_chk = -1; // Expected decrement in rev. counter
+				break; // case ANTI:
+		
+				default:
+					acquire_lock(); // Acquire Display Mutex
+					printcharln(' ');
+					printstr( chk_data_s.padstr1 );
+					printstrln("ERROR: Unknown Hall Spin-state");
+					release_lock(); // Release Display Mutex
+					assert(0 == 1);
+				break; // default:
+			} // switch( chk_data_s.curr_vect.comp_state[SPIN] )
+
+			chk_data_s.orig_cnt = ORIG_TIMEOUT; // Start count-down
+		} // else !(0 < chk_data_s.orig_cnt)
+
+		change = 1; // Set flag indicating change in test vector detected
+	} // if (ORIG_ON == chk_data_s.curr_vect.comp_state[ORIGIN])
+
+	// Check for change in speed test
+	if ((chk_data_s.curr_vect.comp_state[SPEED] != chk_data_s.prev_vect.comp_state[SPEED])
+		|| (chk_data_s.curr_vect.comp_state[SPIN] != chk_data_s.prev_vect.comp_state[SPIN]))
+	{
+		finalise_speed_test_vector( chk_data_s ,chk_data_s.prev_vect.comp_state[SPEED] );
+
+// if ((chk_data_s.curr_vect.comp_state[SPEED] == FAST) &&	(chk_data_s.curr_vect.comp_state[SPIN] == ANTI)) chk_data_s.print = 1; //MB~
+
+		initialise_speed_test_vector( chk_data_s );
+
+		change = 1; // Set flag indicating change in test vector detected
+	} // if ((chk_data_s.curr_vect.comp_state[SPEED] ...
+
+	// Check if test vector changed
+	if (change)
+	{
+		chk_data_s.prev_vect = chk_data_s.curr_vect; // Update previous test-vector
+	} // if (change)
+
+	if (chk_data_s.print)
+	{
+		print_test_vector( chk_data_s.common ,chk_data_s.curr_vect ,chk_data_s.padstr1 ); // Print new test vector details
+	} // if (chk_data_s.print)
+
+} // process_new_test_vector
+/*****************************************************************************/
+static void check_motor_hall_client_data( // Display Hall results for one motor
+	CHECK_HALL_TYP &chk_data_s, // Reference to structure containing test check data
+	streaming chanend c_tst, // Channel for receiving test vectors from test generator
+	streaming chanend c_hall // Hall channel between Client and Server
+)
+{
+	timer chronometer; // XMOS timer
+	int comp_cnt; // Counter for Test Vector components
+	int do_loop = 1;   // Flag set until loop-end condition found 
+	int motor_errs = 0;   // Preset flag to NO errors for current motor
+	int motor_tsts = 0;   // Clear test ccounter for current motor
+
+
+	chronometer :> chk_data_s.time; // Get start time
+	chronometer when timerafter(chk_data_s.time + (MICRO_SEC << 1)) :> chk_data_s.time; // Wait for Test Generation to Start
+
+	acquire_lock(); // Acquire Display Mutex
+	printcharln(' ');
+	printstr( chk_data_s.padstr1 );
+	printstr("Start Checks For Motor_"); printintln( chk_data_s.id ); 
+	release_lock(); // Release Display Mutex
+
+	c_tst :> chk_data_s.curr_vect; // Initialise test-vector structure with 1st test
+
+	// special case: initialisation for first speed test
+  chk_data_s.prev_vect = chk_data_s.curr_vect;
+	initialise_speed_test_vector( chk_data_s ); 
+
+	// Loop until end condition found
+	while( do_loop )
+	{
+		select {
+			// Service any change on test channel
+			case c_tst :> chk_data_s.curr_vect :
+				// New test vector detected.
+				process_new_test_vector( chk_data_s ); // Process new test vector
+
+				// Check if testing has ended for current motor
+				if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
+				{
+					do_loop = 0; // Error flag signals end-of-loop
+				} // if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
+			break; // c_tst 
+
+			// Pace Hall Client requests, so as NOT to overload Hall server
+			case chronometer when timerafter(chk_data_s.time + HALL_PERIOD) :> chk_data_s.time :
+				get_new_hall_client_data( chk_data_s ,c_hall ); // Request data from server & check
+
+				if (0 == chk_data_s.print)
+				{
+					printchar('.'); // Progress indicator
+				} // if (0 == chk_data_s.print)
+			break; // case chronometer
+		} // select
+	} // while( loop )
+
+	// special case: finalisation for last speed test
+	finalise_speed_test_vector( chk_data_s ,chk_data_s.curr_vect.comp_state[SPEED] ); 
+
+	// Update error statistics for current motor
+	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+	{
+		motor_errs += chk_data_s.motor_errs[comp_cnt]; 
+		motor_tsts += chk_data_s.motor_tsts[comp_cnt]; 
+	} // for comp_cnt
+
+	chk_data_s.all_errs[chk_data_s.id] += motor_errs;
+	chk_data_s.all_tsts[chk_data_s.id] += motor_tsts;
+
+	acquire_lock(); // Acquire Display Mutex
+	printcharln(' ');
+	printstr( chk_data_s.padstr1 );
+	printint( motor_tsts );
+	printstrln( " tests run" );
+
+	// Check if this motor had any errors
+	if (motor_errs)
+	{
+		printstr( chk_data_s.padstr1 );
+		printint( motor_errs );
+		printstrln( " tests FAILED, as follows:" );
+
+		// Print Vector Component Names
+		for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+		{
+			printstr( chk_data_s.padstr1 );
+			printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
+			printstr(" : ");
+			printint( chk_data_s.motor_tsts[comp_cnt] );
+			printstr( " tests run" );
+
+			if (chk_data_s.motor_errs[comp_cnt])
+			{
+				printstr( ", " );
+				printint( chk_data_s.motor_errs[comp_cnt] );
+				printstr(" FAILURES");
+			} // if (chk_data_s.motor_errs[comp_cnt])
+			printcharln(' ');
+		} // for comp_cnt
+	} // if (motor_errs)
+	else
+	{
+		printstr( chk_data_s.padstr1 );
+		printstr( "All Motor_" );
+		printint( chk_data_s.id );
+ 		printstrln( " Tests PASSED" );
+	} // else !(motor_errs)
+
+	release_lock(); // Release Display Mutex
+
+	chronometer when timerafter(chk_data_s.time + MILLI_SEC) :> chk_data_s.time; // Wait for Test Generation to End
+} // check_motor_hall_client_data
+/*****************************************************************************/
+void check_all_hall_client_data( // Display Hall results for all motors
+	streaming chanend c_tst, // Channel for receiving test vectors from test generator
+	streaming chanend c_hall[] // Array of Hall channel between Client and Server
+)
+{
+	CHECK_HALL_TYP chk_data_s; // Structure containing test check data
+	int motor_cnt; // counts Motors 
+	int errs_all = 0;	// Preset flag to NO errors for all motors
+	int tsts_all = 0;	// Clear test counter for all motors
+
+
+	init_check_data( chk_data_s ); // Initialise check data
+
 	// Loop through motors, so we can print results serially
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{
-		disp_motor_hall_client_data( motor_cnt ,c_hall[motor_cnt] );
+		init_motor_checks( chk_data_s ,motor_cnt ); // Initialise Hall parameter structure
+
+		check_motor_hall_client_data( chk_data_s ,c_tst ,c_hall[motor_cnt] );
 	} // for motor_cnt
 
 	acquire_lock(); // Acquire Display Mutex
-	printstr( "                             " );
+	printstr( chk_data_s.padstr1 );
 	printstrln( "Test Check Ends " );
+
+	// Update error statistics for all motors
+	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	{
+		errs_all += chk_data_s.all_errs[motor_cnt]; 
+		tsts_all += chk_data_s.all_tsts[motor_cnt]; 
+	} // for motor_cnt
+
+	printint( tsts_all );
+	printstrln( " tests run" );
+
+	// Check for any errors
+	if (errs_all)
+	{
+		printint( errs_all );
+		printstr( " TESTS FAILED");
+		printstrln( "   (See individual motors for details)" );
+	} // if (errs_all)
+	else
+	{
+		printstrln( "ALL TESTS PASSED" );
+	} // else !(errs_all)
+
+	printcharln( ' ' );
 	release_lock(); // Release Display Mutex
-} // disp_all_hall_client_data
+} // check_all_hall_client_data
 /*****************************************************************************/

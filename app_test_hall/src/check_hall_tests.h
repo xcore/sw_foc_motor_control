@@ -20,18 +20,55 @@
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
+#include <safestring.h>
 
 #include "app_global.h"
 #include "use_locks.h"
-#include "test_hall_common.h"
+#include "hall_common.h"
 #include "hall_client.h"
+#include "test_hall_common.h"
+
+#define ERR_TIMEOUT 1 // Allowed error-status delay
+#define ORIG_TIMEOUT 1 // Allowed Hall origin-test delay
+
+#define HALL_PERIOD (40 * MICRO_SEC) // Time period between Hall Client requests for data
+
+typedef struct CHECK_HALL_TAG // Structure containing Hall check data
+{
+	COMMON_HALL_TYP common; // Structure of Hall data common to Generator and Checker
+	char padstr1[STR_LEN]; // Padding string used to format display output
+	char padstr2[STR_LEN]; // Padding string used to format display output
+	TEST_VECT_TYP curr_vect; // Structure of containing current Hall test vector (HALL conditions to be tested)
+	TEST_VECT_TYP prev_vect; // Structure of containing previous Hall test vector
+	HALL_PARAM_TYP curr_params;	// Structure containing current Hall parameters (received from Client)
+	HALL_PARAM_TYP prev_params;	// Structure containing previouis Hall parameters (received from Client)
+	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
+	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
+	int all_errs[NUMBER_OF_MOTORS]; // Array of Error accumulators for each motor
+	int all_tsts[NUMBER_OF_MOTORS]; // Array of Test accumulators for each motor
+ 	int id; // Unique motor identifier
+	int fail_cnt;	// Counter of failed tests
+	int err_chk;	// error check value
+	int err_cnt;	// Counter used in error test
+	int orig_chk;	// origin check value
+	int orig_cnt;	// Counter used in origin test
+	int speed_sum; // Accumulator for speed tests
+	int speed_num; // No of accumulations for speed tests
+	int hi_bound; // error bound for high speed test
+	int lo_bound; // error bound for low speed test
+	unsigned time; // time value when new Hall parameters received
+	int print;  // Print flag
+	int dbg;  // Debug flag
+} CHECK_HALL_TYP;
 
 /*****************************************************************************/
-/** Display HALL results for all motors
- * \param c_hall[]	// Array of channels connecting HALL client & server
+/** Display Hall results for all motors
+ * \param c_tst // Channel for sending test vecotrs to test checker
+ * \param c_hall[]	// Array of channels connecting Hall client & server
  */
-void disp_all_hall_client_data( // Display HALL results for all motors
-	streaming chanend c_hall[] // Array of HALL channels between Client and Server
+void check_all_hall_client_data( // Display Hall results for all motors
+	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
+	streaming chanend c_hall[] // Array of Hall channels between Client and Server
 );
 /*****************************************************************************/
 #endif /* _CHECK_HALL_TESTS_H_ */

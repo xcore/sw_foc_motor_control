@@ -28,11 +28,16 @@
 #include "qei_client.h"
 #include "test_qei_common.h"
 
+/** Define allowed error-status delay */
 #define ERR_TIMEOUT 1 // Allowed error-status delay
+
+/** Define allowed QEI origin-test delay */
 #define ORIG_TIMEOUT 1 // Allowed QEI origin-test delay
 
+/** Define time period between QEI Client requests for data */
 #define QEI_PERIOD (40 * MICRO_SEC) // Time period between QEI Client requests for data
 
+/** Type containing all check data */
 typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 {
 	COMMON_QEI_TYP common; // Structure of QEI data common to Generator and Checker
