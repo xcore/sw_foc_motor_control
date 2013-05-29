@@ -33,8 +33,8 @@ static void init_error_component( // Initialise QEI Test data for error_status t
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[ERR_OFF].str ," No_Err" );
-	safestrcpy( vect_comp_s.state_names[ERR_ON].str ," Err_On" );
+	safestrcpy( vect_comp_s.state_names[QEI_ERR_OFF].str ," No_Err" );
+	safestrcpy( vect_comp_s.state_names[QEI_ERR_ON].str ," Err_On" );
 
 	// Add any new component states here 
 } // init_error_component

@@ -26,7 +26,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.params.theta = 0; // Reset angular position returned to client
 	inp_qei_s.params.rev_cnt = 0; // Reset revolution counter  returned to client
 	inp_qei_s.params.veloc = 0; // Clear velocity returned to client
-	inp_qei_s.params.err = ERR_OFF; // Clear error status flag returned to client
+	inp_qei_s.params.err = QEI_ERR_OFF; // Clear error status flag returned to client
 
 	inp_qei_s.diff_time = 0; // NB Initially this is used to count input-pin changes
 	inp_qei_s.id = inp_id; // Clear Previous phase values
@@ -170,36 +170,36 @@ static void estimate_error_status( // Update estimate of error status based on n
 // We require MAX_QEI_STATUS_ERR consecutive new errors before error estimate is set
 {
 	// Check if status changed
-	if (ERR_ON == new_err)
+	if (QEI_ERR_ON == new_err)
 	{ // new error detected
 
 		// Check previous error estimate
-		if (ERR_OFF == inp_qei_s.params.err)
+		if (QEI_ERR_OFF == inp_qei_s.params.err)
 		{ // NO previous detected Error
 			inp_qei_s.status_errs++; // Increment new error count
 
 			// Check if too many errors occured
 			if (MAX_QEI_STATUS_ERR <=  inp_qei_s.status_errs)
 			{
-				inp_qei_s.params.err = ERR_ON; // Switch ON Error Estimate
+				inp_qei_s.params.err = QEI_ERR_ON; // Switch ON Error Estimate
 			} // if (MAX_QEI_STATUS_ERR <=  inp_qei_s.status_errs)
-		} // if (ERR_OFF == inp_qei_s.params.err)
-	} // if (ERR_ON == new_err)
+		} // if (QEI_ERR_OFF == inp_qei_s.params.err)
+	} // if (QEI_ERR_ON == new_err)
 	else
 	{ // NO new error detected
 
 		// Check previous error estimate
-		if (ERR_ON == inp_qei_s.params.err)
+		if (QEI_ERR_ON == inp_qei_s.params.err)
 		{ // Already detected Error
 			inp_qei_s.status_errs--; // Decrement new error count
 
 			// Check if all errors cleared
 			if (0 >=  inp_qei_s.status_errs)
 			{
-				inp_qei_s.params.err = ERR_OFF; // Switch OFF Error Estimate
+				inp_qei_s.params.err = QEI_ERR_OFF; // Switch OFF Error Estimate
 			} // if (0 >=  inp_qei_s.status_errs)
-		} // if (ERR_ON == inp_qei_s.params.err)
-	} // else !(ERR_ON == new_err)
+		} // if (QEI_ERR_ON == inp_qei_s.params.err)
+	} // else !(QEI_ERR_ON == new_err)
 
 } // estimate_error_status
 /*****************************************************************************/

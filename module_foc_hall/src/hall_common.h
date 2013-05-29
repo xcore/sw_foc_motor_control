@@ -35,6 +35,14 @@
 
 #define HALL_PER_REV (NUM_HALL_PHASES * NUM_POLE_PAIRS) // No. of HALL positions per Revolution
 
+/** Different Hall Error states */
+typedef enum ERROR_HALL_ETAG
+{
+  HALL_ERR_OFF = 0,	// No Error
+  HALL_ERR_ON,			// Error
+  NUM_HALL_ERRS	// Handy Value!-)
+} ERROR_HALL_ENUM;
+
 /** Structure containing HALL parameters for one motor */
 typedef struct HALL_PARAM_TAG // 
 {

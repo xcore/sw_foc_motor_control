@@ -103,7 +103,7 @@ static void init_motor_checks( // Initialise QEI parameter structure
 	chk_data_s.id = motor_id; // Assign Motor identifier
 
 	chk_data_s.err_cnt = 0; // Clear count-down counter used in error_status test
-	chk_data_s.err_chk = ERR_OFF; // Initialise expected error_status test result
+	chk_data_s.err_chk = QEI_ERR_OFF; // Initialise expected error_status test result
 
 	chk_data_s.orig_cnt = 0; // Clear count-down counter used in origin-bit test
 	chk_data_s.orig_chk = ORIG_OFF; // Initialise expected origin-bit test result
@@ -283,13 +283,13 @@ static void check_qei_error_status( // Check for correct update of error status 
 
 			switch( chk_data_s.curr_vect.comp_state[ERROR] )
 			{
-				case ERR_OFF:
+				case QEI_ERR_OFF:
 					printstrln("ERR_OFF FAILURE");
-				break; // case ERR_OFF:
+				break; // case QEI_ERR_OFF:
 		
-				case ERR_ON: // Start error_status test
+				case QEI_ERR_ON: // Start error_status test
 					printstrln("ERR_ON FAILURE");
-				break; // case ERR_ON:
+				break; // case QEI_ERR_ON:
 		
 				default:
 					printstrln("ERROR: Unknown QEI Error-state");

@@ -28,25 +28,42 @@
 #include "hall_server.h"
 #include "test_hall_common.h"
 
+/** Define No. of tests used for Max. speed check */
 #define MAX_TESTS 31 // No. of tests used for Max. speed check
+
+/** Define No. of tests used for Min. speed check */
 #define MIN_TESTS 3  // No. of tests used for Min. speed check
+
+/** Define No. of tests used for Acceleration check */
 #define ACC_TESTS 18 // No. of tests used for Acceleration check
+
+/** Define No. of tests used for Deceleration check */
 #define DEC_TESTS 18 // No. of tests used for Deceleration check
 
+/** Define No. of port timer values (16-bit) */
 #define NUM_PORT_TIMES (1 << 16) // No. of port timer values (16-bit)
 
+/** Define Scaling factor Used for Acceleration */
+#define ACC_SCALE 807 // Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
+
+/** Define Scaling factor Used for Deceleration */
+#define DEC_SCALE 1300 // Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+
+/** Define No. of Bits for Scaling Factor Divisor */
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
 #define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
 
-#define ACC_SCALE 807 // Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
-#define DEC_SCALE 1300 // Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+/** Type for Port timer values */
+typedef unsigned short PORT_TIME_TYP;
 
+/** Type containing array of Hall Phase values */
 typedef struct HALL_PHASE_TAG // Structure containing Array of Hall Phase values
 {
 	int vals[NUM_HALL_PHASES];	// Array of Hall Phase values (NB Increment for clockwise rotation)
 } HALL_PHASE_TYP;
 
-typedef struct GENERATE_HALL_TAG // Structure containing Hall test data
+/** Type containing all Hall test generation data */
+typedef struct GENERATE_HALL_TAG // Structure containing Hall test generation data
 {
 	COMMON_HALL_TYP common; // Structure of Hall data common to Generator and Checker
 	TEST_VECT_TYP vector; // Structure of containing Hall test vector (HALL conditions to be tested)

@@ -70,13 +70,13 @@ static void assign_test_vector_error( // Assign Error-state of test vector
 {
 	switch( inp_err )
 	{
-		case ERR_OFF: // No Errors
+		case QEI_ERR_OFF: // No Errors
 			tst_data_s.nerr = QEI_NERR_MASK; // Set error flag to NO errors (Bit_3 = 1)
-		break; // case ERR_OFF:
+		break; // case QEI_ERR_OFF:
 
-		case ERR_ON: // Force Error
+		case QEI_ERR_ON: // Force Error
 			tst_data_s.nerr = 0; // Clear (Bit_3) to Signal error condition
-		break; // case ERR_OFF:
+		break; // case QEI_ERR_OFF:
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
@@ -284,7 +284,7 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 
 	// NB These tests assume QEI_FILTER = 0
 
-	assign_test_vector_error( tst_data_s ,ERR_OFF ); // Set test vector to NO errors
+	assign_test_vector_error( tst_data_s ,QEI_ERR_OFF ); // Set test vector to NO errors
 	assign_test_vector_origin( tst_data_s ,ORIG_OFF ); // Set test vector to No Origin
 	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
 	assign_test_vector_speed( tst_data_s ,ACCEL ); // Set test vector to Accelerate
@@ -347,14 +347,14 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 	tst_data_s.vector.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
 	do_qei_vector( tst_data_s ,c_tst ,p4_tst ,((MAX_TESTS >> 1) - MAX_QEI_STATUS_ERR) );
 
-	assign_test_vector_error( tst_data_s ,ERR_ON ); // Switch on error-bit
+	assign_test_vector_error( tst_data_s ,QEI_ERR_ON ); // Switch on error-bit
 	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive errors
 	do_qei_vector( tst_data_s ,c_tst ,p4_tst ,MAX_QEI_STATUS_ERR );
 
 	tst_data_s.vector.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be set
 	do_qei_vector( tst_data_s ,c_tst ,p4_tst ,MAX_QEI_STATUS_ERR );
 
-	assign_test_vector_error( tst_data_s ,ERR_OFF ); // Switch off error-bit
+	assign_test_vector_error( tst_data_s ,QEI_ERR_OFF ); // Switch off error-bit
 	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive non-errors
 	do_qei_vector( tst_data_s ,c_tst ,p4_tst ,MAX_QEI_STATUS_ERR );
 

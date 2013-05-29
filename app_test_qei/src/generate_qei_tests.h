@@ -53,6 +53,9 @@
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
 #define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
 
+/** Type for Port timer values */
+typedef unsigned short PORT_TIME_TYP;
+
 /** Type containing array of QEI Phase values */
 typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
 {

@@ -28,11 +28,16 @@
 #include "hall_client.h"
 #include "test_hall_common.h"
 
+/** Define allowed error-status delay */
 #define ERR_TIMEOUT 1 // Allowed error-status delay
+
+/** Define allowed Hall origin-test delay */
 #define ORIG_TIMEOUT 1 // Allowed Hall origin-test delay
 
+/** Define time period between Hall Client requests for data */
 #define HALL_PERIOD (40 * MICRO_SEC) // Time period between Hall Client requests for data
 
+/** Type containing all check data */
 typedef struct CHECK_HALL_TAG // Structure containing Hall check data
 {
 	COMMON_HALL_TYP common; // Structure of Hall data common to Generator and Checker

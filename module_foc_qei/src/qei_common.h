@@ -50,13 +50,11 @@
 // QEI Command Codes (Client --> Server) 
 #define QEI_CMD_DATA_REQ	1	// QEI Data Request
 
-typedef unsigned short PORT_TIME_TYP;
-
 /** Different QEI Error states */
 typedef enum ERROR_QEI_ETAG
 {
-  ERR_OFF = 0,	// No Error
-  ERR_ON,			// Error
+  QEI_ERR_OFF = 0,	// No Error
+  QEI_ERR_ON,			// Error
   NUM_QEI_ERRS	// Handy Value!-)
 } ERROR_QEI_ENUM;
 
