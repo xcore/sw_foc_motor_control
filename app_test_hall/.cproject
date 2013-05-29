@@ -3,8 +3,8 @@
 <cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
     <storageModule moduleId="org.eclipse.cdt.core.settings">
               
-        <cconfiguration id="com.xmos.cdt.toolchain.80682916">
-            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.80682916" moduleId="org.eclipse.cdt.core.settings" name="Default">
+        <cconfiguration id="com.xmos.cdt.toolchain.27553330">
+            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.27553330" moduleId="org.eclipse.cdt.core.settings" name="Default">
                 <externalSettings />
                 <extensions>
                     <extension id="com.xmos.cdt.core.XEBinaryParser" point="org.eclipse.cdt.core.BinaryParser" />
@@ -35,17 +35,17 @@ targetID="org.eclipse.cdt.build.MakeTargetBuilder">
                 </buildTargets>
             </storageModule>
             <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-                <configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.80682916" name="Default" parent="org.eclipse.cdt.build.core.emptycfg">
-                    <folderInfo id="com.xmos.cdt.toolchain.80682916.1127281840" name="/" resourcePath="">
-                        <toolChain id = "com.xmos.cdt.toolchain.27328462" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
-                            <targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id = "com.xmos.cdt.core.platform.75524062" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform" />
-                            <builder arguments="" id = "com.xmos.cdt.builder.base.87951937" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base">
+                <configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.27553330" name="Default" parent="org.eclipse.cdt.build.core.emptycfg">
+                    <folderInfo id="com.xmos.cdt.toolchain.27553330.1127281840" name="/" resourcePath="">
+                        <toolChain id = "com.xmos.cdt.toolchain.20297271" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
+                            <targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id = "com.xmos.cdt.core.platform.70889266" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform" />
+                            <builder arguments="" id = "com.xmos.cdt.builder.base.1486617" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base">
                                 <outputEntries>
                                     <entry flags="VALUE_WORKSPACE_PATH" kind="outputPath" name="bin" />
                                 </outputEntries>
                             </builder>
-                            <tool id = "com.xmos.cdt.xc.compiler.11754076" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
-	<option id = "com.xmos.c.compiler.option.defined.symbols.50148529" name="com.xmos.c.compiler.option.defined.symbols" superClass="com.xmos.c.compiler.option.defined.symbols" valueType="definedSymbols">
+                            <tool id = "com.xmos.cdt.xc.compiler.75512496" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
+	<option id = "com.xmos.c.compiler.option.defined.symbols.74046251" name="com.xmos.c.compiler.option.defined.symbols" superClass="com.xmos.c.compiler.option.defined.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__SHRT_MAX__=32767"/>
 									<listOptionValue builtIn="false" value="__SCHAR_MAX__=127"/>
 									<listOptionValue builtIn="false" value="__SIZE_TYPE__=unsigned"/>
@@ -156,197 +156,147 @@ targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 									<listOptionValue builtIn="false" value="__WCHAR_UNSIGNED__=1"/>
 								</option>
 
-                                <option id = "com.xmos.c.compiler.option.include.paths.67735265" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
+                                <option id = "com.xmos.c.compiler.option.include.paths.81167400" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/gcc&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/c++/4.2.1&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/c++/4.2.1/xcore-xmos-elf&quot;' />
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <inputType id = "com.xmos.cdt.xc.compiler.input.43998392" name="XC Sources" superClass="com.xmos.cdt.xc.compiler.input" />
-                                <option id = "gnu.c.compiler.option.include.paths.40893418" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <inputType id = "com.xmos.cdt.xc.compiler.input.83836653" name="XC Sources" superClass="com.xmos.cdt.xc.compiler.input" />
+                                <option id = "gnu.c.compiler.option.include.paths.2823937" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.xc.compiler.base.66538913" name="com.xmos.cdt.xc.compiler.base" superClass="com.xmos.cdt.xc.compiler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.26028163" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.xc.compiler.base.15458936" name="com.xmos.cdt.xc.compiler.base" superClass="com.xmos.cdt.xc.compiler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.84524712" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.76121105" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.83104709" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.c.compiler.base.72672109" name="com.xmos.cdt.c.compiler.base" superClass="com.xmos.cdt.c.compiler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.50647618" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.c.compiler.base.37425361" name="com.xmos.cdt.c.compiler.base" superClass="com.xmos.cdt.c.compiler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.32863924" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.94583619" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.43404030" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.cpp.compiler.base.28762221" name="com.xmos.cdt.cpp.compiler.base" superClass="com.xmos.cdt.cpp.compiler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.47530990" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.cpp.compiler.base.12001339" name="com.xmos.cdt.cpp.compiler.base" superClass="com.xmos.cdt.cpp.compiler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.18258951" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.29209650" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.94146619" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.core.assembler.base.40507815" name="com.xmos.cdt.core.assembler.base" superClass="com.xmos.cdt.core.assembler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.75736981" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.core.assembler.base.1049904" name="com.xmos.cdt.core.assembler.base" superClass="com.xmos.cdt.core.assembler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.19164574" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.929391" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.73660898" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
@@ -447,8 +397,8 @@ targetID="org.eclipse.cdt.build.MakeTargetBuilder">
             <storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings" />
         </cconfiguration>
 
-        <cconfiguration id="com.xmos.cdt.toolchain.54098428">
-            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.54098428" moduleId="org.eclipse.cdt.core.settings" name="Debug">
+        <cconfiguration id="com.xmos.cdt.toolchain.78541366">
+            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.78541366" moduleId="org.eclipse.cdt.core.settings" name="Debug">
                 <externalSettings />
                 <extensions>
                     <extension id="com.xmos.cdt.core.XEBinaryParser" point="org.eclipse.cdt.core.BinaryParser" />
@@ -479,17 +429,17 @@ targetID="org.eclipse.cdt.build.MakeTargetBuilder">
                 </buildTargets>
             </storageModule>
             <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-                <configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.54098428" name="Debug" parent="org.eclipse.cdt.build.core.emptycfg">
-                    <folderInfo id="com.xmos.cdt.toolchain.54098428.1127281840" name="/" resourcePath="">
-                        <toolChain id = "com.xmos.cdt.toolchain.21850645" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
-                            <targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id = "com.xmos.cdt.core.platform.38931400" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform" />
-                            <builder arguments="CONFIG=Debug" id = "com.xmos.cdt.builder.base.22819835" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base">
+                <configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.78541366" name="Debug" parent="org.eclipse.cdt.build.core.emptycfg">
+                    <folderInfo id="com.xmos.cdt.toolchain.78541366.1127281840" name="/" resourcePath="">
+                        <toolChain id = "com.xmos.cdt.toolchain.15542584" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
+                            <targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id = "com.xmos.cdt.core.platform.80438357" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform" />
+                            <builder arguments="CONFIG=Debug" id = "com.xmos.cdt.builder.base.31723359" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base">
                                 <outputEntries>
                                     <entry flags="VALUE_WORKSPACE_PATH" kind="outputPath" name="bin/Debug" />
                                 </outputEntries>
                             </builder>
-                            <tool id = "com.xmos.cdt.xc.compiler.22365185" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
-	<option id = "com.xmos.c.compiler.option.defined.symbols.34611443" name="com.xmos.c.compiler.option.defined.symbols" superClass="com.xmos.c.compiler.option.defined.symbols" valueType="definedSymbols">
+                            <tool id = "com.xmos.cdt.xc.compiler.35696387" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
+	<option id = "com.xmos.c.compiler.option.defined.symbols.48631823" name="com.xmos.c.compiler.option.defined.symbols" superClass="com.xmos.c.compiler.option.defined.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__SHRT_MAX__=32767"/>
 									<listOptionValue builtIn="false" value="__SCHAR_MAX__=127"/>
 									<listOptionValue builtIn="false" value="__SIZE_TYPE__=unsigned"/>
@@ -600,197 +550,147 @@ targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 									<listOptionValue builtIn="false" value="__WCHAR_UNSIGNED__=1"/>
 								</option>
 
-                                <option id = "com.xmos.c.compiler.option.include.paths.26707447" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
+                                <option id = "com.xmos.c.compiler.option.include.paths.83787656" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/gcc&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/c++/4.2.1&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/c++/4.2.1/xcore-xmos-elf&quot;' />
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <inputType id = "com.xmos.cdt.xc.compiler.input.15859655" name="XC Sources" superClass="com.xmos.cdt.xc.compiler.input" />
-                                <option id = "gnu.c.compiler.option.include.paths.25884636" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <inputType id = "com.xmos.cdt.xc.compiler.input.86656904" name="XC Sources" superClass="com.xmos.cdt.xc.compiler.input" />
+                                <option id = "gnu.c.compiler.option.include.paths.50987401" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.xc.compiler.base.38581638" name="com.xmos.cdt.xc.compiler.base" superClass="com.xmos.cdt.xc.compiler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.92686328" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.xc.compiler.base.12513603" name="com.xmos.cdt.xc.compiler.base" superClass="com.xmos.cdt.xc.compiler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.72595242" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.81645100" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.5520393" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.c.compiler.base.38319609" name="com.xmos.cdt.c.compiler.base" superClass="com.xmos.cdt.c.compiler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.82880241" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.c.compiler.base.24077223" name="com.xmos.cdt.c.compiler.base" superClass="com.xmos.cdt.c.compiler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.75107845" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.10303565" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.89198844" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.cpp.compiler.base.29775400" name="com.xmos.cdt.cpp.compiler.base" superClass="com.xmos.cdt.cpp.compiler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.89331959" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.cpp.compiler.base.44802093" name="com.xmos.cdt.cpp.compiler.base" superClass="com.xmos.cdt.cpp.compiler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.10465144" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.64099486" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.85473548" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.core.assembler.base.24492266" name="com.xmos.cdt.core.assembler.base" superClass="com.xmos.cdt.core.assembler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.11188833" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.core.assembler.base.65707286" name="com.xmos.cdt.core.assembler.base" superClass="com.xmos.cdt.core.assembler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.77221357" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.60779717" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.24526352" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
@@ -891,8 +791,8 @@ targetID="org.eclipse.cdt.build.MakeTargetBuilder">
             <storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings" />
         </cconfiguration>
 
-        <cconfiguration id="com.xmos.cdt.toolchain.69226207">
-            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.69226207" moduleId="org.eclipse.cdt.core.settings" name="Release">
+        <cconfiguration id="com.xmos.cdt.toolchain.1181900">
+            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.1181900" moduleId="org.eclipse.cdt.core.settings" name="Release">
                 <externalSettings />
                 <extensions>
                     <extension id="com.xmos.cdt.core.XEBinaryParser" point="org.eclipse.cdt.core.BinaryParser" />
@@ -923,17 +823,17 @@ targetID="org.eclipse.cdt.build.MakeTargetBuilder">
                 </buildTargets>
             </storageModule>
             <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-                <configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.69226207" name="Release" parent="org.eclipse.cdt.build.core.emptycfg">
-                    <folderInfo id="com.xmos.cdt.toolchain.69226207.1127281840" name="/" resourcePath="">
-                        <toolChain id = "com.xmos.cdt.toolchain.22585534" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
-                            <targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id = "com.xmos.cdt.core.platform.889140" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform" />
-                            <builder arguments="CONFIG=Release" id = "com.xmos.cdt.builder.base.14575659" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base">
+                <configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.1181900" name="Release" parent="org.eclipse.cdt.build.core.emptycfg">
+                    <folderInfo id="com.xmos.cdt.toolchain.1181900.1127281840" name="/" resourcePath="">
+                        <toolChain id = "com.xmos.cdt.toolchain.9455588" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
+                            <targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id = "com.xmos.cdt.core.platform.10973777" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform" />
+                            <builder arguments="CONFIG=Release" id = "com.xmos.cdt.builder.base.15918634" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base">
                                 <outputEntries>
                                     <entry flags="VALUE_WORKSPACE_PATH" kind="outputPath" name="bin/Release" />
                                 </outputEntries>
                             </builder>
-                            <tool id = "com.xmos.cdt.xc.compiler.128184" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
-	<option id = "com.xmos.c.compiler.option.defined.symbols.28593548" name="com.xmos.c.compiler.option.defined.symbols" superClass="com.xmos.c.compiler.option.defined.symbols" valueType="definedSymbols">
+                            <tool id = "com.xmos.cdt.xc.compiler.87380440" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
+	<option id = "com.xmos.c.compiler.option.defined.symbols.18809960" name="com.xmos.c.compiler.option.defined.symbols" superClass="com.xmos.c.compiler.option.defined.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__SHRT_MAX__=32767"/>
 									<listOptionValue builtIn="false" value="__SCHAR_MAX__=127"/>
 									<listOptionValue builtIn="false" value="__SIZE_TYPE__=unsigned"/>
@@ -1044,197 +944,147 @@ targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 									<listOptionValue builtIn="false" value="__WCHAR_UNSIGNED__=1"/>
 								</option>
 
-                                <option id = "com.xmos.c.compiler.option.include.paths.28019636" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
+                                <option id = "com.xmos.c.compiler.option.include.paths.99784414" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/gcc&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/c++/4.2.1&quot;' />
                                     <listOptionValue builtIn="false" value='&quot;${XMOS_DOC_PATH}/../target/include/c++/4.2.1/xcore-xmos-elf&quot;' />
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <inputType id = "com.xmos.cdt.xc.compiler.input.18219159" name="XC Sources" superClass="com.xmos.cdt.xc.compiler.input" />
-                                <option id = "gnu.c.compiler.option.include.paths.95476179" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <inputType id = "com.xmos.cdt.xc.compiler.input.72080571" name="XC Sources" superClass="com.xmos.cdt.xc.compiler.input" />
+                                <option id = "gnu.c.compiler.option.include.paths.84490828" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.xc.compiler.base.88476959" name="com.xmos.cdt.xc.compiler.base" superClass="com.xmos.cdt.xc.compiler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.30752326" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.xc.compiler.base.51261364" name="com.xmos.cdt.xc.compiler.base" superClass="com.xmos.cdt.xc.compiler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.87615160" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.96482420" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.37676142" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.c.compiler.base.45894034" name="com.xmos.cdt.c.compiler.base" superClass="com.xmos.cdt.c.compiler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.9279309" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.c.compiler.base.70197899" name="com.xmos.cdt.c.compiler.base" superClass="com.xmos.cdt.c.compiler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.61317629" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.24835013" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.5054530" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.cpp.compiler.base.22121681" name="com.xmos.cdt.cpp.compiler.base" superClass="com.xmos.cdt.cpp.compiler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.28379422" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.cpp.compiler.base.9257041" name="com.xmos.cdt.cpp.compiler.base" superClass="com.xmos.cdt.cpp.compiler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.98541182" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.49833919" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.34760910" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
-                            <tool id = "com.xmos.cdt.core.assembler.base.56962301" name="com.xmos.cdt.core.assembler.base" superClass="com.xmos.cdt.core.assembler.base">
-                                <option id = "gnu.c.compiler.option.include.paths.5522627" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                            <tool id = "com.xmos.cdt.core.assembler.base.54320209" name="com.xmos.cdt.core.assembler.base" superClass="com.xmos.cdt.core.assembler.base">
+                                <option id = "gnu.c.compiler.option.include.paths.89665230" valueType="includePath" superClass="gnu.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
-                                <option id = "com.xmos.c.compiler.option.include.paths.14482033" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
-                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/bin/Release}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
+                                <option id = "com.xmos.c.compiler.option.include.paths.58356764" valueType="includePath" superClass="com.xmos.c.compiler.option.include.paths">
+                                    <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/fake_inc}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/.build_Release/m_foc_qei}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei/src}&quot;' />
-<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/.build_Release/fake_inc}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/app_test_hall/bin/Release}&quot;' />
 
                                 </option>
                             </tool>
@@ -1337,6 +1187,6 @@ targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 
     </storageModule>
     <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-        <project id = "app_test_qei.null.57093268" name="app_test_qei" />
+        <project id = "app_test_hall.null.38144138" name="app_test_hall" />
     </storageModule>
 </cproject>
