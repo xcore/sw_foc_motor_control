@@ -678,7 +678,13 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 
 	// special case: initialisation for first speed test
   chk_data_s.prev_vect = chk_data_s.curr_vect;
+
 	initialise_speed_test_vector( chk_data_s ); 
+
+	if (chk_data_s.print)
+	{
+		print_test_vector( chk_data_s.common ,chk_data_s.curr_vect ,chk_data_s.padstr1 ); // Print new test vector details
+	} // if (chk_data_s.print)
 
 	// Loop until end condition found
 	while( do_loop )

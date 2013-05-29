@@ -13,6 +13,7 @@
  **/                                   
 
 #include "hall_server.h"
+#include "use_locks.h" //MB~ Dbg
 
 /*****************************************************************************/
 static void init_hall_data( // Initialise Hall data structure for one motor
@@ -21,8 +22,10 @@ static void init_hall_data( // Initialise Hall data structure for one motor
 	unsigned &hall_buf // Reference to buffer of  raw hall data for one motor
 )
 {
-	hall_data_s.id = motor_id; // Set unique motor id
 	hall_data_s.params.hall_val = 0;
+	hall_data_s.params.err = HALL_ERR_OFF; // Clear error status flag returned to client
+
+	hall_data_s.id = motor_id; // Set unique motor id
 	hall_data_s.status_errs = 0; // Initialise counter for QEI status errors
 	hall_buf = 0;
 
@@ -78,7 +81,6 @@ static void service_hall_input_pins( // Process new Hall data
 	unsigned err_flg; // Flag set when Error condition detected
 
 
-// printstr("S1:"); printintln( hall_data_s.params.hall_val );
 	phase_val = inp_pins & HALL_PHASE_MASK; // Mask out phase bits of Hall Sensor data
 	err_flg = !(inp_pins & HALL_NERR_MASK); 	// NB Bit_3=0, and err_flg=1, if error detected, 
 
@@ -88,7 +90,6 @@ static void service_hall_input_pins( // Process new Hall data
 //MB~ TODO: Insert filter here
 
 	hall_data_s.params.hall_val = phase_val; // NB Filtering not yet implemented
-// printstr("S2:"); printintln( hall_data_s.params.hall_val );
 
 	return;
 } // service_hall_input_pins
@@ -115,6 +116,7 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	int motor_cnt; // Counts number of motors
 
 
+// acquire_lock(); printstr("C1="); printintln(all_hall_data[0].params.err); release_lock(); // MB~
 	// Initialise Hall data for each motor
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{ 
@@ -125,6 +127,7 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	while (1) {
 #pragma xta endpoint "hall_main_loop"
 #pragma ordered // If multiple cases fire at same time, service top-most first
+
 		select {
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) p4_hall[motor_id] when pinsneq(hall_bufs[motor_id]) :> hall_bufs[motor_id] :

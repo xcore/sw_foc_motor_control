@@ -23,6 +23,12 @@
 /** Define the number of pole-pairs in motor */
 #define NUM_POLE_PAIRS 4
 
+/** Define the number of different Hall sensor positions per pole-pair */
+#define HALL_PER_POLE 6
+
+/** Define default No. OF Hall positions per Revolution */
+#define HALL_PER_REV (HALL_PER_POLE * NUM_POLE_PAIRS)
+
 /**  Default Filter Mode  1 == On */
 #define HALL_FILTER 0
 
@@ -33,7 +39,7 @@
 #define MAX_SPEC_RPM 4000
 
 /** Set flag for verbose printing*/
-#define PRINT_TST_HALL 0
+#define PRINT_TST_HALL 1
 
 /* This is a bit of a cludge, we are using a non-standard configuration
  * where the timer on the tile for inner_loop() is running at 250 MHz,

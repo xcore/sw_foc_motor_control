@@ -15,12 +15,23 @@
 #ifndef _HALL_COMMON_H_
 #define _HALL_COMMON_H_
 
+#include "app_global.h"
+
+#ifndef PLATFORM_REFERENCE_MHZ
+	#error Define. PLATFORM_REFERENCE_MHZ in app_global.h
+#endif
+
+#ifndef SECS_PER_MIN
+	#error Define. SECS_PER_MIN in app_global.h
+#endif
+
 #ifndef NUM_POLE_PAIRS 
 	#error Define. NUM_POLE_PAIRS in app_global.h
 #endif // NUM_POLE_PAIRS
 
-/** Define the number of different HALL sensor positions per pole-pair */
-#define NUM_HALL_PHASES 6 // Number of HALL Phases (per pole-pair)
+#ifndef HALL_PER_REV 
+	#error Define. HALL_PER_REV in app_global.h
+#endif // HALL_PER_REV
 
 /** Used to mask out Hall error-bit */
 #define HALL_NERR_MASK (0b1000) // Used to mask out Hall Error Bit(s)
@@ -33,7 +44,17 @@
 
 #define HALL_ALL_MASK (HALL_NERR_MASK | HALL_PHASE_MASK) // Used to mask out all 4-bits of Hall Sensor Data
 
-#define HALL_PER_REV (NUM_HALL_PHASES * NUM_POLE_PAIRS) // No. of HALL positions per Revolution
+#define HALL_REV_MASK (HALL_PER_REV - 1) // Mask used to force Hall count into base-range [0..HALL_REV_MASK] 
+
+/* Calculate speed definitions, preserving precision and preventing overflow !-)
+ * 
+ * The time difference between changes in HALL data is measured in 'ticks'.
+ * For a Platform Reference frequency of 100 MHz, there will be 6,000,000,000 ticks/minute
+ * If there are 24 different HALL points per revolution, then angular velocity (in RPM) is 
+ * (60 * 100000000)/(24 * Tick_Diff) or (TICKS_PER_MIN_PER_HALL / Tick_Diff) 
+ */
+#define TICKS_PER_SEC_PER_HALL ((PLATFORM_REFERENCE_HZ + (HALL_PER_REV >> 1)) / HALL_PER_REV) // Ticks/sec/angular_position (rounded) // 14-bits
+#define TICKS_PER_MIN_PER_HALL (SECS_PER_MIN * TICKS_PER_SEC_PER_HALL) // Ticks/min/angular_position // 30 bits
 
 /** Different Hall Error states */
 typedef enum ERROR_HALL_ETAG

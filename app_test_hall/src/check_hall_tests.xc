@@ -52,10 +52,7 @@ static void init_motor_checks( // Initialise Hall parameter structure
 	chk_data_s.id = motor_id; // Assign Motor identifier
 
 	chk_data_s.err_cnt = 0; // Clear count-down counter used in error_status test
-	chk_data_s.err_chk = ERR_OFF; // Initialise expected error_status test result
-
-	chk_data_s.orig_cnt = 0; // Clear count-down counter used in origin-bit test
-	chk_data_s.orig_chk = ORIG_OFF; // Initialise expected origin-bit test result
+	chk_data_s.err_chk = HALL_ERR_OFF; // Initialise expected error_status test result
 
 	chk_data_s.curr_params.hall_val = 0;
 	chk_data_s.curr_params.err = 0; // No Errors
@@ -117,13 +114,13 @@ static void check_hall_error_status( // Check for correct update of error status
 
 			switch( chk_data_s.curr_vect.comp_state[ERROR] )
 			{
-				case ERR_OFF:
-					printstrln("ERR_OFF FAILURE");
-				break; // case ERR_OFF:
+				case HALL_ERR_OFF:
+					printstrln("HALL_ERR_OFF FAILURE");
+				break; // case HALL_ERR_OFF:
 		
-				case ERR_ON: // Start error_status test
-					printstrln("ERR_ON FAILURE");
-				break; // case ERR_ON:
+				case HALL_ERR_ON: // Start error_status test
+					printstrln("HALL_ERR_ON FAILURE");
+				break; // case HALL_ERR_ON:
 		
 				default:
 					printstrln("ERROR: Unknown Hall Error-state");
@@ -312,6 +309,11 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 
 	// special case: initialisation for first speed test
   chk_data_s.prev_vect = chk_data_s.curr_vect;
+
+	if (chk_data_s.print)
+	{
+		print_test_vector( chk_data_s.common ,chk_data_s.curr_vect ,chk_data_s.padstr1 ); // Print new test vector details
+	} // if (chk_data_s.print)
 
 	// Loop until end condition found
 	while( do_loop )

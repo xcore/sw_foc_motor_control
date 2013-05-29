@@ -23,22 +23,23 @@ on tile[MOTOR_TILE]: port out p4_tst[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER ,PORT
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {
-	streaming chan c_hall[NUMBER_OF_MOTORS];
+	streaming chan c_hall[NUMBER_OF_MOTORS]; // Channel connecting Client and Server
+	streaming chan c_tst; // Channel for sending test vectors from Generator to Checker core
 
 
 	par
-	{	// NB All cores are run on one tile so that all cores use the same clock frequency (250 MHz)
+	{	// NB All cores are run on one tile so that all cores use the same clock frequency (100 MHz)
 		on tile[MOTOR_TILE] : 
 		{
 		  init_locks(); // Initialise Mutex for display
 
 			par
 			{
-				gen_all_hall_test_data( p4_tst ); // Generate test data
+				gen_all_hall_test_data( c_tst ,p4_tst ); // Generate test data
 		
 				foc_hall_do_multiple( c_hall, p4_hall ); // Server function under test
 		
-				check_all_hall_client_data( c_hall ); // Check results using HALL Client
+				check_all_hall_client_data( c_tst ,c_hall ); // Check results using Hall Client
 			} // par
 		
 		  free_locks(); // Free Mutex for display

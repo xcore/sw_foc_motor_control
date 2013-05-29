@@ -28,7 +28,7 @@ int main ( void ) // Program Entry Point
 
 
 	par
-	{	// NB All cores are run on one tile so that all cores use the same clock frequency (250 MHz)
+	{	// NB All cores are run on one tile so that all cores use the same clock frequency (100 MHz)
 		on tile[MOTOR_TILE] : 
 		{
 		  init_locks(); // Initialise Mutex for display

@@ -31,9 +31,6 @@
 /** Define allowed error-status delay */
 #define ERR_TIMEOUT 1 // Allowed error-status delay
 
-/** Define allowed Hall origin-test delay */
-#define ORIG_TIMEOUT 1 // Allowed Hall origin-test delay
-
 /** Define time period between Hall Client requests for data */
 #define HALL_PERIOD (40 * MICRO_SEC) // Time period between Hall Client requests for data
 
@@ -55,12 +52,6 @@ typedef struct CHECK_HALL_TAG // Structure containing Hall check data
 	int fail_cnt;	// Counter of failed tests
 	int err_chk;	// error check value
 	int err_cnt;	// Counter used in error test
-	int orig_chk;	// origin check value
-	int orig_cnt;	// Counter used in origin test
-	int speed_sum; // Accumulator for speed tests
-	int speed_num; // No of accumulations for speed tests
-	int hi_bound; // error bound for high speed test
-	int lo_bound; // error bound for low speed test
 	unsigned time; // time value when new Hall parameters received
 	int print;  // Print flag
 	int dbg;  // Debug flag
