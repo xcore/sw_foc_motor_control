@@ -21,8 +21,8 @@
  * copyright notice above.
 \******************************************************************************/
 
-#ifndef _MODULE_FOC_QEI_EXAMPLE_CONF_H_
-#define _MODULE_FOC_QEI_EXAMPLE_CONF_H_
+#ifndef _MODULE_FOC_HALL_EXAMPLE_CONF_H_
+#define _MODULE_FOC_HALL_EXAMPLE_CONF_H_
 
 /** Define this to switch on error checks */
 #define CHECK_ERRORS 1
@@ -33,14 +33,14 @@
 /** Define the number of pole-pairs in motor */
 #define NUM_POLE_PAIRS 4
 
-/** Define the number of different QEI sensor positions per pole-pair */
-#define QEI_PER_POLE 256
+/** Define the number of different Hall sensor positions per pole-pair */
+#define HALL_PER_POLE 256
 
-/**  Default No. OF QEI positions per Revolution */
-#define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
+/**  Default No. OF Hall positions per Revolution */
+#define HALL_PER_REV (HALL_PER_POLE * NUM_POLE_PAIRS)
 
 /**  Default Filter Mode  1 == On */
-#define QEI_FILTER 0
+#define HALL_FILTER 0
 
 /**  Seconds in a minute */
 #define SECS_PER_MIN 60
@@ -55,7 +55,7 @@
  * Therefore, we set up the timer frequency here.
  */
 #ifndef PLATFORM_REFERENCE_MHZ
-#define PLATFORM_REFERENCE_MHZ 250
+#define PLATFORM_REFERENCE_MHZ 100
 #define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ) 
 
 /** Define Referency Frequency to Match that in platform configuration (.XN) file */
@@ -66,4 +66,4 @@
 #define MILLI_SEC (PLATFORM_REFERENCE_KHZ) // One milli-second in clock ticks
 #define MICRO_SEC (PLATFORM_REFERENCE_MHZ) // One micro-second in clock ticks
 
-#endif // _MODULE_FOC_QEI_EXAMPLE_CONF_H_
+#endif // _MODULE_FOC_HALL_EXAMPLE_CONF_H_

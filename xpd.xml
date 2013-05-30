@@ -18,6 +18,14 @@
             <keyword>FOC</keyword>
             <keyword>Motor Control</keyword>
         </component>
+        <component name = "Hall Sensor Interface Component" type = "component" buildresults_path = "module_foc_hall/.module_foc_hall.buildinfo" scope = "Early Development" path = "module_foc_hall" metainfo_path = "module_foc_hall/module_foc_hall.metainfo" local = "false" id = "module_foc_hall" description = "The Hall module is a xSoftIP component of the FOC Motor control suite for processing raw Hall-sensor data supplied by the motor">
+            <board>XP-MC-CTRL-L2</board>
+            <board>XA-MC-PWR-DLV</board>
+            <keyword>Hall</keyword>
+            <keyword>"Hall Sensor"</keyword>
+            <keyword>FOC</keyword>
+            <keyword>Motor Control</keyword>
+        </component>
         <component description = "xSIM testbench for Hall component" type = "demoCode" scope = "Example" path = "app_test_hall" local = "false" id = "app_test_hall" name = "Hall Sensor Interface Test Harness">
             <board>None (works on simulator)</board>
             <componentDependency>module_foc_hall</componentDependency>
