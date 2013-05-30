@@ -39,7 +39,7 @@ static void init_check_data( // Initialise check data for Hall tests
 		chk_data_s.all_tsts[motor_cnt] = 0;
 	} // for motor_cnt
 
-} // init_motor_checks
+} // init_check_data
 /*****************************************************************************/
 static void init_motor_checks( // Initialise Hall parameter structure
 	CHECK_HALL_TYP &chk_data_s, // Reference to structure containing test check data
@@ -54,7 +54,8 @@ static void init_motor_checks( // Initialise Hall parameter structure
 	chk_data_s.err_cnt = 0; // Clear count-down counter used in error_status test
 	chk_data_s.err_chk = HALL_ERR_OFF; // Initialise expected error_status test result
 
-	chk_data_s.curr_params.hall_val = 0;
+
+	chk_data_s.curr_params.hall_val = 0; // Initialise with invalid Hall phase value
 	chk_data_s.curr_params.err = 0; // No Errors
 
 	chk_data_s.prev_params = chk_data_s.curr_params; // Initialise previous parameter values
@@ -136,19 +137,104 @@ static void check_hall_error_status( // Check for correct update of error status
 
 } // check_hall_error_status
 /*****************************************************************************/
+static void check_hall_phase_change( // Check for valid phase change
+	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	unsigned curr_val = chk_data_s.curr_params.hall_val; // local copy of current Hall phase value
+	unsigned prev_val; // local copy of previous Hall phase value
+	unsigned curr_off; // array offset for current phase value
+	unsigned prev_off; // array offset for previous phase value 
+	int fail_cnt = 0; // Clear failure counter
+
+
+	chk_data_s.motor_tsts[PHASE]++;
+
+	// Check for correct phase value
+	if ((curr_val < 1) || (HALL_PER_POLE < curr_val))
+	{ // Invalid new Phase value
+		fail_cnt++; // Increment count of failures
+
+		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstrln("Invalid Phase FAILURE");
+		release_lock(); // Release Display Mutex
+	} // if ((curr_val < 1) || (HALL_PER_POLE < curr_val))
+	else
+	{ // Valid new Phase value
+		prev_val = chk_data_s.prev_params.hall_val; // local copy of previous Hall phase value
+
+		if ((prev_val < 1) || (HALL_PER_POLE < prev_val))
+		{ // Invalid new Phase value
+			fail_cnt++; // Increment count of failures
+
+			acquire_lock(); // Acquire Display Mutex
+			printcharln(' ');
+			printstr( chk_data_s.padstr1 );
+			printstrln("Invalid Phase FAILURE");
+			release_lock(); // Release Display Mutex
+		} // if ((prev_val < 1) || (HALL_PER_POLE < prev_val))
+		else
+		{ // Valid new Phase value
+			curr_off = chk_data_s.common.inverse[curr_val];	// Get array offset for current phase value
+			prev_off = chk_data_s.common.inverse[prev_val];	// Get array offset for previous phase value
+
+			// Calculate change in phase offset
+			chk_data_s.off_diff = HALL_PER_POLE + curr_off - prev_off; // Force +ve change
+			if (HALL_PER_POLE <= chk_data_s.off_diff) chk_data_s.off_diff -= HALL_PER_POLE; // Force into phase-offset range
+		
+acquire_lock(); printstr( "CO="); printint(curr_off); printstr(" OD="); printintln(chk_data_s.off_diff); release_lock(); // MB~
+			// Check for valid offset difference
+			switch( chk_data_s.off_diff )
+			{
+				case 0: // No Change
+					fail_cnt++; // Increment count of failures
+		
+					acquire_lock(); // Acquire Display Mutex
+					printcharln(' ');
+					printstr( chk_data_s.padstr1 );
+					printstrln("No-Change FAILURE");
+					release_lock(); // Release Display Mutex
+				break; // case 0:
+		
+				case 1: // Clock-wise
+				break; // case 1: 
+		
+				case (HALL_PER_POLE - 1): // Anti-clockwise
+				break; // case (HALL_PER_POLE - 1):
+		
+				default:
+					fail_cnt++; // Increment count of failures
+		
+					acquire_lock(); // Acquire Display Mutex
+					printcharln(' ');
+					printstr( chk_data_s.padstr1 );
+					printstrln("Phase-Jump FAILURE");
+					release_lock(); // Release Display Mutex
+				break; // default:
+			} // switch( chk_data_s.off_diff )
+		} // else !((prev_val < 1) || (HALL_PER_POLE < prev_val))
+	} // else !((curr_val < 1) || (HALL_PER_POLE < curr_val))
+
+	// Check for any phase failures
+	if (0 < fail_cnt)
+	{
+		chk_data_s.motor_errs[PHASE]++; // Increment failure count for current motor
+	} // if (0 < fail_cnt)
+	
+} // check_hall_phase_change
+/*****************************************************************************/
 static void check_hall_spin_direction( // Check correct update of Hall spin direction
 	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-#ifdef MB
-	int inp_vel = chk_data_s.curr_params.veloc; // local copy of angular_velocity parameter
-
+	chk_data_s.motor_tsts[SPIN]++;
 
 	switch( chk_data_s.curr_vect.comp_state[SPIN] )
 	{
 		case CLOCK: // Clock-wise
-			chk_data_s.motor_tsts[SPIN]++;
-			if (0 > inp_vel)
+			if (1 != chk_data_s.off_diff)
 			{
 				chk_data_s.motor_errs[SPIN]++;
 
@@ -157,12 +243,11 @@ static void check_hall_spin_direction( // Check correct update of Hall spin dire
 				printstr( chk_data_s.padstr1 );
 				printstrln("Clock-Wise FAILURE");
 				release_lock(); // Release Display Mutex
-			} // if (0 > inp_vel)
+			} // if (1 != chk_data_s.off_diff)
 		break; // case CLOCK:
 
 		case ANTI: // Anti-clockwise
-			chk_data_s.motor_tsts[SPIN]++;
-			if (0 < inp_vel)
+			if ((HALL_PER_POLE - 1) != chk_data_s.off_diff)
 			{
 				chk_data_s.motor_errs[SPIN]++;
 
@@ -171,7 +256,7 @@ static void check_hall_spin_direction( // Check correct update of Hall spin dire
 				printstr( chk_data_s.padstr1 );
 				printstrln("Anti-Clock FAILURE");
 				release_lock(); // Release Display Mutex
-			} // if (0 < inp_vel)
+			} // if ((HALL_PER_POLE - 1) != chk_data_s.off_diff)
 		break; // case ANTI:
 
 		default:
@@ -183,7 +268,6 @@ static void check_hall_spin_direction( // Check correct update of Hall spin dire
 			assert(0 == 1);
 		break; // default:
 	} // switch( chk_data_s.curr_vect.comp_state[SPIN] )
-#endif //MB~
 
 } // check_hall_spin_direction
 /*****************************************************************************/
@@ -192,6 +276,8 @@ static void check_hall_parameters( // Check all Hall parameters
 )
 {
 	check_hall_error_status( chk_data_s ); // Check Hall error status
+
+	check_hall_phase_change( chk_data_s ); // Check Hall phase changes
 
 	check_hall_spin_direction( chk_data_s ); // Check Hall spin direction
 } // check_hall_parameters
@@ -234,7 +320,11 @@ static void get_new_hall_client_data( // Get next set of Hall parameters
 		// Check if this current test vector is valid
 		if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
 		{
-			check_hall_parameters( chk_data_s ); // Check new Hall parameters
+			// Check if we have at least 2 parameter sets
+			if (0 < chk_data_s.prev_params.hall_val)
+			{
+				check_hall_parameters( chk_data_s ); // Check new Hall parameters
+			} // if (0 < chk_data_s.prev_params.hall_val)
 		} // if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
 
 		chk_data_s.prev_params = chk_data_s.curr_params; // Store previous parameter values
@@ -344,7 +434,7 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 	} // while( loop )
 
 	// Update error statistics for current motor
-	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+	for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
 		motor_errs += chk_data_s.motor_errs[comp_cnt]; 
 		motor_tsts += chk_data_s.motor_tsts[comp_cnt]; 
@@ -367,7 +457,7 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 		printstrln( " tests FAILED, as follows:" );
 
 		// Print Vector Component Names
-		for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+		for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 		{
 			printstr( chk_data_s.padstr1 );
 			printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );

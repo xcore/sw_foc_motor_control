@@ -35,11 +35,11 @@
 /** Enumeration of QEI Test Vector Components */
 typedef enum VECT_COMP_ETAG
 {
-  ERROR = 0,	// Error-state
+  CNTRL = 0,	// Special Case: Control/Comunications state
+  ERROR,			// Error-state
   ORIGIN,			// Origin-state
   SPIN,				// Spin-state
   SPEED,			// Speed-state
-  CNTRL,			// Control/Comunications state
   NUM_VECT_COMPS	// Handy Value!-)
 } VECT_COMP_ENUM;
 

@@ -52,6 +52,7 @@ typedef struct CHECK_HALL_TAG // Structure containing Hall check data
 	int fail_cnt;	// Counter of failed tests
 	int err_chk;	// error check value
 	int err_cnt;	// Counter used in error test
+	unsigned off_diff; // Difference in phase offset values (NB always +ve)
 	unsigned time; // time value when new Hall parameters received
 	int print;  // Print flag
 	int dbg;  // Debug flag

@@ -155,7 +155,8 @@ void print_test_vector( // print test vector details
 	acquire_lock(); // Acquire Display Mutex
 	printstr( prefix_str ); // Print prefix string
 
-	for (comp_cnt=0; comp_cnt<(NUM_VECT_COMPS - 1); comp_cnt++)
+	// Loop through NON-control test vector components
+	for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
 		comp_state = inp_vect.comp_state[comp_cnt];  // Get state of current component
 

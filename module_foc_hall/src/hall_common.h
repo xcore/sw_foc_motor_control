@@ -44,8 +44,6 @@
 
 #define HALL_ALL_MASK (HALL_NERR_MASK | HALL_PHASE_MASK) // Used to mask out all 4-bits of Hall Sensor Data
 
-#define HALL_REV_MASK (HALL_PER_REV - 1) // Mask used to force Hall count into base-range [0..HALL_REV_MASK] 
-
 /* Calculate speed definitions, preserving precision and preventing overflow !-)
  * 
  * The time difference between changes in HALL data is measured in 'ticks'.
@@ -67,7 +65,7 @@ typedef enum ERROR_HALL_ETAG
 /** Structure containing HALL parameters for one motor */
 typedef struct HALL_PARAM_TAG // 
 {
-	unsigned hall_val; // Hall sensor value (4 LS bits)
+	unsigned hall_val; // Hall sensor value (3 LS bits)
 	int err; // Error Status
 } HALL_PARAM_TYP;
 

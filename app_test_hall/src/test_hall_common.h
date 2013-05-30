@@ -35,21 +35,29 @@
 /** Enumeration of Hall Test Vector Components */
 typedef enum VECT_COMP_ETAG
 {
-  ERROR = 0,	// Error-state
+  CNTRL = 0,	// Special Case: Control/Comunications state
+  ERROR,	// Error-state
+  PHASE,			// Phase-state
   SPIN,				// Spin-state
   SPEED,			// Speed-state
-  CNTRL,			// Control/Comunications state
   NUM_VECT_COMPS	// Handy Value!-)
 } VECT_COMP_ENUM;
 
 // NB Error States (ERROR_HALL_ENUM) enumerated in module_foc_hall/src/hall_common.h
 
+/** Enumeration of Hall Phase-states */
+typedef enum PHASE_HALL_ETAG
+{
+  CHANGE = 0,			// Phase-Change
+  NUM_HALL_PHASES	// Handy Value!-)
+} PHASE_HALL_ENUM;
+
 /** Enumeration of Hall Spin states */
 typedef enum SPIN_HALL_ETAG
 {
   ANTI = 0,				// Anti-clockwise
-  CLOCK = 1,				// Clock-wise
-  NUM_HALL_SPINS = 2	// Handy Value!-)
+  CLOCK = 1,			// Clock-wise
+  NUM_HALL_SPINS	// Handy Value!-)
 } SPIN_HALL_ENUM;
 
 /** Enumeration of Hall Speed-states */
@@ -80,12 +88,6 @@ typedef struct STRING_TAG // Structure containing string array
 	char str[STR_LEN]; // String array (NB Structure allows easy string copy)
 } STRING_TYP;
 
-/** Type containing array of Hall Phase values */
-typedef struct HALL_PHASE_TAG // Structure containing Array of Hall Phase values
-{
-	int vals[HALL_PER_POLE];	// Array of Hall Phase values (NB Increment for clockwise rotation)
-} HALL_PHASE_TYP;
-
 /** Type containing Test Vector */
 typedef struct TEST_VECT_TAG // Structure containing test vector (HALL conditions to be tested)
 {
@@ -104,7 +106,8 @@ typedef struct VECT_COMP_TAG // Structure containing common Hall test data for o
 typedef struct COMMON_HALL_TAG // Structure containing all common Hall test data
 {
 	VECT_COMP_TYP comp_data[NUM_VECT_COMPS]; // Array of data for each component of test vector
-	HALL_PHASE_TYP phases;	// Structure containing all possible Hall phase values;
+	int phases[HALL_PER_POLE];	// array of all possible Hall phase values;
+	int inverse[HALL_PHASE_MASK];	// inverse phase array (converts Hall Phase values back to array offsets)
 } COMMON_HALL_TYP;
 
 /*****************************************************************************/

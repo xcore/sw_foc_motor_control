@@ -90,7 +90,7 @@ static void init_check_data( // Initialise check data for QEI tests
 		chk_data_s.all_tsts[motor_cnt] = 0;
 	} // for motor_cnt
 
-} // init_motor_checks
+} // init_check_data
 /*****************************************************************************/
 static void init_motor_checks( // Initialise QEI parameter structure
 	CHECK_QEI_TYP &chk_data_s, // Reference to structure containing test check data
@@ -718,7 +718,7 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 	finalise_speed_test_vector( chk_data_s ,chk_data_s.curr_vect.comp_state[SPEED] ); 
 
 	// Update error statistics for current motor
-	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+	for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
 		motor_errs += chk_data_s.motor_errs[comp_cnt]; 
 		motor_tsts += chk_data_s.motor_tsts[comp_cnt]; 
@@ -741,7 +741,7 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 		printstrln( " tests FAILED, as follows:" );
 
 		// Print Vector Component Names
-		for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+		for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 		{
 			printstr( chk_data_s.padstr1 );
 			printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );

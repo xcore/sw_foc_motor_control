@@ -83,6 +83,27 @@ static void assign_test_vector_error( // Assign Error-state of test vector
 	tst_data_s.vector.comp_state[ERROR] = inp_err; // Update Error-state of test vector
 } // assign_test_vector_error
 /*****************************************************************************/
+static void assign_test_vector_phase( // Assign phase-state of test vector
+	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
+	PHASE_HALL_ENUM inp_phase // Input Phase-state
+)
+{
+	switch( inp_phase )
+	{
+		case CHANGE: // Phase-change
+		break; // case CHANGE: 
+
+		default:
+			acquire_lock(); // Acquire Display Mutex
+			printstrln("ERROR: Unknown Hall Phase-state");
+			release_lock(); // Release Display Mutex
+			assert(0 == 1);
+		break; // default:
+	} // switch( inp_phase )
+
+	tst_data_s.vector.comp_state[PHASE] = inp_phase; // Update Spin-state of test vector
+} // assign_test_vector_spin
+/*****************************************************************************/
 static void assign_test_vector_spin( // Assign Spin-state of test vector
 	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
 	SPIN_HALL_ENUM inp_spin // Input Spin-state
@@ -186,7 +207,7 @@ static void do_hall_test( // Performs one Hall test
 
 	// Build Hall value ...
 
-	hall_val = tst_data_s.common.phases.vals[tst_data_s.off]; // Initialise Hall Value with phase bits
+	hall_val = tst_data_s.common.phases[tst_data_s.off]; // Initialise Hall Value with phase bits
 	hall_val |= tst_data_s.nerr; // OR with error flag (Bit_3)
 
 	// Wait till test period elapsed
@@ -279,6 +300,7 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 	// NB These tests assume HALL_FILTER = 0
 
 	assign_test_vector_error( tst_data_s ,HALL_ERR_OFF ); // Set test vector to NO errors
+	assign_test_vector_phase( tst_data_s ,CHANGE ); // Set test vector to Change Phase
 	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
 	assign_test_vector_speed( tst_data_s ,FAST ); // Set test vector to constant Fast speed
 
@@ -300,7 +322,10 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
 
 	assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
-	tst_data_s.vector.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
+	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while changing direction
+	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,1 );
+
+	tst_data_s.vector.comp_state[CNTRL] = VALID; // Direction changed, Switch on testing
 	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
 
 	tst_data_s.vector.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
