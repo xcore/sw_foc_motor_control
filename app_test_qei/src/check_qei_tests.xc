@@ -743,19 +743,23 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 		// Print Vector Component Names
 		for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 		{
-			printstr( chk_data_s.padstr1 );
-			printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
-			printstr(" : ");
-			printint( chk_data_s.motor_tsts[comp_cnt] );
-			printstr( " tests run" );
-
-			if (chk_data_s.motor_errs[comp_cnt])
+			// Check if any test run for this component
+			if (chk_data_s.motor_tsts[comp_cnt])
 			{
-				printstr( ", " );
-				printint( chk_data_s.motor_errs[comp_cnt] );
-				printstr(" FAILURES");
-			} // if (chk_data_s.motor_errs[comp_cnt])
-			printcharln(' ');
+				printstr( chk_data_s.padstr1 );
+				printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
+				printstr(" : ");
+				printint( chk_data_s.motor_tsts[comp_cnt] );
+				printstr( " tests run" );
+	
+				if (chk_data_s.motor_errs[comp_cnt])
+				{
+					printstr( ", " );
+					printint( chk_data_s.motor_errs[comp_cnt] );
+					printstr(" FAILURES");
+				} // if (chk_data_s.motor_errs[comp_cnt])
+				printcharln(' ');
+			} // if (chk_data_s.motor_tsts[comp_cnt])
 		} // for comp_cnt
 	} // if (motor_errs)
 	else

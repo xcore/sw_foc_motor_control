@@ -1,0 +1,159 @@
+ Start Test Gen. For Motor_0
+ 
+                                             Start Checks For Motor_0
+ No_Err Clock-Wise Fast-steady :VALID
+                                              No_Err Clock-Wise Fast-steady :VALID
+0:HALL:11
+0:HALL:10
+                                             0:  E=0  H=3 
+0:HALL:14
+                                             0:  E=0  H=2 
+0:HALL:12
+                                             0:  E=0  H=6 
+0:HALL:13
+                                             0:  E=0  H=4 
+0:HALL:9
+                                             0:  E=0  H=5 
+0:HALL:11
+                                             0:  E=0  H=1 
+0:HALL:10
+                                             0:  E=0  H=3 
+0:HALL:14
+ Err_On Clock-Wise Fast-steady :SKIP 
+                                              Err_On Clock-Wise Fast-steady :SKIP 
+                                             0:  E=0  H=2 
+0:HALL:4
+                                             0:  E=0  H=6 
+0:HALL:5
+ Err_On Clock-Wise Fast-steady :VALID
+                                              Err_On Clock-Wise Fast-steady :VALID
+                                             0:  E=0  H=4 
+0:HALL:1
+                                             0:  E=1  H=5 
+0:HALL:3
+ No_Err Clock-Wise Fast-steady :SKIP 
+                                              No_Err Clock-Wise Fast-steady :SKIP 
+                                             0:  E=1  H=1 
+0:HALL:10
+                                             0:  E=1  H=3 
+0:HALL:14
+ No_Err Clock-Wise Fast-steady :VALID
+                                              No_Err Clock-Wise Fast-steady :VALID
+                                             0:  E=1  H=2 
+0:HALL:12
+                                             0:  E=0  H=6 
+0:HALL:13
+ No_Err Anti-Clock Fast-steady :SKIP 
+                                              No_Err Anti-Clock Fast-steady :SKIP 
+                                             0:  E=0  H=4 
+0:HALL:12
+                                             0:  E=0  H=5 
+0:HALL:14
+ No_Err Anti-Clock Fast-steady :VALID
+                                              No_Err Anti-Clock Fast-steady :VALID
+                                             0:  E=0  H=4 
+0:HALL:10
+                                             0:  E=0  H=6 
+0:HALL:11
+                                             0:  E=0  H=2 
+0:HALL:9
+                                             0:  E=0  H=3 
+0:HALL:13
+                                             0:  E=0  H=1 
+0:HALL:12
+                                             0:  E=0  H=5 
+0:HALL:14
+                                             0:  E=0  H=4 
+0:HALL:10
+                                             0:  E=0  H=6 
+0:HALL:11
+                                             0:  E=0  H=2 
+0:HALL:9
+ No_Err Anti-Clock Fast-steady :QUIT 
+                                              No_Err Anti-Clock Fast-steady :QUIT 
+ 
+                                             57 tests run
+                                             All Motor_0 Tests PASSED
+0:HALL:13
+ Start Test Gen. For Motor_1
+ 
+                                             Start Checks For Motor_1
+ No_Err Clock-Wise Fast-steady :VALID
+                                              No_Err Clock-Wise Fast-steady :VALID
+1:HALL:11
+1:HALL:10
+                                             1:  E=0  H=3 
+1:HALL:14
+                                             1:  E=0  H=2 
+1:HALL:12
+                                             1:  E=0  H=6 
+1:HALL:13
+                                             1:  E=0  H=4 
+1:HALL:9
+                                             1:  E=0  H=5 
+1:HALL:11
+                                             1:  E=0  H=1 
+1:HALL:10
+                                             1:  E=0  H=3 
+1:HALL:14
+ Err_On Clock-Wise Fast-steady :SKIP 
+                                              Err_On Clock-Wise Fast-steady :SKIP 
+                                             1:  E=0  H=2 
+1:HALL:4
+                                             1:  E=0  H=6 
+1:HALL:5
+ Err_On Clock-Wise Fast-steady :VALID
+                                              Err_On Clock-Wise Fast-steady :VALID
+                                             1:  E=0  H=4 
+1:HALL:1
+                                             1:  E=1  H=5 
+1:HALL:3
+ No_Err Clock-Wise Fast-steady :SKIP 
+                                              No_Err Clock-Wise Fast-steady :SKIP 
+                                             1:  E=1  H=1 
+1:HALL:10
+                                             1:  E=1  H=3 
+1:HALL:14
+ No_Err Clock-Wise Fast-steady :VALID
+                                              No_Err Clock-Wise Fast-steady :VALID
+                                             1:  E=1  H=2 
+1:HALL:12
+                                             1:  E=0  H=6 
+1:HALL:13
+ No_Err Anti-Clock Fast-steady :SKIP 
+                                              No_Err Anti-Clock Fast-steady :SKIP 
+                                             1:  E=0  H=4 
+1:HALL:12
+                                             1:  E=0  H=5 
+1:HALL:14
+ No_Err Anti-Clock Fast-steady :VALID
+                                              No_Err Anti-Clock Fast-steady :VALID
+                                             1:  E=0  H=4 
+1:HALL:10
+                                             1:  E=0  H=6 
+1:HALL:11
+                                             1:  E=0  H=2 
+1:HALL:9
+                                             1:  E=0  H=3 
+1:HALL:13
+                                             1:  E=0  H=1 
+1:HALL:12
+                                             1:  E=0  H=5 
+1:HALL:14
+                                             1:  E=0  H=4 
+1:HALL:10
+                                             1:  E=0  H=6 
+1:HALL:11
+                                             1:  E=0  H=2 
+1:HALL:9
+ No_Err Anti-Clock Fast-steady :QUIT 
+                                              No_Err Anti-Clock Fast-steady :QUIT 
+ 
+                                             57 tests run
+                                             All Motor_1 Tests PASSED
+1:HALL:13
+Test Generation Ends 
+                                             Test Check Ends 
+114 tests run
+ALL TESTS PASSED
+ 

@@ -184,7 +184,6 @@ static void check_hall_phase_change( // Check for valid phase change
 			chk_data_s.off_diff = HALL_PER_POLE + curr_off - prev_off; // Force +ve change
 			if (HALL_PER_POLE <= chk_data_s.off_diff) chk_data_s.off_diff -= HALL_PER_POLE; // Force into phase-offset range
 		
-acquire_lock(); printstr( "CO="); printint(curr_off); printstr(" OD="); printintln(chk_data_s.off_diff); release_lock(); // MB~
 			// Check for valid offset difference
 			switch( chk_data_s.off_diff )
 			{
@@ -280,6 +279,8 @@ static void check_hall_parameters( // Check all Hall parameters
 	check_hall_phase_change( chk_data_s ); // Check Hall phase changes
 
 	check_hall_spin_direction( chk_data_s ); // Check Hall spin direction
+
+	// NB There are currently NO Hall speed parameters
 } // check_hall_parameters
 /*****************************************************************************/
 static int parameter_compare( // Check if 2 sets of Hall parameters are different
@@ -459,19 +460,23 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 		// Print Vector Component Names
 		for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 		{
-			printstr( chk_data_s.padstr1 );
-			printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
-			printstr(" : ");
-			printint( chk_data_s.motor_tsts[comp_cnt] );
-			printstr( " tests run" );
-
-			if (chk_data_s.motor_errs[comp_cnt])
+			// Check if any test run for this component
+			if (chk_data_s.motor_tsts[comp_cnt])
 			{
-				printstr( ", " );
-				printint( chk_data_s.motor_errs[comp_cnt] );
-				printstr(" FAILURES");
-			} // if (chk_data_s.motor_errs[comp_cnt])
-			printcharln(' ');
+				printstr( chk_data_s.padstr1 );
+				printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
+				printstr(" : ");
+				printint( chk_data_s.motor_tsts[comp_cnt] );
+				printstr( " tests run" );
+	
+				if (chk_data_s.motor_errs[comp_cnt])
+				{
+					printstr( ", " );
+					printint( chk_data_s.motor_errs[comp_cnt] );
+					printstr(" FAILURES");
+				} // if (chk_data_s.motor_errs[comp_cnt])
+				printcharln(' ');
+			} // if (chk_data_s.motor_tsts[comp_cnt])
 		} // for comp_cnt
 	} // if (motor_errs)
 	else

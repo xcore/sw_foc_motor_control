@@ -323,7 +323,7 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 
 	assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
 	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while changing direction
-	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,1 );
+	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,2 );
 
 	tst_data_s.vector.comp_state[CNTRL] = VALID; // Direction changed, Switch on testing
 	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
