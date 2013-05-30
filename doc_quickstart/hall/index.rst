@@ -41,17 +41,17 @@ Configure And Run The Simulator
       #. Click ``Add`` and dialogue boxes will appear for Tile, Port, Offset and Width. These should be filled in with the following information and steps shown in the table below. The second time the simulator is run, it is only necessary to click on the ``Run`` icon (the white arrow in the green circle) in the top menu.
 
                 +-------+--------+------------+-------+------+
-                | From: |    1   | XS1_PORT_4B|   0   |   4  |
+                | From: |    1   | XS1_PORT_4F|   0   |   4  |
                 +-------+--------+------------+-------+------+
-                | To:   |    1   | XS1_PORT_4F|   0   |   4  |
+                | To:   |    1   | XS1_PORT_4B|   0   |   4  |
                 +-------+--------+------------+-------+------+
 
       #. Click ``Add`` again and then do the below
 
                 +-------+--------+------------+-------+------+
-                | From: |    1   | XS1_PORT_4A|   0   |   4  |
+                | From: |    1   | XS1_PORT_4E|   0   |   4  |
                 +-------+--------+------------+-------+------+
-                | To:   |    1   | XS1_PORT_4E|   0   |   4  |
+                | To:   |    1   | XS1_PORT_4A|   0   |   4  |
                 +-------+--------+------------+-------+------+
 
       #. Click ``Apply``
@@ -61,10 +61,7 @@ Configure And Run The Simulator
 Results 
 --------
 
-After a few seconds, test results will start to appear in the console
-window, and note that there may be pauses of upto 1 minute in console
-output. The test lasts upto 10 minutes. It is completed when the
-following 2 messages have appeared::
+After a few seconds, test results will start to appear in the console window, and note that there may be pauses of upto 1 minute in console output. The test lasts upto 10 minutes. It is completed when the following 2 messages have appeared::
 
    Test Generation Ends       
    Test Check Ends
@@ -77,7 +74,7 @@ Look at the Code
    #. Find the ``main.xc`` file and note that main() runs 3 cores (processes) in parallel. All cores run on the same tile at a reference frequency of 100 MHz.
    #. ``gen_all_hall_test_data()`` Generates test data and transmits it on the 32-bit buffered test port (``p4_tst``).
    #. ``foc_hall_do_multiple()`` is the Hall sensor Server, receiving test data on the 4-bit Hall sensor port (``p4_hall``), processes the data, and transmitting output data over channel ``c_hall``
-   #. ``disp_all_hall_client_data()`` contains the Hall sensor Client which receives Hall sensor output data over channel ``c_hall``, and displays the results. ``gen_all_hall_test_data()`` and ``disp_all_hall_client_data()`` both produce display information in parallel. The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used control a MutEx which only allows one core at a time to print to the display.
+   #. ``check_all_hall_client_data()`` contains the Hall sensor Client which receives Hall sensor output data over channel ``c_hall``, and displays the results. ``gen_all_hall_test_data()`` and ``check_all_hall_client_data()`` both produce display information in parallel. The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used control a MutEx which only allows one core at a time to print to the display.
    #. Find the ``app_global.h`` header. At the top are the motor definitions. The Hall sensor definitions are specific to the type of motor being used and are currently set up for the LDO motors supplied with the development kit.
-   #. Find the file ``check_hall_tests.xc``. In here the function ``disp_motor_hall_client_data()`` handles the Hall sensor output data for one motor. In the 'while loop' is a function ``foc_hall_get_parameters()``. This is the Hall sensor Client. It communicates with the Hall sensor server function ``foc_hall_do_multiple()`` via channel ``c_hall``. The 'while loop' is paced to request Hall sensor data over the ``c_hall`` channel every 40 micro-seconds. This is typical of the issue rate when using real hardware.
+   #. Find the file ``check_hall_tests.xc``. In here the function ``check_motor_hall_client_data()`` handles the Hall sensor output data for one motor. In the 'while loop' is a function ``foc_hall_get_parameters()``. This is the Hall sensor Client. It communicates with the Hall sensor server function ``foc_hall_do_multiple()`` via channel ``c_hall``. The 'while loop' is paced to request Hall sensor data over the ``c_hall`` channel every 40 micro-seconds. This is typical of the issue rate when using real hardware.
 

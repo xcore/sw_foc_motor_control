@@ -10,7 +10,7 @@ Key Files
 Usage
 -----
 
-There following 2 functions are designed to be called from an XC file.
+The following 2 functions are designed to be called from an XC file.
 
    * ``foc_qei_get_parameters()`` Client function designed to be called from an XC file each time a new set of QEI parameters are required.
    * ``foc_qei_do_multiple()``, Server function designed to be called from an XC file. It runs on its own core, and receives data from all QEI motor ports.
@@ -33,7 +33,7 @@ Quadrature Encoder Interface (QEI) Xcore Simulator
 
 To get started with this application, run through the instructions in the quickstart guide.
 The application is in app_test_qei
-The quickstart guide is in doc_quickstart/quickstart_test_qei.rst
+The quickstart guide is in doc_quickstart/qei/index.rst
 
 This application uses module_foc_qei to process simulated QEI input test data.
 The QEI input data is received on a 4-bit port.
@@ -70,7 +70,7 @@ Remember this is a simulator, and is very slow.
 There may be gaps of upto 1 minute between each printed line.
 The whole test takes upto 10 minutes to run.
 
-For a explanation of the test results refer to the README in application directory app_test_qei
+For a explanation of the test results refer to the quickstart guide in doc_quickstart/qei/index.rst
 
 Trouble-shooting
 ................

@@ -3,7 +3,7 @@ Quadrature Encoder Interface Test Harness
 
 :scope: Example
 :description: xSIM testbench for QEI component
-:keywords: FOC, Motor Control
+:keywords: QEI, "Quadrature Encoder", FOC, Motor Control
 :boards: None (works on simulator)
 
 Features

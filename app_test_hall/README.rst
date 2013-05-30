@@ -3,7 +3,7 @@ Hall Sensor Interface Test Harness
 
 :scope: Example
 :description: xSIM testbench for Hall component
-:keywords: Hall, FOC, Motor Control
+:keywords: Hall, "Hall Sensor", FOC, Motor Control
 :boards: None (works on simulator)
 
 Features
