@@ -1,0 +1,97 @@
+-------------------------------------------------------------------------------
+-- Descriptive metadata
+-------------------------------------------------------------------------------
+
+componentName = "QEI Component"
+componentFullName = "Quadrature Encoder Interface (QEI) Function Library"
+alternativeNames = { }
+componentDescription = ""
+componentVersion = "1v0"
+
+-------------------------------------------------------------------------------
+-- Parameter descriptions.
+-------------------------------------------------------------------------------
+
+configPoints =
+{
+  NoOfMotors= {
+    short   = "Number Of Motors",
+    help    = "Number of Motors attached to Motor Power Board, Currently set in app_global.h",
+    long    = "",
+    units   = "",
+    define  = "NUMBER_OF_MOTORS",
+    type    = "int",
+    options = {1,2},
+    resourceUsageFlags = {"linear"},
+    default = 2
+  },
+  ReferenceFrequency= {
+    short   = "Platform Reference Frequency",
+    help    = "This must macth the value set in the Platform Configuration File (.XN), Currently set in app_global.h",
+    long    = "",
+    units   = "",
+    define  = "PLATFORM_REFERENCE_HZ",
+    type    = "int",
+    options = {100,250,500},
+    resourceUsageFlags = {"linear"},
+    default = 250 
+  },
+  QEI_Filter=
+  {
+    short   = "Filters QEI Velocity Parameter",
+    help    = "Reduces noise component in raw data from QEI sensors, Currently set in app_global.h",
+    long    = "",
+    units   = "",
+    define  = "QEI_FILTER",
+    type    = "int",
+    options = {0,1}, 
+    resourceUsageFlags = {"orthogonal"},
+    default = 1
+  },
+}
+
+derivedValues = {}
+
+ports = {
+  p4_qei = {
+    short   = "QEI input data port",
+    long    = "raw QEI data from Motor",
+    help    = "",
+    width   = 4
+  },
+}
+
+channels = {
+  c_qei = {
+    short = "Connects QEI Client and Server",
+    type = "streaming",
+    long  = "Client requests QEI parameters, Server transmits structure containing newest QEI parameters",
+    help  = "",
+  },
+}        
+
+function getConfigStatus()
+  local status = "Valid Configuration"
+  local issues = {}
+
+  -- Everything *should* be valid...
+
+  return status, issues
+end
+
+-------------------------------------------------------------------------------
+-- Source generation functions
+-------------------------------------------------------------------------------
+
+generatedCode = {
+	includes = 
+	{ 
+		"module_foc_qei_example_conf.h"
+	},
+  globals = "",
+  body = ""
+}
+
+api = {'foc_qei_get_parameters','foc_qei_do_multiple'}
+
+files = {["module_foc_qei/src/module_foc_qei_example_conf.h"] = "src/app_global.h"}
