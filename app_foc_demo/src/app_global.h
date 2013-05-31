@@ -25,7 +25,7 @@
 #define CHECK_ERRORS 1
 
 /**  Default Filter Mode  1 == On */
-#define ADC_FILTER 1
+#define ADC_FILTER 0 //MB~ 1
 
 /**  Default Filter Mode  1 == On */
 #define QEI_FILTER 1
@@ -42,6 +42,12 @@
 /** Define the number of different QEI sensor positions per pole-pair */
 #define QEI_PER_POLE 256
 
+/** Define the number of different Hall sensor positions per pole-pair */
+#define HALL_PER_POLE 6
+
+#define HALL_PER_REV (HALL_PER_POLE * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
+
+
 /**  Seconds in a minute */
 #define SECS_PER_MIN 60
 
@@ -51,7 +57,8 @@
 /** Define Minimum motor speed, below which motor stalls. WARNING: Safety critical */
 #define MIN_STALL_RPM 500
 
-#define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
+#define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS) // No. Of QEI positions per Revolution
+#define HALL_PER_REV (HALL_PER_POLE * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
 
 
 // PWM specific definitions ...

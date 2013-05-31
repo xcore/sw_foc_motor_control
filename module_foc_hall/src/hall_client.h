@@ -23,7 +23,7 @@
 
 /*****************************************************************************/
 /** On return structure contains new Hall data (4-bit value)
- * \param qei_param_s	// Reference to structure containing Hall parameters
+ * \param hall_param_s	// Reference to structure containing Hall parameters
  * \param c_hall // data channel to server (carries processed Hall data)
  */
 void foc_hall_get_parameters( // On return structure contains new Hall parameters (4-bit value)

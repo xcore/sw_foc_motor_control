@@ -46,7 +46,7 @@ configPoints =
     type    = "int",
     options = {0,1}, 
     resourceUsageFlags = {"orthogonal"},
-    default = 1
+    default = 0
   },
 }
 

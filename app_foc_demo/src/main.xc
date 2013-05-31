@@ -74,9 +74,9 @@ on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
 void xscope_user_init()
 {
 	xscope_register( 9
-		,XSCOPE_CONTINUOUS, "s_theta", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "m_theta", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "m_veloc", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "adc_a", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "adc_b", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "adc_c", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "set_Vq", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "pid_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "req_vel", XSCOPE_INT , "n"

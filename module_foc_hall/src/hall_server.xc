@@ -13,7 +13,6 @@
  **/                                   
 
 #include "hall_server.h"
-#include "use_locks.h" //MB~ Dbg
 
 /*****************************************************************************/
 static void init_hall_data( // Initialise Hall data structure for one motor
@@ -116,7 +115,6 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	int motor_cnt; // Counts number of motors
 
 
-// acquire_lock(); printstr("C1="); printintln(all_hall_data[0].params.err); release_lock(); // MB~
 	// Initialise Hall data for each motor
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{ 

@@ -985,9 +985,9 @@ static void use_motor ( // Start motor, and run step through different motor sta
 
 					// Get ADC sensor data
 					foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
-// if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.adc_params.vals[ADC_PHASE_A] );
-// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.adc_params.vals[ADC_PHASE_B] );
-// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.adc_params.vals[ADC_PHASE_C] );
+// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.adc_params.vals[ADC_PHASE_A] );
+// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.adc_params.vals[ADC_PHASE_B] );
+// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.adc_params.vals[ADC_PHASE_C] );
 
 					update_motor_state( motor_s ,motor_s.hall_params.hall_val );
 				} // else !(motor_s.hall_params.err)

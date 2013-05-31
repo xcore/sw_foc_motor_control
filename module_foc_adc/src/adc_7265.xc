@@ -227,6 +227,9 @@ static void update_adc_trigger_data( // Update ADC values for this trigger
 
 	get_trigger_data_7265( adc_data_s ,p32_data ,p1_ready ,p4_mux );	// Get ADC values for this trigger	
 
+if (trig_id) xscope_probe_data( 0 ,adc_data_s.phase_data[ADC_PHASE_A].adc_val ); //MB~
+if (trig_id) xscope_probe_data( 1 ,adc_data_s.phase_data[ADC_PHASE_B].adc_val );
+
 	// Loop through used phases
 	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
 	{
