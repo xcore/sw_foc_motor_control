@@ -26,13 +26,6 @@
             <keyword>FOC</keyword>
             <keyword>Motor Control</keyword>
         </component>
-        <component description = "The ADC module is a xSoftIP component of the FOC Motor control suite, It processess raw ADC data supplied by an ADC chip." type = "demoCode" scope = "Example" path = "app_test_adc" local = "false" id = "app_test_adc" name = "app_test_adc">
-            <board>XP-MC-CTRL-L2</board>
-            <board>XA-MC-PWR-DLV</board>
-            <componentDependency>module_foc_adc</componentDependency>
-            <componentDependency>module_locks</componentDependency>
-            <keyword>Field-Oriented-Control FOC Analogue-To-Digital ADC Motor-Control</keyword>
-        </component>
         <component description = "xSIM testbench for QEI component" type = "demoCode" scope = "Example" path = "app_test_qei" local = "false" id = "app_test_qei" name = "Quadrature Encoder Interface Test Harness">
             <board>None (works on simulator)</board>
             <componentDependency>module_foc_qei</componentDependency>
@@ -43,12 +36,6 @@
             <keyword>Motor Control</keyword>
         </component>
     </components>
-    <exclude_dir>app_test_adc</exclude_dir>
-    <exclude_dir>app_foc_demo</exclude_dir>
-    <exclude_dir>module_foc_adc</exclude_dir>
-    <exclude_dir>module_foc_comms</exclude_dir>
-    <exclude_dir>module_foc_display</exclude_dir>
-    <exclude_dir>module_foc_loop</exclude_dir>
     <dependency repo = "sc_xtcp">
         <githash>8ce08457bcd2d0cdeb7c629dd737be8a4073b144</githash>
         <uri>https://github.com/beaumontm/sc_xtcp.git</uri>
@@ -77,11 +64,18 @@
         <version>1.0.1rc0</version>
     </dependency>
     <description>This repository contains S/W to support Field-Oriented Control (FOC) of motors.</description>
+    <exclude_dir>app_test_adc</exclude_dir>
+    <exclude_dir>app_foc_demo</exclude_dir>
+    <exclude_dir>module_foc_adc</exclude_dir>
+    <exclude_dir>module_foc_comms</exclude_dir>
+    <exclude_dir>module_foc_display</exclude_dir>
+    <exclude_dir>module_foc_loop</exclude_dir>
     <location>https://github.com/xcore/sw_foc_motor_control</location>
     <name>sw_foc_motor_control</name>
     <maintainer>markb</maintainer>
     <partnumber>XM-002999-DH</partnumber>
     <release parenthash = "cd6d1cc0aa5caf773dfe466c5ce81d2efb7f78bd" version = "0.0.1beta0" githash = "7cddb8cddaadfa77173536bba73cdb1ee0b18ec2"></release>
+    <release parenthash = "496f41a5e457a8356870f4277e63e18d7c7a40da" version = "0.0.1beta1"></release>
     <subpartnumber>XM-003000-SM</subpartnumber>
     <vendor>XMOS Ltd.</vendor>
     <xcore_repo>sw_foc_motor_control</xcore_repo>
