@@ -1,11 +1,9 @@
 Advanced Motor Control 
 .......................
 
-:Latest release: 0.0.1beta0
-:Maintainer: XMOS
-:Description: motor control
-
-
+:Latest release: 0.0.1beta1
+:Maintainer: markb
+:Description: This repository contains S/W to support Field-Oriented Control (FOC) of motors.
 
 
 Firmware and documentation to go with the XMOS XK-MC-LVM2 and XP-MC-CTRL-L2 Motor Control Development Kits.
