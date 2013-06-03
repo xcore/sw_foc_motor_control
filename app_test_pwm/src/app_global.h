@@ -14,52 +14,20 @@
 #ifndef _APP_GLOBAL_H_
 #define _APP_GLOBAL_H_
 
-/** Define this to include XSCOPE support */
-#define USE_XSCOPE 1
-
-#if (USE_XSCOPE)
-#include <xscope.h>
-#endif // (USE_XSCOPE)
-
 /** Define this to switch on error checks */
 #define CHECK_ERRORS 1
 
-/**  Default Filter Mode  1 == On */
-#define ADC_FILTER 0 //MB~ 1
-
-/**  Default Filter Mode  1 == On */
-#define QEI_FILTER 1
-
-/** Define the number of motors */
-#define NUMBER_OF_MOTORS 2
-
-
-// Motor specific definitions ... (Currently Set for LDO Motors)
+/** Define Motor Identifier (0 or 1) */
+#define MOTOR_ID 1
 
 /** Define the number of pole-pairs in motor */
 #define NUM_POLE_PAIRS 4
 
-/** Define the number of different QEI sensor positions per pole-pair */
-#define QEI_PER_POLE 256
-
-/** Define the number of different Hall sensor positions per pole-pair */
-#define HALL_PER_POLE 6
-
-#define HALL_PER_REV (HALL_PER_POLE * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
-
-
-/**  Seconds in a minute */
+/** Define seconds in a minute */
 #define SECS_PER_MIN 60
 
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000
-
-/** Define Minimum motor speed, below which motor stalls. WARNING: Safety critical */
-#define MIN_STALL_RPM 500
-
-#define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS) // No. Of QEI positions per Revolution
-#define HALL_PER_REV (HALL_PER_POLE * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
-
 
 // PWM specific definitions ...
 
@@ -75,22 +43,8 @@
 /** Define if Shared Memory is used to transfer PWM data from Client to Server */
 #define PWM_SHARED_MEM 0 // 0: Use c_pwm channel for pwm data transfer
 
-
-// Communications specific definitions ...
-
-/** Define the port for the control app to connect to */
-#define TCP_CONTROL_PORT 9595
-
-/** Define this to enable the Ethernet interface */
-#define USE_ETH 1
-
-/** Define this to enable the CAN interface */
-#define USE_CAN 0
-
-// Check that both interfaces are not defined
-#if (USE_CAN && USE_ETH)
-	#error Both CAN and Ethernet are enabled.
-#endif
+/** Define flag for verbose printing */
+#define PRINT_TST_PWM 1
 
 /* This is a bit of a cludge, we are using a non-standard configuration
  * where the timer on the tile for inner_loop() is running at 250 MHz,
@@ -101,6 +55,8 @@
 #ifndef PLATFORM_REFERENCE_MHZ
 #define PLATFORM_REFERENCE_MHZ 100
 #define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ) 
+
+/** Define Referency Frequency to Match that in platform configuration (.XN) file */
 #define PLATFORM_REFERENCE_HZ  (1000 * PLATFORM_REFERENCE_KHZ) // NB Uses 28-bits
 #endif
 
