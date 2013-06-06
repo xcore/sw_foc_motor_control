@@ -14,16 +14,24 @@
 
 #include "main.h"
 
-// PWM ports
-on tile[MOTOR_TILE]: port in p4_pwm[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER ,PORT_M2_ENCODER };
+#define PWM_PORT_WID 32
 
-// Test ports (Borrowed from Hall Sensor)
-on tile[MOTOR_TILE]: port out p4_tst[NUMBER_OF_MOTORS] = { PORT_M1_HALLSENSOR ,PORT_M2_HALLSENSOR };
+// PWM Output ports
+on tile[MOTOR_TILE]: buffered out port:PWM_PORT_WID pb32_pwm_hi[NUM_PWM_PHASES] = {PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C};
+on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_lo[NUM_PWM_PHASES] = {PORT_M1_LO_A, PORT_M1_LO_B, PORT_M1_LO_C};
+on tile[MOTOR_TILE]: clock pwm_clk= XS1_CLKBLK_5;
+on tile[MOTOR_TILE]: in port p16_adc_sync = XS1_PORT_16A; // NB Dummy port
+
+// Test/Check Input ports
+on tile[MOTOR_TILE]: buffered in port:32 pb32_tst_hi[NUM_PWM_PHASES]	= {PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C};
+on tile[MOTOR_TILE]: buffered in port:32 pb32_tst_lo[NUM_PWM_PHASES]	= {PORT_M2_LO_A, PORT_M2_LO_B, PORT_M2_LO_C};
+
 
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {
-	streaming chan c_pwm[NUMBER_OF_MOTORS]; // Channel connecting Client and Server
+	chan c_pwm2adc_trig;
+	chan c_pwm; // Channel connecting Client and Server
 	streaming chan c_tst; // Channel for sending test vectors from Generator to Checker core
 
 
@@ -35,11 +43,12 @@ int main ( void ) // Program Entry Point
 
 			par
 			{
-				gen_all_pwm_test_data( c_tst ,p4_tst ); // Generate test data
+				gen_all_pwm_test_data( c_tst ,c_pwm ); // Generate test data using PWM Client
 		
-				foc_pwm_do_multiple( c_pwm, p4_pwm ); // Server function under test
+				// Server function under test
+				foc_pwm_do_triggered( MOTOR_ID, c_pwm ,pb32_pwm_hi ,pb32_pwm_lo ,c_pwm2adc_trig ,p16_adc_sync ,pwm_clk );
 		
-				check_all_pwm_client_data( c_tst ,c_pwm ); // Check results using PWM Client
+				check_all_pwm_client_data( c_tst ,pb32_tst_hi ,pb32_tst_lo ,c_pwm2adc_trig ); // Check results
 			} // par
 		
 		  free_locks(); // Free Mutex for display

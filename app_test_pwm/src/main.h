@@ -20,8 +20,8 @@
 #include <print.h>
 #include <platform.h>
 
-#include "app_global.h"
 #include "use_locks.h"
+#include "app_global.h"
 #include "pwm_server.h"
 #include "check_pwm_tests.h"
 #include "generate_pwm_tests.h"

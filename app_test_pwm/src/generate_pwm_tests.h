@@ -50,9 +50,6 @@
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
 #define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
 
-/** Type for Port timer values */
-typedef unsigned short PORT_TIME_TYP;
-
 /** Type containing all PWM test generation data */
 typedef struct GENERATE_PWM_TAG // Structure containing PWM test generation data
 {

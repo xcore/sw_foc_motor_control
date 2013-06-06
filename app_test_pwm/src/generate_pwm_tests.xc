@@ -126,6 +126,7 @@ static void do_pwm_vector( // Do all tests for one PWM test vector
 	int test_cnt // count-down test counter
 )
 {
+acquire_lock(); printstrln("SEND Vect="); release_lock(); //MB~
 	c_tst <: tst_data_s.vector; // transmit test vector details to test checker
 
 	if (tst_data_s.print)
@@ -141,6 +142,7 @@ static void do_pwm_vector( // Do all tests for one PWM test vector
 		test_cnt--; // Decrement test counter
 	} // while(test_cnt)
 
+acquire_lock(); printstrln("END Vect="); release_lock(); //MB~
 } // do_pwm_vector
 /*****************************************************************************/
 static void gen_motor_pwm_test_data( // Generate PWM Test data for one motor
@@ -167,18 +169,11 @@ static void gen_motor_pwm_test_data( // Generate PWM Test data for one motor
 
 	assign_test_vector_phase( tst_data_s ,PWM_PHASE_A ); // Set test vector to Phase_A
 	assign_test_vector_width( tst_data_s ,FAST ); // Set test vector to Fast width
-
-	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Skip while Starting-up 
-	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,1 );
-
 	tst_data_s.vector.comp_state[CNTRL] = VALID; // Start-up complete, Switch on testing
+
 	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,MAX_TESTS );
 
 	assign_test_vector_width( tst_data_s ,SLOW ); // Set test vector to Slow width
-	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Skip while Changing widths,
-	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,1 );
-
-	tst_data_s.vector.comp_state[CNTRL] = VALID; // Width-change complete, Switch on testing
 	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,MIN_TESTS );
 
 	tst_data_s.vector.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
