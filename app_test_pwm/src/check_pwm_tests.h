@@ -58,8 +58,10 @@ typedef struct PWM_DATA_TAG // Structure containing PWM check data
 {
 	PWM_PORT_TYP port_data; // PWM port data
 	PWM_LEG_ENUM leg_id; // Id for this PWM-leg
+	PWM_PATN_ENUM class; // pattern class of this PWM sample
 	unsigned first; // first pattern bit received (LS bit)
 	unsigned last; // last pattern bit received (MS bit)
+	int new; // flag set when new edge detected
 } PWM_DATA_TYP;
 
 /** Type containing data for one PWM-leg */
