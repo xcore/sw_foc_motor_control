@@ -3,11 +3,31 @@ Hall Sensor Simulator Testbench
 
 .. _test_hall_Quickstart:
 
-This application is an xSIM test harness for the Hall sensor interface using xTIMEcomposer Studio. It tests the Hall sensor functions in the ``Hall sensor Interface`` xSOFTip component and directs test results to STDOUT.
+This application is an xSIM test harness for the Hall sensor interface using xTIMEcomposer Studio. It tests the Hall functions in the ``Hall Sensor Component`` xSOFTip component and directs test results to STDOUT.
 
-The application runs the Hall sensor component in one logical core, and generates stimulus for the components pins from a second logical core. The pins driven by the stimulus generator are looped back to the Hall sensor component pins using the *loopback plugin* functionality included within the xSIM simulator, which allows arbitrary definition of pin level loopbacks. 
+No hardware is required to run the test harness.
 
-No hardware is required to run it.
+The test application uses 3 cores containing the following components
+   #. A test-vector and Hall raw-data generator
+   #. The Hall Server under test
+   #. The Hall Client under test, and the test results checker
+
+The test application uses 2 channels for the following data
+   #. Transmission of test vectors between the Generator and Checker cores
+   #. Transmission of Hall parameters between Server and Client cores
+
+The test application uses 2 ports for the following data
+   #. A 4-bit output port for transmission of generated Hall raw-data
+   #. A 4-bit input port for the Hall server to receive Hall raw-data
+
+The output pins driven by the generator are looped back to the Hall Server input pins using the *loopback plugin* functionality included within the xSIM simulator, which allows arbitrary definition of pin level loopbacks.
+
+The generator runs through a set of tests, these are specified formally as a *test vector* and transmitted to the test checker. For each test the generator creates the appropriate Hall raw-data and drives this onto the output pins. The Hall Server recognises changes on its input pins, processes the new raw-data, and updates the Hall parameters (Hall_Sensor_value and Error_Status). The test checker reads the specification in the received test vector, then polls the Hall Client for parameters. These parameters are checked for correctness against the test vector specification.
+
+The following tests are currently performed
+   #. An *Error Status* test: the error-status flag should be raised when 3 consecutive error-bits are detected.
+   #. A *Phase_Value* test: the 3 phase values should form a valid combination
+   #. A *Spin Direction* test: the phase values should change in the required order
 
 Import and Build the Application
 --------------------------------
@@ -65,6 +85,52 @@ After a few seconds, test results will start to appear in the console window, an
 
    Test Generation Ends       
    Test Check Ends
+
+For background on the Hall protocol see the ``Overview`` document for module_foc_hall
+
+An example of working test output from a working Hall component can be found in a file named ``hall_results.txt``
+
+
+Using The ``Value Change Dump`` (VCD) File
+------------------------------------------
+
+The waveforms on the output pins can be inspected by using a VCD file. This requires a lot of memory and considerably slows down the simulator. First ensure enough memory has been requested in the xTIMEcomposer init file. Go to the root directory where the XMOS tools are installed. Then edit file ``xtimecomposer_bin/xtimecomposer.exe.ini`` and ensure the requested memory is at least 4 GBytes (``-Xmx4096m``)
+
+Now launch xTIMEcomposer and switch on VCD tracing as follows ...
+   #. Repeat the actions described above up to but NOT including ...
+   #. Click ``Apply``
+   #. Now select the ``Signal Tracing`` tab.
+   #. Tick the ``Enable Signal Tracing`` box
+   #. Click the ``Add`` button
+   #. Select ``tile[1]``
+   #. Tick the ``+details`` box
+   #. Click ``Apply``
+   #. Click ``Run``
+
+Test Results 
+------------
+
+You may want to kill the simulations after Motor_0 has been tested. This can be done by clicking on the red square button in the view-bar for the console window. 
+
+When the executable has stopped running, view the VCD file as follows:-
+   #. In the main toolbar select Tools->Waveform_Analyzer->Load_VCD_File
+   #. Browse to the application root directory or where the VCD file was created.
+   #. Select the VCD file and click the ``OK`` button.
+   #. The VCD file will start loading, this may take some time, 
+   #. WARNING If an ``out-of-memory`` error occurs, increase the xTIMEcomposer memory (described above) to be larger than the VCD file.
+   #. When the VCD file has loaded correctly, a list of ports should appear in the ``Signals`` window.
+   #. If not already active, open a ``Waveform`` window as follows:-
+   #. In the main toolbar, select Window->Show_View->Waves
+   #. Now add some signals to the Waves window as follows:-
+   #. In the Signals window, select tile[1]->ports->XS1_PORT_4A, and drag this to the left-hand column of the Waveform window
+   #. This may not work first time, but try leaving a few seconds between selecting and dragging
+   #. When successful a set of 12 waveforms should appear in the right column of the Waveform window.
+   #. To view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar
+   #. Now repeatedly click on the ``Zoom In`` button until the numbers [b a e c d 9] can be seen in the top waveform (PORT_M1_HALLSENSOR) 
+
+These are the Hall raw-data values and indicate that Motor_0 is turning clock-wise. When the numbers change to [4 5 1 3] the error-bit has been set low to indicate an error condition. Near the middle of the trace, the numbers change order and become [9 d c e a b], this means the motor is now spinning in an anti-clockwise direction.
+
+The waveforms for Motor_1 can be viewed by loading Port XS1_PORT_4B (PORT_M2_HALLSENSOR).
 
 
 Look at the Code

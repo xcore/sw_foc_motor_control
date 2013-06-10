@@ -132,7 +132,7 @@ When the executable has stopped running, view the VCD file as follows:-
 
 These are the QEI raw-data values and indicate that Motor_0 is turning clock-wise. When the numbers are packed more closely the motor is spinning fast, when the numbers are packed more sparsely the motor is running slowly. Near the middle of the trace, the numbers change order and become [8 9 b a], this means the motor is now spinning in an anti-clockwise direction.
 
-The waveforms for Motor_1 can be viewed by loading Port XS1_PORT_4E (PORT_M2_ENCODER).
+The waveforms for Motor_1 can be viewed by loading Port XS1_PORT_4F (PORT_M2_ENCODER).
 
 
 Look at the Code
