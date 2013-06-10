@@ -58,10 +58,8 @@ typedef struct PWM_DATA_TAG // Structure containing PWM check data
 {
 	PWM_PORT_TYP port_data; // PWM port data
 	PWM_LEG_ENUM leg_id; // Id for this PWM-leg
-	PWM_PATN_ENUM class; // pattern class of this PWM sample
 	unsigned first; // first pattern bit received (LS bit)
 	unsigned last; // last pattern bit received (MS bit)
-	int new; // flag set when new edge detected
 } PWM_DATA_TYP;
 
 /** Type containing data for one PWM-leg */
@@ -88,6 +86,10 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 	PWM_LEG_ENUM curr_leg; // Current PWM-leg being processed
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
+	int hi_sum;	// sum of high-times
+	int lo_sum;	// sum of low-times
+	int hi_num;	// No. of high-times
+	int lo_num;	// No. of high-times
 	int wid_chk;	// width check value
 	int wid_cnt;	// Counter used in width test
 	int fail_cnt;	// Counter of failed tests

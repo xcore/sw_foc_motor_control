@@ -38,10 +38,10 @@
 #define PWM_PERIOD (40 * MICRO_SEC) // Time period between generations of PWM Client data
 
 /** Define No. of tests used for Max. speed check */
-#define MAX_TESTS 4 // No. of tests used for Max. speed check
+#define MAX_TESTS 10 // No. of tests used for Max. speed check
 
 /** Define No. of tests used for Min. speed check */
-#define MIN_TESTS 4 // No. of tests used for Min. speed check
+#define MIN_TESTS 10 // No. of tests used for Min. speed check
 
 /** Define No. of port timer values (16-bit) */
 #define NUM_PORT_TIMES (1 << 16) // No. of port timer values (16-bit)

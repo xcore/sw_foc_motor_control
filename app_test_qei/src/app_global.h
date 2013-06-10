@@ -30,7 +30,7 @@
 #define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
 
 /** Define default Filter Mode  1 == On */
-#define QEI_FILTER 1
+#define QEI_FILTER 0
 
 /** Define seconds in a minute */
 #define SECS_PER_MIN 60

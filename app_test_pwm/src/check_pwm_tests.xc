@@ -28,6 +28,11 @@ static void init_check_data( // Initialise check data for PWM tests
 	safestrcpy( chk_data_s.padstr1 ,"                                             " );
 	safestrcpy( chk_data_s.padstr2 ,"                              " );
 
+	chk_data_s.hi_sum = 0;
+	chk_data_s.lo_sum = 0;
+	chk_data_s.hi_num = 0;
+	chk_data_s.lo_num = 0;
+
 	chk_data_s.fail_cnt = 0; // Clear count of failed tests.
 
 	chk_data_s.print = PRINT_TST_PWM; // Set print mode
@@ -40,6 +45,8 @@ static void init_check_data( // Initialise check data for PWM tests
 		chk_data_s.legs[leg_cnt].lo_time = 0; 
 
 		chk_data_s.legs[leg_cnt].curr_data.leg_id = leg_cnt;
+		chk_data_s.legs[leg_cnt].curr_data.first = 0;
+		chk_data_s.legs[leg_cnt].curr_data.last = 0;
 		chk_data_s.legs[leg_cnt].curr_data.port_data.pattern = 0;
 		chk_data_s.legs[leg_cnt].curr_data.port_data.time_off = 0;
 		chk_data_s.legs[leg_cnt].prev_data = chk_data_s.legs[leg_cnt].curr_data; // Initialise previous PWM value
@@ -125,7 +132,7 @@ static void check_pwm_width( // Check for correct PWM width
 
 } // check_pwm_width
 /*****************************************************************************/
-static int find_edge_offset( // Finds first bit-change in 32-bit pattern (measured from LS end)
+static int find_edge_offset_from_ls( // Finds first bit-change in 32-bit pattern (measured from LS end)
 	unsigned inp_patn  // input 32-bit pattern
 ) // Return bit offset
 {
@@ -136,10 +143,10 @@ static int find_edge_offset( // Finds first bit-change in 32-bit pattern (measur
 	// loop until bit-change found
 	while (inp_patn)
 	{
-		if (ls_bit != (0x1 & inp_patn)) break; // Exit loop if bit-change
-
 		bit_off++; // Increment bit-offset
-		inp_patn >> 1; // shift out checked-bit
+		inp_patn >>= 1; // shift out checked-bit
+
+		if (ls_bit != (0x1 & inp_patn)) break; // Exit loop if bit-change found
 	} // while (inp_patn)
 
 	// Check if edge found
@@ -149,7 +156,7 @@ static int find_edge_offset( // Finds first bit-change in 32-bit pattern (measur
 	} // if (PWM_PORT_WID <= bit_off)
 
 	return bit_off;
-} // find_edge_offset
+} // find_edge_offset_from_ls
 /*****************************************************************************/
 static void init_sample_data( // Initialise PWM sample data, and if necessary correct edge-time
 	PWM_DATA_TYP &curr_pwm_s, // Reference to structure containing current data for one PWM sample
@@ -160,59 +167,21 @@ static void init_sample_data( // Initialise PWM sample data, and if necessary co
 
 
 	curr_pwm_s.first = (0x1 & curr_patn); // mask-out first (LS) bit
-	curr_pwm_s.last = (PWM_MS_MASK & curr_patn); // mask-out last (MS) bit
+	curr_pwm_s.last = (PWM_MS_MASK & curr_patn) >> (PWM_PORT_WID - 1); // mask-out last (MS) bit
 
-	curr_pwm_s.new = 0; // Preset flag to NO new-edge
+	// Rebase time-offset to just before first (LS) bit
+	curr_pwm_s.port_data.time_off -= PWM_PORT_WID; // Correct time_offset
 
-	// Classify sample pattern ...
+	// Check for edge ...
 
-	// Check if last bit high
-	if (curr_pwm_s.last)
-	{ // Last-bit High
-		// Check if first bit high
-		if (curr_pwm_s.first)
-		{ // First bit High
-			curr_pwm_s.class = PWM_HIGH;
-
-			// Check for edge at pattern boundary
-			if (0 == prev_pwm_s.last)
-			{ // new edge detected
-				curr_pwm_s.port_data.time_off -= PWM_PORT_WID; // Correct time_offset
-			} // if (0 == prev_pwm_s.last)
-		} // if (curr_pwm_s.first)
-		else
-		{ // First bit Low
-			curr_pwm_s.class = PWM_RISE;
-			curr_pwm_s.new = 1; // Set flag for new edge
-		} // else !(curr_pwm_s.first)
-	} // if (curr_pwm_s.last) 
-	else 
-	{ // Last-bit Low
-		// Check if first bit high
-		if (curr_pwm_s.first)
-		{ // First bit High
-			curr_pwm_s.class = PWM_FALL;
-			curr_pwm_s.new = 1; // Set flag for new edge
-		} // if (curr_pwm_s.first)
-		else
-		{ // First bit Low
-			curr_pwm_s.class = PWM_LOW;
-
-			// Check for edge at pattern boundary
-			if (prev_pwm_s.last)
-			{ // new edge detected
-				curr_pwm_s.port_data.time_off -= PWM_PORT_WID; // Correct time_offset
-			} // if (prev_pwm_s.last)
-		} // else !(curr_pwm_s.first)
-	} // else !(curr_pwm_s.last) 
-
-	// Check for new edge
-	if (curr_pwm_s.new)
-	{
-		PORT_TIME_TYP bit_off = (PORT_TIME_TYP)find_edge_offset( curr_patn ); // Get edge offset
-acquire_lock();	printstr( "BS=" ); printuintln( bit_off );	release_lock();
-			curr_pwm_s.port_data.time_off -= bit_off; // Correct time_offset
-	} // if (curr_pwm_s.new)
+	/* NB The following logic relies on the fact that some combinations are unreachable,
+	 * because the minimum pulse width is PWM_PORT_WID (32) 
+	 */
+	if (curr_pwm_s.first != curr_pwm_s.last)
+	{ // Edge found
+		PORT_TIME_TYP bit_off = (PORT_TIME_TYP)find_edge_offset_from_ls( curr_patn ); // Get edge offset
+		curr_pwm_s.port_data.time_off += bit_off; // Place time-offset at edge
+	} // if (curr_pwm_s.first != curr_pwm_s.last)
 
 } // init_sample_data
 /*****************************************************************************/
@@ -221,7 +190,7 @@ static void update_pwm_data( // Update PWM data
 )
 {
 	PWM_DATA_TYP curr_pwm_s = chk_data_s.legs[chk_data_s.curr_leg].curr_data; // Reference to structure containing current PWM sample data
-	PWM_DATA_TYP prev_pwm_s = chk_data_s.legs[chk_data_s.curr_leg].curr_data; // Reference to structure containing previous PWM sample data
+	PWM_DATA_TYP prev_pwm_s = chk_data_s.legs[chk_data_s.curr_leg].prev_data; // Reference to structure containing previous PWM sample data
 	PORT_TIME_TYP curr_time = (PORT_TIME_TYP)curr_pwm_s.port_data.time_off; // current PWM time-offset
 	PORT_TIME_TYP prev_time = (PORT_TIME_TYP)prev_pwm_s.port_data.time_off; // previous PWM time-offset
 	PORT_TIME_TYP diff_time = (curr_time - prev_time); // Elapsed time
@@ -229,27 +198,40 @@ static void update_pwm_data( // Update PWM data
 
 	// Update pulse times ...
 
-	// Check for new edge
-	if (curr_pwm_s.new)
-	{ // New-edge
-		if (curr_pwm_s.last)
+	/* NB The following logic relies on the fact that some combinations are unreachable,
+	 * because the minimum pulse width is PWM_PORT_WID (32) 
+	 */
+
+	if (curr_pwm_s.last)
+	{ // Currently High
+		if (prev_pwm_s.last)
+		{ // Constant High
+			chk_data_s.legs[chk_data_s.curr_leg].hi_time +=  diff_time; // Update time for high portion of pulse
+		} // if (prev_pwm_s.last)
+		else
 		{ // Rising edge
 			chk_data_s.legs[chk_data_s.curr_leg].lo_time +=  diff_time; // Finalise time for low portion of pulse
-			chk_data_s.legs[chk_data_s.curr_leg].hi_time = (PWM_PORT_WID - diff_time); // Initialise time for high portion of pulse
-		} // if (curr_pwm_s.last)
-		else
-		{ // Falling edge
-			chk_data_s.legs[chk_data_s.curr_leg].hi_time +=  diff_time; // Finalise time for high portion of pulse
-			chk_data_s.legs[chk_data_s.curr_leg].lo_time = (PWM_PORT_WID - diff_time); // Initialise time for low portion of pulse
-		} // else !(curr_pwm_s.last)
-	} // if (curr_pwm_s.new)
+			chk_data_s.legs[chk_data_s.curr_leg].hi_time = 0; // Initialise time for high portion of pulse
+acquire_lock();	printstr(chk_data_s.padstr1); printstr("LT="); printuintln(chk_data_s.legs[chk_data_s.curr_leg].lo_time);	release_lock();
+			chk_data_s.lo_sum += chk_data_s.legs[chk_data_s.curr_leg].lo_time;
+			chk_data_s.lo_num++;
+		} // else !(prev_pwm_s.last)
+	} // if (curr_pwm_s.last)
 	else
-	{ // Pulse continuation
-		// Check pulse level
-		if (PWM_HIGH == curr_pwm_s.class) chk_data_s.legs[chk_data_s.curr_leg].hi_time +=  diff_time; // Update time for high portion of pulse
-		if (PWM_LOW == curr_pwm_s.class) chk_data_s.legs[chk_data_s.curr_leg].lo_time +=  diff_time; // Update time for low portion of pulse
-	} // else !(curr_pwm_s.new)
-
+	{ // Currently Low
+		if (prev_pwm_s.last)
+		{ // Falling Edge
+			chk_data_s.legs[chk_data_s.curr_leg].hi_time += diff_time; // Finalise time for high portion of pulse
+			chk_data_s.legs[chk_data_s.curr_leg].lo_time = 0; // Initialise time for low portion of pulse
+acquire_lock();	printstr(chk_data_s.padstr1); printstr("HT="); printuintln(chk_data_s.legs[chk_data_s.curr_leg].hi_time);	release_lock();
+			chk_data_s.hi_sum += chk_data_s.legs[chk_data_s.curr_leg].hi_time;
+			chk_data_s.hi_num++;
+		} // if (prev_pwm_s.last)
+		else
+		{ // Constant Low
+			chk_data_s.legs[chk_data_s.curr_leg].lo_time += diff_time; // Update time for low portion of pulse
+		} // else !(prev_pwm_s.last)
+	} // else !(curr_pwm_s.last)
 } // update_pwm_data
 /*****************************************************************************/
 static void check_pwm_parameters( // Check all PWM parameters
@@ -280,7 +262,6 @@ static void test_new_pwm_input_value( // test new PWM input value
 
 	// Check for change in PWM data
 	do_test = pwm_data_compare( chk_data_s.legs[chk_data_s.curr_leg].curr_data.port_data  ,chk_data_s.legs[chk_data_s.curr_leg].prev_data.port_data  ); 
-acquire_lock();	printstr( "DT=" ); printintln( do_test );	release_lock();
 
 	// Check for parameter change
 	if (do_test)
@@ -306,12 +287,37 @@ acquire_lock();	printstr( "DT=" ); printintln( do_test );	release_lock();
 	} // if (do_test)
 } // test_new_pwm_input_value
 /*****************************************************************************/
+static void eval_mean(
+	CHECK_PWM_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int hi_mean = 0;
+	int lo_mean = 0;
+	int wid = 0;
+
+
+	if (chk_data_s.hi_num) hi_mean = (chk_data_s.hi_sum + (chk_data_s.hi_num >> 1)) / chk_data_s.hi_num;
+	if (chk_data_s.lo_num) lo_mean = (chk_data_s.lo_sum + (chk_data_s.lo_num >> 1)) / chk_data_s.lo_num;
+
+	wid = hi_mean + lo_mean;
+
+	if (wid) wid = ((PWM_MAX_VALUE * hi_mean) + (wid >> 1))/wid;
+
+	acquire_lock(); printstr("WID="); printuint(wid); release_lock(); //MB~
+} // eval_mean
+/*****************************************************************************/
 static void process_new_test_vector( // Process new test vector
 	CHECK_PWM_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int change = 0; // Clear flag indicating change in test vector detected
 
+	eval_mean( chk_data_s );
+
+	chk_data_s.hi_sum = 0;
+	chk_data_s.lo_sum = 0;
+	chk_data_s.hi_num = 0;
+	chk_data_s.lo_num = 0;
 
 	// Check if error_status test
 	if (chk_data_s.curr_vect.comp_state[WIDTH] != chk_data_s.prev_vect.comp_state[WIDTH])
@@ -362,13 +368,14 @@ void check_all_pwm_client_data( // Display PWM results for all motors
 	unsigned read_off; // buffer read offset
 	unsigned circ_off = 0; // Circular offset between Write and Read and offsets
 	unsigned prev_off; // previous circular offset
-	unsigned hi_pins = 0xAAAAAAAA; // Initialise High-leg input pins to impossible value
-//MB~	unsigned lo_pins = 0xAAAAAAAA; // Initialise Low-leg input pins to impossible value
+	unsigned hi_pins = 0x55555555; // Initialise High-leg input pins to impossible value
+//MB~	unsigned lo_pins = 0x55555555; // Initialise Low-leg input pins to impossible value
 	int comp_cnt; // Counter for Test Vector components
 	int do_loop = 1;   // Flag set until loop-end condition found 
 	int motor_errs = 0;   // Preset flag to NO errors for current motor
 	int motor_tsts = 0;   // Clear test ccounter for current motor
 	unsigned char cntrl_token; // control token
+	PORT_TIME_TYP port_time; // Time when port read
 
 
 	init_check_data( chk_data_s ); // Initialise check data
@@ -401,12 +408,13 @@ void check_all_pwm_client_data( // Display PWM results for all motors
 #pragma ordered // If multiple cases fire at same time, service top-most first
 		select {
 			// Service any change on High-leg input port pins
-			case p32_tst_hi[chk_data_s.curr_vect.comp_state[PHASE]] when pinsneq(hi_pins):> hi_pins :
+			case p32_tst_hi[chk_data_s.curr_vect.comp_state[PHASE]] when pinsneq(hi_pins):> hi_pins @ port_time :
 			{
-				chronometer :> port_data_bufs[write_off].port_data.time_off; // Get new time stamp as soon as possible
+//				chronometer :> port_data_bufs[write_off].port_data.time_off; // Get new time stamp as soon as possible
+				port_data_bufs[write_off].port_data.time_off = port_time;
 				port_data_bufs[write_off].port_data.pattern = hi_pins;
 				port_data_bufs[write_off].leg_id = HI_LEG;
-acquire_lock(); printstr("T="); printintln(port_data_bufs[write_off].port_data.time_off); release_lock(); //MB~
+// acquire_lock(); printstr("T="); printuint(port_data_bufs[write_off].port_data.time_off); printstr(" P="); printhexln(hi_pins); release_lock(); //MB~
 
 				// Update circular buffer offset
 				if (write_off < BUF_MASK)
@@ -417,7 +425,6 @@ acquire_lock(); printstr("T="); printintln(port_data_bufs[write_off].port_data.t
 				{
 					write_off = 0;
 				} // else !(write_off < BUF_MASK)
-acquire_lock(); printstr("WO="); printint(write_off); printstr(" V="); printhexln(hi_pins); release_lock(); //MB~
 			} // case
 			break;
 
@@ -427,12 +434,10 @@ acquire_lock(); printstr("WO="); printint(write_off); printstr(" V="); printhexl
 
 			case inct_byref( c_adc_trig, cntrl_token ):
 // ToDo MB~
-acquire_lock(); printstrln( "ADC" ); release_lock(); //MB~
 			break;
 	
 			// Service any change on test channel
 			case c_tst :> chk_data_s.curr_vect :
-acquire_lock(); printstrln( "Vect" ); release_lock(); //MB~
 				// New test vector detected.
 				process_new_test_vector( chk_data_s ); // Process new test vector
 
@@ -464,7 +469,6 @@ acquire_lock(); printstrln( "Vect" ); release_lock(); //MB~
 					{
 						read_off = 0;
 					} // else !(read_off < BUF_MASK)
-acquire_lock(); printstr("RO="); printintln(read_off); release_lock(); //MB~
 
 					test_new_pwm_input_value( chk_data_s ); // test new PWM data
 				} // if (0 != circ_off)
