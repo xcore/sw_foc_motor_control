@@ -27,20 +27,33 @@
 /** Define string size */
 #define STR_LEN 256
 
+/** Define PWM-Phase under test */
+#define TEST_PHASE PWM_PHASE_A
+
+/** Define PWM-Phase under test */
+#define TEST_LEG PWM_HI_LEG
+
+/** Define value for Low Speed test */
+#define MIN_PWM (PWM_MAX_VALUE >> 3) 
+
+/** Define value for High Speed test */
+#define MAX_PWM (PWM_MAX_VALUE - MIN_PWM)
+
 /** Enumeration of PWM Test Vector Components */
 typedef enum VECT_COMP_ETAG
 {
   CNTRL = 0,	// Special Case: Control/Comunications state
   WIDTH,			// PWM Width-state
   PHASE,			// PWM-Phase
+  LEG,				// PWM-Leg
   NUM_VECT_COMPS	// Handy Value!-)
 } VECT_COMP_ENUM;
 
 /** Enumeration of PWM Width-states */
 typedef enum WIDTH_PWM_ETAG
 {
-  FAST = 0,	// Fast width
-  SLOW,			// Slow width
+  LARGE = 0,	// Large PWM width (for Fast Speed)
+  SMALL,			// Smaell PWM width (for Slow Speed)
   NUM_PWM_WIDTHS	// Handy Value!-)
 } WIDTH_PWM_ENUM;
 

@@ -24,24 +24,17 @@
 
 #include "app_global.h"
 #include "use_locks.h"
+#include "capture_pwm_data.h"
 #include "test_pwm_common.h"
 
 /** Define Input buffer size in bits */
-#define INP_BUF_BITS 4 // Input buffer size in bits, NB Can probably use 2, but sailing cloase to the wind
+#define INP_BUF_BITS 7 // Input buffer size in bits, NB Can probably use 2, but sailing close to the wind
 
 /** Define allowed PWM-width delay */
 #define WID_TIMEOUT 2 // Allowed PWM-width delay
 
 #define NUM_INP_BUFS (1 << INP_BUF_BITS) // No. of input buffers used for storing PWM widths, NB Can probably use 4, but sailing cloase to the wind
-#define BUF_MASK (NUM_INP_BUFS - 1) // Bit-mask used to wrap input buffer offset
-
-/** Different PWM Phases */
-typedef enum PWM_LEG_ETAG
-{
-  HI_LEG = 0,	// High-Leg
-  LO_LEG,		  // Low-Leg
-  NUM_PWM_LEGS    // Handy Value!-)
-} PWM_LEG_ENUM;
+#define INP_BUF_MASK (NUM_INP_BUFS - 1) // Bit-mask used to wrap input buffer offset
 
 /** Classes of PWM sample patterns*/
 typedef enum PWM_PATN_ETAG
@@ -54,25 +47,26 @@ typedef enum PWM_PATN_ETAG
 } PWM_PATN_ENUM;
 
 /** Type containing data for one pulse sample */
-typedef struct PWM_DATA_TAG // Structure containing PWM check data
+typedef struct PWM_SAMP_TAG // Structure containing data for one PWM sample
 {
 	PWM_PORT_TYP port_data; // PWM port data
-	PWM_LEG_ENUM leg_id; // Id for this PWM-leg
 	unsigned first; // first pattern bit received (LS bit)
 	unsigned last; // last pattern bit received (MS bit)
-} PWM_DATA_TYP;
+} PWM_SAMP_TYP;
 
 /** Type containing data for one PWM-leg */
-typedef struct PWM_LEG_TAG // Structure containing data for one PWM-leg
+typedef struct PWM_WAVE_TAG // Structure containing data for one PWM Wave
 {
-	PWM_DATA_TYP curr_data; // data for current PWM sample 
-	PWM_DATA_TYP prev_data; // data for previous PWM sample
+	PWM_SAMP_TYP curr_data; // data for current PWM sample 
+	PWM_SAMP_TYP prev_data; // data for previous PWM sample
+	int meas_wid;	// measured PWM width
 	unsigned hi_time; // Time accumulated during high (one) period of pulse
 	unsigned lo_time; // Time accumulated during low (zero) period of pulse
-	int speed_sum; // Accumulator for speed tests
-	int speed_num; // No of accumulations for speed tests
-} PWM_LEG_TYP;
-
+	int hi_sum;	// sum of high-times
+	int lo_sum;	// sum of low-times
+	int hi_num;	// No. of high-times
+	int lo_num;	// No. of high-times
+} PWM_WAVE_TYP;
 
 /** Type containing all check data */
 typedef struct CHECK_PWM_TAG // Structure containing PWM check data
@@ -82,14 +76,10 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 	char padstr2[STR_LEN]; // Padding string used to format display output
 	TEST_VECT_TYP curr_vect; // Structure of containing current PWM test vector (PWM conditions to be tested)
 	TEST_VECT_TYP prev_vect; // Structure of containing previous PWM test vector
-	PWM_LEG_TYP legs[NUM_PWM_LEGS]; // Array of data structures for each PWM-leg
-	PWM_LEG_ENUM curr_leg; // Current PWM-leg being processed
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
-	int hi_sum;	// sum of high-times
-	int lo_sum;	// sum of low-times
-	int hi_num;	// No. of high-times
-	int lo_num;	// No. of high-times
+	int hi_bound; // error bound for high speed test
+	int lo_bound; // error bound for low speed test
 	int wid_chk;	// width check value
 	int wid_cnt;	// Counter used in width test
 	int fail_cnt;	// Counter of failed tests
@@ -100,14 +90,12 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 /*****************************************************************************/
 /** Display PWM results for all motors
  * \param c_tst // Channel for sending test vecotrs to test checker
- * \param p32_tst_hi, // array of PWM ports (High side)  
- * \param p32_tst_lo, // array of PWM ports (Low side)   
+ * \param c_chk // Channel for sending PWM data to test checker
  * \param c_adc_trig // ADC trigger channel 
  */
-void check_all_pwm_client_data( // Display PWM results for all motors
+void check_pwm_client_data( // Display PWM results for all motors
 	streaming chanend c_tst, // Channel for receiving test vectors from test generator
-	buffered in port:32 p32_tst_hi[], // array of PWM ports (High side)  
-	buffered in port:32 p32_tst_lo[], // array of PWM ports (Low side)   
+	streaming chanend c_chk, // Channel for transmitting PWM data to test checker
 	chanend c_adc_trig // ADC trigger channel 
 );
 /*****************************************************************************/

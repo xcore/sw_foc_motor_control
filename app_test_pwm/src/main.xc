@@ -31,6 +31,7 @@ int main ( void ) // Program Entry Point
 	chan c_pwm2adc_trig;
 	chan c_pwm; // Channel connecting Client and Server
 	streaming chan c_tst; // Channel for sending test vectors from Generator to Checker core
+	streaming chan c_chk; // Channel for sending PWM data from Capture to Checker core
 
 
 	par
@@ -46,7 +47,9 @@ int main ( void ) // Program Entry Point
 				// Server function under test
 				foc_pwm_do_triggered( MOTOR_ID, c_pwm ,pb32_pwm_hi ,pb32_pwm_lo ,c_pwm2adc_trig ,p16_adc_sync ,pwm_clk );
 		
-				check_all_pwm_client_data( c_tst ,pb32_tst_hi ,pb32_tst_lo ,c_pwm2adc_trig ); // Check results
+				capture_pwm_client_data( pb32_tst_hi ,pb32_tst_lo ,c_chk ); // Capture results
+
+				check_pwm_client_data( c_tst ,c_chk ,c_pwm2adc_trig ); // Check results
 			} // par
 		
 		  free_locks(); // Free Mutex for display

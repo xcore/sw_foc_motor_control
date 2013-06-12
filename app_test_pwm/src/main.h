@@ -23,6 +23,7 @@
 #include "use_locks.h"
 #include "app_global.h"
 #include "pwm_server.h"
+#include "capture_pwm_data.h"
 #include "check_pwm_tests.h"
 #include "generate_pwm_tests.h"
 

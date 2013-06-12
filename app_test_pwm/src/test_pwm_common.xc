@@ -34,8 +34,8 @@ static void init_width_component( // Initialise PWM Test data for PWM width test
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[FAST].str		," Fast-width " );
-	safestrcpy( vect_comp_s.state_names[SLOW].str		," Slow-width " );
+	safestrcpy( vect_comp_s.state_names[LARGE].str		," Large-width " );
+	safestrcpy( vect_comp_s.state_names[SMALL].str		," Small-width " );
 
 	// Add any new component states here 
 } // init_width_component
@@ -65,6 +65,31 @@ static void init_phase_component( // Initialise PWM Test data for phase test vec
 
 	// Add any new component states here 
 } // init_phase_component
+/*****************************************************************************/
+static void init_leg_component( // Initialise PWM Test data for PWM-leg test vector component
+	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
+	int inp_states, // No. of states for this test vector component
+	const char inp_name[] // input name for current test vector component
+)
+{
+	// Check enough room for all states
+	if (MAX_COMP_STATES < inp_states)
+	{
+		acquire_lock(); // Acquire Display Mutex
+		printstr( "ERROR on line "); printint( __LINE__ ); printstr( " of "); printstr( __FILE__ );
+		printstrln( ": MAX_COMP_STATES < inp_states, Update value for MAX_COMP_STATES in test_pwm_common.h" );
+		release_lock(); // Release Display Mutex
+		assert(0 == 1);
+	} // if (MAX_COMP_STATES < inp_states)
+
+	vect_comp_s.num_states = inp_states; // Assign number of states for current component
+	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
+
+	safestrcpy( vect_comp_s.state_names[PWM_HI_LEG].str ," High_Leg " );
+	safestrcpy( vect_comp_s.state_names[PWM_LO_LEG].str ,"  Low_Leg " );
+
+	// Add any new component states here 
+} // init_leg_component
 /*****************************************************************************/
 static void init_control_component( // Initialise PWM Test data for Control/Communications test vector component
 	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
@@ -138,7 +163,8 @@ void init_common_data( // Initialise PWM Test data
 {
 	init_width_component(		comm_pwm_s.comp_data[WIDTH]		,NUM_PWM_WIDTHS	," Width " );
 	init_phase_component(		comm_pwm_s.comp_data[PHASE]		,NUM_PWM_PHASES	," Phase " );
-	init_control_component(		comm_pwm_s.comp_data[CNTRL]	,NUM_PWM_CNTRLS	," Comms." );
+	init_leg_component(			comm_pwm_s.comp_data[LEG]			,NUM_PWM_LEGS		,"  Leg  " );
+	init_control_component(	comm_pwm_s.comp_data[CNTRL]		,NUM_PWM_CNTRLS	," Comms." );
 
 	// Add any new test vector components here
 } // init_common_data

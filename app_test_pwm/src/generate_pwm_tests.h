@@ -28,12 +28,6 @@
 #include "pwm_client.h"
 #include "test_pwm_common.h"
 
-/** Define PWM Width for 'Maximum test' */
-#define MAX_PWM 3000 // PWM Width for 'Maximum test'
-
-/** Define PWM Width for 'Minimum test' */
-#define MIN_PWM 500 // PWM Width for 'Minimum test'
-
 /** Define time period between generations of PWM Client data */
 #define PWM_PERIOD (40 * MICRO_SEC) // Time period between generations of PWM Client data
 

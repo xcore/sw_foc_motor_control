@@ -59,13 +59,13 @@ static void assign_test_vector_width( // Assign Speed-state of test vector
 {
 	switch( inp_width )
 	{
-		case FAST: // Constant Fast Speed
+		case LARGE: // Constant Fast Speed
 			tst_data_s.width = MAX_PWM; // Set pulse width for High speed
-		break; // case FAST:
+		break; // case LARGE:
 
-		case SLOW: // Constant Slow Speed
+		case SMALL: // Constant Slow Speed
 			tst_data_s.width = MIN_PWM; // Set pulse width for Slow speed
-		break; // case SLOW:
+		break; // case SMALL:
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
@@ -85,6 +85,14 @@ static void assign_test_vector_phase( // Assign Phase-state of test vector
 {
 	tst_data_s.vector.comp_state[PHASE] = inp_phase; // Update phase-state of test vector
 } // assign_test_vector_phase
+/*****************************************************************************/
+static void assign_test_vector_leg( // Assign PWM-leg state of test vector
+	GENERATE_PWM_TYP &tst_data_s, // Reference to structure of PWM test data
+	PWM_LEG_ENUM inp_leg // Input leg-state
+)
+{
+	tst_data_s.vector.comp_state[LEG] = inp_leg; // Update PWM-leg state of test vector
+} // assign_test_vector_leg
 /*****************************************************************************/
 static void do_pwm_test( // Performs one PWM test
 	GENERATE_PWM_TYP &tst_data_s, // Reference to structure of PWM test data
@@ -164,27 +172,16 @@ static void gen_motor_pwm_test_data( // Generate PWM Test data for one motor
 //MB~		chronometer when timerafter(ts1 + (MILLI_400_SECS << 1) + (256 * thread_id)) :> void;
 
 	// NB These tests assume PWM_FILTER = 0
+	assign_test_vector_leg( tst_data_s ,TEST_LEG); // Set which PWM-Leg to test
+	assign_test_vector_phase( tst_data_s ,TEST_PHASE ); // Set PWM-phase to test
 
-	assign_test_vector_phase( tst_data_s ,PWM_PHASE_A ); // Set test vector to Phase_A
+	assign_test_vector_width( tst_data_s ,LARGE ); // Set test vector to Slow width
+
+	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Skip start-up
+	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,2 );
+
 	tst_data_s.vector.comp_state[CNTRL] = VALID; // Start-up complete, Switch on testing
-
-	assign_test_vector_width( tst_data_s ,FAST ); // Set test vector to Slow width
-	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,2 );
-
-	assign_test_vector_width( tst_data_s ,SLOW ); // Set test vector to Slow width
-	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,MIN_TESTS );
-
-	assign_test_vector_width( tst_data_s ,FAST ); // Set test vector to Fast width
 	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,MAX_TESTS );
-
-	assign_test_vector_width( tst_data_s ,SLOW ); // Set test vector to Slow width
-	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,MIN_TESTS );
-
-	assign_test_vector_width( tst_data_s ,FAST ); // Set test vector to Fast width
-	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,MAX_TESTS );
-
-	assign_test_vector_width( tst_data_s ,SLOW ); // Set test vector to Fast width
-	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,2 );
 
 	tst_data_s.vector.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
 	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,1 );
