@@ -435,8 +435,8 @@ static void process_new_test_vector( // Process new test vector
 } // process_new_test_vector
 /*****************************************************************************/
 void check_pwm_client_data( // Display PWM results for all motors
+	streaming chanend c_chk[], // Array of Channels for receiving PWM data
 	streaming chanend c_tst, // Channel for receiving test vectors from test generator
-	streaming chanend c_chk, // Channel for transmitting PWM data to test checker
 	chanend c_adc_trig // ADC trigger channel 
 )
 {
@@ -451,8 +451,10 @@ void check_pwm_client_data( // Display PWM results for all motors
 
 	int write_cnt = 0; // No of buffer writes
 	int read_cnt = 0; // No of buffer reads
+	int chan_cnt = 0; // No of channel reads
 	unsigned write_off = 0; // buffer write offset
 	unsigned read_off = 0; // buffer read offset
+	unsigned chan_off = 0; // channel offset
 
 
 	init_check_data( chk_data_s ); // Initialise check data
@@ -484,12 +486,15 @@ void check_pwm_client_data( // Display PWM results for all motors
 #pragma ordered // If multiple cases fire at same time, service top-most first
 		select {
 			// Service any new PWM data on input channel
-			case c_chk :> port_data_bufs[write_off] :
+			case c_chk[chan_off] :> port_data_bufs[write_off] :
 // acquire_lock(); printstr("                "); printuint(write_off); printstr("P="); printhexln(port_data_bufs[write_off].pattern); release_lock(); //MB~
 
-				// Update circular buffer offset
+				// Update circular buffer offsets
 				write_cnt++; // Increment write counter
 				write_off = (((unsigned)write_cnt) & INP_BUF_MASK); // Wrap offset into range [0..INP_BUF_MASK];
+
+				chan_cnt++; // Increment channe lcounter
+				chan_off = (((unsigned)chan_cnt) & CHAN_MASK); // Wrap offset into range [0..CHAN_MASK];
 			break;
 
 #ifdef MB

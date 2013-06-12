@@ -28,7 +28,7 @@
 #include "test_pwm_common.h"
 
 /** Define Input buffer size in bits */
-#define INP_BUF_BITS 7 // Input buffer size in bits, NB Can probably use 2, but sailing close to the wind
+#define INP_BUF_BITS 6 // Input buffer size in bits, NB Can probably use 2, but sailing close to the wind
 
 /** Define allowed PWM-width delay */
 #define WID_TIMEOUT 2 // Allowed PWM-width delay
@@ -90,12 +90,12 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 /*****************************************************************************/
 /** Display PWM results for all motors
  * \param c_tst // Channel for sending test vecotrs to test checker
- * \param c_chk // Channel for sending PWM data to test checker
+ * \param c_chk[] // Array of channels for Receiving PWM data
  * \param c_adc_trig // ADC trigger channel 
  */
 void check_pwm_client_data( // Display PWM results for all motors
+	streaming chanend c_chk[], // Array of Channels for Receiving PWM data
 	streaming chanend c_tst, // Channel for receiving test vectors from test generator
-	streaming chanend c_chk, // Channel for transmitting PWM data to test checker
 	chanend c_adc_trig // ADC trigger channel 
 );
 /*****************************************************************************/
