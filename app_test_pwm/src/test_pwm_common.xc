@@ -34,11 +34,32 @@ static void init_width_component( // Initialise PWM Test data for PWM width test
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[LARGE].str		," Large-width " );
-	safestrcpy( vect_comp_s.state_names[SMALL].str		," Small-width " );
+	safestrcpy( vect_comp_s.state_names[MINI].str		," Minimum-width " );
+	safestrcpy( vect_comp_s.state_names[SMALL].str	,"  Small-width  " );
+	safestrcpy( vect_comp_s.state_names[EQUAL].str	,"  Equal-width  " );
+	safestrcpy( vect_comp_s.state_names[LARGE].str	,"  Large-width  " );
+	safestrcpy( vect_comp_s.state_names[MAXI].str		," Maximum-width " );
 
 	// Add any new component states here 
 } // init_width_component
+/*****************************************************************************/
+static void init_width_info( // Initialise PWM Test data for PWM width test vector component
+	COMMON_PWM_TYP &comm_pwm_s, // Reference to structure of common PWM data
+	int inp_states, // No. of states for this test vector component
+	const char inp_name[] // input name for current test vector component
+)
+{
+	init_width_component(		comm_pwm_s.comp_data[WIDTH]		,inp_states ,inp_name );
+
+	// Assign PWM-widths to each PWM width-state 
+	comm_pwm_s.pwm_wids[MINI] = MINI_PWM;
+	comm_pwm_s.pwm_wids[SMALL] = SMALL_PWM;
+	comm_pwm_s.pwm_wids[EQUAL] = EQUAL_PWM;
+	comm_pwm_s.pwm_wids[LARGE] = LARGE_PWM;
+	comm_pwm_s.pwm_wids[MAXI] = MAXI_PWM;
+
+	// Add any new component states here 
+} // init_width_info
 /*****************************************************************************/
 static void init_phase_component( // Initialise PWM Test data for phase test vector component
 	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
@@ -161,7 +182,7 @@ void init_common_data( // Initialise PWM Test data
 	COMMON_PWM_TYP &comm_pwm_s // Reference to structure of common PWM data
 )
 {
-	init_width_component(		comm_pwm_s.comp_data[WIDTH]		,NUM_PWM_WIDTHS	," Width " );
+	init_width_info(	comm_pwm_s ,NUM_PWM_WIDTHS	," Width " );
 	init_phase_component(		comm_pwm_s.comp_data[PHASE]		,NUM_PWM_PHASES	," Phase " );
 	init_leg_component(			comm_pwm_s.comp_data[LEG]			,NUM_PWM_LEGS		,"  Leg  " );
 	init_control_component(	comm_pwm_s.comp_data[CNTRL]		,NUM_PWM_CNTRLS	," Comms." );

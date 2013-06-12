@@ -33,11 +33,23 @@
 /** Define PWM-Phase under test */
 #define TEST_LEG PWM_HI_LEG
 
+/** Define samll PWM width resolution */
+#define SMALL_RES_BITS ((PORT_RES_BITS + PWM_RES_BITS - 1) >> 1) // NB Geometric mean of MINI and EQUAL widths
+
+/** Define value for Minimum Speed test */
+#define MINI_PWM PWM_PORT_WID
+
 /** Define value for Low Speed test */
-#define MIN_PWM (PWM_MAX_VALUE >> 3) 
+#define SMALL_PWM (1 << SMALL_RES_BITS)
+
+/** Define value for Medium Speed test */
+#define EQUAL_PWM (PWM_MAX_VALUE >> 1) 
 
 /** Define value for High Speed test */
-#define MAX_PWM (PWM_MAX_VALUE - MIN_PWM)
+#define LARGE_PWM (PWM_MAX_VALUE - SMALL_PWM)
+
+/** Define value for Maximum Speed test */
+#define MAXI_PWM (PWM_MAX_VALUE - MINI_PWM)
 
 /** Enumeration of PWM Test Vector Components */
 typedef enum VECT_COMP_ETAG
@@ -52,8 +64,11 @@ typedef enum VECT_COMP_ETAG
 /** Enumeration of PWM Width-states */
 typedef enum WIDTH_PWM_ETAG
 {
-  LARGE = 0,	// Large PWM width (for Fast Speed)
-  SMALL,			// Smaell PWM width (for Slow Speed)
+  MINI = 0,	// Minimum PWM width (for Slowest Speed)
+  SMALL,		// Small PWM width (for Slow Speed)
+  EQUAL,		// Equal High and Low PWM (for Medium Speed)
+  LARGE,		// Large PWM width (for Fast Speed)
+  MAXI,			// Maximum PWM width (for Fastest Speed)
   NUM_PWM_WIDTHS	// Handy Value!-)
 } WIDTH_PWM_ENUM;
 
@@ -69,7 +84,7 @@ typedef enum CNTRL_PWM_ETAG
 // NB Enumeration of PWM Phase-states in sc_pwm/module_foc_pwm/src/pwm_common.h
 
 /** Define maximum number of states for any test vector component (used to size arrays) */
-#define MAX_COMP_STATES NUM_PWM_CNTRLS	// Edit this line
+#define MAX_COMP_STATES NUM_PWM_WIDTHS	// Edit this line
 
 /** Type containing string */
 typedef struct STRING_TAG // Structure containing string array
@@ -95,6 +110,7 @@ typedef struct VECT_COMP_TAG // Structure containing common PWM test data for on
 typedef struct COMMON_PWM_TAG // Structure containing all common PWM test data
 {
 	VECT_COMP_TYP comp_data[NUM_VECT_COMPS]; // Array of data for each component of test vector
+	unsigned pwm_wids[NUM_PWM_WIDTHS]; // Array of PWM-widths for each width-state
 } COMMON_PWM_TYP;
 
 /*****************************************************************************/

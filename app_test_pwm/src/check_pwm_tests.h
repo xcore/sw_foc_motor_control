@@ -28,7 +28,7 @@
 #include "test_pwm_common.h"
 
 /** Define Input buffer size in bits */
-#define INP_BUF_BITS 6 // Input buffer size in bits, NB Can probably use 2, but sailing close to the wind
+#define INP_BUF_BITS 6 // Input buffer size in bits
 
 /** Define allowed PWM-width delay */
 #define WID_TIMEOUT 2 // Allowed PWM-width delay
@@ -78,8 +78,7 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 	TEST_VECT_TYP prev_vect; // Structure of containing previous PWM test vector
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
-	int hi_bound; // error bound for high speed test
-	int lo_bound; // error bound for low speed test
+	int bound; // error bound for PWM-width measurement
 	int wid_chk;	// width check value
 	int wid_cnt;	// Counter used in width test
 	int fail_cnt;	// Counter of failed tests

@@ -32,10 +32,6 @@ static void init_check_data( // Initialise check data for PWM tests
 	chk_data_s.print = PRINT_TST_PWM; // Set print mode
 	chk_data_s.dbg = 0; // Set debug mode
 
-	// Evaluate error bounds for speed checks (~6%)
-	chk_data_s.hi_bound = ((MAX_PWM + 2) >> 4); 
-	chk_data_s.lo_bound = ((MIN_PWM + 2) >> 4); 
-
 	// Clear error and test counters for current motor
 	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
@@ -64,79 +60,35 @@ static void init_wave_data( // Initialise data structure for one PWM wave
 	wave_data_s.prev_data = wave_data_s.curr_data; // Initialise previous PWM value
 } // init_one_wave
 /*****************************************************************************/
-static void print_pwm_parameters( // Print PWM parameters
+static void print_pwm_pulse( // Print PWM Pulse data
+	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
+	unsigned pulse_width, // Width of input pulse
+	const char pulse_name[] // name for input pulse
+)
+{
+	acquire_lock(); // Acquire Display Mutex
+	printstr( chk_data_s.padstr1 );
+	printstr(pulse_name);
+	printstr( "= " );
+	printuint( pulse_width );
+	printcharln(' ');
+	release_lock(); // Release Display Mutex
+} // print_pwm_pulse
+/*****************************************************************************/
+static void print_pwm_sample( // Print PWM parameters
 	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
 	PWM_WAVE_TYP &wave_data_s // Reference to wave-data structure to be printed
 )
 {
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
-
-	printstr( "  P=" );
-	printint( chk_data_s.curr_vect.comp_state[PHASE] );
 	printstr( "  X=" );
 	printhex( wave_data_s.curr_data.port_data.pattern );
 	printstr( "  T=" );
 	printint( wave_data_s.curr_data.port_data.time_off );
-	printstr( "  D=" );
-	printint( (PORT_TIME_TYP)(wave_data_s.curr_data.port_data.time_off 
-		- wave_data_s.prev_data.port_data.time_off) );
 	printcharln(' ');
 	release_lock(); // Release Display Mutex
-} // print_pwm_parameters
-/*****************************************************************************/
-static void check_pwm_width( // Check for correct PWM width
-	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
-	PWM_WAVE_TYP &wave_data_s // Reference to wave-data structure to be checked
-)
-{
-	unsigned curr_patn = wave_data_s.curr_data.port_data.pattern; // local copy of current PWM pattern
-
-
-	chk_data_s.motor_tsts[WIDTH]++;
-
-	// Check for expected value
-	if (curr_patn == chk_data_s.wid_chk)
-	{ // Found expected value (Test passed)
-		chk_data_s.wid_cnt = 0; // Clear Time-out
-	} // if (curr_patn == chk_data_s.wid_chk)
-	else
-	{ // Not expected value
-		if (0 < chk_data_s.wid_cnt)
-		{ // test NOT yet timed-out
-			chk_data_s.wid_cnt--; // Decrement 'timer'
-		} // if (0 < chk_data_s.wid_cnt)
-		else
-		{ // test timed-out (Test failed)
-			chk_data_s.motor_errs[WIDTH]++;
-
-			acquire_lock(); // Acquire Display Mutex
-			printcharln(' ');
-			printstr( chk_data_s.padstr1 );
-
-			switch( chk_data_s.curr_vect.comp_state[WIDTH] )
-			{
-				case LARGE:
-					printstrln("LARGE FAILURE");
-				break; // case LARGE:
-		
-				case SMALL: // Start error_status test
-					printstrln("SMALL FAILURE");
-				break; // case SMALL:
-		
-				default:
-					printstrln("WIDTH: Unknown PWM Width-state");
-					assert(0 == 1);
-				break; // default:
-			} // switch( chk_data_s.curr_vect.comp_state[WIDTH] )
-
-			release_lock(); // Release Display Mutex
-
-			chk_data_s.wid_cnt = 0; //  // Clear Time-out
-		} // if (0 < chk_data_s.wid_cnt)
-	} // else !(curr_patn == chk_data_s.wid_chk)
-
-} // check_pwm_width
+} // print_pwm_sample
 /*****************************************************************************/
 static int find_edge_offset_from_ls( // Finds first bit-change in 32-bit pattern (measured from LS end)
 	unsigned inp_patn  // input 32-bit pattern
@@ -219,9 +171,13 @@ static void update_pwm_data( // Update PWM data
 		{ // Rising edge
 			wave_data_s.lo_time +=  diff_time; // Finalise time for low portion of pulse
 			wave_data_s.hi_time = 0; // Initialise time for high portion of pulse
-acquire_lock();	printstr(chk_data_s.padstr1); printstr("LT="); printuintln(wave_data_s.lo_time);	release_lock();
 			wave_data_s.lo_sum += wave_data_s.lo_time;
 			wave_data_s.lo_num++;
+
+			if (chk_data_s.print)
+			{
+				print_pwm_pulse( chk_data_s ,wave_data_s.lo_time ," Low_Width" ); // Print new PWM pulse data
+			} // if (chk_data_s.print)
 		} // else !(prev_pwm_s.last)
 	} // if (curr_pwm_s.last)
 	else
@@ -230,9 +186,13 @@ acquire_lock();	printstr(chk_data_s.padstr1); printstr("LT="); printuintln(wave_
 		{ // Falling Edge
 			wave_data_s.hi_time += diff_time; // Finalise time for high portion of pulse
 			wave_data_s.lo_time = 0; // Initialise time for low portion of pulse
-acquire_lock();	printstr(chk_data_s.padstr1); printstr("HT="); printuintln(wave_data_s.hi_time);	release_lock();
 			wave_data_s.hi_sum += wave_data_s.hi_time;
 			wave_data_s.hi_num++;
+
+			if (chk_data_s.print)
+			{
+				print_pwm_pulse( chk_data_s ,wave_data_s.hi_time ,"High_Width" ); // Print new PWM pulse data
+			} // if (chk_data_s.print)
 		} // if (prev_pwm_s.last)
 		else
 		{ // Constant Low
@@ -246,7 +206,7 @@ static void check_pwm_parameters( // Check all PWM parameters
 	PWM_WAVE_TYP &wave_data_s // Reference to wave-data structure to be checked
 )
 {
-	check_pwm_width( chk_data_s ,wave_data_s ); // Check PWM width
+
 } // check_pwm_parameters
 /*****************************************************************************/
 static void check_pwm_pulse_levels( // Check PWM mean voltage
@@ -255,48 +215,22 @@ static void check_pwm_pulse_levels( // Check PWM mean voltage
 	const WIDTH_PWM_ENUM cur_width	// PWM-width state to check
 )
 {
-	switch(cur_width)
+	unsigned chk_wid = chk_data_s.common.pwm_wids[cur_width]; // Get Check widths for this width-state 
+
+
+	chk_data_s.motor_tsts[WIDTH]++;
+
+	if (chk_data_s.bound < abs(wave_data_s.meas_wid - chk_wid))
 	{
-		case LARGE: // Constant Large Width (for fast speed)
-			chk_data_s.motor_tsts[WIDTH]++;
+		chk_data_s.motor_errs[WIDTH]++;
 
-			if (chk_data_s.hi_bound < abs(wave_data_s.meas_wid - MAX_PWM))
-			{
-				chk_data_s.motor_errs[WIDTH]++;
-
-				acquire_lock(); // Acquire Display Mutex
-				printcharln(' ');
-				printstr( chk_data_s.padstr1 );
-				printstrln("LARGE FAILURE");
-				release_lock(); // Release Display Mutex
-			} // if (chk_data_s.hi_bound < abs(wave_data_s.meas_wid - MAX_PWM))
-		break; // case LARGE:
-
-		case SMALL: // Constant Small Width (for Slow Speed)
-			chk_data_s.motor_tsts[WIDTH]++;
-
-			if (chk_data_s.lo_bound < abs(wave_data_s.meas_wid - MIN_PWM))
-			{
-				chk_data_s.motor_errs[WIDTH]++;
-
-				acquire_lock(); // Acquire Display Mutex
-				printcharln(' ');
-				printstr( chk_data_s.padstr1 );
-				printstrln("SMALL FAILURE");
-				release_lock(); // Release Display Mutex
-			} // if (chk_data_s.lo_bound < abs(wave_data_s.meas_wid - MIN_PWM))
-		break; // case SMALL:
-
-		default:
-			acquire_lock(); // Acquire Display Mutex
-			printcharln(' ');
-			printstr( chk_data_s.padstr1 );
-			printstrln("ERROR: Unknown PWM Speed-state");
-			release_lock(); // Release Display Mutex
-			assert(0 == 1);
-		break; // default:
-	} // switch(cur_width)
-
+		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstr( chk_data_s.common.comp_data[WIDTH].state_names[cur_width].str	);
+		printstrln(" FAILURE");
+		release_lock(); // Release Display Mutex
+	} // if (chk_data_s.hi_bound < abs(wave_data_s.meas_wid - MAX_PWM))
 } // check_pwm_pulse_levels
 /*****************************************************************************/
 static void measure_pwm_width( // Calculate PWM-width from captured PWM wave data
@@ -331,7 +265,6 @@ static void measure_pwm_width( // Calculate PWM-width from captured PWM wave dat
 		wave_data_s.meas_wid = ((PWM_MAX_VALUE * hi_mean) + (period >> 1))/period;
 	} // if (period) 
 
-	acquire_lock(); printstr("WID="); printuintln(wave_data_s.meas_wid); release_lock(); //MB~
 } // measure_pwm_width
 /*****************************************************************************/
 static void initialise_pwm_width_test( // Initialise data for new speed test
@@ -341,6 +274,9 @@ static void initialise_pwm_width_test( // Initialise data for new speed test
 {
 	// Clear accumulated data
 	init_wave_data( chk_data_s ,wave_data_s ); // Initialise data for one PWM wave
+
+	// Evaluate error bounds for Pulse-width checks (~2%)
+	chk_data_s.bound = 1 + (chk_data_s.common.pwm_wids[chk_data_s.curr_vect.comp_state[WIDTH]] >> 6); 
 
 } // initialise_pwm_width_test 
 /*****************************************************************************/
@@ -352,7 +288,18 @@ static void finalise_pwm_width_test( // terminate speed test and check results
 {
 	measure_pwm_width( chk_data_s ,wave_data_s );
 
-	check_pwm_pulse_levels( chk_data_s ,wave_data_s ,cur_width ); // Check PWM angular speed
+	if (chk_data_s.print)
+	{
+		acquire_lock(); // Acquire Display Mutex
+		printstr( chk_data_s.padstr1 );
+		printstr( "Mean_Width= " );
+		printuint(wave_data_s.meas_wid);
+		printcharln(' ');
+		release_lock(); // Release Display Mutex
+	} // if (chk_data_s.print)
+
+	check_pwm_pulse_levels( chk_data_s ,wave_data_s ,cur_width ); // Check PWM pulse width
+
 } // finalise_pwm_width_test 
 /*****************************************************************************/
 static int pwm_data_compare( // Check if 2 sets of PWM data are different
@@ -384,16 +331,16 @@ static void test_new_pwm_input_value( // test new PWM input value
 
 		if (chk_data_s.print)
 		{
-			print_pwm_parameters( chk_data_s ,wave_data_s ); // Print new PWM parameters
+//			print_pwm_sample( chk_data_s ,wave_data_s ); // Print new PWM sample
 		} // if (chk_data_s.print)
 
 		init_sample_data( wave_data_s.curr_data ,wave_data_s.prev_data ); 
 
-		update_pwm_data( chk_data_s ,wave_data_s ); // Update PWM data
-
 		// Check if this current test vector is valid
 		if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
 		{
+			update_pwm_data( chk_data_s ,wave_data_s ); // Update PWM data
+
 			check_pwm_parameters( chk_data_s ,wave_data_s ); // Check all PWM parameters
 		} // if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
 
@@ -410,7 +357,7 @@ static void process_new_test_vector( // Process new test vector
 	int change = 0; // Clear flag indicating change in test vector detected
 
 
-	// Check for change in speed test
+	// Check for change in Pulse-width
 	if (chk_data_s.curr_vect.comp_state[WIDTH] != chk_data_s.prev_vect.comp_state[WIDTH])
 	{
 		finalise_pwm_width_test( chk_data_s ,wave_data_s ,chk_data_s.prev_vect.comp_state[WIDTH] );
@@ -419,7 +366,6 @@ static void process_new_test_vector( // Process new test vector
 
 		change = 1; // Set flag indicating change in test vector detected
 	} // if ((chk_data_s.curr_vect.comp_state[WIDTH] ...
-
 
 	// Check if test vector changed
 	if (change)
@@ -459,9 +405,6 @@ void check_pwm_client_data( // Display PWM results for all motors
 
 	init_check_data( chk_data_s ); // Initialise check data
 
-//	chronometer :> chk_data_s.time_off[0]; // Get start time
-//	chronometer when timerafter(chk_data_s.time_off[0] + (MICRO_SEC << 1)) :> chk_data_s.time_off[0]; // Wait for Test Generation to Start
-
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
@@ -497,10 +440,6 @@ void check_pwm_client_data( // Display PWM results for all motors
 				chan_off = (((unsigned)chan_cnt) & CHAN_MASK); // Wrap offset into range [0..CHAN_MASK];
 			break;
 
-#ifdef MB
-			// Service any change on Low-leg input port pins
-#endif //MB~
-
 			case inct_byref( c_adc_trig, cntrl_token ):
 // ToDo MB~
 			break;
@@ -524,7 +463,6 @@ void check_pwm_client_data( // Display PWM results for all motors
 				if (write_cnt > read_cnt)
 				{
 					wave_data_s.curr_data.port_data = port_data_bufs[read_off]; // Update PWM data
-// acquire_lock(); printstr("                        DO="); printintln(write_cnt - read_cnt); release_lock(); //MB~
 		
 					// Update circular buffer offset
 					read_cnt++; // Increment write counter
