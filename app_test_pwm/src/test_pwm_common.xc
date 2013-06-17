@@ -112,6 +112,31 @@ static void init_leg_component( // Initialise PWM Test data for PWM-leg test vec
 	// Add any new component states here 
 } // init_leg_component
 /*****************************************************************************/
+static void init_adc_component( // Initialise PWM Test data for ADC trigger test vector component
+	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
+	int inp_states, // No. of states for this test vector component
+	const char inp_name[] // input name for current test vector component
+)
+{
+	// Check enough room for all states
+	if (MAX_COMP_STATES < inp_states)
+	{
+		acquire_lock(); // Acquire Display Mutex
+		printstr( "ERROR on line "); printint( __LINE__ ); printstr( " of "); printstr( __FILE__ );
+		printstrln( ": MAX_COMP_STATES < inp_states, Update value for MAX_COMP_STATES in test_pwm_common.h" );
+		release_lock(); // Release Display Mutex
+		assert(0 == 1);
+	} // if (MAX_COMP_STATES < inp_states)
+
+	vect_comp_s.num_states = inp_states; // Assign number of states for current component
+	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
+
+	safestrcpy( vect_comp_s.state_names[NO_ADC].str ,"No_ADC" );
+	safestrcpy( vect_comp_s.state_names[ADC_ON].str ,"ADC_On" );
+
+	// Add any new component states here 
+} // init_adc_component
+/*****************************************************************************/
 static void init_control_component( // Initialise PWM Test data for Control/Communications test vector component
 	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
 	int inp_states, // No. of states for this test vector component
@@ -183,9 +208,10 @@ void init_common_data( // Initialise PWM Test data
 )
 {
 	init_width_info(	comm_pwm_s ,NUM_PWM_WIDTHS	," Width " );
-	init_phase_component(		comm_pwm_s.comp_data[PHASE]		,NUM_PWM_PHASES	," Phase " );
-	init_leg_component(			comm_pwm_s.comp_data[LEG]			,NUM_PWM_LEGS		,"  Leg  " );
-	init_control_component(	comm_pwm_s.comp_data[CNTRL]		,NUM_PWM_CNTRLS	," Comms." );
+	init_phase_component(		comm_pwm_s.comp_data[PHASE]			,NUM_PWM_PHASES	," Phase " );
+	init_leg_component(			comm_pwm_s.comp_data[LEG]				,NUM_PWM_LEGS		,"  Leg  " );
+	init_adc_component(			comm_pwm_s.comp_data[ADC_TRIG]	,NUM_PWM_ADCS		,"  ADC  " );
+	init_control_component(	comm_pwm_s.comp_data[CNTRL]			,NUM_PWM_CNTRLS	," Comms." );
 
 	// Add any new test vector components here
 } // init_common_data

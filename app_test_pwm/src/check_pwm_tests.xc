@@ -141,6 +141,41 @@ static void init_sample_data( // Initialise PWM sample data, and if necessary co
 
 } // init_sample_data
 /*****************************************************************************/
+static void check_adc_trigger( // Check timing of ADC trigger
+	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
+	PWM_WAVE_TYP &wave_data_s, // Reference to wave-data structure to be updated
+	PORT_TIME_TYP curr_time,		// current PWM time-offset
+	const ADC_PWM_ENUM curr_adc	// ADC-trigger state to check
+)
+{
+	PORT_TIME_TYP cent_time; // port time for centre of High-Pulse
+	int err_time; // ADC error time
+
+
+	// Calculate ADC trigger error. (distance from centre of High-pulse)
+	cent_time = curr_time + (PWM_MAX_VALUE - (wave_data_s.hi_time >> 1)); // time_offset for centre of High-Pulse
+	cent_time &= PWM_MASK; // mask into range [0..PWM_MASK]
+	err_time = (wave_data_s.adc_time + QUART_PWM_MAX - ADC_DELAY) + (PWM_MAX_VALUE - cent_time); // error for ADC trigger;
+	err_time &= PWM_MASK; // mask into range [0..PWM_MASK]
+	if (err_time > (PWM_MAX_VALUE >> 1)) err_time -= PWM_MAX_VALUE; // Max. absolute error is half PWM period 
+
+	chk_data_s.motor_tsts[ADC_TRIG]++;
+
+//MB~	if (HALF_PORT_WID <= abs(err_time))
+	if (4 <= abs(err_time))
+	{
+		chk_data_s.motor_errs[ADC_TRIG]++;
+
+		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstr( chk_data_s.common.comp_data[ADC_TRIG].state_names[curr_adc].str	);
+		printstrln(" FAILURE");
+		release_lock(); // Release Display Mutex
+	} // if (HALF_PORT_WID <= abs(err_time))
+
+} // check_adc_trigger
+/*****************************************************************************/
 static void update_pwm_data( // Update PWM data
 	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
 	PWM_WAVE_TYP &wave_data_s // Reference to wave-data structure to be updated
@@ -151,8 +186,6 @@ static void update_pwm_data( // Update PWM data
 	PORT_TIME_TYP curr_time = (PORT_TIME_TYP)curr_pwm_s.port_data.time_off; // current PWM time-offset
 	PORT_TIME_TYP prev_time = (PORT_TIME_TYP)prev_pwm_s.port_data.time_off; // previous PWM time-offset
 	PORT_TIME_TYP diff_time = (curr_time - prev_time); // Elapsed time
-	PORT_TIME_TYP cent_time; // port time for centre of High-Pulse
-	int err_time; // ADC error time
 
 
 	// Update pulse times ...
@@ -189,14 +222,12 @@ static void update_pwm_data( // Update PWM data
 			wave_data_s.hi_sum += wave_data_s.hi_time;
 			wave_data_s.hi_num++;
 
-			// Calculate ADC trigger error. (distance from centre of High-pulse)
-			cent_time = curr_time + (PWM_MAX_VALUE - (wave_data_s.hi_time >> 1)); // time_offset for centre of High-Pulse
-			cent_time &= PWM_MASK; // mask into range [0..PWM_MASK]
-			err_time = (wave_data_s.adc_time + QUART_PWM_MAX) + (PWM_MAX_VALUE - cent_time); // error for ADC trigger;
-			err_time &= PWM_MASK; // mask into range [0..PWM_MASK]
-			if (err_time > (PWM_MAX_VALUE >> 1)) err_time -= PWM_MAX_VALUE; // Max. absolute error is half PWM period 
+			// Check if ADC-trigger being tested
+			if (chk_data_s.common.options.flags[TST_ADC])
+			{ 
+				check_adc_trigger( chk_data_s ,wave_data_s ,curr_time ,chk_data_s.curr_vect.comp_state[ADC_TRIG] );
+			} // if (chk_data_s.common.options.flags[TST_ADC])
 
-acquire_lock(); printstr("ADC_ERR="); printintln(err_time); release_lock(); //MB~
 			if (chk_data_s.print)
 			{
 				print_pwm_pulse( chk_data_s ,wave_data_s.hi_time ,"High_Width" ); // Print new PWM pulse data
@@ -416,6 +447,9 @@ void check_pwm_client_data( // Display PWM results for all motors
 	printstr( chk_data_s.padstr1 );
 	printstrln("Start Checks"); 
 	release_lock(); // Release Display Mutex
+
+
+	c_tst :> chk_data_s.common.options; // Get test options from generator core
 
 	c_tst :> chk_data_s.curr_vect; // Initialise test-vector structure with 1st test
 

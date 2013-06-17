@@ -55,6 +55,15 @@
 /** Define ADC Pattern - Must NOT be equivalent to a PWM pattern */
 #define ADC_PATN 0xAA // ADC Pattern - Must NOT be equivalent to a PWM pattern
 
+/** Enumeration of PWM Test Options */
+typedef enum PWM_TEST_ETAG
+{
+  TST_NARROW = 0,	// Test Narrow PWM Widths
+  TST_EQUAL,	// Test Equal PWM Widths
+  TST_ADC,				// Test ADC Trigger
+  NUM_TEST_OPTS	// Handy Value!-)
+} PWM_TEST_ENUM;
+
 /** Enumeration of PWM Test Vector Components */
 typedef enum VECT_COMP_ETAG
 {
@@ -62,6 +71,7 @@ typedef enum VECT_COMP_ETAG
   WIDTH,			// PWM Width-state
   PHASE,			// PWM-Phase
   LEG,				// PWM-Leg
+  ADC_TRIG,				// ADC Trigger
   NUM_VECT_COMPS	// Handy Value!-)
 } VECT_COMP_ENUM;
 
@@ -75,6 +85,14 @@ typedef enum WIDTH_PWM_ETAG
   MAXI,			// Maximum PWM width (for Fastest Speed)
   NUM_PWM_WIDTHS	// Handy Value!-)
 } WIDTH_PWM_ENUM;
+
+/** Enumeration of PWM ADC-trigger states */
+typedef enum ADC_PWM_ETAG
+{
+  NO_ADC = 0,	// ADC-trigger not tested
+  ADC_ON,		// ADC-trigger is tested
+  NUM_PWM_ADCS	// Handy Value!-)
+} ADC_PWM_ENUM;
 
 /** Enumeration of PWM Control-states */
 typedef enum CNTRL_PWM_ETAG
@@ -110,10 +128,17 @@ typedef struct VECT_COMP_TAG // Structure containing common PWM test data for on
 	int num_states; // number of states for this test vector component
 } VECT_COMP_TYP;
 
+/** Type containing all Test Options */
+typedef struct TEST_OPTS_TAG // Structure containing all test option data
+{
+	int flags[NUM_TEST_OPTS]; // Array of test option flags
+} TEST_OPTS_TYP;
+
 /** Type containing all Test Vector Meta-information */
 typedef struct COMMON_PWM_TAG // Structure containing all common PWM test data
 {
 	VECT_COMP_TYP comp_data[NUM_VECT_COMPS]; // Array of data for each component of test vector
+	TEST_OPTS_TYP options; // Structure of test_option data
 	unsigned pwm_wids[NUM_PWM_WIDTHS]; // Array of PWM-widths for each width-state
 } COMMON_PWM_TYP;
 

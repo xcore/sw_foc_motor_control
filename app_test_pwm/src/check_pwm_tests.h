@@ -38,6 +38,8 @@
 
 #define PWM_MASK (PWM_MAX_VALUE - 1) // Used to force into range [0..PWM_MASK]
 
+#define ADC_DELAY 8 // Fudge-Factor: delay between receiving ADC-trigger from channel and outputting to dummy port
+
 /** Classes of PWM sample patterns*/
 typedef enum PWM_PATN_ETAG
 {
