@@ -38,6 +38,7 @@
 
 /** Define value for Minimum Speed test */
 #define MINI_PWM PWM_PORT_WID
+//MB~ #define MINI_PWM (PWM_PORT_WID << 1)
 
 /** Define value for Low Speed test */
 #define SMALL_PWM (1 << SMALL_RES_BITS)
@@ -49,7 +50,10 @@
 #define LARGE_PWM (PWM_MAX_VALUE - SMALL_PWM)
 
 /** Define value for Maximum Speed test */
-#define MAXI_PWM (PWM_MAX_VALUE - MINI_PWM)
+#define MAXI_PWM (PWM_WID_LIMIT - 1)
+
+/** Define ADC Pattern - Must NOT be equivalent to a PWM pattern */
+#define ADC_PATN 0xAA // ADC Pattern - Must NOT be equivalent to a PWM pattern
 
 /** Enumeration of PWM Test Vector Components */
 typedef enum VECT_COMP_ETAG

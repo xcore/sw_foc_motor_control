@@ -27,8 +27,6 @@ static void init_check_data( // Initialise check data for PWM tests
 	safestrcpy( chk_data_s.padstr1 ,"                                             " );
 	safestrcpy( chk_data_s.padstr2 ,"                              " );
 
-	chk_data_s.fail_cnt = 0; // Clear count of failed tests.
-
 	chk_data_s.print = PRINT_TST_PWM; // Set print mode
 	chk_data_s.dbg = 0; // Set debug mode
 
@@ -153,6 +151,8 @@ static void update_pwm_data( // Update PWM data
 	PORT_TIME_TYP curr_time = (PORT_TIME_TYP)curr_pwm_s.port_data.time_off; // current PWM time-offset
 	PORT_TIME_TYP prev_time = (PORT_TIME_TYP)prev_pwm_s.port_data.time_off; // previous PWM time-offset
 	PORT_TIME_TYP diff_time = (curr_time - prev_time); // Elapsed time
+	PORT_TIME_TYP cent_time; // port time for centre of High-Pulse
+	int err_time; // ADC error time
 
 
 	// Update pulse times ...
@@ -189,6 +189,14 @@ static void update_pwm_data( // Update PWM data
 			wave_data_s.hi_sum += wave_data_s.hi_time;
 			wave_data_s.hi_num++;
 
+			// Calculate ADC trigger error. (distance from centre of High-pulse)
+			cent_time = curr_time + (PWM_MAX_VALUE - (wave_data_s.hi_time >> 1)); // time_offset for centre of High-Pulse
+			cent_time &= PWM_MASK; // mask into range [0..PWM_MASK]
+			err_time = (wave_data_s.adc_time + QUART_PWM_MAX) + (PWM_MAX_VALUE - cent_time); // error for ADC trigger;
+			err_time &= PWM_MASK; // mask into range [0..PWM_MASK]
+			if (err_time > (PWM_MAX_VALUE >> 1)) err_time -= PWM_MAX_VALUE; // Max. absolute error is half PWM period 
+
+acquire_lock(); printstr("ADC_ERR="); printintln(err_time); release_lock(); //MB~
 			if (chk_data_s.print)
 			{
 				print_pwm_pulse( chk_data_s ,wave_data_s.hi_time ,"High_Width" ); // Print new PWM pulse data
@@ -267,7 +275,7 @@ static void measure_pwm_width( // Calculate PWM-width from captured PWM wave dat
 
 } // measure_pwm_width
 /*****************************************************************************/
-static void initialise_pwm_width_test( // Initialise data for new speed test
+static void initialise_pwm_width_test( // Initialise data for new Pulse-width test
 	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
 	PWM_WAVE_TYP &wave_data_s // Reference to wave-data structure to be initialise
 )
@@ -280,7 +288,7 @@ static void initialise_pwm_width_test( // Initialise data for new speed test
 
 } // initialise_pwm_width_test 
 /*****************************************************************************/
-static void finalise_pwm_width_test( // terminate speed test and check results
+static void finalise_pwm_width_test( // terminate pulse-width test and check results
 	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
 	PWM_WAVE_TYP &wave_data_s, // Reference to wave-data structure to be finalised
 	const WIDTH_PWM_ENUM cur_width	// PWM-width state to check
@@ -323,7 +331,7 @@ static void test_new_pwm_input_value( // test new PWM input value
 
 
 	// Check for change in PWM data
-	do_test = pwm_data_compare( wave_data_s.curr_data.port_data  ,wave_data_s.prev_data.port_data  ); 
+	do_test = pwm_data_compare( wave_data_s.curr_data.port_data  ,wave_data_s.prev_data.port_data ); 
 
 	// Check for parameter change
 	if (do_test)
@@ -382,8 +390,7 @@ static void process_new_test_vector( // Process new test vector
 /*****************************************************************************/
 void check_pwm_client_data( // Display PWM results for all motors
 	streaming chanend c_chk[], // Array of Channels for receiving PWM data
-	streaming chanend c_tst, // Channel for receiving test vectors from test generator
-	chanend c_adc_trig // ADC trigger channel 
+	streaming chanend c_tst // Channel for receiving test vectors from test generator
 )
 {
 	CHECK_PWM_TYP chk_data_s; // Structure containing test check data
@@ -393,7 +400,6 @@ void check_pwm_client_data( // Display PWM results for all motors
 	int do_loop = 1;   // Flag set until loop-end condition found 
 	int motor_errs = 0;   // Preset flag to NO errors for current motor
 	int motor_tsts = 0;   // Clear test ccounter for current motor
-	unsigned char cntrl_token; // control token
 
 	int write_cnt = 0; // No of buffer writes
 	int read_cnt = 0; // No of buffer reads
@@ -440,10 +446,6 @@ void check_pwm_client_data( // Display PWM results for all motors
 				chan_off = (((unsigned)chan_cnt) & CHAN_MASK); // Wrap offset into range [0..CHAN_MASK];
 			break;
 
-			case inct_byref( c_adc_trig, cntrl_token ):
-// ToDo MB~
-			break;
-	
 			// Service any change on test channel
 			case c_tst :> chk_data_s.curr_vect :
 				// New test vector detected.
@@ -467,15 +469,23 @@ void check_pwm_client_data( // Display PWM results for all motors
 					// Update circular buffer offset
 					read_cnt++; // Increment write counter
 					read_off = (((unsigned)read_cnt) & INP_BUF_MASK); // Wrap offset into range [0..INP_BUF_MASK];
-		
-					// test new PWM data for current wave
-					test_new_pwm_input_value( chk_data_s ,wave_data_s );
+
+					// Check for special case of ADC trigger		
+					if (ADC_PATN != wave_data_s.curr_data.port_data.pattern)
+					{ 
+						// test new PWM data for current wave
+						test_new_pwm_input_value( chk_data_s ,wave_data_s );
+					} // if (ADC_PATN != wave_data_s.curr_data.port_data.pattern)
+					else
+					{ // Update ADC trigger time
+						wave_data_s.adc_time = wave_data_s.curr_data.port_data.time_off;
+					} // if (ADC_PATN != wave_data_s.curr_data.port_data.pattern)
 				} // if (write_cnt > read_cnt)
 			break; // default
 		} // select
 	}	// while (do_loop)
 
-	// special case: finalisation for last speed test
+	// special case: finalisation for last pulse-width test
 	finalise_pwm_width_test( chk_data_s ,wave_data_s ,chk_data_s.curr_vect.comp_state[WIDTH] ); 
 
 	// Update error statistics for current motor

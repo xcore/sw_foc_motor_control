@@ -160,7 +160,9 @@ static void gen_motor_pwm_test_data( // Generate PWM Test data for one motor
 	assign_test_vector_leg( tst_data_s ,TEST_LEG); // Set which PWM-Leg to test
 	assign_test_vector_phase( tst_data_s ,TEST_PHASE ); // Set PWM-phase to test
 
+//MB~			for (wid_cnt=0; wid_cnt<1; wid_cnt++)
 	for (wid_cnt=0; wid_cnt<NUM_PWM_WIDTHS; wid_cnt++)
+//MB~			for (wid_cnt=EQUAL; wid_cnt<(NUM_PWM_WIDTHS - 1); wid_cnt++)
 	{ 
 		assign_test_vector_width( tst_data_s ,wid_cnt ); // Set test vector to Slow width
 	
@@ -169,6 +171,7 @@ static void gen_motor_pwm_test_data( // Generate PWM Test data for one motor
 	
 		tst_data_s.vector.comp_state[CNTRL] = VALID; // Start-up complete, Switch on testing
 		do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,MAX_TESTS );
+		do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,1 );
 	} // for (wid_cnt=0; wid_cnt<NUM_PWM_WIDTHS; wid_cnt++)
 
 	tst_data_s.vector.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor

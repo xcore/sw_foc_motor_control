@@ -36,6 +36,8 @@
 #define NUM_INP_BUFS (1 << INP_BUF_BITS) // No. of input buffers used for storing PWM widths, NB Can probably use 4, but sailing cloase to the wind
 #define INP_BUF_MASK (NUM_INP_BUFS - 1) // Bit-mask used to wrap input buffer offset
 
+#define PWM_MASK (PWM_MAX_VALUE - 1) // Used to force into range [0..PWM_MASK]
+
 /** Classes of PWM sample patterns*/
 typedef enum PWM_PATN_ETAG
 {
@@ -60,6 +62,7 @@ typedef struct PWM_WAVE_TAG // Structure containing data for one PWM Wave
 	PWM_SAMP_TYP curr_data; // data for current PWM sample 
 	PWM_SAMP_TYP prev_data; // data for previous PWM sample
 	int meas_wid;	// measured PWM width
+	PORT_TIME_TYP adc_time; // port_time when ADC trigger received
 	unsigned hi_time; // Time accumulated during high (one) period of pulse
 	unsigned lo_time; // Time accumulated during low (zero) period of pulse
 	int hi_sum;	// sum of high-times
@@ -79,9 +82,6 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
 	int bound; // error bound for PWM-width measurement
-	int wid_chk;	// width check value
-	int wid_cnt;	// Counter used in width test
-	int fail_cnt;	// Counter of failed tests
 	int print;  // Print flag
 	int dbg;  // Debug flag
 } CHECK_PWM_TYP;
@@ -90,12 +90,10 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 /** Display PWM results for all motors
  * \param c_tst // Channel for sending test vecotrs to test checker
  * \param c_chk[] // Array of channels for Receiving PWM data
- * \param c_adc_trig // ADC trigger channel 
  */
 void check_pwm_client_data( // Display PWM results for all motors
 	streaming chanend c_chk[], // Array of Channels for Receiving PWM data
-	streaming chanend c_tst, // Channel for receiving test vectors from test generator
-	chanend c_adc_trig // ADC trigger channel 
+	streaming chanend c_tst // Channel for receiving test vectors from test generator
 );
 /*****************************************************************************/
 #endif /* _CHECK_PWM_TESTS_H_ */
