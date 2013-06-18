@@ -17,6 +17,104 @@
 /*	[CBA] order is 001 -> 011 -> 010 -> 110 -> 100 -> 101  Clockwise direction
  *	[CBA] order is 001 -> 101 -> 100 -> 110 -> 010 -> 011  Anti-Clockwise direction
  */
+
+/*****************************************************************************/
+static void parse_control_file( // Parse Hall-Sensor control file and set up test options
+	GENERATE_HALL_TYP &tst_data_s // Reference to structure of Hall test data
+)
+{
+  unsigned char file_buf[FILE_SIZE];
+  int char_cnt; // Character counter
+  int line_cnt = 0; // line counter
+  int test_cnt = 0; // test counter
+  int new_line = 0; // flag if new-line found
+  char curr_char; // Current character
+  int file_id; // File identifier
+  int status = 0; // Error status
+
+
+	// Initialise file buffer
+  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt) 
+	{
+    file_buf[char_cnt] = 0;
+  } // for char_cnt
+
+  file_id = _open( "hall_tests.txt" ,O_RDONLY ,0 ); // Open control file for PWM tests
+
+  assert(-1 != file_id); // ERROR: Open file failed (_open)
+
+  // An open file can be read using the *_read* system call
+  _read( file_id ,file_buf ,FILE_SIZE );
+
+  status = _close(file_id);	// Close file
+  assert(0 == status);	// ERROR: Close file failed (_close)
+
+	acquire_lock(); // Acquire Display Mutex
+	printstrln("Read following Test Options ..." );
+
+	// Parse the file buffer for test options
+  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt) 
+	{
+    curr_char = file_buf[char_cnt]; // Get next character
+
+    if (!curr_char) break; // Check for end of file info.
+
+
+		switch (curr_char)
+		{
+    	case '\n' : // End of line.
+				new_line = 1; // Set flag for new-line
+    	break; // case '\n' :
+
+    	case '0' : // Opt out of test
+				tst_data_s.common.options.flags[test_cnt] = 0;
+				test_cnt++;
+				new_line = 1; // Set flag for new-line
+				printchar(curr_char);
+				printchar(' ');
+    	break; // case '0' :
+
+    	case '1' : // Opt for this test
+				tst_data_s.common.options.flags[test_cnt] = 1;
+				test_cnt++;
+				new_line = 1; // Set flag for new-line
+				printchar(curr_char);
+				printchar(' ');
+    	break; // case '1' :
+
+    	case '#' : // Start of comment
+				new_line = 1; // Set flag for new-line
+    	break; // case '1' :
+
+    	default : // Whitespace
+    	break; // case '\n' :
+		} // switch (curr_char)
+
+		// Check if we need to move to new-line
+		if (new_line)
+		{ // skip to next line
+			while ('\n' != file_buf[char_cnt])
+			{
+				char_cnt++;
+				assert(char_cnt < FILE_SIZE); // End-of-file found
+				printchar( file_buf[char_cnt] );
+			} // while ('\n' != file_buf[char_cnt])
+
+			line_cnt++;
+			new_line = 0; // Clear new_line flag
+		} // if (new_line)
+  } // for char_cnt
+
+	printcharln(' ');
+	release_lock(); // Release Display Mutex
+
+	// Do some checks ...
+	assert(test_cnt == NUM_TEST_OPTS); // Check read required number of test options found
+	assert(NUM_TEST_OPTS <= line_cnt); // Check enough file lines read
+	assert(test_cnt <= line_cnt); // Check no more than one test/line
+ 
+	return;
+} // parse_control_file
 /*****************************************************************************/
 static unsigned speed_to_ticks( // Convert Velocity (in RPM) to ticks per Hall position (in Reference Frequency Cycles)
 	int speed // input speed
@@ -31,7 +129,8 @@ static unsigned speed_to_ticks( // Convert Velocity (in RPM) to ticks per Hall p
 }	// speed_to_ticks
 /*****************************************************************************/
 static void init_test_data( // Initialise Hall Test data
-	GENERATE_HALL_TYP &tst_data_s // Reference to structure of Hall test data
+	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
+	streaming chanend c_tst // Channel for sending test vecotrs to test checker
 )
 {
 	init_common_data( tst_data_s.common ); // Initialise data common to Generator and Checker
@@ -43,6 +142,9 @@ static void init_test_data( // Initialise Hall Test data
 	tst_data_s.print = PRINT_TST_HALL; // Set print mode
 	tst_data_s.dbg = 0; // Set debug mode
 
+	parse_control_file( tst_data_s ); 
+
+	c_tst <: tst_data_s.common.options; // Send test options to checker core
 } // init_test_data
 /*****************************************************************************/
 static void init_motor_tests( // Initialisation for each set of motor tests
@@ -307,26 +409,38 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 	tst_data_s.vector.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
 	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
 
-	assign_test_vector_error( tst_data_s ,HALL_ERR_ON ); // Switch on error-bit
-	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive errors
-	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
+	// Check if Error-status test activated
+	if (tst_data_s.common.options.flags[TST_ERROR])
+	{ // Do Error-Status test
+		assign_test_vector_error( tst_data_s ,HALL_ERR_ON ); // Switch on error-bit
+		tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive errors
+		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
+	
+		tst_data_s.vector.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be set
+		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
+	
+		assign_test_vector_error( tst_data_s ,HALL_ERR_OFF ); // Switch off error-bit
+		tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive non-errors
+		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
+	
+		tst_data_s.vector.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be cleared
+		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
+	} // if (tst_data_s.common.options.flags[TST_ERROR])
+	else
+	{ // Skip Error-Status test
+		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
+	} // else !(tst_data_s.common.options.flags[TST_ERROR])
 
-	tst_data_s.vector.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be set
-	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
+	// Check if Anti-clockwise spin direction test activated
+	if (tst_data_s.common.options.flags[TST_ANTI])
+	{ // Do Anti-clockwise spin direction test
+		assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
+		tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while changing direction
+		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,2 );
 
-	assign_test_vector_error( tst_data_s ,HALL_ERR_OFF ); // Switch off error-bit
-	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive non-errors
-	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
-
-	tst_data_s.vector.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be cleared
-	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
-
-	assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
-	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while changing direction
-	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,2 );
-
-	tst_data_s.vector.comp_state[CNTRL] = VALID; // Direction changed, Switch on testing
-	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
+		tst_data_s.vector.comp_state[CNTRL] = VALID; // Direction changed, Switch on testing
+		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
+	} // if (tst_data_s.common.options.flags[TST_ANTI])
 
 	tst_data_s.vector.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
 	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,1 );
@@ -342,7 +456,7 @@ void gen_all_hall_test_data( // Generate Hall Test data
 	int motor_cnt; // counts Motors 
 
 
-	init_test_data( tst_data_s );
+	init_test_data( tst_data_s ,c_tst );
 
 	// Loop through motors, so we can print results serially
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)

@@ -39,7 +39,7 @@
 #define MAX_SPEC_RPM 4000
 
 /** Set flag for verbose printing*/
-#define PRINT_TST_HALL 0
+#define PRINT_TST_HALL 1
 
 /* This is a bit of a cludge, we are using a non-standard configuration
  * where the timer on the tile for inner_loop() is running at 250 MHz,

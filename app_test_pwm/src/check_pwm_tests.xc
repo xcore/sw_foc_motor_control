@@ -161,8 +161,7 @@ static void check_adc_trigger( // Check timing of ADC trigger
 
 	chk_data_s.motor_tsts[ADC_TRIG]++;
 
-//MB~	if (HALF_PORT_WID <= abs(err_time))
-	if (4 <= abs(err_time))
+	if (HALF_PORT_WID <= abs(err_time))
 	{
 		chk_data_s.motor_errs[ADC_TRIG]++;
 
@@ -170,7 +169,8 @@ static void check_adc_trigger( // Check timing of ADC trigger
 		printcharln(' ');
 		printstr( chk_data_s.padstr1 );
 		printstr( chk_data_s.common.comp_data[ADC_TRIG].state_names[curr_adc].str	);
-		printstrln(" FAILURE");
+		printstr(" FAILURE: Error_Cycles=");
+		printintln(err_time);
 		release_lock(); // Release Display Mutex
 	} // if (HALF_PORT_WID <= abs(err_time))
 

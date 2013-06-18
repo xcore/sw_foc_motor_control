@@ -274,7 +274,11 @@ static void check_hall_parameters( // Check all Hall parameters
 	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-	check_hall_error_status( chk_data_s ); // Check Hall error status
+	// Check if Error-status test is activated
+	if (chk_data_s.common.options.flags[TST_ERROR])
+	{
+		check_hall_error_status( chk_data_s ); // Check Hall error status
+	} // if (chk_data_s.common.options.flags[TST_ERROR])
 
 	check_hall_phase_change( chk_data_s ); // Check Hall phase changes
 
@@ -395,6 +399,8 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 	printstr( chk_data_s.padstr1 );
 	printstr("Start Checks For Motor_"); printintln( chk_data_s.id ); 
 	release_lock(); // Release Display Mutex
+
+	c_tst :> chk_data_s.common.options; // Get test options from generator core
 
 	c_tst :> chk_data_s.curr_vect; // Initialise test-vector structure with 1st test
 

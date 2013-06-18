@@ -15,8 +15,6 @@
 #ifndef _GENERATE_PWM_TESTS_H_
 #define _GENERATE_PWM_TESTS_H_
 
-#include <stdlib.h>
-
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
@@ -48,7 +46,6 @@
 typedef struct GENERATE_PWM_TAG // Structure containing PWM test generation data
 {
 	COMMON_PWM_TYP common; // Structure of PWM data common to Generator and Checker
-	TEST_OPTS_TYP tst_opt_s; // Reference to structure of test_option data
 	TEST_VECT_TYP vector; // Structure of containing PWM test vector (PWM conditions to be tested)
 	PWM_COMMS_TYP pwm_comms;	// Structure containing current PWM communication data (sent to Server)
 	int scale; // velocity scaling factor (used for acceleration and deceleration)

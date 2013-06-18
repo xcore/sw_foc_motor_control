@@ -15,12 +15,11 @@
 #ifndef _GENERATE_HALL_TESTS_H_
 #define _GENERATE_HALL_TESTS_H_
 
-#include <stdlib.h>
-
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
 #include <safestring.h>
+#include <syscall.h>
 
 #include "app_global.h"
 #include "use_locks.h"
@@ -52,6 +51,8 @@
 /** Define No. of Bits for Scaling Factor Divisor */
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
 #define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
+
+#define FILE_SIZE (STR_LEN * NUM_TEST_OPTS) // Size of PWM control file (in Bytes)
 
 /** Type for Port timer values */
 typedef unsigned short PORT_TIME_TYP;

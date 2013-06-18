@@ -32,6 +32,14 @@
 /** Define value for Low Speed test */
 #define LOW_SPEED  50
 
+/** Enumeration of PWM Test Options */
+typedef enum PWM_TEST_ETAG
+{
+  TST_ANTI = 0,	// Test Anti-Clockwise spin
+  TST_ERROR,	// Test Error-Status
+  NUM_TEST_OPTS	// Handy Value!-)
+} PWM_TEST_ENUM;
+
 /** Enumeration of Hall Test Vector Components */
 typedef enum VECT_COMP_ETAG
 {
@@ -102,10 +110,17 @@ typedef struct VECT_COMP_TAG // Structure containing common Hall test data for o
 	int num_states; // number of states for this test vector component
 } VECT_COMP_TYP;
 
+/** Type containing all Test Options */
+typedef struct TEST_OPTS_TAG // Structure containing all test option data
+{
+	int flags[NUM_TEST_OPTS]; // Array of test option flags
+} TEST_OPTS_TYP;
+
 /** Type containing all Test Vector Meta-information */
 typedef struct COMMON_HALL_TAG // Structure containing all common Hall test data
 {
 	VECT_COMP_TYP comp_data[NUM_VECT_COMPS]; // Array of data for each component of test vector
+	TEST_OPTS_TYP options; // Structure of test_option data
 	int phases[HALL_PER_POLE];	// array of all possible Hall phase values;
 	int inverse[HALL_PHASE_MASK];	// inverse phase array (converts Hall Phase values back to array offsets)
 } COMMON_HALL_TYP;
