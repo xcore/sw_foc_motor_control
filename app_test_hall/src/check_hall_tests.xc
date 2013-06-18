@@ -395,12 +395,9 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 	chronometer when timerafter(chk_data_s.time + (MICRO_SEC << 1)) :> chk_data_s.time; // Wait for Test Generation to Start
 
 	acquire_lock(); // Acquire Display Mutex
-	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
 	printstr("Start Checks For Motor_"); printintln( chk_data_s.id ); 
 	release_lock(); // Release Display Mutex
-
-	c_tst :> chk_data_s.common.options; // Get test options from generator core
 
 	c_tst :> chk_data_s.curr_vect; // Initialise test-vector structure with 1st test
 
@@ -510,6 +507,8 @@ void check_all_hall_client_data( // Display Hall results for all motors
 
 
 	init_check_data( chk_data_s ); // Initialise check data
+
+	c_tst :> chk_data_s.common.options; // Get test options from generator core
 
 	// Loop through motors, so we can print results serially
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)

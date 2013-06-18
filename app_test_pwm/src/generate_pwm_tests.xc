@@ -40,8 +40,7 @@ static void parse_control_file( // Parse PWM control file and set up test option
 
   assert(-1 != file_id); // ERROR: Open file failed (_open)
 
-  // An open file can be read using the *_read* system call
-  _read( file_id ,file_buf ,FILE_SIZE );
+  _read( file_id ,file_buf ,FILE_SIZE ); // Read file into buffer
 
   status = _close(file_id);	// Close file
   assert(0 == status);	// ERROR: Close file failed (_close)

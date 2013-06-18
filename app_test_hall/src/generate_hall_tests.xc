@@ -19,7 +19,7 @@
  */
 
 /*****************************************************************************/
-static void parse_control_file( // Parse Hall-Sensor control file and set up test options
+static void parse_control_file( // Parse Hall control file and set up test options
 	GENERATE_HALL_TYP &tst_data_s // Reference to structure of Hall test data
 )
 {
@@ -28,6 +28,7 @@ static void parse_control_file( // Parse Hall-Sensor control file and set up tes
   int line_cnt = 0; // line counter
   int test_cnt = 0; // test counter
   int new_line = 0; // flag if new-line found
+  int tst_line = 0; // flag set if test-option found
   char curr_char; // Current character
   int file_id; // File identifier
   int status = 0; // Error status
@@ -39,17 +40,17 @@ static void parse_control_file( // Parse Hall-Sensor control file and set up tes
     file_buf[char_cnt] = 0;
   } // for char_cnt
 
-  file_id = _open( "hall_tests.txt" ,O_RDONLY ,0 ); // Open control file for PWM tests
+  file_id = _open( "hall_tests.txt" ,O_RDONLY ,0 ); // Open control file for HALL tests
 
   assert(-1 != file_id); // ERROR: Open file failed (_open)
 
-  // An open file can be read using the *_read* system call
-  _read( file_id ,file_buf ,FILE_SIZE );
+  _read( file_id ,file_buf ,FILE_SIZE );  // Read file into buffer
 
   status = _close(file_id);	// Close file
   assert(0 == status);	// ERROR: Close file failed (_close)
 
 	acquire_lock(); // Acquire Display Mutex
+	printcharln(' ');
 	printstrln("Read following Test Options ..." );
 
 	// Parse the file buffer for test options
@@ -62,37 +63,36 @@ static void parse_control_file( // Parse Hall-Sensor control file and set up tes
 
 		switch (curr_char)
 		{
-    	case '\n' : // End of line.
-				new_line = 1; // Set flag for new-line
-    	break; // case '\n' :
-
     	case '0' : // Opt out of test
 				tst_data_s.common.options.flags[test_cnt] = 0;
-				test_cnt++;
-				new_line = 1; // Set flag for new-line
-				printchar(curr_char);
-				printchar(' ');
+				tst_line = 1; // Flag test-option found
     	break; // case '0' :
 
     	case '1' : // Opt for this test
 				tst_data_s.common.options.flags[test_cnt] = 1;
-				test_cnt++;
-				new_line = 1; // Set flag for new-line
-				printchar(curr_char);
-				printchar(' ');
+				tst_line = 1; // Flag test-option found
     	break; // case '1' :
 
     	case '#' : // Start of comment
 				new_line = 1; // Set flag for new-line
     	break; // case '1' :
 
+    	case '\n' : // End of line.
+				new_line = 1; // Set flag for new-line
+    	break; // case '\n' :
+
     	default : // Whitespace
+				// Un-determined line
     	break; // case '\n' :
 		} // switch (curr_char)
 
-		// Check if we need to move to new-line
-		if (new_line)
-		{ // skip to next line
+		// Check if we have a test-option line
+		if (tst_line)
+		{ // Process test-option line
+			test_cnt++;
+			printchar(curr_char);
+			printchar(' ');
+
 			while ('\n' != file_buf[char_cnt])
 			{
 				char_cnt++;
@@ -101,8 +101,24 @@ static void parse_control_file( // Parse Hall-Sensor control file and set up tes
 			} // while ('\n' != file_buf[char_cnt])
 
 			line_cnt++;
+			tst_line = 0; // Clear test-option flag
 			new_line = 0; // Clear new_line flag
-		} // if (new_line)
+		} // if (tst_line)
+		else
+		{ // Process other line
+			// Check if we need to move to new-line
+			if (new_line)
+			{ // skip to next line
+				while ('\n' != file_buf[char_cnt])
+				{
+					char_cnt++;
+					assert(char_cnt < FILE_SIZE); // End-of-file found
+				} // while ('\n' != file_buf[char_cnt])
+	
+				line_cnt++;
+				new_line = 0; // Clear new_line flag
+			} // if (new_line)
+		} // else !(tst_line)
   } // for char_cnt
 
 	printcharln(' ');
