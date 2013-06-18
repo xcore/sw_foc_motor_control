@@ -32,6 +32,15 @@
 /** Define value for Low Speed test */
 #define LOW_SPEED  50
 
+/** Enumeration of PWM Test Options */
+typedef enum PWM_TEST_ETAG
+{
+  TST_ANTI = 0,	// Test Anti-Clockwise spin
+  TST_ERROR,	// Test Error-Status
+  TST_ORIGIN,	// Test Origin-bit
+  NUM_TEST_OPTS	// Handy Value!-)
+} PWM_TEST_ENUM;
+
 /** Enumeration of QEI Test Vector Components */
 typedef enum VECT_COMP_ETAG
 {
@@ -103,10 +112,17 @@ typedef struct VECT_COMP_TAG // Structure containing common QEI test data for on
 	int num_states; // number of states for this test vector component
 } VECT_COMP_TYP;
 
+/** Type containing all Test Options */
+typedef struct TEST_OPTS_TAG // Structure containing all test option data
+{
+	int flags[NUM_TEST_OPTS]; // Array of test option flags
+} TEST_OPTS_TYP;
+
 /** Type containing all Test Vector Meta-information */
 typedef struct COMMON_QEI_TAG // Structure containing all common QEI test data
 {
 	VECT_COMP_TYP comp_data[NUM_VECT_COMPS]; // Array of data for each component of test vector
+	TEST_OPTS_TYP options; // Structure of test_option data
 } COMMON_QEI_TYP;
 
 /*****************************************************************************/

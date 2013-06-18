@@ -171,7 +171,8 @@ static void init_motor_tests( // Initialisation for each set of motor tests
 	tst_data_s.id = motor_id; // Assign motor identifier
 	tst_data_s.period = tst_data_s.lo_ticks; // Set period for Low start speed
 	tst_data_s.off = 0; // Set Hall phase offset to arbitary number (< HALL_PER_POLE)
-	tst_data_s.vector.comp_state[CNTRL] = SKIP; // Initialise to skipped test for start-up mode
+	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Initialise to skipped test for start-up mode
+	tst_data_s.prev_vect.comp_state[CNTRL] = QUIT; // Initialise to something that will force an update
 	tst_data_s.prev_hall = HALL_NERR_MASK; // Initialise to starting value
 } // init_motor_tests
 /*****************************************************************************/
@@ -198,7 +199,7 @@ static void assign_test_vector_error( // Assign Error-state of test vector
 		break; // default:
 	} // switch( inp_err )
 
-	tst_data_s.vector.comp_state[ERROR] = inp_err; // Update Error-state of test vector
+	tst_data_s.curr_vect.comp_state[ERROR] = inp_err; // Update Error-state of test vector
 } // assign_test_vector_error
 /*****************************************************************************/
 static void assign_test_vector_phase( // Assign phase-state of test vector
@@ -219,7 +220,7 @@ static void assign_test_vector_phase( // Assign phase-state of test vector
 		break; // default:
 	} // switch( inp_phase )
 
-	tst_data_s.vector.comp_state[PHASE] = inp_phase; // Update Spin-state of test vector
+	tst_data_s.curr_vect.comp_state[PHASE] = inp_phase; // Update Spin-state of test vector
 } // assign_test_vector_spin
 /*****************************************************************************/
 static void assign_test_vector_spin( // Assign Spin-state of test vector
@@ -243,7 +244,7 @@ static void assign_test_vector_spin( // Assign Spin-state of test vector
 		break; // default:
 	} // switch( inp_spin )
 
-	tst_data_s.vector.comp_state[SPIN] = inp_spin; // Update Spin-state of test vector
+	tst_data_s.curr_vect.comp_state[SPIN] = inp_spin; // Update Spin-state of test vector
 } // assign_test_vector_spin
 /*****************************************************************************/
 static void assign_test_vector_speed( // Assign Speed-state of test vector
@@ -277,7 +278,7 @@ static void assign_test_vector_speed( // Assign Speed-state of test vector
 		break; // default:
 	} // switch( inp_speed )
 
-	tst_data_s.vector.comp_state[SPEED] = inp_speed; // Update speed-state of test vector
+	tst_data_s.curr_vect.comp_state[SPEED] = inp_speed; // Update speed-state of test vector
 } // assign_test_vector_speed
 /*****************************************************************************/
 static void do_hall_test( // Performs one Hall test
@@ -291,7 +292,7 @@ static void do_hall_test( // Performs one Hall test
 
 	// Increment/Decrement (and wrap) Hall position ...
 
-	switch( tst_data_s.vector.comp_state[SPIN] )
+	switch( tst_data_s.curr_vect.comp_state[SPIN] )
 	{
 		case CLOCK: // Clock-wise
 			if ((HALL_PER_POLE - 1) > tst_data_s.off)
@@ -321,7 +322,7 @@ static void do_hall_test( // Performs one Hall test
 			release_lock(); // Release Display Mutex
 			assert(0 == 1);
 		break; // default:
-	} // switch( tst_data_s.vector.comp_state[SPIN] )
+	} // switch( tst_data_s.curr_vect.comp_state[SPIN] )
 
 	// Build Hall value ...
 
@@ -350,6 +351,22 @@ static void do_hall_test( // Performs one Hall test
 
 } // do_hall_test
 /*****************************************************************************/
+static int vector_compare( // Check if 2 sets of test vector are different
+	TEST_VECT_TYP &vect_a, // Structure of containing 1st set of vectore components
+	TEST_VECT_TYP &vect_b  // Structure of containing 2nd set of vectore components
+) // return TRUE (1) if vectors are different, FALSE(0) if equal
+{
+	VECT_COMP_ENUM comp_cnt; // vector component counter
+
+
+	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+	{
+		if (vect_a.comp_state[comp_cnt] != vect_b.comp_state[comp_cnt]) return 1;
+	} // for comp_cnt=0
+
+	return 0; // No differences found
+} // vector_compare
+/*****************************************************************************/
 static void do_hall_vector( // Do all tests for one Hall test vector
 	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
@@ -357,13 +374,24 @@ static void do_hall_vector( // Do all tests for one Hall test vector
 	int test_cnt // count-down test counter
 )
 {
-	c_tst <: tst_data_s.vector; // transmit test vector details to test checker
+	int new_vect; // flag set if new test vector detected
 
-	// Decelerate
-	if (tst_data_s.print)
+
+	new_vect = vector_compare( tst_data_s.curr_vect ,tst_data_s.prev_vect );
+
+	// Check for new test-vector
+	if (new_vect)
 	{
-		print_test_vector( tst_data_s.common ,tst_data_s.vector ,"" );
-	} // if (tst_data_s.print)
+		c_tst <: tst_data_s.curr_vect; // transmit new test vector details to test checker
+
+		// Check if verbose printing required
+		if (tst_data_s.print)
+		{
+			print_test_vector( tst_data_s.common ,tst_data_s.curr_vect ,"" );
+		} // if (tst_data_s.print)
+
+		tst_data_s.prev_vect = tst_data_s.curr_vect; // update previous vector
+	} // if (new_vect)
 
 	// Loop through tests for current test vector
 	while(test_cnt)
@@ -371,7 +399,7 @@ static void do_hall_vector( // Do all tests for one Hall test vector
 		do_hall_test( tst_data_s ,p4_tst ); // Performs one Hall test
 
 		// Check which speed mode being tested
-		switch( tst_data_s.vector.comp_state[SPEED] )
+		switch( tst_data_s.curr_vect.comp_state[SPEED] )
 		{
 			case ACCEL: // Accelerate
 				tst_data_s.period = (tst_data_s.scale * tst_data_s.period + HALF_SCALE) >> SCALE_PRECISION; // Alter period to change speed
@@ -393,7 +421,7 @@ static void do_hall_vector( // Do all tests for one Hall test vector
 				release_lock(); // Release Display Mutex
 				assert(0 == 1);
 			break; // default:
-		} // switch( tst_data_s.vector.comp_state[SPEED] )
+		} // switch( tst_data_s.curr_vect.comp_state[SPEED] )
 
 		test_cnt--; // Decrement test counter
 	} // while(test_cnt)
@@ -422,24 +450,24 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
 	assign_test_vector_speed( tst_data_s ,FAST ); // Set test vector to constant Fast speed
 
-	tst_data_s.vector.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
+	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
 	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
 
 	// Check if Error-status test activated
 	if (tst_data_s.common.options.flags[TST_ERROR])
 	{ // Do Error-Status test
 		assign_test_vector_error( tst_data_s ,HALL_ERR_ON ); // Switch on error-bit
-		tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive errors
+		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive errors
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
 	
-		tst_data_s.vector.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be set
+		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be set
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
 	
 		assign_test_vector_error( tst_data_s ,HALL_ERR_OFF ); // Switch off error-bit
-		tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive non-errors
+		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive non-errors
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
 	
-		tst_data_s.vector.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be cleared
+		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be cleared
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
 	} // if (tst_data_s.common.options.flags[TST_ERROR])
 	else
@@ -451,14 +479,14 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 	if (tst_data_s.common.options.flags[TST_ANTI])
 	{ // Do Anti-clockwise spin direction test
 		assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
-		tst_data_s.vector.comp_state[CNTRL] = SKIP; // Switch off testing, while changing direction
+		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, while changing direction
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,2 );
 
-		tst_data_s.vector.comp_state[CNTRL] = VALID; // Direction changed, Switch on testing
+		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Direction changed, Switch on testing
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
 	} // if (tst_data_s.common.options.flags[TST_ANTI])
 
-	tst_data_s.vector.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
+	tst_data_s.curr_vect.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
 	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,1 );
 
 } // gen_motor_hall_test_data

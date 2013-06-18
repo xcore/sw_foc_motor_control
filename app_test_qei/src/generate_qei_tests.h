@@ -15,12 +15,11 @@
 #ifndef _GENERATE_QEI_TESTS_H_
 #define _GENERATE_QEI_TESTS_H_
 
-#include <stdlib.h>
-
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
 #include <safestring.h>
+#include <syscall.h>
 
 #include "app_global.h"
 #include "use_locks.h"
@@ -53,6 +52,8 @@
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
 #define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
 
+#define FILE_SIZE (STR_LEN * NUM_TEST_OPTS) // Size of PWM control file (in Bytes)
+
 /** Type for Port timer values */
 typedef unsigned short PORT_TIME_TYP;
 
@@ -66,7 +67,8 @@ typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
 typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 {
 	COMMON_QEI_TYP common; // Structure of QEI data common to Generator and Checker
-	TEST_VECT_TYP vector; // Structure of containing QEI test vector (QEI conditions to be tested)
+	TEST_VECT_TYP curr_vect; // Structure of containing current QEI test vector (QEI conditions to be tested)
+	TEST_VECT_TYP prev_vect; // Structure of containing previous QEI test vector (QEI conditions to be tested)
 	QEI_PHASE_TYP phases;	// Structure containing all possible QEI phase values;
 	int inc;			// QEI rotation increment (+1 for clock-wise, -1 for anti-clockwise)
 	int id;			// Current motor identifier

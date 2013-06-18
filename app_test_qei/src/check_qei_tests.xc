@@ -483,9 +483,17 @@ static void check_qei_parameters( // Check all QEI parameters
 	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-	check_qei_error_status( chk_data_s ); // Check QEI error status
+	// Check if Error-status test is activated
+	if (chk_data_s.common.options.flags[TST_ERROR])
+	{
+		check_qei_error_status( chk_data_s ); // Check QEI error status
+	} // if (chk_data_s.common.options.flags[TST_ERROR])
 
-	check_qei_origin_detection( chk_data_s ); // Check QEI origin detection
+	// Check if Origin-bit test is activated
+	if (chk_data_s.common.options.flags[TST_ORIGIN])
+	{
+		check_qei_origin_detection( chk_data_s ); // Check QEI origin detection
+	} // if (chk_data_s.common.options.flags[TST_ORIGIN])
 
 	check_qei_spin_direction( chk_data_s ); // Check QEI spin direction
 
@@ -787,6 +795,8 @@ void check_all_qei_client_data( // Display QEI results for all motors
 
 
 	init_check_data( chk_data_s ); // Initialise check data
+
+	c_tst :> chk_data_s.common.options; // Get test options from generator core
 
 	// Loop through motors, so we can print results serially
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
