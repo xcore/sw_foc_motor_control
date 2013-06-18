@@ -52,9 +52,9 @@ int main ( void ) // Program Entry Point
 				foc_pwm_do_triggered( MOTOR_ID, c_pwm ,pb32_pwm_hi ,pb32_pwm_lo ,c_pwm2adc_trig ,p16_adc_sync ,pwm_clk );
 		
 				// Capture results
-				capture_pwm_client_data( pb32_tst_hi ,pb32_tst_lo ,p8_tst_sync ,comm_clk ,c_chk ,c_pwm2adc_trig );
+				capture_pwm_server_data( pb32_tst_hi ,pb32_tst_lo ,p8_tst_sync ,comm_clk ,c_chk ,c_pwm2adc_trig );
 
-				check_pwm_client_data( c_chk ,c_tst ); // Check results
+				check_pwm_server_data( c_chk ,c_tst ); // Check results
 			} // par
 		
 		  free_locks(); // Free Mutex for display

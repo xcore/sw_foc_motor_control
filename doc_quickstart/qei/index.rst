@@ -24,14 +24,18 @@ The output pins driven by the generator are looped back to the QEI Server input 
 
 The generator runs through a set of tests, these are specified formally as a *test vector* and transmitted to the test checker. For each test the generator creates the appropriate QEI raw-data and drives this onto the output pins. The QEI Server recognises changes on its input pins, processes the new raw-data, and updates the QEI parameters (Velocity, Direction, etc). The test checker reads the specification in the received test vector, then polls the QEI Client for parameters. These parameters are checked for correctness against the test vector specification.
 
-The following tests are currently performed
-   #. An *Origin* test: the revolution counter should increment when the origin is detected.
-   #. An *Error Status* test: the error-status flag should be raised when 3 consecutive error-bits are detected.
-   #. A *Spin Direction* test: the spin direction bit should be correctly set
+The following tests are always performed
    #. A *Fast* test: the speed should be fast and steady
    #. A *Slow* test: the speed should be slow and steady
    #. An *Acceleration* test: the speed should increase
    #. A *Deceleration* test: the speed should decrease
+
+The following tests are optional
+   #. An *Origin* test: the revolution counter should increment when the origin is detected.
+   #. An *Error Status* test: the error-status flag should be raised when 3 consecutive error-bits are detected.
+   #. A *Spin Direction* test: the spin direction bit should be correctly set
+
+The options are selected by editing the flags in the file qei_tests.txt
 
 Import and Build the Application
 --------------------------------

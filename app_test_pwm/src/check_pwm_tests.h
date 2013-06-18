@@ -89,11 +89,11 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 } CHECK_PWM_TYP;
 
 /*****************************************************************************/
-/** Display PWM results for all motors
+/** Check PWM results for all motors
  * \param c_tst // Channel for sending test vecotrs to test checker
  * \param c_chk[] // Array of channels for Receiving PWM data
  */
-void check_pwm_client_data( // Display PWM results for all motors
+void check_pwm_server_data( // Check PWM results for all motors
 	streaming chanend c_chk[], // Array of Channels for Receiving PWM data
 	streaming chanend c_tst // Channel for receiving test vectors from test generator
 );

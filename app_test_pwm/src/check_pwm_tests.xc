@@ -419,7 +419,7 @@ static void process_new_test_vector( // Process new test vector
 
 } // process_new_test_vector
 /*****************************************************************************/
-void check_pwm_client_data( // Display PWM results for all motors
+void check_pwm_server_data( // Cheks PWM results for all motors
 	streaming chanend c_chk[], // Array of Channels for receiving PWM data
 	streaming chanend c_tst // Channel for receiving test vectors from test generator
 )
@@ -571,5 +571,5 @@ void check_pwm_client_data( // Display PWM results for all motors
 
 	printcharln( ' ' );
 	release_lock(); // Release Display Mutex
-} // check_pwm_client_data
+} // check_pwm_server_data
 /*****************************************************************************/

@@ -24,10 +24,14 @@ The output pins driven by the generator are looped back to the Hall Server input
 
 The generator runs through a set of tests, these are specified formally as a *test vector* and transmitted to the test checker. For each test the generator creates the appropriate Hall raw-data and drives this onto the output pins. The Hall Server recognises changes on its input pins, processes the new raw-data, and updates the Hall parameters (Hall_Sensor_value and Error_Status). The test checker reads the specification in the received test vector, then polls the Hall Client for parameters. These parameters are checked for correctness against the test vector specification.
 
-The following tests are currently performed
-   #. An *Error Status* test: the error-status flag should be raised when 3 consecutive error-bits are detected.
+The following tests are always performed
    #. A *Phase_Value* test: the 3 phase values should form a valid combination
+
+The following tests are optional
+   #. An *Error Status* test: the error-status flag should be raised when 3 consecutive error-bits are detected.
    #. A *Spin Direction* test: the phase values should change in the required order
+
+The options are selected by editing the flags in the file hall_tests.txt
 
 Import and Build the Application
 --------------------------------

@@ -15,7 +15,7 @@
 #include "capture_pwm_data.h"
 
 /*****************************************************************************/
-void capture_pwm_client_data( // Display PWM results for all motors
+void capture_pwm_server_data( // Captures PWM results for all motors
 	buffered in port:32 p32_tst_hi[], // array of PWM ports (High side)  
 	buffered in port:32 p32_tst_lo[], // array of PWM ports (Low side)
 	out port p8_tst_sync, // NB Dummy output port
@@ -97,5 +97,5 @@ void capture_pwm_client_data( // Display PWM results for all motors
 		
 	}	// while (1)
 
-} // capture_pwm_client_data
+} // capture_pwm_server_data
 /*****************************************************************************/

@@ -1,0 +1,215 @@
+ 
+                                             Start Checks
+Read following Test Options ...
+1  # Narrow Width tests
+1  # Equal Width tests
+1  # ADC trigger tests
+ 
+ Start Test Generation
+ Minimum-width  Phase_A  High_Leg ADC_On:SKIP 
+                                              Minimum-width  Phase_A  High_Leg ADC_On:SKIP 
+PWM:32
+PWM:32
+ Minimum-width  Phase_A  High_Leg ADC_On:VALID
+                                              Minimum-width  Phase_A  High_Leg ADC_On:VALID
+PWM:32
+                                              Low_Width= 4064 
+                                             High_Width= 32 
+PWM:32
+                                              Low_Width= 4064 
+                                             High_Width= 32 
+PWM:32
+                                              Low_Width= 4064 
+                                             High_Width= 32 
+PWM:32
+                                              Low_Width= 4064 
+                                             High_Width= 32 
+PWM:32
+                                              Low_Width= 4064 
+                                             High_Width= 32 
+PWM:32
+                                              Low_Width= 4064 
+                                             High_Width= 32 
+PWM:32
+                                              Low_Width= 4064 
+                                             High_Width= 32 
+PWM:32
+                                              Low_Width= 4064 
+                                             High_Width= 32 
+PWM:32
+                                              Low_Width= 4064 
+                                             High_Width= 32 
+PWM:32
+                                              Low_Width= 4064 
+                                             High_Width= 32 
+PWM:32
+                                              Low_Width= 4064 
+  Small-width   Phase_A  High_Leg ADC_On:SKIP 
+                                             Mean_Width= 32 
+                                               Small-width   Phase_A  High_Leg ADC_On:SKIP 
+PWM:256
+PWM:256
+  Small-width   Phase_A  High_Leg ADC_On:VALID
+                                               Small-width   Phase_A  High_Leg ADC_On:VALID
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+                                             High_Width= 256 
+PWM:256
+                                              Low_Width= 3840 
+  Equal-width   Phase_A  High_Leg ADC_On:SKIP 
+                                             Mean_Width= 256 
+                                               Equal-width   Phase_A  High_Leg ADC_On:SKIP 
+PWM:2048
+PWM:2048
+  Equal-width   Phase_A  High_Leg ADC_On:VALID
+                                               Equal-width   Phase_A  High_Leg ADC_On:VALID
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+                                             High_Width= 2036 
+                                              Low_Width= 2060 
+PWM:2048
+  Large-width   Phase_A  High_Leg ADC_On:SKIP 
+                                             Mean_Width= 2036 
+                                               Large-width   Phase_A  High_Leg ADC_On:SKIP 
+PWM:3840
+PWM:3840
+  Large-width   Phase_A  High_Leg ADC_On:VALID
+                                               Large-width   Phase_A  High_Leg ADC_On:VALID
+                                             High_Width= 3828 
+                                              Low_Width= 256 
+PWM:3840
+                                             High_Width= 3840 
+                                              Low_Width= 256 
+PWM:3840
+                                             High_Width= 3840 
+                                              Low_Width= 256 
+PWM:3840
+                                             High_Width= 3840 
+                                              Low_Width= 256 
+PWM:3840
+                                             High_Width= 3840 
+                                              Low_Width= 256 
+PWM:3840
+                                             High_Width= 3840 
+                                              Low_Width= 256 
+PWM:3840
+                                             High_Width= 3840 
+                                              Low_Width= 256 
+PWM:3840
+                                             High_Width= 3840 
+                                              Low_Width= 256 
+PWM:3840
+                                             High_Width= 3840 
+                                              Low_Width= 256 
+PWM:3840
+                                             High_Width= 3840 
+                                              Low_Width= 256 
+PWM:3840
+                                             High_Width= 3840 
+                                              Low_Width= 256 
+PWM:3840
+ Maximum-width  Phase_A  High_Leg ADC_On:SKIP 
+                                             Mean_Width= 3840 
+                                              Maximum-width  Phase_A  High_Leg ADC_On:SKIP 
+PWM:3943
+PWM:3943
+ Maximum-width  Phase_A  High_Leg ADC_On:VALID
+                                              Maximum-width  Phase_A  High_Leg ADC_On:VALID
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+                                             High_Width= 3943 
+                                              Low_Width= 153 
+PWM:3943
+ Maximum-width  Phase_A  High_Leg ADC_On:QUIT 
+                                              Maximum-width  Phase_A  High_Leg ADC_On:QUIT 
+                                             Mean_Width= 3943 
+ 
+                                             59 tests run
+ALL TESTS PASSED
+ 
+PWM:3943
+Test Generation Ends 

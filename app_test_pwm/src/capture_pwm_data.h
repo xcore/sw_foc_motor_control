@@ -32,7 +32,7 @@
 #define CHAN_MASK (NUM_CHANS - 1) // Bit-mask used to wrap channel offset
 
 /*****************************************************************************/
-/** Display PWM results for all motors
+/** Captures PWM data from input pins for one motor
  * \param p32_tst_hi, // array of PWM ports (High side)  
  * \param p32_tst_lo, // array of PWM ports (Low side)   
  * \param p8_tst_sync, // NB Dummy output port
@@ -40,7 +40,7 @@
  * \param c_chk[] // Array of channels for sending PWM data to test checker
  * \param c_adc_trig // ADC trigger channel 
  */
-void capture_pwm_client_data( // Captures PWM data from input pins for one motor
+void capture_pwm_server_data( // Captures PWM data from input pins for one motor
 	buffered in port:32 p32_tst_hi[], // array of PWM ports (High side)  
 	buffered in port:32 p32_tst_lo[], // array of PWM ports (Low side)   
 	out port p8_tst_sync, // NB Dummy output port
