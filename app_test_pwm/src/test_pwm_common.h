@@ -30,8 +30,7 @@
 /** Define PWM-Phase under test */
 #define TEST_PHASE PWM_PHASE_A
 
-/** Define PWM-Phase under test */
-#define TEST_LEG PWM_HI_LEG
+#define NUM_TST_PHASES 1 // NB Currently only one phase is tested
 
 /** Define samll PWM width resolution */
 #define SMALL_RES_BITS ((PORT_RES_BITS + PWM_RES_BITS - 1) >> 1) // NB Geometric mean of MINI and EQUAL widths
@@ -70,7 +69,7 @@ typedef enum VECT_COMP_ETAG
   CNTRL = 0,	// Special Case: Control/Comunications state
   WIDTH,			// PWM Width-state
   PHASE,			// PWM-Phase
-  LEG,				// PWM-Leg
+	LEG,				// PWM-Leg
   ADC_TRIG,				// ADC Trigger
   NUM_VECT_COMPS	// Handy Value!-)
 } VECT_COMP_ENUM;
@@ -133,6 +132,13 @@ typedef struct TEST_OPTS_TAG // Structure containing all test option data
 {
 	int flags[NUM_TEST_OPTS]; // Array of test option flags
 } TEST_OPTS_TYP;
+
+/** Structure containing captured pwm data */
+typedef struct PWM_CAPTURE_TAG
+{
+	PWM_PORT_TYP port_data; // PWM port data
+	int id; // Identifies source for this data (Hi-Leg, Lo-leg, ADC-trigger)
+} PWM_CAPTURE_TYP;
 
 /** Type containing all Test Vector Meta-information */
 typedef struct COMMON_PWM_TAG // Structure containing all common PWM test data

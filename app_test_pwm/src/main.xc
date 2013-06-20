@@ -34,7 +34,9 @@ int main ( void ) // Program Entry Point
 	chan c_pwm2adc_trig;
 	chan c_pwm; // Channel connecting Client and Server
 	streaming chan c_tst; // Channel for sending test vectors from Generator to Checker core
-	streaming chan c_chk[NUM_CHANS]; // Channel for sending PWM data from Capture to Checker core
+	streaming chan c_adc; // Channels for sending PWM ADC data from Capture to Checker core
+	streaming chan c_hi_leg[NUM_CHANS]; // Array of channels for sending PWM Hi-Leg data from Capture to Checker core
+	streaming chan c_lo_leg[NUM_CHANS]; // Array of channels for sending PWM Lo-Leg data from Capture to Checker core
 
 
 	par
@@ -43,6 +45,7 @@ int main ( void ) // Program Entry Point
 		{
 		  init_locks(); // Initialise Mutex for display
 
+			config_all_ports( pb32_tst_hi ,pb32_tst_lo ,p8_tst_sync ,comm_clk );
 
 			par
 			{
@@ -51,10 +54,13 @@ int main ( void ) // Program Entry Point
 				// Server function under test
 				foc_pwm_do_triggered( MOTOR_ID, c_pwm ,pb32_pwm_hi ,pb32_pwm_lo ,c_pwm2adc_trig ,p16_adc_sync ,pwm_clk );
 		
-				// Capture results
-				capture_pwm_server_data( pb32_tst_hi ,pb32_tst_lo ,p8_tst_sync ,comm_clk ,c_chk ,c_pwm2adc_trig );
+				capture_pwm_leg_data( pb32_tst_hi ,c_hi_leg ,PWM_HI_LEG ); // Capture PWM Hi-Leg data
 
-				check_pwm_server_data( c_chk ,c_tst ); // Check results
+				capture_pwm_leg_data( pb32_tst_lo ,c_lo_leg ,PWM_LO_LEG ); // Capture PWM Lo-Leg data
+
+				capture_pwm_adc_data( p8_tst_sync ,c_pwm2adc_trig ,c_adc ); // Capture PWM ADC-trigger data
+
+				check_pwm_server_data( c_hi_leg ,c_lo_leg ,c_adc ,c_tst ); // Check results
 			} // par
 		
 		  free_locks(); // Free Mutex for display

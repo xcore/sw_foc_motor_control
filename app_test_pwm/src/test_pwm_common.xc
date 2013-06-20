@@ -34,11 +34,11 @@ static void init_width_component( // Initialise PWM Test data for PWM width test
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[MINI].str		," Minimum-width " );
-	safestrcpy( vect_comp_s.state_names[SMALL].str	,"  Small-width  " );
-	safestrcpy( vect_comp_s.state_names[EQUAL].str	,"  Equal-width  " );
-	safestrcpy( vect_comp_s.state_names[LARGE].str	,"  Large-width  " );
-	safestrcpy( vect_comp_s.state_names[MAXI].str		," Maximum-width " );
+	safestrcpy( vect_comp_s.state_names[MINI].str		,"Minimum-width " );
+	safestrcpy( vect_comp_s.state_names[SMALL].str	," Small-width  " );
+	safestrcpy( vect_comp_s.state_names[EQUAL].str	," Equal-width  " );
+	safestrcpy( vect_comp_s.state_names[LARGE].str	," Large-width  " );
+	safestrcpy( vect_comp_s.state_names[MAXI].str		,"Maximum-width " );
 
 	// Add any new component states here 
 } // init_width_component
@@ -49,7 +49,7 @@ static void init_width_info( // Initialise PWM Test data for PWM width test vect
 	const char inp_name[] // input name for current test vector component
 )
 {
-	init_width_component(		comm_pwm_s.comp_data[WIDTH]		,inp_states ,inp_name );
+	init_width_component(	comm_pwm_s.comp_data[WIDTH] ,inp_states ,inp_name );
 
 	// Assign PWM-widths to each PWM width-state 
 	comm_pwm_s.pwm_wids[MINI] = MINI_PWM;
@@ -80,9 +80,9 @@ static void init_phase_component( // Initialise PWM Test data for phase test vec
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[PWM_PHASE_A].str ," Phase_A " );
-	safestrcpy( vect_comp_s.state_names[PWM_PHASE_B].str ," Phase_B " );
-	safestrcpy( vect_comp_s.state_names[PWM_PHASE_C].str ," Phase_C " );
+	safestrcpy( vect_comp_s.state_names[PWM_PHASE_A].str ,"Phase_A " );
+	safestrcpy( vect_comp_s.state_names[PWM_PHASE_B].str ,"Phase_B " );
+	safestrcpy( vect_comp_s.state_names[PWM_PHASE_C].str ,"Phase_C " );
 
 	// Add any new component states here 
 } // init_phase_component
@@ -106,11 +106,12 @@ static void init_leg_component( // Initialise PWM Test data for PWM-leg test vec
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[PWM_HI_LEG].str ," High_Leg " );
-	safestrcpy( vect_comp_s.state_names[PWM_LO_LEG].str ,"  Low_Leg " );
+	safestrcpy( vect_comp_s.state_names[PWM_HI_LEG].str		,"Hi-Leg " );
+	safestrcpy( vect_comp_s.state_names[PWM_LO_LEG].str		,"Lo-Leg " );
+	safestrcpy( vect_comp_s.state_names[NUM_PWM_LEGS].str	,"2-Legs " );
 
 	// Add any new component states here 
-} // init_leg_component
+} // init_phase_component
 /*****************************************************************************/
 static void init_adc_component( // Initialise PWM Test data for ADC trigger test vector component
 	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
@@ -131,8 +132,8 @@ static void init_adc_component( // Initialise PWM Test data for ADC trigger test
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[NO_ADC].str ,"No_ADC" );
-	safestrcpy( vect_comp_s.state_names[ADC_ON].str ,"ADC_On" );
+	safestrcpy( vect_comp_s.state_names[NO_ADC].str ,"No_ADC " );
+	safestrcpy( vect_comp_s.state_names[ADC_ON].str ,"ADC_On " );
 
 	// Add any new component states here 
 } // init_adc_component
@@ -207,11 +208,12 @@ void init_common_data( // Initialise PWM Test data
 	COMMON_PWM_TYP &comm_pwm_s // Reference to structure of common PWM data
 )
 {
-	init_width_info(	comm_pwm_s ,NUM_PWM_WIDTHS	," Width " );
-	init_phase_component(		comm_pwm_s.comp_data[PHASE]			,NUM_PWM_PHASES	," Phase " );
-	init_leg_component(			comm_pwm_s.comp_data[LEG]				,NUM_PWM_LEGS		,"  Leg  " );
-	init_adc_component(			comm_pwm_s.comp_data[ADC_TRIG]	,NUM_PWM_ADCS		,"  ADC  " );
-	init_control_component(	comm_pwm_s.comp_data[CNTRL]			,NUM_PWM_CNTRLS	," Comms." );
+	init_width_info( comm_pwm_s ,NUM_PWM_WIDTHS	," Width " );
+
+	init_phase_component(		comm_pwm_s.comp_data[PHASE]			,NUM_PWM_PHASES			," Phase " );
+	init_leg_component(			comm_pwm_s.comp_data[LEG]				,(NUM_PWM_LEGS + 1)	,"  Leg  " );
+	init_adc_component(			comm_pwm_s.comp_data[ADC_TRIG]	,NUM_PWM_ADCS				,"  ADC  " );
+	init_control_component(	comm_pwm_s.comp_data[CNTRL]			,NUM_PWM_CNTRLS			," Comms." );
 
 	// Add any new test vector components here
 } // init_common_data

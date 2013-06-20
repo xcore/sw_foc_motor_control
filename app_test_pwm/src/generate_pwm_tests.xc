@@ -172,12 +172,12 @@ static void init_test_data( // Initialise PWM Test data
 /*****************************************************************************/
 static void assign_test_vector_width( // Assign Width-state of test vector
 	GENERATE_PWM_TYP &tst_data_s, // Reference to structure of PWM test data
-	WIDTH_PWM_ENUM inp_width // Input Width-state
+	WIDTH_PWM_ENUM wid_state // Input Width-state
 )
 {
-	tst_data_s.curr_vect.comp_state[WIDTH] = inp_width; // Update speed-state of test vector
+	tst_data_s.curr_vect.comp_state[WIDTH] = wid_state; // Update speed-state of test vector
 
-	tst_data_s.width = tst_data_s.common.pwm_wids[inp_width]; // Set pulse width for current width-state
+	tst_data_s.width = tst_data_s.common.pwm_wids[wid_state]; // Set pulse width for current width-state
 } // assign_test_vector_width
 /*****************************************************************************/
 static void assign_test_vector_phase( // Assign Phase-state of test vector
@@ -188,12 +188,12 @@ static void assign_test_vector_phase( // Assign Phase-state of test vector
 	tst_data_s.curr_vect.comp_state[PHASE] = inp_phase; // Update phase-state of test vector
 } // assign_test_vector_phase
 /*****************************************************************************/
-static void assign_test_vector_leg( // Assign PWM-leg state of test vector
+static void assign_test_vector_leg( // Assign PWM-leg of test vector
 	GENERATE_PWM_TYP &tst_data_s, // Reference to structure of PWM test data
-	PWM_LEG_ENUM inp_leg // Input leg-state
+	PWM_LEG_ENUM inp_leg	// Input PWM-leg state
 )
 {
-	tst_data_s.curr_vect.comp_state[LEG] = inp_leg; // Update PWM-leg state of test vector
+	tst_data_s.curr_vect.comp_state[LEG] = inp_leg;
 } // assign_test_vector_leg
 /*****************************************************************************/
 static void assign_test_vector_adc( // Assign ADC_trigger state of test vector
@@ -293,13 +293,13 @@ static void gen_pwm_width_test( // Generate PWM Test data for testing one PWM Pu
 	GENERATE_PWM_TYP &tst_data_s, // Reference to structure of PWM test data
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
 	chanend c_pwm, 				// Channel between Client and Server
-	WIDTH_PWM_ENUM curr_wid // Current PWM Pulse-width under test
+	WIDTH_PWM_ENUM wid_state // Current PWM Pulse-width state under test
 )
 {
-	assign_test_vector_width( tst_data_s ,curr_wid ); // Set test vector to Slow width
+	assign_test_vector_width( tst_data_s ,wid_state ); // Set test vector to Slow width
 	
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Skip start-up
-	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,2 );
+	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,3 );
 	
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Start-up complete, Switch on testing
 	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,MAX_TESTS );
@@ -336,8 +336,8 @@ static void gen_motor_pwm_test_data( // Generate PWM Test data for one motor
 		assign_test_vector_adc( tst_data_s ,NO_ADC );
 	} // if (tst_data_s.common.options.flags[TST_ADC])
 
-	assign_test_vector_leg( tst_data_s ,TEST_LEG); // Set which PWM-Leg to test
 	assign_test_vector_phase( tst_data_s ,TEST_PHASE ); // Set PWM-phase to test
+	assign_test_vector_leg( tst_data_s ,NUM_PWM_LEGS ); // Set test both PWM-legs
 
 	// Do pulse-width tests ...
 	if (tst_data_s.common.options.flags[TST_NARROW]) gen_pwm_width_test( tst_data_s ,c_tst ,c_pwm ,MINI );

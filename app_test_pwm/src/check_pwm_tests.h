@@ -28,7 +28,7 @@
 #include "test_pwm_common.h"
 
 /** Define Input buffer size in bits */
-#define INP_BUF_BITS 6 // Input buffer size in bits
+#define INP_BUF_BITS 8 // Input buffer size in bits
 
 /** Define allowed PWM-width delay */
 #define WID_TIMEOUT 2 // Allowed PWM-width delay
@@ -64,7 +64,6 @@ typedef struct PWM_WAVE_TAG // Structure containing data for one PWM Wave
 	PWM_SAMP_TYP curr_data; // data for current PWM sample 
 	PWM_SAMP_TYP prev_data; // data for previous PWM sample
 	int meas_wid;	// measured PWM width
-	PORT_TIME_TYP adc_time; // port_time when ADC trigger received
 	unsigned hi_time; // Time accumulated during high (one) period of pulse
 	unsigned lo_time; // Time accumulated during low (zero) period of pulse
 	int hi_sum;	// sum of high-times
@@ -72,6 +71,19 @@ typedef struct PWM_WAVE_TAG // Structure containing data for one PWM Wave
 	int hi_num;	// No. of high-times
 	int lo_num;	// No. of high-times
 } PWM_WAVE_TYP;
+
+/** Type containing data for a balanced line (pair of PWM wave trains) */
+typedef struct PWM_LINE_TAG
+{
+	PWM_WAVE_TYP waves[NUM_PWM_LEGS]; // Array of structures containing PWM wave data for each leg of a balanced line
+} PWM_LINE_TYP;
+
+/** Type containing data for all PWM motor data (3 phases + ADC) */
+typedef struct PWM_MOTOR_TAG
+{
+	PWM_LINE_TYP lines[NUM_TST_PHASES]; // Array of structures containing PWM wave data for a balanced-line (PWM phase)
+	PORT_TIME_TYP adc_time; // port_time when ADC trigger received
+} PWM_MOTOR_TYP;
 
 /** Type containing all check data */
 typedef struct CHECK_PWM_TAG // Structure containing PWM check data
@@ -83,18 +95,23 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 	TEST_VECT_TYP prev_vect; // Structure of containing previous PWM test vector
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
+	PWM_LEG_ENUM curr_leg; // Current PWM-leg under test
 	int bound; // error bound for PWM-width measurement
 	int print;  // Print flag
 	int dbg;  // Debug flag
 } CHECK_PWM_TYP;
 
 /*****************************************************************************/
-/** Check PWM results for all motors
+/** Check PWM results 
+ * \param c_hi_leg[], // Array of Channels for receiving PWM High-Leg data
+ * \param c_lo_leg[], // Array of Channels for receiving PWM Low-Leg data
+ * \param c_adc, // Channel for receiving PWM ADC-trigger data
  * \param c_tst // Channel for sending test vecotrs to test checker
- * \param c_chk[] // Array of channels for Receiving PWM data
  */
-void check_pwm_server_data( // Check PWM results for all motors
-	streaming chanend c_chk[], // Array of Channels for Receiving PWM data
+void check_pwm_server_data( // Checks PWM results for all motors
+	streaming chanend c_hi_leg[], // Array of Channels for receiving PWM High-Leg data
+	streaming chanend c_lo_leg[], // Array of Channels for receiving PWM Low-Leg data
+	streaming chanend c_adc, // Channel for receiving PWM ADC-trigger data
 	streaming chanend c_tst // Channel for receiving test vectors from test generator
 );
 /*****************************************************************************/
