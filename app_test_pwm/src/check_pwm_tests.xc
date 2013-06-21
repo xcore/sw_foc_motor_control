@@ -28,6 +28,8 @@ static void init_check_data( // Initialise check data for PWM tests
 	safestrcpy( chk_data_s.padstr2 ,"                              " );
 
 	chk_data_s.curr_leg = chk_data_s.curr_vect.comp_state[LEG]; // Initialise PWM-leg under test
+	chk_data_s.prev_leg = chk_data_s.curr_leg; // Initialise previous PWM-leg under test
+
 	chk_data_s.print = PRINT_TST_PWM; // Set print mode
 	chk_data_s.dbg = 0; // Set debug mode
 
@@ -50,6 +52,8 @@ static void init_wave_data( // Initialise data structure for one PWM wave
 	wave_data_s.lo_sum = 0;
 	wave_data_s.hi_num = 0;
 	wave_data_s.lo_num = 0;
+	wave_data_s.new_rise = 0; // Code for no rising-edge detected
+	wave_data_s.new_fall = 0; // Code for no falling-edge detected
 
 	wave_data_s.curr_data.first = 0;
 	wave_data_s.curr_data.last = 0;
@@ -209,10 +213,41 @@ static void check_adc_trigger( // Check timing of ADC trigger
 
 } // check_adc_trigger
 /*****************************************************************************/
+static void check_dead_time( // Check dead-time between edges in High and Low legs
+	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
+	PORT_TIME_TYP early_time,		// time of earlier edge
+	PORT_TIME_TYP later_time		// time of later edge 
+)
+{
+	int gap_time; // Time gap between edges
+
+
+// acquire_lock(); printstr("E="); printuint(early_time); printstr(" L="); printuintln(later_time); release_lock(); //MB~
+	gap_time = later_time + (PWM_MAX_VALUE - early_time); // Time difference between edges
+	gap_time &= PWM_MASK; // mask into range [0..PWM_MASK]
+	if (gap_time > (PWM_MAX_VALUE >> 1)) gap_time -= PWM_MAX_VALUE; // Max. absolute error is half PWM period 
+
+	chk_data_s.motor_tsts[DEAD]++;
+
+	// Check gap is large enough (should be half of dead-time)
+	if ((HALF_DEAD_TIME - HALF_PORT_WID) > abs(gap_time))
+	{
+		chk_data_s.motor_errs[DEAD]++;
+
+		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstr( chk_data_s.common.comp_data[LEG].state_names[chk_data_s.curr_leg].str	);
+		printstr(" DEAD_TIME FAILURE: Gap_Cycles=");
+		printintln(gap_time);
+		release_lock(); // Release Display Mutex
+	} // if ((HALF_DEAD_TIME - HALF_PORT_WID) > abs(gap_time))
+
+} // check_dead_time
+/*****************************************************************************/
 static void update_pwm_data( // Update PWM data
 	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
-	PWM_WAVE_TYP &wave_data_s, // Reference to wave-data structure to be updated
-	PORT_TIME_TYP adc_time // port_time when previous ADC trigger received
+	PWM_WAVE_TYP &wave_data_s // Reference to wave-data structure to be updated
 )
 {
 	PWM_SAMP_TYP curr_pwm_s = wave_data_s.curr_data; // Reference to structure containing current PWM sample data
@@ -221,6 +256,9 @@ static void update_pwm_data( // Update PWM data
 	PORT_TIME_TYP prev_time = (PORT_TIME_TYP)prev_pwm_s.port_data.time_off; // previous PWM time-offset
 	PORT_TIME_TYP diff_time = (curr_time - prev_time); // Elapsed time
 
+
+	wave_data_s.new_rise = 0; // preset flag to NO new rising-edge detected
+	wave_data_s.new_fall = 0; // preset flag to NO new falling-edge detected
 
 	// Update pulse times ...
 
@@ -236,36 +274,20 @@ static void update_pwm_data( // Update PWM data
 		} // if (prev_pwm_s.last)
 		else
 		{ // Rising edge
+			wave_data_s.rise_time = curr_time; // Store Rising-edge time-stamp
 			wave_data_s.lo_time +=  diff_time; // Finalise time for low portion of pulse
 			wave_data_s.hi_time = 0; // Initialise time for high portion of pulse
-			wave_data_s.lo_sum += wave_data_s.lo_time;
-			wave_data_s.lo_num++;
-
-			if (chk_data_s.print)
-			{
-				print_pwm_pulse( chk_data_s ,wave_data_s.lo_time ," Low_Width" ); // Print new PWM pulse data
-			} // if (chk_data_s.print)
+			wave_data_s.new_rise = 1; // Set flag for new rising-edge
 		} // else !(prev_pwm_s.last)
 	} // if (curr_pwm_s.last)
 	else
 	{ // Currently Low
 		if (prev_pwm_s.last)
 		{ // Falling Edge
+			wave_data_s.fall_time = curr_time; // Store Falling-edge time-stamp
 			wave_data_s.hi_time += diff_time; // Finalise time for high portion of pulse
 			wave_data_s.lo_time = 0; // Initialise time for low portion of pulse
-			wave_data_s.hi_sum += wave_data_s.hi_time;
-			wave_data_s.hi_num++;
-
-			// Check if ADC-trigger being tested
-			if (chk_data_s.common.options.flags[TST_ADC])
-			{ 
-				check_adc_trigger( chk_data_s ,wave_data_s ,adc_time ,curr_time );
-			} // if (chk_data_s.common.options.flags[TST_ADC])
-
-			if (chk_data_s.print)
-			{
-				print_pwm_pulse( chk_data_s ,wave_data_s.hi_time ,"High_Width" ); // Print new PWM pulse data
-			} // if (chk_data_s.print)
+			wave_data_s.new_fall = 1; // Set flag for new falling-edge
 		} // if (prev_pwm_s.last)
 		else
 		{ // Constant Low
@@ -276,10 +298,36 @@ static void update_pwm_data( // Update PWM data
 /*****************************************************************************/
 static void check_pwm_wave( // Check PWM balanced-line
 	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
-	PWM_WAVE_TYP &wave_data_s // Reference to a structure containing wave data for one PWM-leg
+	PWM_WAVE_TYP &wave_data_s, // Reference to a structure containing wave data for one PWM-leg
+	PORT_TIME_TYP adc_time // port_time when previous ADC trigger received
 )
 {
+	// Accumulate pulse times ...
 
+	if (wave_data_s.new_fall)
+	{ // New falling edge
+		wave_data_s.hi_sum += wave_data_s.hi_time;
+		wave_data_s.hi_num++;
+
+		// Check if ADC-trigger being tested
+		if (chk_data_s.common.options.flags[TST_ADC])
+		{ 
+			check_adc_trigger( chk_data_s ,wave_data_s ,adc_time ,wave_data_s.curr_data.port_data.time_off );
+		} // if (chk_data_s.common.options.flags[TST_ADC])
+
+		if (chk_data_s.print)
+		{
+			print_pwm_pulse( chk_data_s ,wave_data_s.hi_time ,"Hi_Width" ); // Print new PWM pulse data
+		} // if (chk_data_s.print)
+	} // if (wave_data_s.new_fall)
+	else
+	{
+		if (wave_data_s.new_rise)
+		{ // New rising edge
+			wave_data_s.lo_sum += wave_data_s.lo_time;
+			wave_data_s.lo_num++;
+		} // if (wave_data_s.new_rise)
+	} // else !(wave_data_s.new_fall)
 } // check_pwm_wave
 /*****************************************************************************/
 static void check_pwm_pulse_levels( // Check PWM mean voltage
@@ -348,7 +396,6 @@ static void initialise_pwm_width_test( // Initialise data for new Pulse-width te
 
 	// Evaluate error bounds for Pulse-width checks (~2%)
 	chk_data_s.bound = 1 + (chk_data_s.common.pwm_wids[chk_data_s.curr_vect.comp_state[WIDTH]] >> 6); 
-
 } // initialise_pwm_width_test 
 /*****************************************************************************/
 static void finalise_pwm_leg( // Terminate pulse-width test for one PWM-leg
@@ -416,7 +463,7 @@ static int pwm_data_compare( // Check if 2 sets of PWM data are different
 	return 0; // No differences found
 } // pwm_data_compare
 /*****************************************************************************/
-static void test_new_pwm_input_value( // test new PWM input value
+static void test_pwm_wave( // test new PWM input value
 	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
 	PWM_WAVE_TYP &wave_data_s, // Reference to a structure containing wave data for one PWM-leg
 	PORT_TIME_TYP adc_time // port_time when previous ADC trigger received
@@ -439,18 +486,69 @@ static void test_new_pwm_input_value( // test new PWM input value
 
 		init_sample_data( wave_data_s.curr_data ); 
 
+		update_pwm_data( chk_data_s ,wave_data_s ); // Update PWM-leg data
+
 		// Check if this current test vector is valid
 		if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
 		{
-			update_pwm_data( chk_data_s ,wave_data_s ,adc_time ); // Update PWM-leg data
-
-			check_pwm_wave( chk_data_s ,wave_data_s ); // Check wave data
+			check_pwm_wave( chk_data_s ,wave_data_s ,adc_time ); // Check wave data
 		} // if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
 
 		// Store previous PWM data
 		wave_data_s.prev_data = wave_data_s.curr_data;
 	} // if (do_test)
-} // test_new_pwm_input_value
+} // test_pwm_wave
+/*****************************************************************************/
+static void test_pwm_phase( // test new PWM data against PWM data for phase under test
+	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
+	PWM_LINE_TYP &phase_data_s, // Reference to a structure containing wave data for one PWM phase
+	PORT_TIME_TYP adc_time // port_time when previous ADC trigger received
+)
+{
+	// test new PWM data against PWM-leg under test
+	test_pwm_wave( chk_data_s ,phase_data_s.waves[chk_data_s.curr_leg] ,adc_time );
+
+	// Check if new edge detected in wave-train
+	if (phase_data_s.waves[chk_data_s.curr_leg].new_rise)
+	{	// Check Dead-time for rising edge
+
+		if (PWM_LO_LEG == chk_data_s.curr_leg)
+		{ // High-Edge --> Low-Edge
+			check_dead_time( chk_data_s ,phase_data_s.waves[PWM_HI_LEG].fall_time ,phase_data_s.waves[PWM_LO_LEG].rise_time );
+			check_dead_time( chk_data_s ,phase_data_s.waves[PWM_HI_LEG].rise_time ,phase_data_s.waves[PWM_LO_LEG].rise_time );
+		} // if (PWM_LO_LEG == chk_data_s.curr_leg)
+		else
+		{ // Low-Edge --> High-Edge
+			check_dead_time( chk_data_s ,phase_data_s.waves[PWM_LO_LEG].fall_time ,phase_data_s.waves[PWM_HI_LEG].rise_time );
+			check_dead_time( chk_data_s ,phase_data_s.waves[PWM_LO_LEG].rise_time ,phase_data_s.waves[PWM_HI_LEG].rise_time );
+		} // if (PWM_LO_LEG == chk_data_s.curr_leg)
+	} // if (phase_data_s.waves[chk_data_s.curr_leg].new_rise)
+	else
+	{
+		if (phase_data_s.waves[chk_data_s.curr_leg].new_fall)
+		{	// Check Dead-time for falling edge
+			if (PWM_LO_LEG == chk_data_s.curr_leg)
+			{ // High-Edge --> Low-Edge
+				check_dead_time( chk_data_s ,phase_data_s.waves[PWM_HI_LEG].fall_time ,phase_data_s.waves[PWM_LO_LEG].fall_time );
+				check_dead_time( chk_data_s ,phase_data_s.waves[PWM_HI_LEG].rise_time ,phase_data_s.waves[PWM_LO_LEG].fall_time );
+			} // if (PWM_LO_LEG == chk_data_s.curr_leg)
+			else
+			{ // Low-Edge --> High-Edge
+				check_dead_time( chk_data_s ,phase_data_s.waves[PWM_LO_LEG].fall_time ,phase_data_s.waves[PWM_HI_LEG].fall_time );
+				check_dead_time( chk_data_s ,phase_data_s.waves[PWM_LO_LEG].rise_time ,phase_data_s.waves[PWM_HI_LEG].fall_time );
+			} // if (PWM_LO_LEG == chk_data_s.curr_leg)
+		} // if (phase_data_s.waves[chk_data_s.curr_leg].new_fall)
+	} // else !(phase_data_s.waves[chk_data_s.curr_leg].new_rise)
+} // test_pwm_phase
+/*****************************************************************************/
+static void test_all_pwm( // test new PWM data against all previous PWM data
+	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
+	PWM_MOTOR_TYP &motor_s // Reference to a structure containing wave data for one PWM-leg
+)
+{
+	// test new PWM data against PWM data for phase under test
+	test_pwm_phase( chk_data_s ,motor_s.lines[TEST_PHASE] ,motor_s.adc_time );
+} // test_all_pwm
 /*****************************************************************************/
 static void process_new_test_vector( // Process new test vector
 	CHECK_PWM_TYP &chk_data_s, // Reference to structure containing test check data
@@ -545,8 +643,21 @@ void check_pwm_server_data( // Checks PWM results for all motors
 	initialise_pwm_width_test( chk_data_s ,motor_s ); 
 
 	while (do_loop) {
-#pragma ordered // If multiple cases fire at same time, service top-most first
+// #pragma ordered // If multiple cases fire at same time, service top-most first
 		select {
+			// Service any new PWM data on High-Leg input channel
+			case c_hi_leg[hi_off] :> capture_bufs[write_off].port_data :
+				capture_bufs[write_off].id = PWM_HI_LEG;
+// acquire_lock(); printstr("            "); printuint(write_off); printstr(":H="); printint(capture_bufs[write_off].port_data.time_off ); printstr(" P="); printhexln(capture_bufs[write_off].port_data.pattern); release_lock(); //MB~
+
+				// Update circular buffer offsets
+				write_cnt++; // Increment write counter
+				write_off = (((unsigned)write_cnt) & INP_BUF_MASK); // Wrap offset into range [0..INP_BUF_MASK];
+
+				hi_cnt++; // Increment channel counter
+				hi_off = (((unsigned)hi_cnt) & CHAN_MASK); // Wrap offset into range [0..CHAN_MASK];
+			break;
+
 			// Service any new PWM data on Low-Leg input channel
 			case c_lo_leg[lo_off] :> capture_bufs[write_off].port_data :
 				capture_bufs[write_off].id = PWM_LO_LEG;
@@ -568,19 +679,6 @@ void check_pwm_server_data( // Checks PWM results for all motors
 				// Update circular buffer offsets
 				write_cnt++; // Increment write counter
 				write_off = (((unsigned)write_cnt) & INP_BUF_MASK); // Wrap offset into range [0..INP_BUF_MASK];
-			break;
-
-			// Service any new PWM data on High-Leg input channel
-			case c_hi_leg[hi_off] :> capture_bufs[write_off].port_data :
-				capture_bufs[write_off].id = PWM_HI_LEG;
-// acquire_lock(); printstr("            "); printuint(write_off); printstr(":H="); printint(capture_bufs[write_off].port_data.time_off ); printstr(" P="); printhexln(capture_bufs[write_off].port_data.pattern); release_lock(); //MB~
-
-				// Update circular buffer offsets
-				write_cnt++; // Increment write counter
-				write_off = (((unsigned)write_cnt) & INP_BUF_MASK); // Wrap offset into range [0..INP_BUF_MASK];
-
-				hi_cnt++; // Increment channel counter
-				hi_off = (((unsigned)hi_cnt) & CHAN_MASK); // Wrap offset into range [0..CHAN_MASK];
 			break;
 
 			// Service any change on test channel
@@ -609,7 +707,7 @@ void check_pwm_server_data( // Checks PWM results for all motors
 // acquire_lock(); printuint(read_off); printstr(": H="); printint(capture_bufs[read_off].port_data.time_off); printstr(" P="); printhexln(capture_bufs[read_off].port_data.pattern); release_lock(); //MB~
 
 							chk_data_s.curr_leg = PWM_HI_LEG; // Set PWM-leg under test
-							test_new_pwm_input_value( chk_data_s ,motor_s.lines[TEST_PHASE].waves[PWM_HI_LEG] ,motor_s.adc_time ); // test new PWM data for current wave
+							test_all_pwm( chk_data_s ,motor_s ); // test new PWM data
 						break; // case PWM_HI_LEG
 
 						case PWM_LO_LEG :
@@ -617,7 +715,7 @@ void check_pwm_server_data( // Checks PWM results for all motors
 // acquire_lock(); printuint(read_off); printstr(": L="); printint(capture_bufs[read_off].port_data.time_off); printstr(" P="); printhexln(capture_bufs[read_off].port_data.pattern); release_lock(); //MB~
 
 							chk_data_s.curr_leg = PWM_LO_LEG; // Set PWM-leg under test
-							test_new_pwm_input_value( chk_data_s ,motor_s.lines[TEST_PHASE].waves[PWM_LO_LEG] ,motor_s.adc_time ); // test new PWM data for current wave
+							test_all_pwm( chk_data_s ,motor_s ); // test new PWM data
 						break; // case PWM_LO_LEG
 
 						case ADC_PATN :

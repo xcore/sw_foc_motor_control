@@ -204,6 +204,14 @@ static void assign_test_vector_adc( // Assign ADC_trigger state of test vector
 	tst_data_s.curr_vect.comp_state[ADC_TRIG] = inp_adc;
 } // assign_test_vector_leg
 /*****************************************************************************/
+static void assign_test_vector_deadtime( // Assign DeadTime of test vector
+	GENERATE_PWM_TYP &tst_data_s, // Reference to structure of PWM test data
+	DEAD_PWM_ENUM inp_deadtime	// Input dead-time state
+)
+{
+	tst_data_s.curr_vect.comp_state[DEAD] = inp_deadtime;
+} // assign_test_vector_deadtime
+/*****************************************************************************/
 static void do_pwm_test( // Performs one PWM test
 	GENERATE_PWM_TYP &tst_data_s, // Reference to structure of PWM test data
 	chanend c_pwm 				// Channel between Client and Server
@@ -299,7 +307,7 @@ static void gen_pwm_width_test( // Generate PWM Test data for testing one PWM Pu
 	assign_test_vector_width( tst_data_s ,wid_state ); // Set test vector to Slow width
 	
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Skip start-up
-	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,3 );
+	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,5 );
 	
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Start-up complete, Switch on testing
 	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,MAX_TESTS );
@@ -336,6 +344,7 @@ static void gen_motor_pwm_test_data( // Generate PWM Test data for one motor
 		assign_test_vector_adc( tst_data_s ,NO_ADC );
 	} // if (tst_data_s.common.options.flags[TST_ADC])
 
+	assign_test_vector_deadtime( tst_data_s ,DEAD_ON ); // Set test Dead-time
 	assign_test_vector_phase( tst_data_s ,TEST_PHASE ); // Set PWM-phase to test
 	assign_test_vector_leg( tst_data_s ,NUM_PWM_LEGS ); // Set test both PWM-legs
 

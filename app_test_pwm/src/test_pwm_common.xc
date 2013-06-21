@@ -34,11 +34,11 @@ static void init_width_component( // Initialise PWM Test data for PWM width test
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[MINI].str		,"Minimum-width " );
-	safestrcpy( vect_comp_s.state_names[SMALL].str	," Small-width  " );
-	safestrcpy( vect_comp_s.state_names[EQUAL].str	," Equal-width  " );
-	safestrcpy( vect_comp_s.state_names[LARGE].str	," Large-width  " );
-	safestrcpy( vect_comp_s.state_names[MAXI].str		,"Maximum-width " );
+	safestrcpy( vect_comp_s.state_names[MINI].str		,"Minim-width " );
+	safestrcpy( vect_comp_s.state_names[SMALL].str	,"Small-width " );
+	safestrcpy( vect_comp_s.state_names[EQUAL].str	,"Equal-width " );
+	safestrcpy( vect_comp_s.state_names[LARGE].str	,"Large-width " );
+	safestrcpy( vect_comp_s.state_names[MAXI].str		,"Maxim-width " );
 
 	// Add any new component states here 
 } // init_width_component
@@ -108,7 +108,7 @@ static void init_leg_component( // Initialise PWM Test data for PWM-leg test vec
 
 	safestrcpy( vect_comp_s.state_names[PWM_HI_LEG].str		,"Hi-Leg " );
 	safestrcpy( vect_comp_s.state_names[PWM_LO_LEG].str		,"Lo-Leg " );
-	safestrcpy( vect_comp_s.state_names[NUM_PWM_LEGS].str	,"2-Legs " );
+	safestrcpy( vect_comp_s.state_names[NUM_PWM_LEGS].str	,"" );
 
 	// Add any new component states here 
 } // init_phase_component
@@ -137,6 +137,31 @@ static void init_adc_component( // Initialise PWM Test data for ADC trigger test
 
 	// Add any new component states here 
 } // init_adc_component
+/*****************************************************************************/
+static void init_deadtime_component( // Initialise PWM Test data for Dead-Time test vector component
+	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
+	int inp_states, // No. of states for this test vector component
+	const char inp_name[] // input name for current test vector component
+)
+{
+	// Check enough room for all states
+	if (MAX_COMP_STATES < inp_states)
+	{
+		acquire_lock(); // Acquire Display Mutex
+		printstr( "ERROR on line "); printint( __LINE__ ); printstr( " of "); printstr( __FILE__ );
+		printstrln( ": MAX_COMP_STATES < inp_states, Update value for MAX_COMP_STATES in test_pwm_common.h" );
+		release_lock(); // Release Display Mutex
+		assert(0 == 1);
+	} // if (MAX_COMP_STATES < inp_states)
+
+	vect_comp_s.num_states = inp_states; // Assign number of states for current component
+	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
+
+	safestrcpy( vect_comp_s.state_names[NO_DEAD].str ,"No_DeadT " );
+	safestrcpy( vect_comp_s.state_names[DEAD_ON].str ,"DeadT_On " );
+
+	// Add any new component states here 
+} // init_deadtime_component
 /*****************************************************************************/
 static void init_control_component( // Initialise PWM Test data for Control/Communications test vector component
 	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
@@ -210,10 +235,11 @@ void init_common_data( // Initialise PWM Test data
 {
 	init_width_info( comm_pwm_s ,NUM_PWM_WIDTHS	," Width " );
 
-	init_phase_component(		comm_pwm_s.comp_data[PHASE]			,NUM_PWM_PHASES			," Phase " );
-	init_leg_component(			comm_pwm_s.comp_data[LEG]				,(NUM_PWM_LEGS + 1)	,"  Leg  " );
-	init_adc_component(			comm_pwm_s.comp_data[ADC_TRIG]	,NUM_PWM_ADCS				,"  ADC  " );
-	init_control_component(	comm_pwm_s.comp_data[CNTRL]			,NUM_PWM_CNTRLS			," Comms." );
+	init_phase_component(			comm_pwm_s.comp_data[PHASE]			,NUM_PWM_PHASES			," Phase " );
+	init_leg_component(				comm_pwm_s.comp_data[LEG]				,(NUM_PWM_LEGS + 1)	,"  Leg  " );
+	init_adc_component(				comm_pwm_s.comp_data[ADC_TRIG]	,NUM_PWM_ADCS				,"  ADC  " );
+	init_deadtime_component(	comm_pwm_s.comp_data[DEAD]			,NUM_PWM_DEADS			," DeadT " );
+	init_control_component(		comm_pwm_s.comp_data[CNTRL]			,NUM_PWM_CNTRLS			," Comms." );
 
 	// Add any new test vector components here
 } // init_common_data

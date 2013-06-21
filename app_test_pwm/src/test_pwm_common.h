@@ -70,7 +70,8 @@ typedef enum VECT_COMP_ETAG
   WIDTH,			// PWM Width-state
   PHASE,			// PWM-Phase
 	LEG,				// PWM-Leg
-  ADC_TRIG,				// ADC Trigger
+  ADC_TRIG,		// ADC Trigger
+	DEAD,				// Dead-Time
   NUM_VECT_COMPS	// Handy Value!-)
 } VECT_COMP_ENUM;
 
@@ -92,6 +93,14 @@ typedef enum ADC_PWM_ETAG
   ADC_ON,		// ADC-trigger is tested
   NUM_PWM_ADCS	// Handy Value!-)
 } ADC_PWM_ENUM;
+
+/** Enumeration of PWM Dead-Time states */
+typedef enum DEAD_PWM_ETAG
+{
+  NO_DEAD = 0,	// Dead-Time not tested
+  DEAD_ON,		// Dead-Time is tested
+  NUM_PWM_DEADS	// Handy Value!-)
+} DEAD_PWM_ENUM;
 
 /** Enumeration of PWM Control-states */
 typedef enum CNTRL_PWM_ETAG

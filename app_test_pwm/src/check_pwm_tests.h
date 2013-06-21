@@ -70,6 +70,10 @@ typedef struct PWM_WAVE_TAG // Structure containing data for one PWM Wave
 	int lo_sum;	// sum of low-times
 	int hi_num;	// No. of high-times
 	int lo_num;	// No. of high-times
+	int new_rise;	// Flag set when new rising-edge found
+	int new_fall;	// Flag set when new falling-edge found
+	PORT_TIME_TYP rise_time; // Time-stamp of rising edge
+	PORT_TIME_TYP fall_time; // Time-stamp of falling edge
 } PWM_WAVE_TYP;
 
 /** Type containing data for a balanced line (pair of PWM wave trains) */
@@ -96,6 +100,7 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
 	PWM_LEG_ENUM curr_leg; // Current PWM-leg under test
+	PWM_LEG_ENUM prev_leg; // Previous PWM-leg under test
 	int bound; // error bound for PWM-width measurement
 	int print;  // Print flag
 	int dbg;  // Debug flag
