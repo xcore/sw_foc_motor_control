@@ -226,11 +226,12 @@ static void check_dead_time( // Check dead-time between edges in High and Low le
 	gap_time = later_time + (PWM_MAX_VALUE - early_time); // Time difference between edges
 	gap_time &= PWM_MASK; // mask into range [0..PWM_MASK]
 	if (gap_time > (PWM_MAX_VALUE >> 1)) gap_time -= PWM_MAX_VALUE; // Max. absolute error is half PWM period 
+	gap_time = abs(gap_time);
 
 	chk_data_s.motor_tsts[DEAD]++;
 
 	// Check gap is large enough (should be half of dead-time)
-	if ((HALF_DEAD_TIME - HALF_PORT_WID) > abs(gap_time))
+	if ((HALF_DEAD_TIME - HALF_PORT_WID) > gap_time)
 	{
 		chk_data_s.motor_errs[DEAD]++;
 
@@ -695,7 +696,7 @@ void check_pwm_server_data( // Checks PWM results for all motors
 
 			default:
 				assert(write_cnt <= (read_cnt + NUM_INP_BUFS)); // Check we have enough input buffers
-	
+
 				// Check if any new data to read
 				if (write_cnt > read_cnt)
 				{

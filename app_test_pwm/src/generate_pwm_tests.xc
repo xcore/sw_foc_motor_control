@@ -307,7 +307,7 @@ static void gen_pwm_width_test( // Generate PWM Test data for testing one PWM Pu
 	assign_test_vector_width( tst_data_s ,wid_state ); // Set test vector to Slow width
 	
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Skip start-up
-	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,5 );
+	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,3 );
 	
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Start-up complete, Switch on testing
 	do_pwm_vector( tst_data_s ,c_tst ,c_pwm ,MAX_TESTS );

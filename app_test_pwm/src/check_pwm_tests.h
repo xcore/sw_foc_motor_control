@@ -28,7 +28,7 @@
 #include "test_pwm_common.h"
 
 /** Define Input buffer size in bits */
-#define INP_BUF_BITS 8 // Input buffer size in bits
+#define INP_BUF_BITS 6 // NB This may need to be increased if extra printed output added to checker
 
 /** Define allowed PWM-width delay */
 #define WID_TIMEOUT 2 // Allowed PWM-width delay
