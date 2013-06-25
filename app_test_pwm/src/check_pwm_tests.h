@@ -28,10 +28,10 @@
 #include "test_pwm_common.h"
 
 /** Define Input buffer size in bits */
-#define INP_BUF_BITS 6 // NB This may need to be increased if extra printed output added to checker
+#define INP_BUF_BITS 8 // 6 NB This may need to be increased if extra printed output added to checker
 
-/** Define allowed PWM-width delay */
-#define WID_TIMEOUT 2 // Allowed PWM-width delay
+/** Define minimum Dead-time limit */
+#define DEAD_ERR_LIM	(HALF_DEAD_TIME - HALF_PORT_WID) // Minimum allowed time between High-leg/Low-leg edges
 
 #define NUM_INP_BUFS (1 << INP_BUF_BITS) // No. of input buffers used for storing PWM widths, NB Can probably use 4, but sailing cloase to the wind
 #define INP_BUF_MASK (NUM_INP_BUFS - 1) // Bit-mask used to wrap input buffer offset
@@ -40,6 +40,7 @@
 
 #define ADC_DELAY 8 // Fudge-Factor: delay between receiving ADC-trigger from channel and outputting to dummy port
 
+#ifdef MB // Depreciated
 /** Classes of PWM sample patterns*/
 typedef enum PWM_PATN_ETAG
 {
@@ -49,6 +50,18 @@ typedef enum PWM_PATN_ETAG
   PWM_HIGH,			// All-bits high (High portion of pulse)
   NUM_PATN_STATES    // Handy Value!-)
 } PWM_PATN_ENUM;
+#endif //MB~
+
+/** Class of PWM events */
+typedef enum PWM_EVENT_ETAG
+{
+  PWM_LO_RISE = 0,	// Low-leg rising edge
+  PWM_HI_RISE,			// High-leg rising edge
+  PWM_ADC_TRIG,			// ADC-trigger event
+  PWM_HI_FALL,			// High-leg falling edge 
+  PWM_LO_FALL,			// Low-leg falling edge 
+  NUM_PWM_EVENTS    // Handy Value!-)
+} PWM_EVENT_ENUM;
 
 /** Type containing data for one pulse sample */
 typedef struct PWM_SAMP_TAG // Structure containing data for one PWM sample
@@ -64,14 +77,15 @@ typedef struct PWM_WAVE_TAG // Structure containing data for one PWM Wave
 	PWM_SAMP_TYP curr_data; // data for current PWM sample 
 	PWM_SAMP_TYP prev_data; // data for previous PWM sample
 	int meas_wid;	// measured PWM width
-	unsigned hi_time; // Time accumulated during high (one) period of pulse
-	unsigned lo_time; // Time accumulated during low (zero) period of pulse
+	unsigned time_sum; // Time accumulated during pulse
+	unsigned hi_wid; // Measure width of High(one) portion of pulse 
+	unsigned lo_wid; // Measure width of Low(zero) portion of pulse 
 	int hi_sum;	// sum of high-times
 	int lo_sum;	// sum of low-times
 	int hi_num;	// No. of high-times
 	int lo_num;	// No. of high-times
-	int new_rise;	// Flag set when new rising-edge found
-	int new_fall;	// Flag set when new falling-edge found
+	int hi_on;	// Flag set when in High(one) portion of pulse 
+	int new_edge;	// Flag set when new edge found
 	PORT_TIME_TYP rise_time; // Time-stamp of rising edge
 	PORT_TIME_TYP fall_time; // Time-stamp of falling edge
 } PWM_WAVE_TYP;
@@ -86,7 +100,6 @@ typedef struct PWM_LINE_TAG
 typedef struct PWM_MOTOR_TAG
 {
 	PWM_LINE_TYP lines[NUM_TST_PHASES]; // Array of structures containing PWM wave data for a balanced-line (PWM phase)
-	PORT_TIME_TYP adc_time; // port_time when ADC trigger received
 } PWM_MOTOR_TYP;
 
 /** Type containing all check data */
@@ -99,8 +112,10 @@ typedef struct CHECK_PWM_TAG // Structure containing PWM check data
 	TEST_VECT_TYP prev_vect; // Structure of containing previous PWM test vector
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
+	PWM_EVENT_ENUM event; // Current PWM event being processed
 	PWM_LEG_ENUM curr_leg; // Current PWM-leg under test
 	PWM_LEG_ENUM prev_leg; // Previous PWM-leg under test
+	PORT_TIME_TYP adc_time; // port_time when ADC trigger received
 	int bound; // error bound for PWM-width measurement
 	int print;  // Print flag
 	int dbg;  // Debug flag

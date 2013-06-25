@@ -34,6 +34,7 @@
 /** Define the resolution of PWM (WARNING: effects update rate as tied to ref clock) */
 #define PWM_RES_BITS 12 // Number of bits used to define number of different PWM pulse-widths
 #define PWM_MAX_VALUE (1 << PWM_RES_BITS) // No.of different PWM pulse-widths
+#define QUART_PWM_MAX (PWM_MAX_VALUE >> 2)  // Quarter of maximum PWM width value
 
 // If locked, the ADC sampling will occur in the middle of the  switching sequence.
 // It is triggered over a channel. Set this define to 0 to disable this feature
@@ -63,7 +64,5 @@
 #define SECOND PLATFORM_REFERENCE_HZ // One Second in Clock ticks
 #define MILLI_SEC (PLATFORM_REFERENCE_KHZ) // One milli-second in clock ticks
 #define MICRO_SEC (PLATFORM_REFERENCE_MHZ) // One micro-second in clock ticks
-
-#define QUART_PWM_MAX (PWM_MAX_VALUE >> 2)  // Quarter of maximum PWM width value
 
 #endif /* _APP_GLOBAL_H_ */

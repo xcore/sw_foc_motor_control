@@ -72,9 +72,11 @@ void capture_pwm_leg_data( // Captures PWM data results for one leg
 	PWM_PORT_TYP port_data_s; // Structure containing PWM port data captured from input pins
 
 	unsigned curr_pins; // current value on High-Leg input pins
-	unsigned prev_pins = 0x55555555; // Initialise previous High-Leg input pins to impossible value
+	unsigned prev_pins; // Initialise previous High-Leg input pins to impossible value
 	unsigned chan_off = 0; // offset into channel array
 
+
+	p32_leg[TEST_PHASE] :> prev_pins; // Initialise previous pin value
 
 	// Loop forever
 	while (1)

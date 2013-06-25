@@ -16,29 +16,29 @@ Small-width Phase_A No_ADC DeadT_On :VALID
                                              Hi-Leg Hi_Width= 256 
 PWM:256
                                              Lo-Leg Hi_Width= 376 
-                                             Lo-Leg Hi_Width= 376 
-PWM:256
-                                             Hi-Leg Hi_Width= 256 
                                              Hi-Leg Hi_Width= 256 
                                              Lo-Leg Hi_Width= 376 
 PWM:256
-                                             Lo-Leg Hi_Width= 376 
                                              Hi-Leg Hi_Width= 256 
+                                             Lo-Leg Hi_Width= 376 
 PWM:256
-                                             Lo-Leg Hi_Width= 376 
                                              Hi-Leg Hi_Width= 256 
+                                             Lo-Leg Hi_Width= 376 
 PWM:256
-                                             Lo-Leg Hi_Width= 376 
                                              Hi-Leg Hi_Width= 256 
+                                             Lo-Leg Hi_Width= 376 
 PWM:256
-                                             Lo-Leg Hi_Width= 376 
                                              Hi-Leg Hi_Width= 256 
+                                             Lo-Leg Hi_Width= 376 
 PWM:256
-                                             Lo-Leg Hi_Width= 376 
                                              Hi-Leg Hi_Width= 256 
+                                             Lo-Leg Hi_Width= 376 
 PWM:256
-                                             Lo-Leg Hi_Width= 376 
                                              Hi-Leg Hi_Width= 256 
+                                             Lo-Leg Hi_Width= 376 
+PWM:256
+                                             Hi-Leg Hi_Width= 256 
+                                             Lo-Leg Hi_Width= 376 
 PWM:256
                                              Hi-Leg Hi_Width= 256 
                                              Lo-Leg Hi_Width= 376 
@@ -93,7 +93,7 @@ Large-width Phase_A No_ADC DeadT_On :QUIT
                                              Hi-Leg  Mean_Width 3840 
                                              Lo-Leg  Mean_Width 3960 
  
-                                             216 tests run
+                                             109 tests run
 ALL TESTS PASSED
  
 PWM:3840
