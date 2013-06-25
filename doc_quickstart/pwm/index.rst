@@ -8,7 +8,7 @@ This application is an xSIM test harness for the pulse width modulation interfac
 No hardware is required to run the test harness.
 
 The test application uses a maximum of 6 cores containing the following components:-
-   #. A test-vector and PWM Client under test
+   #. A test-vector generator and the PWM Client under test
    #. The PWM Server under test (generates raw PWM data)
    #. 2 PWM-Leg capture cores (captures raw PWM data from either the High-Leg or Low-Leg ports via 'loopback')
    #. A PWM-adc capture core (captures raw PWM data from the pwm-to-adc trigger channel via 'loopback')
@@ -192,7 +192,7 @@ Look at the Code
          * ``capture_pwm_adc_data()`` captures the raw PWM data from the pwm-to-adc trigger channel which has been looped back onto a set of input pins, and transmits this over a channel to the Checker core
          * ``check_pwm_server_data()`` receives raw PWM data from a number of channels connected to Capture cores, checks it, and displays the results. ``gen_all_pwm_test_data()`` and ``check_all_pwm_server_data()`` both produce display information in parallel. 
          * ``config_all_ports()`` configures the timers on all ports used to capture PWM-data. These ports are all configured to run from the same clock so that their times are all synchronised.
-         * The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used control a MutEx which allows only one core at a time to print to the display.
+         * The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used to control a MutEx which allows only one core at a time to print to the display.
    #. Find the file ``generate_pwm_tests.xc``. In here the function ``do_pwm_test()`` handles the PWM output data via the PWM Client function ``foc_pwm_put_parameters()``. It communicates with the PWM server function ``foc_pwm_do_triggered()`` via channel ``c_pwm``. 
    #. Find the ``app_global.h`` header. At the top are the motor definitions. Next down are the PWM definitions.
    #. Note in ``app_global.h`` the define PRINT_TST_PWM used to switch on verbose printing. An example of this can be found in file ``pwm_results.txt``.
