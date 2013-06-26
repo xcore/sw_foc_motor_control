@@ -4,16 +4,16 @@ Programming Guide
 Key Files
 ---------
 
-   * ``qei_client.xc``: Contains the XC implementation of the QEI Client API
-   * ``qei_server.xc``: Contains the XC implementation of the QEI Server task
+   * ``qei_client.xc``: Contains the xC implementation of the QEI Client API
+   * ``qei_server.xc``: Contains the xC implementation of the QEI Server task
 
 Usage
 -----
 
-The following 2 functions are designed to be called from an XC file.
+The following 2 functions are designed to be called from an xC file.
 
-   * ``foc_qei_get_parameters()`` Client function designed to be called from an XC file each time a new set of QEI parameters are required.
-   * ``foc_qei_do_multiple()``, Server function designed to be called from an XC file. It runs on its own core, and receives data from all QEI motor ports.
+   * ``foc_qei_get_parameters()`` Client function designed to be called from an Xx file each time a new set of QEI parameters are required.
+   * ``foc_qei_do_multiple()``, Server function designed to be called from an xC file. It runs on its own core, and receives data from all QEI motor ports.
 
 The following QEI definitions are required. These are set in ``qei_common.h`` or ``app_global.h``
 
@@ -28,16 +28,9 @@ The following QEI definitions are required. These are set in ``qei_common.h`` or
 Test Applications
 =================
 
-Quadrature Encoder Interface (QEI) Xcore Simulator
---------------------------------------------------
+This module has a test harness called ``Quadrature Encoder Interface (QEI) xSIM Simulator`` which can be found in the xSOFTip Explorer pane.
 
-To get started with this application, run through the instructions in the quickstart guide.
-The application is in app_test_qei
-The quickstart guide is in doc_quickstart/qei/index.rst
-
-This application uses module_foc_qei to process simulated QEI input test data.
-The QEI input data is received on a 4-bit port.
-The QEI outputs (motor position and velocity) are transmitted in a QEI data structure.
+To get started with this application, run through the instructions in the quickstart guide for the test harness. More details about using this test harness are given below.
 
 Makefile
 ........
@@ -75,8 +68,6 @@ For a explanation of the test results refer to the quickstart guide in doc_quick
 Trouble-shooting
 ................
 
-The information in the 'check results' column may disappear.
-This and almost any other problem are probably due to NOT setting the port configuration correctly when calling xsim
+**The information in the 'check results' column may disappear**: This and almost any other problem are probably due to not setting the port configuration correctly when calling xSIM.
 
-The printout may stop.
-As mentioned above, depending on the speed of your PC (or Mac), there can be upto 1 minute gap between printed lines.
+**The printout may stop** Depending on the speed of your PC (or Mac), there can be upto 1 minute gap between printed lines.
