@@ -1,7 +1,7 @@
 Advanced Motor Control 
 .......................
 
-:Latest release: 0.0.1beta1
+:Latest release: 0.0.1beta2
 :Maintainer: markb
 :Description: This repository contains S/W to support Field-Oriented Control (FOC) of motors.
 
