@@ -71,6 +71,8 @@
     </dependency>
     <description>This repository contains S/W to support Field-Oriented Control (FOC) of motors.</description>
     <exclude_dir>app_test_adc</exclude_dir>
+    <exclude_dir>app_test_pwm</exclude_dir>
+    <exclude_dir>app_test_hall</exclude_dir>
     <exclude_dir>app_foc_demo</exclude_dir>
     <exclude_dir>module_foc_adc</exclude_dir>
     <exclude_dir>module_foc_comms</exclude_dir>
