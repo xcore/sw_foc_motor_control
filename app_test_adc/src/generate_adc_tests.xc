@@ -15,174 +15,274 @@
 #include "generate_adc_tests.h"
 
 /*****************************************************************************/
-static void init_adc_data( // Initialise ADC Test data
-	TEST_ADC_TYP &tst_data_s, // Reference to structure of ADC test data
-	TEST_WAVE_TYP &tst_wave_s // Reference to structure containing all wave data
+static void parse_control_file( // Parse ADC control file and set up test options
+	GENERATE_TST_TYP &tst_data_s // Reference to structure of ADC test data
 )
 {
-	int samp_cnt; // sample counter
+  unsigned char file_buf[FILE_SIZE];
+  int char_cnt; // Character counter
+  int line_cnt = 0; // line counter
+  int test_cnt = 0; // test counter
+  int new_line = 0; // flag if new-line found
+  int tst_line = 0; // flag set if test-option found
+  char curr_char; // Current character
+  int file_id; // File identifier
+  int status = 0; // Error status
 
+
+	// Initialise file buffer
+  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt) 
+	{
+    file_buf[char_cnt] = 0;
+  } // for char_cnt
+
+  file_id = _open( "adc_tests.txt" ,O_RDONLY ,0 ); // Open control file for ADC tests
+
+  assert(-1 != file_id); // ERROR: Open file failed (_open)
+
+  _read( file_id ,file_buf ,FILE_SIZE );  // Read file into buffer
+
+  status = _close(file_id);	// Close file
+  assert(0 == status);	// ERROR: Close file failed (_close)
 
 	acquire_lock(); // Acquire Display Mutex
-	printstrln("Initialising Data ...");
+	printcharln(' ');
+	printstrln("Read following Test Options ..." );
 
-	for (samp_cnt=0; samp_cnt<NUM_WAVE_SAMPS; samp_cnt++)
+	// Parse the file buffer for test options
+  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt) 
 	{
-		printchar('.');
-		tst_wave_s.sine.samps[samp_cnt] = get_sine_value( samp_cnt ,NUM_WAVE_SAMPS ,MAX_ADC_VAL );
-	} // for samp_cnt
+    curr_char = file_buf[char_cnt]; // Get next character
 
-	printcharln('|');
+    if (!curr_char) break; // Check for end of file info.
+
+
+		switch (curr_char)
+		{
+    	case '0' : // Opt out of test
+				tst_data_s.common.options.flags[test_cnt] = 0;
+				tst_line = 1; // Flag test-option found
+    	break; // case '0' :
+
+    	case '1' : // Opt for this test
+				tst_data_s.common.options.flags[test_cnt] = 1;
+				tst_line = 1; // Flag test-option found
+    	break; // case '1' :
+
+    	case '#' : // Start of comment
+				new_line = 1; // Set flag for new-line
+    	break; // case '1' :
+
+    	case '\n' : // End of line.
+				new_line = 1; // Set flag for new-line
+    	break; // case '\n' :
+
+    	default : // Whitespace
+				// Un-determined line
+    	break; // case '\n' :
+		} // switch (curr_char)
+
+		// Check if we have a test-option line
+		if (tst_line)
+		{ // Process test-option line
+			test_cnt++;
+			printchar(curr_char);
+			printchar(' ');
+
+			while ('\n' != file_buf[char_cnt])
+			{
+				char_cnt++;
+				assert(char_cnt < FILE_SIZE); // End-of-file found
+				printchar( file_buf[char_cnt] );
+			} // while ('\n' != file_buf[char_cnt])
+
+			line_cnt++;
+			tst_line = 0; // Clear test-option flag
+			new_line = 0; // Clear new_line flag
+		} // if (tst_line)
+		else
+		{ // Process other line
+			// Check if we need to move to new-line
+			if (new_line)
+			{ // skip to next line
+				while ('\n' != file_buf[char_cnt])
+				{
+					char_cnt++;
+					assert(char_cnt < FILE_SIZE); // End-of-file found
+				} // while ('\n' != file_buf[char_cnt])
+	
+				line_cnt++;
+				new_line = 0; // Clear new_line flag
+			} // if (new_line)
+		} // else !(tst_line)
+  } // for char_cnt
+
+	printcharln(' ');
 	release_lock(); // Release Display Mutex
 
-} // init_adc_data
+	// Do some checks ...
+	assert(test_cnt == NUM_TEST_OPTS); // Check read required number of test options found
+	assert(NUM_TEST_OPTS <= line_cnt); // Check enough file lines read
+	assert(test_cnt <= line_cnt); // Check no more than one test/line
+ 
+	return;
+} // parse_control_file
 /*****************************************************************************/
-static void transmit_adc_data( // transmits data for one ADC test
-	TEST_ADC_TYP &tst_data_s, // Reference to structure of ADC test data
-	buffered out port:32 pb32_tst[], // Array of current port on which to transmit test data
-	chanend c_pwm2adc_trig // Array of channels outputting ADC trigger 
+static void init_test_data( // Initialise ADC Test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data	
+	streaming chanend c_chk // Channel for communication with Checker cores
 )
 {
-	int phase_cnt; // counter for ADC phases
+	init_common_data( tst_data_s.common ); // Initialise data common to Generator and Checker
+ 
+	tst_data_s.period = ADC_PERIOD; // Typical time between ADC capture in FOC motor control loop
 
+	tst_data_s.print = PRINT_TST_ADC; // Set print mode
+	tst_data_s.dbg = 0; // Set debug mode
 
-	acquire_lock(); // Acquire Display Mutex
-	printint( tst_data_s.id );
+	parse_control_file( tst_data_s ); 
 
-	// Transmit ADC sample for used ADC phases 
-	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; phase_cnt++) 
-	{
-		pb32_tst[phase_cnt] <: tst_data_s.vals[phase_cnt];	// Transmit ADC sample for current ADC phase 
-		printstr( " : " ); printint( tst_data_s.vals[phase_cnt] );
-	} // for phase_cnt
+	c_chk <: tst_data_s.common.options; // Send test options to checker core
 
-	/* Send synchronisation token to ADC. 
-	 * NB In full FOC motor control loop, this is usually done by PWM server
-   */
-	outct( c_pwm2adc_trig ,XS1_CT_END );
+	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Initialise to skipped test for set-up mode
+	tst_data_s.prev_vect.comp_state[CNTRL] = QUIT; // Initialise to something that will force an update
 
-	printstrln( " :ADC" );
-	release_lock(); // Release Display Mutex
-} // transmit_adc_data
+} // init_motor_tests
 /*****************************************************************************/
-static void do_adc_test( // Performs one ADC test
-	TEST_ADC_TYP &tst_data_s, // Reference to structure of ADC test data
-	ADC_WAVE_TYP &wave_data_s, // Reference to structure containing data for one wave
-	buffered out port:32 pb32_tst[], // Array of current port on which to transmit test data
-	chanend c_pwm2adc_trig // Array of channels outputting ADC trigger 
+static void assign_test_vector_sum( // Assign Zero-sum state of test vector
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data
+	SUM_ADC_ENUM inp_sum // Input Zero-sum state
 )
 {
-	int curr_off; // current offset into array of wave samples
-	int phase_cnt; // counter for ADC phases
-
-
-	tst_data_s.cnt = (tst_data_s.cnt + 1) & MAX_WAVE_ID; // Increment (and wrap) ADC position
-
-	// Transmit ADC sample for each ADC phase 
-	for (phase_cnt=0; phase_cnt<NUM_ADC_PHASES; phase_cnt++) 
-	{
-		curr_off = (tst_data_s.cnt + tst_data_s.offsets[phase_cnt]) & MAX_WAVE_ID; // Calculate (and wrap) Wave offset
-		tst_data_s.vals[phase_cnt] = wave_data_s.samps[curr_off]; // store current adc value
-	} // for phase_cnt
-
-	transmit_adc_data( tst_data_s ,pb32_tst ,c_pwm2adc_trig ); // Transmit test data
-} // do_adc_test
+	tst_data_s.curr_vect.comp_state[SUM] = inp_sum; // Update Zero-Sum state of test vector
+} // assign_test_vector_sum
 /*****************************************************************************/
-static void steady_speed( // Holds steady speed for a number of tests
-	TEST_ADC_TYP &tst_data_s, // Reference to structure of ADC test data
-	ADC_WAVE_TYP &wave_data_s, // Reference to structure containing data for one wave
-	buffered out port:32 pb32_tst[], // Array of current port on which to transmit test data
-	chanend c_pwm2adc_trig, // Array of channels outputting ADC trigger 
-	int test_cnt, // count-down test counter
-	const char str_val[] // String containing title for tests
+static void assign_test_vector_pace( // Assign Pacing state of test vector
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data
+	PACE_ADC_ENUM inp_pace // Input Pacing state
+)
+// See PACE_ADC_ENUM in test_adc_common.h for explanation
+{
+	tst_data_s.curr_vect.comp_state[PACE] = inp_pace; // Update Pacing state of test vector
+} // assign_test_vector_pace
+/*****************************************************************************/
+static void assign_test_vector_spin( // Assign Spin-state of test vector
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data
+	SPIN_ADC_ENUM inp_spin // Input Spin-state
 )
 {
-	timer chronometer; // XMOS timer
+	tst_data_s.curr_vect.comp_state[SPIN] = inp_spin; // Update Spin-state of test vector
+} // assign_test_vector_spin
+/*****************************************************************************/
+static void assign_test_vector_speed( // Assign Speed-state of test vector
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data
+	SPEED_ADC_ENUM inp_speed // Input speed-state
+)
+{
+	tst_data_s.curr_vect.comp_state[SPEED] = inp_speed; // Update speed-state of test vector
+} // assign_test_vector_speed
+/*****************************************************************************/
+static int vector_compare( // Check if 2 sets of test vector are different
+	TEST_VECT_TYP &vect_a, // Structure of containing 1st set of vectore components
+	TEST_VECT_TYP &vect_b  // Structure of containing 2nd set of vectore components
+) // return TRUE (1) if vectors are different, FALSE(0) if equal
+{
+	VECT_COMP_ENUM comp_cnt; // vector component counter
 
 
-	// Initial start-up, spin at full speed
-	acquire_lock(); // Acquire Display Mutex
-	printstrln( str_val ); // Print test title
-	release_lock(); // Release Display Mutex
-
-	// Loop until all tests done
-	while(test_cnt)
+	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
-		// Wait till test period elapsed
-		chronometer when timerafter(tst_data_s.time + tst_data_s.period) :> tst_data_s.time;
+		if (vect_a.comp_state[comp_cnt] != vect_b.comp_state[comp_cnt]) return 1;
+	} // for comp_cnt=0
 
-		do_adc_test( tst_data_s ,wave_data_s ,pb32_tst ,c_pwm2adc_trig ); // Performs one ADC test
+	return 0; // No differences found
+} // vector_compare
+/*****************************************************************************/
+static void do_adc_vector( // Do all tests for one ADC test vector
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data
+	streaming chanend c_sin, // Channel for communication with Sine_Generator cores
+	streaming chanend c_chk // Channel for communication with Checker cores
+)
+{
+	int new_vect; // flag set if new test vector detected
 
-		test_cnt--; // Decrement test counter
-	} // while(test_cnt)
 
-} // steady_speed
+	new_vect = vector_compare( tst_data_s.curr_vect ,tst_data_s.prev_vect );
+
+	// Check for new test-vector
+	if (new_vect)
+	{
+		c_chk <: tst_data_s.curr_vect; // transmit new test vector details to test checker
+		c_sin <: tst_data_s.curr_vect; // transmit new test vector details to Sine_Generator
+
+		// Check if verbose printing required
+		if (tst_data_s.print)
+		{
+			print_test_vector( tst_data_s.common ,tst_data_s.curr_vect ,"" );
+		} // if (tst_data_s.print)
+
+		c_chk :> int _; // Receive test complete signal
+		tst_data_s.prev_vect = tst_data_s.curr_vect; // update previous vector
+	} // if (new_vect)
+
+} // do_adc_vector
 /*****************************************************************************/
 static void gen_motor_adc_test_data( // Generate ADC Test data for one motor
-	TEST_ADC_TYP &tst_data_s, // Reference to structure of ADC test data
-	TEST_WAVE_TYP &tst_wave_s, // Reference to structure containing all wave data
-	buffered out port:32 pb32_tst[], // Array of current port on which to transmit test data
-	chanend c_pwm2adc_trig // Array of channels outputting ADC trigger 
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data
+	streaming chanend c_sin, // Channel for communication with Sine_Generator cores
+	streaming chanend c_chk // Channel for communication with Checker cores
 )
 {
-	int phase_cnt; // counter for ADC phases
-	timer chronometer; // XMOS timer
-
-
-	chronometer :> tst_data_s.time; // Get start time
+	if (tst_data_s.print)
+	{
+		acquire_lock(); // Acquire Display Mutex
+		printstr( " Start Test Gen. For Motor_"); printintln( MOTOR_ID );
+		release_lock(); // Release Display Mutex
+	} // if (tst_data_s.print)
 
 	// NB These tests assume ADC_FILTER = 0
 
-	tst_data_s.period = TEST_TIME; // Time period between tests
-	steady_speed( tst_data_s ,tst_wave_s.sine ,pb32_tst ,c_pwm2adc_trig ,MAX_TESTS ," Max_Speed Clockwise ");
+	assign_test_vector_sum( tst_data_s ,SUM_ON ); // Set test vector to test zero-sum
+	assign_test_vector_pace( tst_data_s ,NO_PACE ); // Set test vector to test No Pacing (Fast Execution))
+	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
+	assign_test_vector_speed( tst_data_s ,FAST ); // Set test vector to Fast speed
 
-	// Signal end-of-tests (all phases max. value) ...
+	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
+	do_adc_vector( tst_data_s ,c_sin ,c_chk );
 
-	for (phase_cnt=0; phase_cnt<NUM_ADC_PHASES; phase_cnt++) 
-	{
-		tst_data_s.vals[phase_cnt] = MAX_ADC_VAL; // store max. adc value
-	} // for phase_cnt
+	assign_test_vector_pace( tst_data_s ,PACE_ON ); // Set test vector to test Pacing (Slow Execution))
+	do_adc_vector( tst_data_s ,c_sin ,c_chk );
 
-	transmit_adc_data( tst_data_s ,pb32_tst ,c_pwm2adc_trig ); // Transmit 'end-of-tests' data
+	// Check if Error-status test activated
+	if (tst_data_s.common.options.flags[TST_ANTI])
+	{ // Do Anti-Clockwise test
+		assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
+		do_adc_vector( tst_data_s ,c_sin ,c_chk );
+	} // if (tst_data_s.common.options.flags[TST_ANTI])
+
+	assign_test_vector_speed( tst_data_s ,STOP ); // Set test vector to Zero Velocity (Stops ADC values)
+	tst_data_s.curr_vect.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
+	do_adc_vector( tst_data_s ,c_sin ,c_chk );
 
 } // gen_motor_adc_test_data
 /*****************************************************************************/
 void gen_all_adc_test_data( // Generate ADC Test data
-	buffered out port:32 pb32_tst[][NUM_ADC_PHASES], // Array of 32-bit buffered ports outputing test ADC values 
-	chanend c_pwm2adc_trig[] // Array of channels outputting ADC trigger 
+	streaming chanend c_chk, // Channel for communication with Checker cores
+	streaming chanend c_sin // Channel for communication with Sine_Generator cores
 )
 {
-	TEST_ADC_TYP tst_data_s; // Structure of ADC test data
-	TEST_WAVE_TYP tst_wave_s; // Structure containing all wave data
-	int motor_cnt; // counts Motors 
-	int phase_cnt; // counter for ADC phases
-	int offset_inc = 0; // counter for ADC phases
+	GENERATE_TST_TYP tst_data_s; // Structure of ADC test data
 
 
-	init_adc_data( tst_data_s ,tst_wave_s );
+	init_test_data( tst_data_s ,c_chk );
 
-	// Loop through motors, so we can print results serially
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	gen_motor_adc_test_data( tst_data_s ,c_sin ,c_chk );
+
+	if (tst_data_s.print)
 	{
 		acquire_lock(); // Acquire Display Mutex
-		printstr( " Start Test Gen. For Motor_"); printintln( motor_cnt );
+		printstrln( "Test Generation Ends " );
 		release_lock(); // Release Display Mutex
-
-		tst_data_s.cnt = 0; // Set ADC position counter to arbitary number
-		tst_data_s.id = motor_cnt; // Assign current motor identifier
-
-		// Initialise  ADC phase offset
-		for (phase_cnt=0; phase_cnt<NUM_ADC_PHASES; phase_cnt++) 
-		{
-			tst_data_s.offsets[phase_cnt] = (offset_inc + 1) / NUM_ADC_PHASES;
-			offset_inc += NUM_WAVE_SAMPS;
-		} // for phase_cnt
-
-		gen_motor_adc_test_data( tst_data_s ,tst_wave_s ,pb32_tst[motor_cnt] ,c_pwm2adc_trig[motor_cnt] );
-	} // for motor_cnt
-
-	acquire_lock(); // Acquire Display Mutex
-	printstrln( "Test Generation Ends " );
-	release_lock(); // Release Display Mutex
+	} // if (tst_data_s.print)
 } // gen_all_adc_test_data
 /*****************************************************************************/

@@ -205,7 +205,7 @@ static void error_pwm_values( // Set PWM values to error condition
 /*****************************************************************************/
 static int filter_adc_extrema( 		// Smooths adc extrema values using low-pass filter
 	MOTOR_DATA_TYP &motor_s,	// reference to structure containing motor data
-	int extreme_val						// Either a minimum or maximum ADC value
+	ADC_TYP extreme_val						// Either a minimum or maximum ADC value
 ) // Returns filtered output value
 /* This is a 1st order IIR filter, it is configured as a low-pass filter, 
  * The input value is up-scaled, to allow integer arithmetic to be used.
@@ -216,7 +216,7 @@ static int filter_adc_extrema( 		// Smooths adc extrema values using low-pass fi
 	int scaled_inp = (extreme_val << XTR_SCALE_BITS); // Upscaled QEI input value
 	int diff_val; // Difference between input and filtered output
 	int increment; // new increment to filtered output value
-	int out_val; // filtered output value
+	ADC_TYP out_val; // filtered output value
 
 
 	// Form difference with previous filter output
@@ -237,13 +237,13 @@ static int filter_adc_extrema( 		// Smooths adc extrema values using low-pass fi
 	return out_val; // return filtered output value
 } // filter_adc_extrema
 /*****************************************************************************/
-static int smooth_adc_maxima( // Smooths maximum ADC values
+static ADC_TYP smooth_adc_maxima( // Smooths maximum ADC values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	int max_val = motor_s.adc_params.vals[0]; // Initialise maximum to first phase
+	ADC_TYP max_val = motor_s.adc_params.vals[0]; // Initialise maximum to first phase
+	ADC_TYP out_val; // filtered output value
 	int phase_cnt; // phase counter
-	int out_val; // filtered output value
 
 
 	for (phase_cnt = 1; phase_cnt < NUM_ADC_PHASES; phase_cnt++)
@@ -256,13 +256,13 @@ static int smooth_adc_maxima( // Smooths maximum ADC values
 	return out_val;
 } // smooth_adc_maxima
 /*****************************************************************************/
-static int smooth_adc_minima( // Smooths minimum ADC values
+static ADC_TYP smooth_adc_minima( // Smooths minimum ADC values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	int min_val = motor_s.adc_params.vals[0]; // Initialise minimum to first phase
+	ADC_TYP min_val = motor_s.adc_params.vals[0]; // Initialise minimum to first phase
+	ADC_TYP out_val; // filtered output value
 	int phase_cnt; // phase counter
-	int out_val; // filtered output value
 
 
 	for (phase_cnt = 1; phase_cnt < NUM_ADC_PHASES; phase_cnt++)
@@ -329,7 +329,10 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 #pragma xta label "foc_loop_clarke"
 
 	// To calculate alpha and beta currents from measured data
-	clarke_transform( motor_s.adc_params.vals[ADC_PHASE_A], motor_s.adc_params.vals[ADC_PHASE_B], motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
+//MB~ clarke_transform( motor_s.adc_params.vals[ADC_PHASE_A], motor_s.adc_params.vals[ADC_PHASE_B], motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
+/* MB~ FIXME There is problem with a inverse sign here. Need to work out why this bodge is required */
+
+	clarke_transform( -motor_s.adc_params.vals[ADC_PHASE_A], -motor_s.adc_params.vals[ADC_PHASE_B], -motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
 // if (motor_s.xscope) xscope_probe_data( 6 ,beta_meas );
 
 	// Update Phi estimate ...
@@ -385,14 +388,12 @@ static unsigned convert_volts_to_pwm_width( // Converted voltages to PWM pulse-w
 	// Clip PWM value into allowed range
 	if (out_pwm > PWM_MAX_LIMIT)
 	{
-xscope_probe_data( 1 ,out_pwm );
 		out_pwm = PWM_MAX_LIMIT;
 	} // if (out_pwm > PWM_MAX_LIMIT)
 	else
 	{
 		if (out_pwm < PWM_MIN_LIMIT)
 		{
-xscope_probe_data( 1 ,out_pwm );
 			out_pwm = PWM_MIN_LIMIT;
 		} // if (out_pwm < PWM_MIN_LIMIT)
 	} // else !(out_pwm > PWM_MAX_LIMIT)
@@ -981,12 +982,12 @@ static void use_motor ( // Start motor, and run step through different motor sta
 					} // if (4100 < motor_s.qei_params.veloc)
 
 // if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
-// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
+if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.veloc );
 
 					// Get ADC sensor data
 					foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
-// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.adc_params.vals[ADC_PHASE_A] );
-// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.adc_params.vals[ADC_PHASE_B] );
+if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.adc_params.vals[ADC_PHASE_A] );
+if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.adc_params.vals[ADC_PHASE_B] );
 // if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.adc_params.vals[ADC_PHASE_C] );
 
 					update_motor_state( motor_s ,motor_s.hall_params.hall_val );
@@ -1005,6 +1006,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 					// Convert new set DQ values to PWM values
 					dq_to_pwm( motor_s ,motor_s.set_Vd ,motor_s.set_Vq ,motor_s.set_theta ); // Convert Output DQ values to PWM values
 
+// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.pwm_comms.params.widths[PWM_PHASE_A] );
 					foc_pwm_put_parameters( motor_s.pwm_comms ,c_pwm ); // Update the PWM values
 
 #ifdef USE_XSCOPE

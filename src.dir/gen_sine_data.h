@@ -12,31 +12,24 @@
  * copyright notice above.
  **/                                   
 
-#ifndef _MAIN_H_
-#define _MAIN_H_
+#ifndef _GEN_SINE_DATA_H_
+#define _GEN_SINE_DATA_H_
 
-#include <xs1.h>
-#include <assert.h>
-#include <print.h>
-#include <platform.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <math.h>
 
-#include "app_global.h"
-#include "use_locks.h"
-#include "check_adc_tests.h"
-#include "generate_adc_tests.h"
-#include "sine_generator.h"
+#include "sine_common.h"
 
-#if (1 == HW_ADC_7265)
-#include "adc_7265.h"
-#include "adc_7265_interface.h"
-#endif // (1 == HW_ADC_7265)
+#define STR_LEN 256 // String size
 
-// Define where everything is
+typedef double R64;
+typedef R64 SINE_T;
 
-/** Define Interface Tile */
-#define INTERFACE_TILE 0
+/** Pi */
+#define PI ((SINE_T)3.141592653589793)
 
-/** Define Motor Tile */
-#define MOTOR_TILE 1
-
-#endif /* _MAIN_H_ */
+#endif /* _GEN_SINE_DATA_H_ */

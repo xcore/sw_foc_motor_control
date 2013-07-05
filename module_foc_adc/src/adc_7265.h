@@ -70,7 +70,7 @@
 
 #define ADC_PAD_BITS 0 // 0..2 No. of padding bits after Least-Significant active bit of sample
 #define ADC_ACTIVE_BITS 12 // No. of active bits in ADC Sample
-#define WORD16_BITS 16 // No. of bits in 16-bit word
+#define WORD16_BITS (sizeof(short) * BITS_IN_BYTE) // No. of bits in 16-bit word
 #define ADC_MIN_BITS 14 // Minimum No. of bits to in ADC sample (including padding bits)
 
 #define ADC_DIFF_BITS (WORD16_BITS - ADC_ACTIVE_BITS) //4 Difference between Word16 and active bits 
@@ -101,11 +101,11 @@
 
 typedef struct ADC_PHASE_TAG // Structure containing data for one phase of ADC Trigger
 {
-	unsigned adc_val; // ADC measured current value
-	int mean; // local mean value
-	int filt_val; // filtered value
-	int coef_err; // Coefficient diffusion error
-	int scale_err; // Scaling diffusion error 
+	ADC_TYP adc_val; // measured current ADC value
+	ADC_TYP mean; // local mean value
+	int filt_val; // (Upscaled) filtered value
+	int coef_err; // (Upscaled) Coefficient diffusion error
+	int scale_err; // (Upscaled) Scaling diffusion error 
 } ADC_PHASE_TYP;
 
 typedef struct ADC_FILT_TAG // Structure containing data for one ADC Trigger

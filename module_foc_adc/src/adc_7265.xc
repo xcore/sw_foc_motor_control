@@ -91,7 +91,7 @@ static void configure_adc_ports_7265( // Configure all ADC data ports
 
 		We require the analogue signal to be sampled when CSi goes low,
 		and we require data to be read when the ready signal goes high.
-		By using the set_port_sample_delay() function to invert the ready signal, it can be used for both (1) & (2).
+		By using the set_port_inv() function to invert the ready signal, it can be used for both (1) & (2).
 		NB If an inverted port is used as ready signals to control another port, 
     the internal signal (used by XMOS port) is inverted with respect to the external signal (used to control AD7265).
 	*/
@@ -121,12 +121,13 @@ static void get_adc_port_data( // Get ADC data from one port
 	unsigned inp_val; // input value read from buffered ports
 	unsigned tmp_val; // Temporary manipulation value
 	short word_16; // signed 16-bit value
-	int int_32; // signed 32-bit value
+	ADC_TYP int_32; // signed (32-bit) ADC value 
 
 
 	endin( inp_data_port ); // End the previous input on this buffered port
 
 	inp_data_port :> inp_val; // Get new input
+
 
 	// This section extracts active bits from sample with padding zeros
 	tmp_val = bitrev( inp_val );	// Reverse bit order. WARNING. Machine dependent
@@ -134,10 +135,11 @@ static void get_adc_port_data( // Get ADC data from one port
 	word_16 = (short)(tmp_val & ADC_MASK);	// Mask out active bits and convert to signed word
 	int_32 = ((int)word_16) >> ADC_DIFF_BITS; // Convert to int and recover original magnitude
 
+// acquire_lock(); printstr("        S="); printintln(int_32); release_lock(); // MB~
 	// Check if filtering selected
 	if (1 == ADC_FILTER)
 	{
-		int sum_val = phase_data_s.adc_val; // get old value
+		ADC_TYP sum_val = phase_data_s.adc_val; // get old value
 
 		// Create filtered value and store in int_32 ...
 		int_32 = (sum_val + (sum_val << 1) + int_32 + 2) >> 2; // 1st order filter (uncalibrated value)
@@ -177,6 +179,7 @@ static void get_trigger_data_7265(
 	{
 		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] );
 	} // for port_cnt
+// acquire_lock(); printstr("   S_Ang="); printintln( adc_data_s.phase_data[0].adc_val ); release_lock(); // MB~
 
 } // get_trigger_data_7265
 /*****************************************************************************/
@@ -226,9 +229,6 @@ static void update_adc_trigger_data( // Update ADC values for this trigger
 
 
 	get_trigger_data_7265( adc_data_s ,p32_data ,p1_ready ,p4_mux );	// Get ADC values for this trigger	
-
-if (trig_id) xscope_probe_data( 0 ,adc_data_s.phase_data[ADC_PHASE_A].adc_val ); //MB~
-if (trig_id) xscope_probe_data( 1 ,adc_data_s.phase_data[ADC_PHASE_B].adc_val );
 
 	// Loop through used phases
 	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
@@ -292,8 +292,8 @@ static void service_data_request( // Services client command data request for th
 )
 {
 	int phase_cnt; // ADC Phase counter
-	int adc_val; // ADC value
-	int adc_sum; // Accumulator for transmitted ADC Phases
+	ADC_TYP adc_val; // ADC value
+	ADC_TYP adc_sum; // Accumulator for transmitted ADC Phases
 
 
 	switch(inp_cmd)
@@ -305,13 +305,15 @@ static void service_data_request( // Services client command data request for th
 			for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
 			{
 				// Convert parameter phase values to zero mean
-				adc_val = adc_data_s.phase_data[phase_cnt].mean - adc_data_s.phase_data[phase_cnt].adc_val;
+				adc_val = adc_data_s.phase_data[phase_cnt].adc_val - adc_data_s.phase_data[phase_cnt].mean;
 				adc_sum += adc_val; // Add adc value to sum
 				adc_data_s.params.vals[phase_cnt] = adc_val; // Load adc value into parameter structure
 			} // for phase_cnt
 
 			// Calculate last ADC phase from previous phases (NB Sum of phases is zero)
 			adc_data_s.params.vals[(NUM_ADC_PHASES - 1)] = -adc_sum;
+
+// acquire_lock(); printstr("   R_Ang="); printintln( adc_data_s.phase_data[0].adc_val ); release_lock(); // MB~
 
 			c_control <: adc_data_s.params; // Return structure of ADC parameters
 		break; // case ADC_CMD_REQ 
@@ -338,7 +340,6 @@ void foc_adc_7265_triggered( // Thread for ADC server
 	unsigned char cntrl_token; // control token
 	int cmd_id; // command identifier
 	int trig_id; // trigger identifier
-	int dummy = -512; // MB~
 
 
 	// Initialise data structure for each trigger
@@ -359,26 +360,16 @@ void foc_adc_7265_triggered( // Thread for ADC server
 		{
 			// Service any Control Tokens that are received
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) inct_byref( c_trigger[trig_id], cntrl_token ):
-//MB~  printstr("                                        SCT_1:"); printintln( trig_id );
 				service_control_token( all_adc_data[trig_id] ,trig_id ,cntrl_token );
-#ifdef USE_XSCOPE
-		if (0 == trig_id) // Check if 1st Motor
-		{
-//			xscope_probe_data( 1 ,dummy );
-			dummy = -dummy;
-		} // if (0 == trig_id)
-#endif
 			break;
 	
 			// If guard is OFF, load 'my_timer' at time 'time_stamp' 
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) all_adc_data[trig_id].guard_off => all_adc_data[trig_id].my_timer when timerafter( all_adc_data[trig_id].time_stamp ) :> void:
-//MB~  printstr("                                        UATD_1:"); printintln( trig_id );
 				update_adc_trigger_data( all_adc_data[trig_id] ,p32_data ,p1_ready ,trig_id ,p4_mux ); 
 			break;
 	
 			// Service any client request for ADC data
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) c_control[trig_id] :> cmd_id:
-//MB~ printstr("                                        SDR_1:"); printintln( trig_id );
 				service_data_request( all_adc_data[trig_id] ,c_control[trig_id] ,trig_id ,cmd_id );
 			break;
 		} // select

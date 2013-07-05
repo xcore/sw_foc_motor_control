@@ -15,54 +15,49 @@
 #ifndef _GENERATE_ADC_TESTS_H_
 #define _GENERATE_ADC_TESTS_H_
 
-#include <stdlib.h>
-
 #include <xs1.h>
+#include <xccompat.h>
 #include <assert.h>
 #include <print.h>
+#include <safestring.h>
+#include <syscall.h>
 
 #include "app_global.h"
 #include "use_locks.h"
-#include "maths_functions.h"
 #include "adc_common.h"
 #include "test_adc_common.h"
 
-#define STR_LEN 256
+/** Define No. of tests used for Max. speed check */
+#define MAX_TESTS 31 // No. of tests used for Max. speed check
 
-#define MAX_TESTS 32
+/** Define No. of tests used for Min. speed check */
+#define MIN_TESTS 3  // No. of tests used for Min. speed check
 
-#define WAVE_RESOLUTION 5 // 10 No. of bits used to define sample index
-#define NUM_WAVE_SAMPS (1 << WAVE_RESOLUTION) // No. Of Samples used in one wave period
-#define MAX_WAVE_ID (NUM_WAVE_SAMPS - 1) // Max. Samples index
+/** Define No. of port timer values (16-bit) */
+#define NUM_PORT_TIMES (1 << 16) // No. of port timer values (16-bit)
 
-typedef struct ADC_WAVE_TAG // Structure containing data for one wave period
+#define FILE_SIZE (STR_LEN * NUM_TEST_OPTS) // Size of ADC control file (in Bytes)
+
+/** Type containing all ADC test generation data */
+typedef struct GENERATE_TST_TAG // Structure containing ADC test generation data
 {
-	int samps[NUM_WAVE_SAMPS];	// Array of samples for one wave period 
-} ADC_WAVE_TYP;
-
-typedef struct TEST_WAVE_TAG // Structure containing all wave data
-{
-	ADC_WAVE_TYP sine; // sine-wave samples
-} TEST_WAVE_TYP;
-
-typedef struct TEST_ADC_TAG // Structure containing ADC test data
-{
-	int vals[NUM_ADC_PHASES];	// Array of ADC values for each phase
-	int offsets[NUM_ADC_PHASES];	// Array of ADC Phase offsets
-	int cnt; // test counter
-	int id; // Motors Identifier
-	unsigned time; // previous timer value
-	unsigned period; // period (in ticks) between tests
-} TEST_ADC_TYP;
+	COMMON_ADC_TYP common; // Structure of ADC data common to Generator and Checker
+	TEST_VECT_TYP curr_vect; // Structure of containing current ADC test vector (ADC conditions to be tested)
+	TEST_VECT_TYP prev_vect; // Structure of containing previous ADC test vector (ADC conditions to be tested)
+	unsigned period; // Period between generated sets of ADC stimuli
+	int print;  // Print flag
+	int dbg;  // Debug flag
+} GENERATE_TST_TYP;
 
 /*****************************************************************************/
 /** Generate ADC test data for all motors
- * \param pb32_tst // Array of 32-bit buffered ports outputing test ADC values 
- * \param c_pwm2adc_trig // Array of channels outputting ADC trigger 
+ * \param c_chk, // Channel for communication with Checker cores
+ * \param c_adc, // Channel for communication with ADC_Interface 
+ * \param c_sin // Channel for communication with Sine_Generator cores
  */
 void gen_all_adc_test_data( // Generate ADC Test data for all motors
-	buffered out port:32 pb32_tst[][NUM_ADC_PHASES], // Array of 32-bit buffered ports outputing test ADC values 
-	chanend c_pwm2adc_trig[] // Array of channels outputting ADC trigger 
+	streaming chanend c_chk, // Channel for communication with Checker cores
+	streaming chanend c_sin // Channel for communication with Sine_Generator cores
 );
 /*****************************************************************************/
 #endif /* _GENERATE_ADC_TESTS_H_ */

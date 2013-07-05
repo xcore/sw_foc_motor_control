@@ -1,4 +1,4 @@
-﻿Analogur to Digital Conversion (ADC) Test Harness
+﻿Analogue to Digital Conversion (ADC) Test Harness
 ===================================--============
 
 :scope: Example

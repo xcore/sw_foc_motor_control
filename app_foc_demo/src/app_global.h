@@ -48,9 +48,6 @@
 #define HALL_PER_REV (HALL_PER_POLE * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
 
 
-/**  Seconds in a minute */
-#define SECS_PER_MIN 60
-
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000
 
@@ -60,6 +57,11 @@
 #define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS) // No. Of QEI positions per Revolution
 #define HALL_PER_REV (HALL_PER_POLE * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
 
+/**  Seconds in a minute */
+#define SECS_PER_MIN 60
+
+/** Define Bits in Byte */
+#define BITS_IN_BYTE 8
 
 // PWM specific definitions ...
 
