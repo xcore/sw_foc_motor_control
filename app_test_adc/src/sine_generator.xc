@@ -49,7 +49,8 @@ static void init_sine_data( // Initialise Sine data
 
 	sin_data_s.first = 1; // Set flag for 1st data
 	sin_data_s.err = 0; // Clear diffusion error
-	sin_data_s.veloc = HIGH_SPEED; // Initialise to High Speed
+	sin_data_s.veloc = MAX_SPEC_RPM; // Initialise to Maximum speed
+	sin_data_s.gain = MAX_GAIN; // Initialise to Maximum Gain
 	sin_data_s.curr_mtim = 0; // Clear mock time
 
 	// Calculate scaling factor for bit-shift division ...
@@ -61,7 +62,7 @@ static void init_sine_data( // Initialise Sine data
 	sin_data_s.scale *= NUM_POLE_PAIRS; // 12-bit
 } // init_sine_data
 /*****************************************************************************/
-static ADC_TYP calc_one_adc_val( // Calculates one ADC value from angular position value
+static ADC_GEN_TYP calc_one_adc_val( // Calculates one ADC value from angular position value
 	SINE_TST_TYP &sin_data_s, // Reference to structure of generated Sine data
 	S64_T ang_val // 64-bit angular position value (measured in RPM*Clock_Ticks)
 ) // Returns and ADC value
@@ -113,10 +114,9 @@ static ADC_TYP calc_one_adc_val( // Calculates one ADC value from angular positi
  * Therefore let    i = scale.A >> 28,      where  scale = 733.P
  */
 {
-	ADC_TYP out_adc; // Returned ADC value
-  int shift; // bit-shift for scaling parameter dependant on velocity. MB~ Revisit
+	ADC_GEN_TYP out_adc; // Returned ADC value
   int index; // Index into Sine table
-  int sin_val; // Sine value (-65535 .. 65535)
+  int sin_val; // 17-bit Sine value (-65535 .. 65535)
 	S64_T tmp_val; // 64-bit value
 
 
@@ -151,17 +151,10 @@ static ADC_TYP calc_one_adc_val( // Calculates one ADC value from angular positi
 		} // else !(index <= MAX_SINx3_ID)
 	} // else !(index <= MAX_SINx2_ID)
 
-	// ADC values are signed 12-bit, therefore dowm-scale
-	if (2000 > sin_data_s.veloc)
-	{
-		shift = 5;
-	} // if (2000 > sin_data_s.veloc)
-	else
-	{  
-		shift = 5;
-	} // else !(2000 > sin_data_s.veloc)
+	// NB Adding sign bit makes sin_val a 17-bit number
 
-	out_adc = (ADC_TYP)((sin_val + (1 << (shift - 1))) >> shift); // MB~ Do diffusion error
+	out_adc = (ADC_GEN_TYP)(sin_data_s.gain * sin_val);	// Adjust amplitude
+	// NB This value is down-scaled in the ADC_interface to simulate the ADC chip behaviour
 
 	sin_data_s.prev_mtim = sin_data_s.curr_mtim; // Store mock time for next iteration
 /* MB~
@@ -177,12 +170,12 @@ release_lock(); // MB~
 	return out_adc;
 } // calc_one_adc_val
 /*****************************************************************************/
-static void calc_all_adc_vals( // Calculates all ADC values from velocity and time data
+static void calc_all_adc_vals( // Calculates all ADC values from Gain and time data
 	SINE_TST_TYP &sin_data_s // Reference to structure of generated Sine data
 )
 {
 	unsigned diff_time;
-	ADC_TYP adc_val; // ADC value
+	ADC_GEN_TYP adc_val; // ADC value
 	S64_T ang_val; // 64-bit value
 
 
@@ -239,29 +232,8 @@ static void update_ang_velocity( // Updates angular velocity
 		break; // default:
 	} // switch( inp_spin )
 
-	switch( sin_data_s.curr_vect.comp_state[SPEED] )
-	{
-		case STOP: // Zero velocity
-			sin_data_s.speed = 0; 
-		break; // case FAST:
+	sin_data_s.veloc = MAX_SPEC_RPM * sin_data_s.sign; // NB run at max speed to shorten time time.
 
-		case SLOW: // Constant Slow Speed
-			sin_data_s.speed = LOW_SPEED; 
-		break; // case SLOW:
-
-		case FAST: // Constant Fast Speed
-			sin_data_s.speed = HIGH_SPEED; 
-		break; // case FAST:
-
-		default:
-			acquire_lock(); // Acquire Display Mutex
-			printstrln("ERROR: Unknown ADC Speed-state");
-			release_lock(); // Release Display Mutex
-			assert(0 == 1);
-		break; // default:
-	} // switch( inp_speed )
-
-	sin_data_s.veloc = sin_data_s.sign * sin_data_s.speed; 
 acquire_lock(); printstr("VEL="); printintln(sin_data_s.veloc); release_lock(); // MB~
 } // update_ang_velocity
 /*****************************************************************************/
@@ -273,13 +245,12 @@ static void process_new_test_vector( // Process new test vector
 
 
 	// Check for change in speed test
-	if ((sin_data_s.curr_vect.comp_state[SPEED] != sin_data_s.prev_vect.comp_state[SPEED])
-		|| (sin_data_s.curr_vect.comp_state[SPIN] != sin_data_s.prev_vect.comp_state[SPIN]))
+	if (sin_data_s.curr_vect.comp_state[SPIN] != sin_data_s.prev_vect.comp_state[SPIN])
 	{
 		update_ang_velocity( sin_data_s );
 
 		change = 1; // Set flag indicating change in test vector detected
-	} // if ((sin_data_s.curr_vect.comp_state[SPEED] ...
+	} // if (sin_data_s.curr_vect.comp_state[SPIN] != sin_data_s.prev_vect.comp_state[SPIN])
 
 	// Check if test vector changed
 	if (change)
@@ -295,7 +266,7 @@ static void send_adc_values( // Calculates and send ADC values
 )
 {
 	calc_all_adc_vals( sin_data_s ); // Compute ADC value
-// acquire_lock(); printstr("Ang="); printint(sin_data_s.adc_a); printstr(":"); printintln(sin_data_s.adc_b); release_lock(); // MB~
+acquire_lock(); printstr("G_Ang="); printint(sin_data_s.adc_a); printstr(":"); printintln(sin_data_s.adc_b); release_lock(); // MB~
 	c_adc <: sin_data_s.adc_a; // return ADC value for Phase_A
 	c_adc <: sin_data_s.adc_b; // return ADC value for Phase_B
 	c_chk <: sin_data_s.curr_mtim; // Pass on mock time to Checker core

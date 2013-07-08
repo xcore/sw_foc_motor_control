@@ -187,9 +187,10 @@ static void filter_adc_data( // Low-pass filter generate a mean value which is u
 	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing adc phase data
 	ADC_FILT_TYP &filt_s // Reference to structure containing filter parameters
 )
-/* This is a 1st order IIR filter, it is configured as a low-pass filter, 
- * The impulse response of the filter can have a short decay or a long decay,
+/* In its simplest from, this is a 1st order IIR filter, it is configured as a low-pass filter, 
+ * However, the impulse response of the filter can have a short decay or a long decay,
  * depending on the value of 'coef_bits'. Therefore the filter response can be changed dynamically.
+ * Due to the changing coefficient, the output is NOT like a 1st order IIR filter, and may have overshoot.
  * The input ADC value is up-scaled, to allow integer arithmetic to be used.
  * The output mean value is down-scaled by the same amount.
  * Error diffusion is used to keep control of systematic quantisation errors.
@@ -306,6 +307,7 @@ static void service_data_request( // Services client command data request for th
 			{
 				// Convert parameter phase values to zero mean
 				adc_val = adc_data_s.phase_data[phase_cnt].adc_val - adc_data_s.phase_data[phase_cnt].mean;
+//MB~		adc_val = adc_data_s.phase_data[phase_cnt].adc_val;
 				adc_sum += adc_val; // Add adc value to sum
 				adc_data_s.params.vals[phase_cnt] = adc_val; // Load adc value into parameter structure
 			} // for phase_cnt

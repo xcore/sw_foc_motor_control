@@ -55,11 +55,11 @@
  *	The AD7265 returns a sample with 12 active bits of data.
  *	For our configuration (SGL/DIFF=0, A[0]=0, RANGE=0), these bit are in 2's compliment format.
  *
- *	There can also be zero padding bits both before and after the active bits.
+ *	There can also be padding bits (of value zero) both before and after the active bits.
  *	For this application 14, 15, or 16-bit samples can be used. 
  *	If timings are set up correctly, the padding bits are expected to be as follows:-
  *
- *	Total-Sample-Size  Pad-Before-MSB  Pad-After-LSB  
+ *	Total-Sample-Size   Pre-Pad(MSB)   Post-Pad(LSB)
  *	-----------------  --------------  -------------
  *	    14                 2               0
  *	    15                 2               1
@@ -68,15 +68,16 @@
 
 #define NUM_ADC_DATA_PORTS 2 // The number of data ports on the ADC chip (AD7265)
 
-#define ADC_PAD_BITS 0 // 0..2 No. of padding bits after Least-Significant active bit of sample
+#define ADC_PRE_PAD_BITS 2 // 0..2 No. of pre-padding bits before Most-Significant active bit of sample
 #define ADC_ACTIVE_BITS 12 // No. of active bits in ADC Sample
+#define ADC_POST_PAD_BITS 0 // 0..2 No. of post-padding bits after Least-Significant active bit of sample
 #define WORD16_BITS (sizeof(short) * BITS_IN_BYTE) // No. of bits in 16-bit word
-#define ADC_MIN_BITS 14 // Minimum No. of bits to in ADC sample (including padding bits)
+#define ADC_MIN_BITS (ADC_ACTIVE_BITS + ADC_PRE_PAD_BITS) // Minimum No. of bits to transmit in ADC sample (including pre-padding bits)
 
 #define ADC_DIFF_BITS (WORD16_BITS - ADC_ACTIVE_BITS) //4 Difference between Word16 and active bits 
-#define ADC_TOTAL_BITS (ADC_MIN_BITS + ADC_PAD_BITS) //14..16 Total No. of bits to in ADC sample (including padding bits)
+#define ADC_TOTAL_BITS (ADC_MIN_BITS + ADC_POST_PAD_BITS) //14..16 Total No. of bits to in ADC sample (including post-padding bits)
 
-#define ADC_SHIFT_BITS (ADC_DIFF_BITS - ADC_PAD_BITS) //4..2 No. of bits to shift to get 16-bit word alignment
+#define ADC_SHIFT_BITS (ADC_DIFF_BITS - ADC_POST_PAD_BITS) //4..2 No. of bits to shift to get 16-bit word alignment
 #define ADC_MASK 0xFFF0 // Mask for 12 active bits in MS bits of 16-bit word
 
 /*	The AD7265 clock frequency (SCLK) can be configured to between  4..16 MHz.

@@ -33,7 +33,7 @@
 #define MAX_SPEC_RPM 4000
 
 /** Define flag for verbose printing */
-#define PRINT_TST_ADC 0
+#define PRINT_TST_ADC 1
 
 /** Define seconds in a minute */
 #define SECS_PER_MIN 60

@@ -19,12 +19,12 @@
 #define NUM_SIN_VALS (1 << SIN_RES_BITS) // Number of Sine table Entries
 #define MAX_SIN_INDEX (NUM_SIN_VALS - 1) // Max. table index value
 
-#define SIN_SCALE ((1 << 16) - 1) // Scaling value for short
-
 #define SIN_NAME "sine_table.bin" // name of file containing binary tabulated sine values
 
 typedef unsigned short SIN_TYP;
 
-#define SIN_BUF_SIZE (NUM_SIN_VALS * sizeof(SIN_TYP))
+#define SIN_VAL_BITS (sizeof(SIN_TYP) * BITS_IN_BYTE) // No. of bits in SIN_TYP
+
+#define SIN_BUF_SIZE (NUM_SIN_VALS * sizeof(SIN_TYP)) // Total size of Sine-table (in bytes)
 
 #endif /* _SINE_COMMON_H_ */

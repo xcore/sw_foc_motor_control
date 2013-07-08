@@ -91,7 +91,7 @@ static void init_spin_component( // Initialise ADC Test data for spin-direction 
 	// Add any new component states here 
 } // init_spin_component
 /*****************************************************************************/
-static void init_speed_component( // Initialise ADC Test data for speed test vector component
+static void init_gain_component( // Initialise ADC Test data for Gain test vector component
 	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
 	int inp_states, // No. of states for this test vector component
 	const char inp_name[] // input name for current test vector component
@@ -110,12 +110,12 @@ static void init_speed_component( // Initialise ADC Test data for speed test vec
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[STOP].str		," STOP " );
-	safestrcpy( vect_comp_s.state_names[SLOW].str		," Slow " );
-	safestrcpy( vect_comp_s.state_names[FAST].str		," Fast " );
+	safestrcpy( vect_comp_s.state_names[ZERO].str		,"  STOP " );
+	safestrcpy( vect_comp_s.state_names[SMALL].str	," Small " );
+	safestrcpy( vect_comp_s.state_names[LARGE].str	," Large " );
 
 	// Add any new component states here 
-} // init_speed_component
+} // init_gain_component
 /*****************************************************************************/
 static void init_control_component( // Initialise ADC Test data for Control/Communications test vector component
 	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
@@ -190,7 +190,7 @@ void init_common_data( // Initialise ADC Test data
 	init_sum_component(			comm_adc_s.comp_data[SUM]		,NUM_ADC_SUMS		,"  Sum  " );
 	init_pace_component(		comm_adc_s.comp_data[PACE]	,NUM_ADC_PACES	,"  Pace " );
 	init_spin_component(		comm_adc_s.comp_data[SPIN]	,NUM_ADC_SPINS	,"  Spin " );
-	init_speed_component(		comm_adc_s.comp_data[SPEED]	,NUM_ADC_SPEEDS	," Speed " );
+	init_gain_component(		comm_adc_s.comp_data[GAIN]	,NUM_ADC_GAINS	,"  Gain " );
 	init_control_component(	comm_adc_s.comp_data[CNTRL]	,NUM_ADC_CNTRLS	," Comms." );
 
 	// Add any new test vector components here

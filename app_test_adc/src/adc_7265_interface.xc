@@ -76,7 +76,7 @@ void adc_7265_interface( // Generate ADC Test data for all motors
 		// For each port, configure to read into buffer when using the serial clock
 		for (port_cnt=0; port_cnt<NUM_ADC_DATA_PORTS; port_cnt++)
 		{
-			c_sin :> adc_val; // Receive an ADC value
+			c_sin :> adc_val; // Receive a standardised ADC value (Currently 24-bit)
 			out_val = bitrev((unsigned)adc_val); // Reverse bit-order as ADC_7265 transmits MSB first
 			out_val >>= SHIFT_BITS; // Shift active bits to LSB end of integer (as XMOS port transmits LSB first)
 

@@ -32,11 +32,14 @@
 /** Define string size */
 #define STR_LEN 256
 
-/** Define value for High Speed test */
-#define HIGH_SPEED 4000
+/** Define Numeber of bits to represent gain */
+#define GAIN_BITS 8 
 
-/** Define value for Low Speed test */
-#define LOW_SPEED  50
+/** Define value for Maximum Gain test*/
+#define MAX_GAIN ((1 << 8) - 1) // 255 Maximum Gain
+
+/** Define value for Minimum Gain test*/
+#define MIN_GAIN 1
 
 /** Define time period between ADC Client requests for data */
 #define ADC_PERIOD (40 * MICRO_SEC) // Time period between ADC Client requests for data
@@ -44,13 +47,13 @@
 /** Type for Port timer values */
 typedef unsigned short PORT_TIME_TYP;
 
-/** Enumeration of PWM Test Options */
-typedef enum PWM_TEST_ETAG
+/** Enumeration of ADC Test Options */
+typedef enum ADC_TEST_ETAG
 {
   TST_SUM = 0,	// Zero-Sum Test
   TST_ANTI,			// Spin-Direction Test
   NUM_TEST_OPTS	// Handy Value!-)
-} PWM_TEST_ENUM;
+} ADC_TEST_ENUM;
 
 /** Enumeration of ADC Test Vector Components */
 typedef enum VECT_COMP_ETAG
@@ -59,7 +62,7 @@ typedef enum VECT_COMP_ETAG
   SUM,				// Sum-state
   PACE,				// Pace-state
   SPIN,				// Spin-state
-  SPEED,			// Speed-state
+  GAIN,				// Amplitude-state
   NUM_VECT_COMPS	// Handy Value!-)
 } VECT_COMP_ENUM;
 
@@ -95,14 +98,14 @@ typedef enum SPIN_ADC_ETAG
   NUM_ADC_SPINS	// Handy Value!-)
 } SPIN_ADC_ENUM;
 
-/** Enumeration of ADC Speed-states */
-typedef enum SPEED_ADC_ETAG
+/** Enumeration of ADC Amplitude-states */
+typedef enum GAIN_ADC_ETAG
 {
-  STOP = 0,	// Zero Velocity (used to stop ADC generator
-  SLOW,			// Slow speed
-  FAST,			// Fast speed
-  NUM_ADC_SPEEDS	// Handy Value!-)
-} SPEED_ADC_ENUM;
+  ZERO = 0,	// Zero Amplitude (used to stop ADC generator)
+  SMALL,		// Small Amplitude
+  LARGE,		// Large Amplitude
+  NUM_ADC_GAINS	// Handy Value!-)
+} GAIN_ADC_ENUM;
 
 /** Enumeration of ADC Control-states */
 typedef enum CNTRL_ADC_ETAG

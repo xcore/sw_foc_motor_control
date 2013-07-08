@@ -174,13 +174,13 @@ static void assign_test_vector_spin( // Assign Spin-state of test vector
 	tst_data_s.curr_vect.comp_state[SPIN] = inp_spin; // Update Spin-state of test vector
 } // assign_test_vector_spin
 /*****************************************************************************/
-static void assign_test_vector_speed( // Assign Speed-state of test vector
+static void assign_test_vector_gain( // Assign Gain-state of test vector
 	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data
-	SPEED_ADC_ENUM inp_speed // Input speed-state
+	GAIN_ADC_ENUM inp_gain // Input gain-state
 )
 {
-	tst_data_s.curr_vect.comp_state[SPEED] = inp_speed; // Update speed-state of test vector
-} // assign_test_vector_speed
+	tst_data_s.curr_vect.comp_state[GAIN] = inp_gain; // Update gain-state of test vector
+} // assign_test_vector_gain
 /*****************************************************************************/
 static int vector_compare( // Check if 2 sets of test vector are different
 	TEST_VECT_TYP &vect_a, // Structure of containing 1st set of vectore components
@@ -245,7 +245,7 @@ static void gen_motor_adc_test_data( // Generate ADC Test data for one motor
 	assign_test_vector_sum( tst_data_s ,SUM_ON ); // Set test vector to test zero-sum
 	assign_test_vector_pace( tst_data_s ,NO_PACE ); // Set test vector to test No Pacing (Fast Execution))
 	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
-	assign_test_vector_speed( tst_data_s ,FAST ); // Set test vector to Fast speed
+	assign_test_vector_gain( tst_data_s ,LARGE ); // Set test vector to Large gain
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
 	do_adc_vector( tst_data_s ,c_sin ,c_chk );
@@ -260,7 +260,7 @@ static void gen_motor_adc_test_data( // Generate ADC Test data for one motor
 		do_adc_vector( tst_data_s ,c_sin ,c_chk );
 	} // if (tst_data_s.common.options.flags[TST_ANTI])
 
-	assign_test_vector_speed( tst_data_s ,STOP ); // Set test vector to Zero Velocity (Stops ADC values)
+	assign_test_vector_gain( tst_data_s ,ZERO ); // Set test vector to Zero Gain (Stops ADC values)
 	tst_data_s.curr_vect.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
 	do_adc_vector( tst_data_s ,c_sin ,c_chk );
 

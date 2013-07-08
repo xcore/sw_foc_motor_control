@@ -25,9 +25,14 @@
 #include "use_locks.h"
 #include "adc_common.h"
 #include "test_adc_common.h"
+#include "sine_common.h"
 
+/** bit-shift used to convert standardised ADC value (Currently 25-bit) to 
+ *  format used by the ADC chip: Currently 14-bit, MSB transmitted 1st (bit-reversed)
+ */
 #define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer
-#define SHIFT_BITS (INT32_BITS - ADC_TOTAL_BITS) // Bit-shift used in int_32 -> ADC_TYP conversion
+#define ADC_GEN_BITS (GAIN_BITS + SIN_VAL_BITS + 1) //25 No. of bits in Standardised ADC generated value NB (1 is sign bit)
+#define SHIFT_BITS (INT32_BITS - ADC_GEN_BITS - ADC_PRE_PAD_BITS) //5 Bit-shift used in int_32 -> ADC_TYP conversion
 
 /*****************************************************************************/
 /** Generate ADC test data for all motors
