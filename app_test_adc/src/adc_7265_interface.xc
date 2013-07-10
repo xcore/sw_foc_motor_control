@@ -96,5 +96,5 @@ void adc_7265_interface( // Generate ADC Test data for all motors
 		// Wait for ready signal signalling ADC finished
 		p1_tst_ready when pinseq(1) :> void;
 	} // while(1)
-} // gen_all_adc_test_data
+} // adc_7265_interface
 /*****************************************************************************/

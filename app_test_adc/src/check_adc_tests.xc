@@ -15,17 +15,6 @@
 #include "check_adc_tests.h"
 
 /*****************************************************************************/
-static unsigned eval_phase_bound( // Evaluate error bounds for given gain 
-	int veloc_val // input velocity
-) // Returns error_bound
-{
-	unsigned bound; // Output error_bound
-
-	bound = (veloc_val + 8) >> 4; // 1/16 //MB~ ToDo
-
-	return bound;
-}	// eval_phase_bound
-/*****************************************************************************/
 static void init_check_data( // Initialise check data for ADC tests
 	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
 )
@@ -39,11 +28,7 @@ static void init_check_data( // Initialise check data for ADC tests
 	safestrcpy( chk_data_s.padstr1 ,"                                             " );
 	safestrcpy( chk_data_s.padstr2 ,"                              " );
 
-	chk_data_s.fail_cnt = 0; // Clear count of failed tests.
-
-	// Evaluate error bounds for gain checks
-	chk_data_s.hi_bound = eval_phase_bound( MAX_GAIN ); 
-	chk_data_s.lo_bound = eval_phase_bound( MIN_GAIN ); 
+	chk_data_s.skips = LO_SKIP_CHANGES; // Initialise No. of skipped state-changes while settling
 
 	chk_data_s.print = PRINT_TST_ADC; // Set print mode
 	chk_data_s.dbg = 0; // Set debug mode
@@ -67,6 +52,117 @@ static void init_check_data( // Initialise check data for ADC tests
 
 } // init_check_data
 /*****************************************************************************/
+static void init_ang_velocity( // Initialises angular velocity
+	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	switch( chk_data_s.curr_vect.comp_state[SPIN] )
+	{
+		case CLOCK: // Clock-wise
+			chk_data_s.sign = 1; 
+		break; // case CLOCK:
+
+		case ANTI: // Anti-clockwise
+			chk_data_s.sign = -1; 
+		break; // case ANTI:
+
+		default:
+			acquire_lock(); // Acquire Display Mutex
+			printstrln("ERROR: Unknown ADC Spin-state");
+			release_lock(); // Release Display Mutex
+			assert(0 == 1);
+		break; // default:
+	} // switch( inp_spin )
+
+	switch( chk_data_s.curr_vect.comp_state[SPEED] )
+	{
+		case FAST: // Fast Speed
+			chk_data_s.speed = HI_SPEED; // Set fast speed (in RPM)
+		break; // case FAST:
+
+		case SLOW: // Slow Speed
+			chk_data_s.speed = LO_SPEED; // Set slow speed (in RPM)
+		break; // case SLOW:
+
+		default:
+			acquire_lock(); // Acquire Display Mutex
+			printstrln("ERROR: Unknown ADC Speed-state");
+			release_lock(); // Release Display Mutex
+			assert(0 == 1);
+		break; // default:
+	} // switch( inp_speed )
+
+	chk_data_s.veloc = chk_data_s.speed * chk_data_s.sign;
+
+acquire_lock(); printstr(chk_data_s.padstr1); printstr("VEL="); printintln(chk_data_s.veloc); release_lock(); // MB~
+} // init_ang_velocity
+/*****************************************************************************/
+static void init_gain( // Initialises ADC gain
+	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	switch( chk_data_s.curr_vect.comp_state[GAIN] )
+	{
+		case ZERO: // Zero amplitude
+			chk_data_s.skips = HI_SKIP_CHANGES; 
+		break; // case ZERO
+
+		case SMALL: // Small amplitude
+			chk_data_s.skips = HI_SKIP_CHANGES; 
+		break; // case SMALL
+
+		case LARGE: // large amplitude
+			chk_data_s.skips = LO_SKIP_CHANGES; 
+		break; // case LARGE
+
+		default:
+			acquire_lock(); // Acquire Display Mutex
+			printstrln("ERROR: Unknown ADC Gain-state");
+			release_lock(); // Release Display Mutex
+			assert(0 == 1);
+		break; // default
+	} // switch(chk_data_s.curr_vect.comp_state[GAIN])
+
+	assert(1 < chk_data_s.skips); // ERROR: A minimum of 3 state-changes (2 skips) are required to define a wave period
+} // init_gain
+/*****************************************************************************/
+static void initialise_one_phase_test_vector( // Initialise one set of ADC phase data
+	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	ADC_PHASE_ENUM curr_phase, // current ADC phase
+	ADC_STATE_ENUM init_state // initial ADC-state
+)
+{
+	chk_data_s.stats[curr_phase].state = init_state;
+	chk_data_s.stats[curr_phase].num_changes = 0;
+	chk_data_s.stats[curr_phase].sum_periods = 0; // Clear accumulator for 'period durations'
+	chk_data_s.stats[curr_phase].change_time = 0; // Clear time of ADC state change
+	chk_data_s.stats[curr_phase].half_period = 0; // Clear 'half of period duration'
+	chk_data_s.stats[curr_phase].done = 0; // Clear 'test complete' flag
+
+} // initialise_one_phase_test_vector 
+/*****************************************************************************/
+static void initialise_test_vector( // Initialise all ADC phase data
+	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	unsigned tmp_val; // temporary manipulation variable
+
+
+	init_ang_velocity( chk_data_s );
+	init_gain( chk_data_s );
+
+	tmp_val = (PLATFORM_REFERENCE_HZ + (NUM_POLE_PAIRS >> 1)) / NUM_POLE_PAIRS; // Divide with rounding (25-bits)
+ 	tmp_val *= SECS_PER_MIN; // 31-bits
+	chk_data_s.chk_period = (tmp_val + (chk_data_s.speed >> 1)) / chk_data_s.speed; // (19-bits)
+// acquire_lock(); printstr("CHK="); printintln(chk_data_s.chk_period); release_lock(); // MB~
+
+	// Initialise ADC state for each phase
+	initialise_one_phase_test_vector( chk_data_s ,ADC_PHASE_A ,POSITIVE );
+	initialise_one_phase_test_vector( chk_data_s ,ADC_PHASE_B ,NEGATIVE );
+	initialise_one_phase_test_vector( chk_data_s ,ADC_PHASE_C ,POSITIVE );
+
+} // initialise_test_vector 
+/*****************************************************************************/
 static void print_adc_parameters( // Print ADC parameters
 	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
 )
@@ -89,7 +185,7 @@ static void print_adc_parameters( // Print ADC parameters
 	release_lock(); // Release Display Mutex
 } // print_adc_parameters
 //*****************************************************************************/
-static void check_adc_sum( // Check 3 phases sum to zero
+static void check_adc_sum( // Check all phases sum to zero
 	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
@@ -130,229 +226,189 @@ static void check_adc_sum( // Check 3 phases sum to zero
 
 } // check_adc_sum
 /*****************************************************************************/
-static void check_adc_spin_direction( // Check correct update of ADC spin direction
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+static void check_adc_spin_direction( // Check for correct ADC spin direction
+	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	ADC_PHASE_ENUM curr_phase	// current phase to update
 )
+// NB Difference in phase index is of opposite sign to spin
 {
-#ifdef MB
-	int inp_vel = 0; //MB~ ToDo Evaluate angular velocity
+	int phase_diff = chk_data_s.prev_phase - curr_phase; // phase difference (sign reversed)
 
 
-	switch( chk_data_s.curr_vect.comp_state[SPIN] )
+	chk_data_s.motor_tsts[SPIN]++;
+
+	if (0 > phase_diff) phase_diff += NUM_ADC_PHASES;	//Check for wrap
+
+	if (1 != phase_diff) phase_diff -= NUM_ADC_PHASES; // If NOT 1, create -1 value
+
+	// Now we are ready to check the sign of the phase order
+	if (chk_data_s.sign != phase_diff)
 	{
-		case CLOCK: // Clock-wise
-			chk_data_s.motor_tsts[SPIN]++;
-			if (0 > inp_vel)
-			{
-				chk_data_s.motor_errs[SPIN]++;
+		chk_data_s.motor_errs[SPIN]++;
 
-				acquire_lock(); // Acquire Display Mutex
-				printcharln(' ');
-				printstr( chk_data_s.padstr1 );
-				printstrln("Clock-Wise FAILURE");
-				release_lock(); // Release Display Mutex
-			} // if (0 > inp_vel)
-		break; // case CLOCK:
-
-		case ANTI: // Anti-clockwise
-			chk_data_s.motor_tsts[SPIN]++;
-			if (0 < inp_vel)
-			{
-				chk_data_s.motor_errs[SPIN]++;
-
-				acquire_lock(); // Acquire Display Mutex
-				printcharln(' ');
-				printstr( chk_data_s.padstr1 );
-				printstrln("Anti-Clock FAILURE");
-				release_lock(); // Release Display Mutex
-			} // if (0 < inp_vel)
-		break; // case ANTI:
-
-		default:
-			acquire_lock(); // Acquire Display Mutex
-			printcharln(' ');
-			printstr( chk_data_s.padstr1 );
-			printstrln("ERROR: Unknown ADC Spin-state");
-			release_lock(); // Release Display Mutex
-			assert(0 == 1);
-		break; // default:
-	} // switch( chk_data_s.curr_vect.comp_state[SPIN] )
-#endif //MB
+		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstrln("Spin FAILURE");
+		release_lock(); // Release Display Mutex
+	} // if (chk_data_s.sign != phase_diff)
 
 } // check_adc_spin_direction
 /*****************************************************************************/
-static int update_adc_phase( // Update accumulators for calculating ADC phase
+static void check_adc_period( // Check one set of ADC phase data
 	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
 	ADC_PHASE_ENUM curr_phase	// current phase to update
-) // Returns flag indicating if more data required for this phase
-{
-	ADC_TYP curr_val; // Current ADC value
-	int diff_val; // Current ADC difference value
-	int state_change; // flag indicating state change
-	int change_id; // Index into state changes array
-	int quad_id; // Index into quadrant-times array
-	int quad_cnt; // quadrant counter 
-	unsigned period_time; // period time for ADC Sine-wave
-
-
-	state_change = 0; // Preset to NO state change
-
-	curr_val = chk_data_s.curr_params.vals[curr_phase]; 
-	diff_val = curr_val - chk_data_s.prev_params.vals[curr_phase]; 
-
-	switch(chk_data_s.stats[curr_phase].state)
-	{
-		case POSI_RISE :
-			if (0 > diff_val)
-			{
-				state_change = 1; // Set flag indicating state change detected
-				chk_data_s.stats[curr_phase].state = POSI_FALL; // Update adc state					
-			} // if (0 > diff_val)
-		break; // POSI_RISE
-
-		case POSI_FALL :
-			if (0 > curr_val)
-			{
-				state_change = 1; // Set flag indicating state change detected
-				chk_data_s.stats[curr_phase].state = NEGA_FALL; // Update adc state					
-			} // if (0 > curr_val)
-		break; // POSI_FALL
-
-		case NEGA_FALL :
-			if (0 <= diff_val)
-			{
-				state_change = 1; // Set flag indicating state change detected
-				chk_data_s.stats[curr_phase].state = NEGA_RISE; // Update adc state					
-			} // if (0 <= diff_val)
-		break; // NEGA_FALL
-
-		case NEGA_RISE :
-			if (0 <= curr_val)
-			{
-				state_change = 1; // Set flag indicating state change detected
-				chk_data_s.stats[curr_phase].state = POSI_RISE; // Update adc state					
-			} // if (0 <= curr_val)
-		break; // NEGA_RISE
-
-		default :
-			assert(0 == 1); // ERROR: Invalid ADC-state detected
-		break; // default
-	} // switch(chk_data_s.stats[curr_phase].state)
-
-	if (state_change)
-	{
-		change_id = chk_data_s.stats[curr_phase].num_changes; // Get state change index
-
-		// Skip 1st change
-		if (0 < change_id)
-		{ 
-			quad_id = chk_data_s.stats[curr_phase].quad_off; // Get quadrant offset
-			// Calculate new quadrant time
-			chk_data_s.stats[curr_phase].quad_times[quad_id] = chk_data_s.curr_time - chk_data_s.stats[curr_phase].change_time;
-
-			// Check if we have enough quadrants NB require 5 state-shanges for quadrants
-			if (QUAD_MASK < change_id)
-			{
-				period_time = chk_data_s.stats[curr_phase].quad_times[0]; // Initialise period time with 1st quadrant time
-
-				for (quad_cnt=1; quad_cnt<NUM_QUADS; quad_cnt++)
-				{
-					period_time += chk_data_s.stats[curr_phase].quad_times[quad_cnt]; // Accumulate quadrant times
-				} // for quad_cnt
-
-				chk_data_s.stats[curr_phase].period_times[change_id - NUM_QUADS] = period_time;
-			} // if (QUAD_MASK < change_id)
-
-			// Increment quadrant offset
-			quad_id++;
-			chk_data_s.stats[curr_phase].quad_off = (quad_id & QUAD_MASK); // Wrap into range [0..(NUM_QUADS-1)]
-		} // if (0 < change_id)
-		else
-		{
-			chk_data_s.stats[curr_phase].period_times[0] = 0; // Initialise 1st period time
-		} // else !(0 < change_id)
-
-		chk_data_s.stats[curr_phase].change_time = chk_data_s.curr_time; // Store time of state-change
-		chk_data_s.stats[curr_phase].num_changes++; // Increment No of state changes detected
-	} // if (state_change)
-
-	chk_data_s.stats[curr_phase].adc_diff = diff_val; // Store for next iteration
-
-	// Check if we have enough data for test
-	if (NUM_CHANGES > chk_data_s.stats[curr_phase].num_changes)
-	{
-		return 1; // Set flag indicating more data required
-	} // if (NUM_CHANGES > chk_data_s.stats[curr_phase].num_changes)
-	else
-	{
-		return 0;
-	} // else !(NUM_CHANGES > chk_data_s.stats[curr_phase].num_changes)
-} // update_adc_phase
-/*****************************************************************************/
-static void update_adc_data( // Update accumulators for calculating ADC phase
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-	ADC_PHASE_ENUM phase_cnt; // Counter for ADC phases
-	int more_data; // Preset flag to NO more data required
+	unsigned mean_period; // Mean of accumulated period durations
+	int period_err; // Error in measured period
 
 
-	chk_data_s.more = 0; // Preset flag to NO more data required
+	chk_data_s.motor_tsts[SPEED]++;
 
+	// Calculate average period duration (with rounding)
+	mean_period = (chk_data_s.stats[curr_phase].sum_periods + HALF_PERIODS) >> PERIOD_BITS; 
 
-	for (phase_cnt=0; phase_cnt<NUM_ADC_PHASES; phase_cnt++)
+	period_err = mean_period - chk_data_s.chk_period; // Measurement error
+
+	// Check accuracy
+	if (ADC_PERIOD < abs(period_err))
 	{
-		more_data = update_adc_phase( chk_data_s, phase_cnt );
+		chk_data_s.motor_errs[SPEED]++;
 
-		chk_data_s.more |= more_data; // NB Yes its another ambiguous evaluation work-around
-	} // for phase_cnt
+		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstrln("Speed FAILURE");
+		release_lock(); // Release Display Mutex
+	} // if (ADC_PERIOD < abs(period_err))
 
-
-} // update_adc_data
-/*****************************************************************************/
-static void check_one_adc_phase( // Check one set of ADC phase data
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
-	ADC_PHASE_ENUM curr_phase,	// current phase to update
-	int period_id // Index into state changes array
-)
-{
-	printint( chk_data_s.stats[curr_phase].period_times[period_id]); 
-	printstr(" : ");
-} // check_one_adc_phase
+} // check_adc_period
 /*****************************************************************************/
 static void check_all_adc_phase_data( // Check all ADC phase data
 	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-	int period_cnt; // Index into state changes array
 	ADC_PHASE_ENUM phase_cnt; // Counter for ADC phases
 
 
-	for (period_cnt=0; period_cnt<NUM_PERIODS; period_cnt++)
+	for (phase_cnt=0; phase_cnt<NUM_ADC_PHASES; phase_cnt++)
 	{
-		acquire_lock(); // Acquire Display Mutex
-		printint( period_cnt );
-		printstr("= ");
-
-		for (phase_cnt=0; phase_cnt<NUM_ADC_PHASES; phase_cnt++)
-		{
-			check_one_adc_phase( chk_data_s ,phase_cnt ,period_cnt ); // Check one set of ADC phase data
-		} // for phase_cnt
-
-		printcharln(' ');
-		release_lock(); // Release Display Mutex
-	} // for period_cnt
+		check_adc_period( chk_data_s ,phase_cnt ); // Check speed(period duration) for one ADC phase
+	} // for phase_cnt
 } // check_all_adc_phase_data
 /*****************************************************************************/
-static void check_adc_parameters( // Check all ADC parameters
+static void process_state_change( // Update accumulators due to state-change, and check spin
+	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	ADC_PHASE_ENUM curr_phase	// current phase to update
+)
+{
+	int period_id; // Index into array of period durations
+	unsigned duration; // time difference between ADC state-changes (half period)
+
+
+	// Calculate new half period duration
+	duration = chk_data_s.curr_time - chk_data_s.stats[curr_phase].change_time;
+
+	// Calculate trial period array index
+	period_id = chk_data_s.stats[curr_phase].num_changes - chk_data_s.skips;
+
+acquire_lock(); printint(period_id); printstr(":"); printintln(curr_phase); printstr(" D="); printintln(duration); release_lock(); // MB~
+
+	// Skip early changes while Sine-wave settles
+	if (0 <= period_id)
+	{ // Settled, so calculate add new period time
+		check_adc_spin_direction( chk_data_s ,curr_phase ); // Check ADC spin direction
+
+		// Check if we have enough data for period test
+		if (NUM_PERIODS > period_id)
+		{
+			chk_data_s.stats[curr_phase].sum_periods += (duration + chk_data_s.stats[curr_phase].half_period);
+acquire_lock(); printstr("H="); printint(chk_data_s.stats[curr_phase].half_period); 
+printstr(" T="); printintln(duration + chk_data_s.stats[curr_phase].half_period); release_lock(); // MB~
+
+			// Check if we NOW have enough data for period test
+			if ((NUM_PERIODS - 1) <= period_id)
+			{
+				chk_data_s.stats[curr_phase].done = 1; // Set flag indicating NO more data required
+			} // if (NUM_PERIODS - 1) <= period_id)
+		} // if (NUM_PERIODS > period_id)
+	} // if (0 <= period_id)
+
+	// store key data for next iteration
+	chk_data_s.prev_phase = curr_phase;
+// acquire_lock(); printstr("PH="); printintln(chk_data_s.prev_phase); release_lock(); // MB~
+	chk_data_s.stats[curr_phase].half_period = duration;
+	chk_data_s.stats[curr_phase].change_time = chk_data_s.curr_time;
+
+	chk_data_s.stats[curr_phase].num_changes++; // Increment No of state changes detected
+
+} // process_state_change
+/*****************************************************************************/
+static void detect_phase_state_change( // Detect if state-change occured for current ADC phase, and check spin
+	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	ADC_PHASE_ENUM curr_phase	// current phase to update
+)
+/* A noise threshold has to be crossed before a state-change is accepted.
+ * If the noise threshold is large enough, state-change jitter is prevented.
+ * However, this introduces some hysteresis into the state-change cycle
+ */
+{
+	ADC_TYP curr_val = chk_data_s.curr_params.vals[curr_phase]; // Current ADC value	
+
+
+	// Check for change of state
+	if (POSITIVE == chk_data_s.stats[curr_phase].state)
+	{
+		// Check if ADC value is sufficiently negative
+		if (-NOISE_THRESH > curr_val)
+		{
+			process_state_change( chk_data_s ,curr_phase );
+
+			chk_data_s.stats[curr_phase].state = NEGATIVE; // Update adc state					
+		} // if (0 > curr_val)
+	} // if (POSITIVE == chk_data_s.stats[curr_phase].state)
+	else
+	{ // NEGATIVE
+		// Check if ADC value is sufficiently positive
+		if (NOISE_THRESH <= curr_val)
+		{
+			process_state_change( chk_data_s ,curr_phase );
+
+			chk_data_s.stats[curr_phase].state = POSITIVE; // Update adc state					
+		} // if (0 <= curr_val)
+	} // else !if (POSITIVE == chk_data_s.stats[curr_phase].state)
+
+} // detect_phase_state_change
+/*****************************************************************************/
+static void update_adc_phase_data( // Updates phase data and checks spin
+	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	ADC_PHASE_ENUM phase_cnt; // Counter for ADC phases
+
+
+	chk_data_s.done = 1; // Preset flag to data collection complete
+
+
+	// Loop through all phases
+	for (phase_cnt=0; phase_cnt<NUM_ADC_PHASES; phase_cnt++)
+	{
+		detect_phase_state_change( chk_data_s, phase_cnt );
+
+		chk_data_s.done &= chk_data_s.stats[phase_cnt].done; // Combine 'done' flags
+	} // for phase_cnt
+
+} // update_adc_phase_data
+/*****************************************************************************/
+static void process_new_adc_parameters( // Process new ADC parameters
 	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	check_adc_sum( chk_data_s ); // Check ADC zero-sum
-	check_adc_spin_direction( chk_data_s ); // Check ADC spin direction
 
-	update_adc_data( chk_data_s ); // Update data on ADC angular speed
-} // check_adc_parameters
+	update_adc_phase_data( chk_data_s ); // Update phase data and check spin
+} // process_new_adc_parameters
 /*****************************************************************************/
 static int parameter_compare( // Check if 2 sets of ADC parameters are different
 	ADC_PARAM_TYP &params_a,	// Structure containing 1st set of ADC parameters
@@ -376,68 +432,32 @@ static void get_new_adc_client_data( // Get next set of ADC parameters
 	streaming chanend c_adc // ADC channel between Client and Server
 )
 {
-	int do_test = 0;	// Flag set when next test required
+	int diff_params = 0;	// Flag set when parameters change detected
 
 
 	c_sin :> chk_data_s.curr_time; // get time-stamp for new ADC parameters
 
-	// Loop until parameter change
-	do // while(!do_test)
-	{
-		// Get new parameter values from Client function under test
-		foc_adc_get_parameters( chk_data_s.curr_params ,c_adc );
-
-		// Check for change in non-speed parameters
-		do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
-	} while(!do_test);
+	// Get new parameter values from Client function under test
+	foc_adc_get_parameters( chk_data_s.curr_params ,c_adc );
 
 	c_sin <: (int)TST_REQ_CMD; // Request next ADC value
 
-	if (chk_data_s.print)
+	// Check for change in non-speed parameters
+	diff_params = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
+
+	if (chk_data_s.print & diff_params )
 	{
 		print_adc_parameters( chk_data_s ); // Print new ADC parameters
-	} // if (chk_data_s.print)
+	} // if (chk_data_s.print & diff_params )
 
-	// Check if this current test vector is valid
-	if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
-	{
-		check_adc_parameters( chk_data_s ); // Check new ADC parameters
-	} // if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
+	process_new_adc_parameters( chk_data_s ); // Process new ADC parameters
 
 	chk_data_s.prev_time = chk_data_s.curr_time; // Store previous time-stamp
 	chk_data_s.prev_params = chk_data_s.curr_params; // Store previous parameter values
 } // get_new_adc_client_data
 /*****************************************************************************/
-static void initialise_one_phase_test_vector( // Initialise one set of ADC phase data
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
-	ADC_PHASE_ENUM curr_phase, // current ADC phase
-	ADC_STATE_ENUM init_state // initial ADC-state
-)
-{
-	chk_data_s.stats[curr_phase].state = init_state;
-	chk_data_s.stats[curr_phase].num_changes = 0;
-	chk_data_s.stats[curr_phase].change_time = 0;
-	chk_data_s.stats[curr_phase].adc_diff = 0;
-	chk_data_s.stats[curr_phase].quad_off = 0;
-
-} // initialise_one_phase_test_vector 
-/*****************************************************************************/
-static void initialise_all_phases_test_vector( // Initialise all ADC phase data
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
-)
-{
-
-
-	// Initialise ADC state for each phase
-	initialise_one_phase_test_vector( chk_data_s ,ADC_PHASE_A ,POSI_RISE );
-	initialise_one_phase_test_vector( chk_data_s ,ADC_PHASE_B ,NEGA_FALL );
-	initialise_one_phase_test_vector( chk_data_s ,ADC_PHASE_C ,POSI_FALL );
-
-} // initialise_all_phase_test_vector 
-/*****************************************************************************/
 static void finalise_phase_test_vector( // terminate ADC phase test and check results
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
-	const GAIN_ADC_ENUM cur_speed	// Speed-state to finalise
+	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	check_all_adc_phase_data( chk_data_s ); // Check all ADC phase data
@@ -479,12 +499,12 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 		} // if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
 		else
 		{ // Do new test
-			initialise_all_phases_test_vector( chk_data_s ); // Initialise accumulators
+			initialise_test_vector( chk_data_s ); // Do Initialisation for new test
 
-			chk_data_s.more = 1; // Initialise Flag to 'more data required'
+			chk_data_s.done = 0; // Initialise Flag to 'more data required'
 
 			// Loop until enough data collected
-			while(chk_data_s.more)
+			while(0 == chk_data_s.done)
 			{
 				get_new_adc_client_data( chk_data_s ,c_sin ,c_adc ); // Request data from server & check
 
@@ -492,9 +512,9 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 				{
 					printchar('.'); // Progress indicator
 				} // if (0 == chk_data_s.print)
-			} // while(chk_data_s.more)
+			} // while(0 == chk_data_s.done)
 
-			finalise_phase_test_vector( chk_data_s ,chk_data_s.curr_vect.comp_state[GAIN] ); 
+			finalise_phase_test_vector( chk_data_s ); 
 		} // else !(QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
 
 		c_tst <: (int)END_TST_CMD; // Signal to test generator that this test is complete

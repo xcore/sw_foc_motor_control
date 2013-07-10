@@ -306,8 +306,8 @@ static void service_data_request( // Services client command data request for th
 			for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
 			{
 				// Convert parameter phase values to zero mean
-				adc_val = adc_data_s.phase_data[phase_cnt].adc_val - adc_data_s.phase_data[phase_cnt].mean;
-//MB~		adc_val = adc_data_s.phase_data[phase_cnt].adc_val;
+//MB~						adc_val = adc_data_s.phase_data[phase_cnt].adc_val - adc_data_s.phase_data[phase_cnt].mean;
+adc_val = adc_data_s.phase_data[phase_cnt].adc_val;
 				adc_sum += adc_val; // Add adc value to sum
 				adc_data_s.params.vals[phase_cnt] = adc_val; // Load adc value into parameter structure
 			} // for phase_cnt

@@ -58,9 +58,10 @@ typedef struct SINE_TST_TAG // Structure containing ADC test generation data
 	unsigned curr_mtim; // Current (32-bit) mock time value
 	unsigned prev_mtim; // Previous (32-bit) mock time value
 	int gain; // Amplitude requested
-	int veloc; // Angular Velocity requested
 	unsigned sum_time; // (32-bit) time value
 	int sign;		// Sign of angular velocity
+	unsigned speed;	// Magnitude of angular velocity
+	int veloc; // Angular Velocity requested
 	ADC_GEN_TYP adc_a; // Generatored ADC value for phase_A
 	ADC_GEN_TYP adc_b; // Generatored ADC value for phase_B
 	int scale; // Scaling factor used in bit-shift division

@@ -133,6 +133,9 @@ static void init_test_data( // Initialise ADC Test data
 	streaming chanend c_chk // Channel for communication with Checker cores
 )
 {
+	int opt_flag; // Options flag
+
+
 	init_common_data( tst_data_s.common ); // Initialise data common to Generator and Checker
  
 	tst_data_s.period = ADC_PERIOD; // Typical time between ADC capture in FOC motor control loop
@@ -142,9 +145,25 @@ static void init_test_data( // Initialise ADC Test data
 
 	parse_control_file( tst_data_s ); 
 
+	// Check for sensible options ...
+
+	opt_flag =	tst_data_s.common.options.flags[TST_SMALL] || 
+							tst_data_s.common.options.flags[TST_PACE] ||
+							tst_data_s.common.options.flags[TST_SLOW];
+
+	if (0 == opt_flag)
+	{
+		acquire_lock(); 
+		printstrln("ERROR Reading Test-Options file. Please select one of Selection_1/Selection_2/Slow_Speed");
+		printstrln("      Aborting Program");
+		printstrln("");
+		release_lock();
+		_exit(0);
+	} // if (0 == opt_flag)
+
 	c_chk <: tst_data_s.common.options; // Send test options to checker core
 
-	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Initialise to skipped test for set-up mode
+	tst_data_s.curr_vect.comp_state[CNTRL] = NO_PACE; // Initialise to No pacing (Fast execution)
 	tst_data_s.prev_vect.comp_state[CNTRL] = QUIT; // Initialise to something that will force an update
 
 } // init_motor_tests
@@ -156,15 +175,6 @@ static void assign_test_vector_sum( // Assign Zero-sum state of test vector
 {
 	tst_data_s.curr_vect.comp_state[SUM] = inp_sum; // Update Zero-Sum state of test vector
 } // assign_test_vector_sum
-/*****************************************************************************/
-static void assign_test_vector_pace( // Assign Pacing state of test vector
-	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data
-	PACE_ADC_ENUM inp_pace // Input Pacing state
-)
-// See PACE_ADC_ENUM in test_adc_common.h for explanation
-{
-	tst_data_s.curr_vect.comp_state[PACE] = inp_pace; // Update Pacing state of test vector
-} // assign_test_vector_pace
 /*****************************************************************************/
 static void assign_test_vector_spin( // Assign Spin-state of test vector
 	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data
@@ -181,6 +191,14 @@ static void assign_test_vector_gain( // Assign Gain-state of test vector
 {
 	tst_data_s.curr_vect.comp_state[GAIN] = inp_gain; // Update gain-state of test vector
 } // assign_test_vector_gain
+/*****************************************************************************/
+static void assign_test_vector_speed( // Assign Speed-state of test vector
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of ADC test data
+	SPEED_ADC_ENUM inp_speed // Input speed-state
+)
+{
+	tst_data_s.curr_vect.comp_state[SPEED] = inp_speed; // Update speed-state of test vector
+} // assign_test_vector_speed
 /*****************************************************************************/
 static int vector_compare( // Check if 2 sets of test vector are different
 	TEST_VECT_TYP &vect_a, // Structure of containing 1st set of vectore components
@@ -221,6 +239,7 @@ static void do_adc_vector( // Do all tests for one ADC test vector
 			print_test_vector( tst_data_s.common ,tst_data_s.curr_vect ,"" );
 		} // if (tst_data_s.print)
 
+// acquire_lock(); printstrln("GEN-S_Rchk"); release_lock(); // MB~
 		c_chk :> int _; // Receive test complete signal
 		tst_data_s.prev_vect = tst_data_s.curr_vect; // update previous vector
 	} // if (new_vect)
@@ -242,23 +261,47 @@ static void gen_motor_adc_test_data( // Generate ADC Test data for one motor
 
 	// NB These tests assume ADC_FILTER = 0
 
-	assign_test_vector_sum( tst_data_s ,SUM_ON ); // Set test vector to test zero-sum
-	assign_test_vector_pace( tst_data_s ,NO_PACE ); // Set test vector to test No Pacing (Fast Execution))
-	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
-	assign_test_vector_gain( tst_data_s ,LARGE ); // Set test vector to Large gain
+	if (tst_data_s.common.options.flags[TST_SUM])
+	{
+		assign_test_vector_sum( tst_data_s ,SUM_ON ); // Set test vector to test zero-sum
+	} // if (tst_data_s.common.options.flags[TST_SUM])
+	else
+	{
+		assign_test_vector_sum( tst_data_s ,NO_SUM ); // Set test vector to skip zero-sum tests
+	} // if (tst_data_s.common.options.flags[TST_SUM])
 
-	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
-	do_adc_vector( tst_data_s ,c_sin ,c_chk );
+	// Check if Small-Gain tests activated
+	if (tst_data_s.common.options.flags[TST_SMALL])
+	{
+		assign_test_vector_speed( tst_data_s ,FAST ); // Set test vector to Fast Speed to shorten time.
+		assign_test_vector_gain( tst_data_s ,SMALL ); // Set test vector to Small gain
+		assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
+		tst_data_s.curr_vect.comp_state[CNTRL] = NO_PACE; // Set control to No Pacing (Fast Execution)
 
-	assign_test_vector_pace( tst_data_s ,PACE_ON ); // Set test vector to test Pacing (Slow Execution))
-	do_adc_vector( tst_data_s ,c_sin ,c_chk );
-
-	// Check if Error-status test activated
-	if (tst_data_s.common.options.flags[TST_ANTI])
-	{ // Do Anti-Clockwise test
-		assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
 		do_adc_vector( tst_data_s ,c_sin ,c_chk );
-	} // if (tst_data_s.common.options.flags[TST_ANTI])
+	} // if (tst_data_s.common.options.flags[TST_SMALL] || etc.
+
+	// Check if Pacing tests activated
+	if (tst_data_s.common.options.flags[TST_PACE])
+	{
+		assign_test_vector_speed( tst_data_s ,FAST ); // Set test vector to Fast Speed to shorten time.
+		assign_test_vector_gain( tst_data_s ,LARGE ); // Set test vector to Large gain
+		assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
+		tst_data_s.curr_vect.comp_state[CNTRL] = PACE_ON; // Set control to Paced (Slow Execution)
+
+		do_adc_vector( tst_data_s ,c_sin ,c_chk );
+	} // if (tst_data_s.common.options.flags[TST_PACE] || etc.
+
+	// Check if Slow test activated
+	if (tst_data_s.common.options.flags[TST_SLOW])
+	{ // Do Slow speed test
+		assign_test_vector_speed( tst_data_s ,SLOW ); // Set test vector to Slow Speed (very long).
+		assign_test_vector_gain( tst_data_s ,LARGE ); // Set test vector to Large gain
+		assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
+		tst_data_s.curr_vect.comp_state[CNTRL] = NO_PACE; // Set control to No Pacing (Fast Execution)
+
+		do_adc_vector( tst_data_s ,c_sin ,c_chk );
+	} // if (tst_data_s.common.options.flags[TST_SLOW])
 
 	assign_test_vector_gain( tst_data_s ,ZERO ); // Set test vector to Zero Gain (Stops ADC values)
 	tst_data_s.curr_vect.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor

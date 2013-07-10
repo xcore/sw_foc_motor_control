@@ -2,6 +2,8 @@
 # ============================
 # In left column type 1 to select test, 0 to skip.
 # NB Text after a hash is a comment
-#
+# 
 1 # Zero-Sum tests
-0 # Anti-clockwise tests
+0 # Selection_1 tests: Small-Gain, Non-Paced, Clock-wise and Fast-Speed
+0 # Selection_2 tests: Pacing-On, Large-Gain, Anti-Clockwise and Fast-Speed
+1 # Slow_Speed tests: Non-Paced, Large-Gain, and Clock-wise (WARNING: Very Long Test)
