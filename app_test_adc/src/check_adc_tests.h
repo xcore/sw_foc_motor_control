@@ -28,7 +28,6 @@
 #include "adc_client.h"
 #include "test_adc_common.h"
 
-//MB~ #define PERIOD_BITS 2 // No. of bits used to represent No. of period times to capture (in ADC Sine-Wave)
 #define PERIOD_BITS 2 //2 No. of bits used to represent No. of period times to capture (in ADC Sine-Wave)
 #define NUM_PERIODS (1 << PERIOD_BITS) // No. of period times to capture (in ADC Sine-Wave)
 #define HALF_PERIODS (NUM_PERIODS >> 1) // Used for rounding
@@ -75,6 +74,7 @@ typedef struct CHECK_ADC_TAG // Structure containing ADC check data
 	unsigned curr_time; // time value when current ADC parameters received
 	unsigned prev_time; // time value when previous ADC parameters received 
 	unsigned chk_period; // Check value for period duration
+	unsigned period_bound; // Error bound for period duration check
 	unsigned speed; // Magnitude of angular velocity
 	int sign; // Sign of angular velocity
 	int veloc; // Angular velocity

@@ -119,7 +119,7 @@ static void init_gain( // Initialises ADC gain
 		break; // default
 	} // switch(chk_data_s.curr_vect.comp_state[GAIN])
 
-acquire_lock(); printstr("SKIP="); printintln(chk_data_s.skips); release_lock(); // MB~
+// acquire_lock(); printstr("SKIP="); printintln(chk_data_s.skips); release_lock(); // MB~
 	assert(1 < chk_data_s.skips); // ERROR: A minimum of 3 state-changes (2 skips) are required to define a wave period
 } // init_gain
 /*****************************************************************************/
@@ -151,7 +151,9 @@ static void initialise_test_vector( // Initialise all ADC phase data
 	tmp_val = (PLATFORM_REFERENCE_HZ + (NUM_POLE_PAIRS >> 1)) / NUM_POLE_PAIRS; // Divide with rounding (25-bits)
  	tmp_val *= SECS_PER_MIN; // 31-bits
 	chk_data_s.chk_period = (tmp_val + (chk_data_s.speed >> 1)) / chk_data_s.speed; // (19-bits)
-acquire_lock(); printstr("CHK="); printintln(chk_data_s.chk_period); release_lock(); // MB~
+	chk_data_s.period_bound = (chk_data_s.chk_period + 64) >> 6; // Set error bound at ~0.8%
+
+// acquire_lock(); printstr("CHK="); printintln(chk_data_s.chk_period); release_lock(); // MB~
 
 	// Initialise ADC state for each phase
 	initialise_one_phase_test_vector( chk_data_s ,ADC_PHASE_A ,POSITIVE );
@@ -269,7 +271,7 @@ static void check_adc_period( // Check one set of ADC phase data
 	period_err = mean_period - chk_data_s.chk_period; // Measurement error
 
 	// Check accuracy
-	if (ADC_PERIOD < abs(period_err))
+	if (chk_data_s.period_bound < abs(period_err))
 	{
 		chk_data_s.motor_errs[SPEED]++;
 
@@ -319,7 +321,7 @@ static void process_state_change( // Update accumulators due to state-change, an
 		if (NUM_PERIODS > period_id)
 		{
 			chk_data_s.stats[curr_phase].sum_periods += (duration + chk_data_s.stats[curr_phase].half_period);
-acquire_lock(); printstr("H="); printint(chk_data_s.stats[curr_phase].half_period); printstr(" T="); printintln(duration + chk_data_s.stats[curr_phase].half_period); release_lock(); // MB~
+// acquire_lock(); printstrln(""); printstr("H="); printint(chk_data_s.stats[curr_phase].half_period); printstr(" T="); printintln(duration + chk_data_s.stats[curr_phase].half_period); release_lock(); // MB~
 
 			// Check if we NOW have enough data for period test
 			if ((NUM_PERIODS - 1) <= period_id)
