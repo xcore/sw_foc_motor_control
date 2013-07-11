@@ -94,7 +94,7 @@ static void init_ang_velocity( // Initialises angular velocity
 
 	chk_data_s.veloc = chk_data_s.speed * chk_data_s.sign;
 
-acquire_lock(); printstr(chk_data_s.padstr1); printstr("VEL="); printintln(chk_data_s.veloc); release_lock(); // MB~
+// acquire_lock(); printstr(chk_data_s.padstr1); printstr("VEL="); printintln(chk_data_s.veloc); release_lock(); // MB~
 } // init_ang_velocity
 /*****************************************************************************/
 static void init_gain( // Initialises ADC gain
@@ -103,10 +103,6 @@ static void init_gain( // Initialises ADC gain
 {
 	switch( chk_data_s.curr_vect.comp_state[GAIN] )
 	{
-		case ZERO: // Zero amplitude
-			chk_data_s.skips = HI_SKIP_CHANGES; 
-		break; // case ZERO
-
 		case SMALL: // Small amplitude
 			chk_data_s.skips = HI_SKIP_CHANGES; 
 		break; // case SMALL
@@ -123,6 +119,7 @@ static void init_gain( // Initialises ADC gain
 		break; // default
 	} // switch(chk_data_s.curr_vect.comp_state[GAIN])
 
+acquire_lock(); printstr("SKIP="); printintln(chk_data_s.skips); release_lock(); // MB~
 	assert(1 < chk_data_s.skips); // ERROR: A minimum of 3 state-changes (2 skips) are required to define a wave period
 } // init_gain
 /*****************************************************************************/
@@ -154,7 +151,7 @@ static void initialise_test_vector( // Initialise all ADC phase data
 	tmp_val = (PLATFORM_REFERENCE_HZ + (NUM_POLE_PAIRS >> 1)) / NUM_POLE_PAIRS; // Divide with rounding (25-bits)
  	tmp_val *= SECS_PER_MIN; // 31-bits
 	chk_data_s.chk_period = (tmp_val + (chk_data_s.speed >> 1)) / chk_data_s.speed; // (19-bits)
-// acquire_lock(); printstr("CHK="); printintln(chk_data_s.chk_period); release_lock(); // MB~
+acquire_lock(); printstr("CHK="); printintln(chk_data_s.chk_period); release_lock(); // MB~
 
 	// Initialise ADC state for each phase
 	initialise_one_phase_test_vector( chk_data_s ,ADC_PHASE_A ,POSITIVE );
@@ -313,8 +310,6 @@ static void process_state_change( // Update accumulators due to state-change, an
 	// Calculate trial period array index
 	period_id = chk_data_s.stats[curr_phase].num_changes - chk_data_s.skips;
 
-acquire_lock(); printint(period_id); printstr(":"); printintln(curr_phase); printstr(" D="); printintln(duration); release_lock(); // MB~
-
 	// Skip early changes while Sine-wave settles
 	if (0 <= period_id)
 	{ // Settled, so calculate add new period time
@@ -324,8 +319,7 @@ acquire_lock(); printint(period_id); printstr(":"); printintln(curr_phase); prin
 		if (NUM_PERIODS > period_id)
 		{
 			chk_data_s.stats[curr_phase].sum_periods += (duration + chk_data_s.stats[curr_phase].half_period);
-acquire_lock(); printstr("H="); printint(chk_data_s.stats[curr_phase].half_period); 
-printstr(" T="); printintln(duration + chk_data_s.stats[curr_phase].half_period); release_lock(); // MB~
+acquire_lock(); printstr("H="); printint(chk_data_s.stats[curr_phase].half_period); printstr(" T="); printintln(duration + chk_data_s.stats[curr_phase].half_period); release_lock(); // MB~
 
 			// Check if we NOW have enough data for period test
 			if ((NUM_PERIODS - 1) <= period_id)
@@ -337,7 +331,6 @@ printstr(" T="); printintln(duration + chk_data_s.stats[curr_phase].half_period)
 
 	// store key data for next iteration
 	chk_data_s.prev_phase = curr_phase;
-// acquire_lock(); printstr("PH="); printintln(chk_data_s.prev_phase); release_lock(); // MB~
 	chk_data_s.stats[curr_phase].half_period = duration;
 	chk_data_s.stats[curr_phase].change_time = chk_data_s.curr_time;
 
@@ -426,35 +419,52 @@ static int parameter_compare( // Check if 2 sets of ADC parameters are different
 	return 0; // No differences found
 } // parameter_compare
 /*****************************************************************************/
-static void get_new_adc_client_data( // Get next set of ADC parameters
+static void get_adc_client_data( // Get next set of ADC parameters
 	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
-	streaming chanend c_sin, // Channel for communication with Sine_Generator cores
+	streaming chanend c_gen, // Channel for communication with Test_Generator
 	streaming chanend c_adc // ADC channel between Client and Server
 )
 {
 	int diff_params = 0;	// Flag set when parameters change detected
 
 
-	c_sin :> chk_data_s.curr_time; // get time-stamp for new ADC parameters
+	chk_data_s.done = 0; // Initialise Flag to 'more data required'
 
-	// Get new parameter values from Client function under test
-	foc_adc_get_parameters( chk_data_s.curr_params ,c_adc );
-
-	c_sin <: (int)TST_REQ_CMD; // Request next ADC value
-
-	// Check for change in non-speed parameters
-	diff_params = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
-
-	if (chk_data_s.print & diff_params )
+	// Loop until enough data collected for phase tests
+	while (0 == chk_data_s.done)
 	{
-		print_adc_parameters( chk_data_s ); // Print new ADC parameters
-	} // if (chk_data_s.print & diff_params )
+		c_gen :> chk_data_s.curr_time; // get time-stamp for new ADC parameters
 
-	process_new_adc_parameters( chk_data_s ); // Process new ADC parameters
+		// To improve speed, a speculative request is issued (NB the last one will NOT be unused)
+		c_gen <: (int)TST_REQ_CMD; // Request next ADC value
+	
+		// Get new parameter values from Client function under test
+		foc_adc_get_parameters( chk_data_s.curr_params ,c_adc );
+	
+		// Check for change in non-speed parameters
+		diff_params = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
+	
+		if (chk_data_s.print & diff_params )
+		{
+			print_adc_parameters( chk_data_s ); // Print new ADC parameters
+		} // if (chk_data_s.print & diff_params )
+	
+		process_new_adc_parameters( chk_data_s ); // Process new ADC parameters
+	
+		chk_data_s.prev_time = chk_data_s.curr_time; // Store previous time-stamp
+		chk_data_s.prev_params = chk_data_s.curr_params; // Store previous parameter values
 
-	chk_data_s.prev_time = chk_data_s.curr_time; // Store previous time-stamp
-	chk_data_s.prev_params = chk_data_s.curr_params; // Store previous parameter values
-} // get_new_adc_client_data
+		if (0 == chk_data_s.print)
+		{
+			printchar('.'); // Progress indicator
+		} // if (0 == chk_data_s.print)
+
+	} // while (0 == chk_data_s.done)
+
+	// Eat last unused time-stamp (from speculative request)
+	c_gen :> chk_data_s.curr_time;
+	
+} // get_adc_client_data
 /*****************************************************************************/
 static void finalise_phase_test_vector( // terminate ADC phase test and check results
 	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
@@ -465,16 +475,14 @@ static void finalise_phase_test_vector( // terminate ADC phase test and check re
 /*****************************************************************************/
 static void check_motor_adc_client_data( // Display ADC results for one motor
 	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
-	streaming chanend c_tst, // Channel for receiving test vectors from test generator
-	streaming chanend c_sin, // Channel for communication with Sine_Generator cores
-	streaming chanend c_adc // ADC channel between Client and Server
+	streaming chanend c_gen, // Channel for receiving test vectors from test generator
+	streaming chanend c_adc // ADC channel communication with between ADC Client
 )
 {
 	int comp_cnt; // Counter for Test Vector components
 	int do_loop = 1;   // Flag set until loop-end condition found 
 	int motor_errs = 0;   // Preset flag to NO errors for current motor
 	int motor_tsts = 0;   // Clear test ccounter for current motor
-
 
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
@@ -485,7 +493,7 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 	// Loop until end condition found
 	while( do_loop )
 	{
-		c_tst :> chk_data_s.curr_vect; // get new test-vector
+		c_gen :> chk_data_s.curr_vect; // get new test-vector
 
 		if (chk_data_s.print)
 		{
@@ -499,25 +507,17 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 		} // if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
 		else
 		{ // Do new test
+			c_gen <: (int)TST_REQ_CMD; // Request next ADC value
+	
 			initialise_test_vector( chk_data_s ); // Do Initialisation for new test
 
-			chk_data_s.done = 0; // Initialise Flag to 'more data required'
-
-			// Loop until enough data collected
-			while(0 == chk_data_s.done)
-			{
-				get_new_adc_client_data( chk_data_s ,c_sin ,c_adc ); // Request data from server & check
-
-				if (0 == chk_data_s.print)
-				{
-					printchar('.'); // Progress indicator
-				} // if (0 == chk_data_s.print)
-			} // while(0 == chk_data_s.done)
+			// Get next set of ADC parameters
+			get_adc_client_data( chk_data_s ,c_gen ,c_adc );
 
 			finalise_phase_test_vector( chk_data_s ); 
 		} // else !(QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
 
-		c_tst <: (int)END_TST_CMD; // Signal to test generator that this test is complete
+		c_gen <: (int)END_TST_CMD; // Signal to test generator that this test is complete
 	} // while( loop )
 
 	// Update error statistics for current motor
@@ -578,26 +578,21 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 /*****************************************************************************/
 void check_all_adc_client_data( // Display ADC results for all motors
 	streaming chanend c_adc[], // Array of channel for communication with ADC_Server
-	streaming chanend c_sin, // Channel for communication with Sine_Generator cores
-	streaming chanend c_tst // Channel for communication with Test_Generator
+	streaming chanend c_gen // Channel for communication with Test_Generator
 )
 {
 	CHECK_ADC_TYP chk_data_s; // Structure containing test check data
 
 
 
-	c_sin <: (int)TST_REQ_CMD; // Request 1st ADC value
-
 	// Initialise parameter values by calling Client function
 	foc_adc_get_parameters( chk_data_s.curr_params ,c_adc[MOTOR_ID]  );
 
-	c_sin <: (int)TST_REQ_CMD; // Request next ADC value
-
 	init_check_data( chk_data_s ); // Initialise check data
 
-	c_tst :> chk_data_s.common.options; // Get test options from generator core
+	c_gen :> chk_data_s.common.options; // Get test options from generator core
 
-	check_motor_adc_client_data( chk_data_s ,c_tst ,c_sin ,c_adc[MOTOR_ID] );
+	check_motor_adc_client_data( chk_data_s ,c_gen ,c_adc[MOTOR_ID] );
 
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );

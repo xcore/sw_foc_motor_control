@@ -33,8 +33,8 @@
 #define NUM_PERIODS (1 << PERIOD_BITS) // No. of period times to capture (in ADC Sine-Wave)
 #define HALF_PERIODS (NUM_PERIODS >> 1) // Used for rounding
 
-#define LO_SKIP_CHANGES 2 //3 Low No. of skipped state-changes while Sine-wave settles (used for large gain)
-#define HI_SKIP_CHANGES 2 //4 High No. of skipped state-changes while Sine-wave settles (used for small gain)
+#define LO_SKIP_CHANGES 4 // 3 Low No. of skipped state-changes while Sine-wave settles (used for large gain)
+#define HI_SKIP_CHANGES 4 // 4 High No. of skipped state-changes while Sine-wave settles (used for small gain)
 
 /** Noise threshold used to control ADC state-change. NB Currently only noise is due to diffusion error */
 #define NOISE_THRESH 1 // Noise Threshold
@@ -88,14 +88,12 @@ typedef struct CHECK_ADC_TAG // Structure containing ADC check data
 
 /*****************************************************************************/
 /** Display ADC results for all motors
- * \param c_adc[],	// Array of channels for communication with ADC_Server
- * \param c_sin, // Channel for communication with Sine_Generator cores
- * \param c_tst // Channel for communication with Test_Generator
+ * \param c_adc[],	// Array of channels for communication with ADC_Client cores
+ * \param c_tst // Channel for communication with Test_Generator core
  */
 void check_all_adc_client_data( // Display ADC results for all motors
-	streaming chanend c_adc[], // Array of channel for communication with ADC_Server
-	streaming chanend c_sin, // Channel for communication with Sine_Generator cores
-	streaming chanend c_tst // Channel for communication with Test_Generator
+	streaming chanend c_adc[], // Array of channel for communication with ADC_Client cores
+	streaming chanend c_gen // Channel for communication with Test_Generator core
 );
 /*****************************************************************************/
 #endif /* _CHECK_ADC_TESTS_H_ */

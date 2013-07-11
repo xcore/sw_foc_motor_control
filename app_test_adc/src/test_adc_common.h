@@ -92,8 +92,7 @@ typedef enum SPIN_ADC_ETAG
 /** Enumeration of ADC Amplitude-states */
 typedef enum GAIN_ADC_ETAG
 {
-  ZERO = 0,	// Zero Amplitude (used to stop ADC generator)
-  SMALL,		// Small Amplitude
+  SMALL = 0,		// Small Amplitude
   LARGE,		// Large Amplitude
   NUM_ADC_GAINS	// Handy Value!-)
 } GAIN_ADC_ENUM;

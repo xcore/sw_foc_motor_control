@@ -37,7 +37,7 @@
 /*****************************************************************************/
 /** Generate ADC test data for all motors
  * \param	c_pwm2adc_trig[] // Array of channels for sending PWM-to_ADC trigger pulse
- * \param	c_adc_sin, // Channel for communication with Sine_Generator cores
+ * \param	c_gen, // Channel for communication with Test_Generator cores
  * \param	pb32_tst_data[]	// Array of ADC data ports for transmitting raw ADC values (NB For Phase_A and Phase_B)
  * \param	p1_tst_ready // 1-bit port used for ready signal
  * \param	p1_tst_sclk // 1-bit port used for serial clock
@@ -45,7 +45,7 @@
  */
 void adc_7265_interface( // Generate ADC Test data for all motors
 	chanend c_pwm2adc_trig[], // Array of channels for sending PWM-to_ADC trigger pulse
-	streaming chanend c_sin, // Channel for communication with Sine_Generator cores
+	streaming chanend c_gen, // Channel for communication with Test_Generator cores
 	buffered out port:32 pb32_tst_data[],	// Array of ADC data ports for transmitting raw ADC values (NB For Phase_A and Phase_B)
 	in port p1_tst_ready, 										// 1-bit port used for ready signal
 	in port p1_tst_sclk, 										// 1-bit port used for serial clock

@@ -24,7 +24,6 @@
 #include "use_locks.h"
 #include "check_adc_tests.h"
 #include "generate_adc_tests.h"
-#include "sine_generator.h"
 
 #if (1 == HW_ADC_7265)
 #include "adc_7265.h"

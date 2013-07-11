@@ -32,10 +32,8 @@ int main ( void ) // Program Entry Point
 {
 	chan c_pwm2adc_trig[NUMBER_OF_MOTORS]; // Channel for sending PWM-to_ADC trigger pulse
 	streaming chan c_adc_chk[NUMBER_OF_MOTORS]; // Array of channel for communication between ADC_Server & Checker cores
-	streaming chan c_tst_chk; // Channel for communication between Test_Generator & Checker cores
-	streaming chan c_tst_sin; // Channel for communication between Test_Generator & Sine_Generator cores
-	streaming chan c_adc_sin; // Channel for communication between ADC_Interface & Sine_Generator cores
-	streaming chan c_sin_chk; // Channel for communication between Checker & Sine_Generator cores
+	streaming chan c_gen_chk; // Channel for communication between Test_Generator & Checker cores
+	streaming chan c_gen_adc; // Channel for communication between Test_Generator & ADC_Interface cores
 
 
 	par
@@ -46,19 +44,17 @@ int main ( void ) // Program Entry Point
 
 			par
 			{
-				gen_all_adc_test_data( c_tst_chk ,c_tst_sin ); // Generate test data
-
-				get_sine_data( c_tst_sin ,c_sin_chk ,c_adc_sin ); // Generates a Sine value having received a velocity and time value
+				gen_all_adc_test_data( c_gen_chk ,c_gen_adc ); // Generate test data
 
 				// I/O via H/W specific interface
 #if (1 == HW_ADC_7265)
-				adc_7265_interface( c_pwm2adc_trig ,c_adc_sin ,pb32_tst_data ,p1_tst_ready ,p1_tst_sclk ,tst_xclk ); // Simulate ADC_7265 I/F
+				adc_7265_interface( c_pwm2adc_trig ,c_gen_adc ,pb32_tst_data ,p1_tst_ready ,p1_tst_sclk ,tst_xclk ); // Simulate ADC_7265 I/F
 
 				// ADC_7265 Server under test		
 				foc_adc_7265_triggered( c_adc_chk ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_adc_ready ,p4_adc_mux );
 #endif // (1 == HW_ADC_7265)
 		
-				check_all_adc_client_data( c_adc_chk ,c_sin_chk ,c_tst_chk ); // Check results using ADC Client
+				check_all_adc_client_data( c_adc_chk ,c_gen_chk ); // Check results using ADC Client
 			} // par
 		
 		  free_locks(); // Free Mutex for display

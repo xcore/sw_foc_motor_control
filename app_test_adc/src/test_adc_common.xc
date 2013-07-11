@@ -84,7 +84,6 @@ static void init_gain_component( // Initialise ADC Test data for Gain test vecto
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[ZERO].str		,"  STOP" );
 	safestrcpy( vect_comp_s.state_names[SMALL].str	," Small" );
 	safestrcpy( vect_comp_s.state_names[LARGE].str	," Large" );
 
