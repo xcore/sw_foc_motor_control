@@ -25,7 +25,7 @@ on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock, mast
 on tile[MOTOR_TILE]: buffered out port:32 pb32_tst_data[NUM_ADC_DATA_PORTS]	= {	PORT_M1_HI_A, PORT_M1_HI_B }; // NB For Phase_A and Phase_B
 on tile[MOTOR_TILE]: in port p1_tst_ready = PORT_M1_LO_C; // 1-bit Input port as used to as ready signal for pb32_tst_data ports
 on tile[MOTOR_TILE]: in port p1_tst_sclk = PORT_M1_HI_C; // 1-bit port receives serial clock
-on tile[MOTOR_TILE]: clock tst_xclk = XS1_CLKBLK_3; // Internal XMOS clock, slaved to received serial clock
+on tile[MOTOR_TILE]: clock tst_xclk = XS1_CLKBLK_3; // Internal XMOS clock, slaved to received ADC serial clock
 
 /*****************************************************************************/
 int main ( void ) // Program Entry Point

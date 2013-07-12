@@ -423,8 +423,16 @@ static void assign_test_vector_sum( // Assign Zero-sum state of test vector
 	SUM_ADC_ENUM inp_sum // Input Zero-sum state
 )
 {
-	gen_data_s.curr_vect.comp_state[SUM] = inp_sum; // Update Zero-Sum state of test vector
+	gen_data_s.curr_vect.comp_state[SUM] = inp_sum; // Update Zero-sum state of test vector
 } // assign_test_vector_sum
+/*****************************************************************************/
+static void assign_test_vector_mean( // Assign Zero-mean state of test vector
+	GENERATE_TST_TYP &gen_data_s, // Reference to structure of ADC test data
+	MEAN_ADC_ENUM inp_mean // Input Zero-mean state
+)
+{
+	gen_data_s.curr_vect.comp_state[MEAN] = inp_mean; // Update Zero-mean state of test vector
+} // assign_test_vector_mean
 /*****************************************************************************/
 static void assign_test_vector_spin( // Assign Spin-state of test vector
 	GENERATE_TST_TYP &gen_data_s, // Reference to structure of ADC test data
@@ -610,21 +618,14 @@ static void gen_motor_adc_test_data( // Generate ADC Test data for one motor
 
 	// NB These tests assume ADC_FILTER = 0
 
-	if (gen_data_s.common.options.flags[TST_SUM])
-	{
-		assign_test_vector_sum( gen_data_s ,SUM_ON ); // Set test vector to test zero-sum
-	} // if (gen_data_s.common.options.flags[TST_SUM])
-	else
-	{
-		assign_test_vector_sum( gen_data_s ,NO_SUM ); // Set test vector to skip zero-sum tests
-	} // if (gen_data_s.common.options.flags[TST_SUM])
+	assign_test_vector_sum( gen_data_s ,SUM_ON ); // Set test vector to test zero-sum
+	assign_test_vector_mean( gen_data_s ,MEAN_ON ); // Set test vector to test zero-mean
 
 	// Check if Small-Gain tests activated
 	if (gen_data_s.common.options.flags[TST_SMALL])
 	{
 		assign_test_vector_speed( gen_data_s ,FAST ); // Set test vector to Fast Speed to shorten time.
-//MB~		assign_test_vector_gain( gen_data_s ,SMALL ); // Set test vector to Small gain
-		assign_test_vector_gain( gen_data_s ,LARGE ); // Set test vector to Small gain
+		assign_test_vector_gain( gen_data_s ,SMALL ); // Set test vector to Small gain
 		assign_test_vector_spin( gen_data_s ,CLOCK ); // Set test vector to Clock-wise spin
 		gen_data_s.curr_vect.comp_state[CNTRL] = NO_PACE; // Set control to No Pacing (Fast Execution)
 

@@ -29,7 +29,6 @@ static void init_check_data( // Initialise check data for ADC tests
 	safestrcpy( chk_data_s.padstr2 ,"                              " );
 
 	chk_data_s.skips = LO_SKIP_CHANGES; // Initialise No. of skipped state-changes while settling
-
 	chk_data_s.print = PRINT_TST_ADC; // Set print mode
 	chk_data_s.dbg = 0; // Set debug mode
 
@@ -105,10 +104,16 @@ static void init_gain( // Initialises ADC gain
 	{
 		case SMALL: // Small amplitude
 			chk_data_s.skips = HI_SKIP_CHANGES; 
+			chk_data_s.chk_ampli = (MIN_GAIN * (MAX_ADC_VAL - MIN_ADC_VAL)) / 255 ; // Check value for ADC Gain
+			chk_data_s.ampli_bound = (MIN_GAIN + 1); // Error Bound for ADC Gain test
+			chk_data_s.mean_bound = (SMALL_BOUND * MIN_GAIN) / chk_data_s.speed;  // Error Bound for Zero-Mean test
 		break; // case SMALL
 
 		case LARGE: // large amplitude
 			chk_data_s.skips = LO_SKIP_CHANGES; 
+			chk_data_s.chk_ampli = (MAX_GAIN * (MAX_ADC_VAL - MIN_ADC_VAL)) / 255 ; // Check value for ADC Gain
+			chk_data_s.ampli_bound = (MAX_GAIN + 1); // Error Bound for ADC Gain test
+			chk_data_s.mean_bound = (LARGE_BOUND * MAX_GAIN) / chk_data_s.speed;  // Error Bound for Zero-Mean test 
 		break; // case LARGE
 
 		default:
@@ -119,7 +124,7 @@ static void init_gain( // Initialises ADC gain
 		break; // default
 	} // switch(chk_data_s.curr_vect.comp_state[GAIN])
 
-// acquire_lock(); printstr("SKIP="); printintln(chk_data_s.skips); release_lock(); // MB~
+// acquire_lock(); printstr("M_B="); printintln(chk_data_s.mean_bound); release_lock(); // MB~
 	assert(1 < chk_data_s.skips); // ERROR: A minimum of 3 state-changes (2 skips) are required to define a wave period
 } // init_gain
 /*****************************************************************************/
@@ -132,9 +137,13 @@ static void initialise_one_phase_test_vector( // Initialise one set of ADC phase
 	chk_data_s.stats[curr_phase].state = init_state;
 	chk_data_s.stats[curr_phase].num_changes = 0;
 	chk_data_s.stats[curr_phase].sum_periods = 0; // Clear accumulator for 'period durations'
+	chk_data_s.stats[curr_phase].sum_adcs = 0; // Clear accumulator for adc values
 	chk_data_s.stats[curr_phase].change_time = 0; // Clear time of ADC state change
 	chk_data_s.stats[curr_phase].half_period = 0; // Clear 'half of period duration'
+	chk_data_s.stats[curr_phase].half_adc = 0; // Clear 'half of adc sum'
 	chk_data_s.stats[curr_phase].done = 0; // Clear 'test complete' flag
+	chk_data_s.stats[curr_phase].max = MIN_ADC_VAL; // Initialise to minimum possible value
+	chk_data_s.stats[curr_phase].min = MAX_ADC_VAL; // Initialise to maximum possible value
 
 } // initialise_one_phase_test_vector 
 /*****************************************************************************/
@@ -145,7 +154,7 @@ static void initialise_test_vector( // Initialise all ADC phase data
 	unsigned tmp_val; // temporary manipulation variable
 
 
-	init_ang_velocity( chk_data_s );
+	init_ang_velocity( chk_data_s ); // NB Do this BEFORE init_gain
 	init_gain( chk_data_s );
 
 	tmp_val = (PLATFORM_REFERENCE_HZ + (NUM_POLE_PAIRS >> 1)) / NUM_POLE_PAIRS; // Divide with rounding (25-bits)
@@ -192,38 +201,70 @@ static void check_adc_sum( // Check all phases sum to zero
 	int sum_val = 0; // Clear sum of adc values
 
 
-	switch( chk_data_s.curr_vect.comp_state[SUM] )
+	chk_data_s.motor_tsts[SUM]++;
+	for (phase_cnt=0; phase_cnt<NUM_ADC_PHASES; phase_cnt++)
 	{
-		case SUM_ON: // Do Zero-Sum test
-			chk_data_s.motor_tsts[SUM]++;
-			for (phase_cnt=0; phase_cnt<NUM_ADC_PHASES; phase_cnt++)
-			{
-				sum_val += chk_data_s.curr_params.vals[phase_cnt];
-			} // for phase_cnt
+		sum_val += chk_data_s.curr_params.vals[phase_cnt];
+	} // for phase_cnt
 
-			if (0 != sum_val)
-			{
-				chk_data_s.motor_errs[SUM]++;
+	if (0 != sum_val)
+	{
+		chk_data_s.motor_errs[SUM]++;
 
-				acquire_lock(); // Acquire Display Mutex
-				printcharln(' ');
-				printstr( chk_data_s.padstr1 );
-				printstrln("Zero-Sum FAILURE");
-				release_lock(); // Release Display Mutex
-			} // if (0 > inp_vel)
-		break; // case SUM_ON:
-
-		default:
-			acquire_lock(); // Acquire Display Mutex
-			printcharln(' ');
-			printstr( chk_data_s.padstr1 );
-			printstrln("ERROR: Unknown ADC Zero-Sum test state");
-			release_lock(); // Release Display Mutex
-			assert(0 == 1);
-		break; // default:
-	} // switch( chk_data_s.curr_vect.comp_state[SUM] )
-
+		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstrln("Zero-Sum FAILURE");
+		release_lock(); // Release Display Mutex
+	} // if (0 > inp_vel)
 } // check_adc_sum
+//*****************************************************************************/
+static void check_adc_gain( // Check gain of wave-train is approximately correct
+	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	ADC_TYP inp_max, 					// Maximum measured ADC value
+	ADC_TYP inp_min 					// Minimum measured ADC value
+)
+{
+	int amplitude = (inp_max - inp_min); // peak-to-peak amplitude
+	int ampli_err; // Error in measured amplitude
+
+
+	chk_data_s.motor_tsts[GAIN]++;
+	ampli_err = amplitude - chk_data_s.chk_ampli; // Measurement error
+
+	if (chk_data_s.ampli_bound < abs(ampli_err))
+	{
+		chk_data_s.motor_errs[GAIN]++;
+
+		acquire_lock(); // Acquire Display Mutex
+printstrln(""); //MB~
+printstr("AMP="); printint(amplitude);
+printstr(" ERR="); printintln(ampli_err);
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstrln("ADC-Gain FAILURE");
+		release_lock(); // Release Display Mutex
+	} // if (chk_data_s.ampli_bound < abs(ampli_err))
+} // check_adc_gain
+//*****************************************************************************/
+static void check_adc_mean( // Check all mean ADC value is approximately zero
+	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	int inp_mean 								// Input mean ADC value to test
+)
+{
+	chk_data_s.motor_tsts[MEAN]++;
+
+	if (chk_data_s.mean_bound < abs(inp_mean))
+	{
+		chk_data_s.motor_errs[MEAN]++;
+
+		acquire_lock(); // Acquire Display Mutex
+		printcharln(' ');
+		printstr( chk_data_s.padstr1 );
+		printstrln("Zero-Mean FAILURE");
+		release_lock(); // Release Display Mutex
+	} // if (0 > inp_vel)
+} // check_adc_mean
 /*****************************************************************************/
 static void check_adc_spin_direction( // Check for correct ADC spin direction
 	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
@@ -304,6 +345,7 @@ static void process_state_change( // Update accumulators due to state-change, an
 {
 	int period_id; // Index into array of period durations
 	unsigned duration; // time difference between ADC state-changes (half period)
+	int mean_val; // mean ADC value over one period
 
 
 	// Calculate new half period duration
@@ -311,10 +353,16 @@ static void process_state_change( // Update accumulators due to state-change, an
 
 	// Calculate trial period array index
 	period_id = chk_data_s.stats[curr_phase].num_changes - chk_data_s.skips;
+// acquire_lock(); printstrln(""); printstr("H="); printint(chk_data_s.stats[curr_phase].half_adc); printstr(" S="); printintln(chk_data_s.stats[curr_phase].sum_adcs); release_lock(); // MB~
 
 	// Skip early changes while Sine-wave settles
 	if (0 <= period_id)
 	{ // Settled, so calculate add new period time
+		// Calculate mean ADC value over previous period
+		mean_val = 	chk_data_s.stats[curr_phase].half_adc + chk_data_s.stats[curr_phase].sum_adcs;
+
+		check_adc_gain( chk_data_s ,chk_data_s.stats[curr_phase].max ,chk_data_s.stats[curr_phase].min ); // Check ADC Gain
+		check_adc_mean( chk_data_s ,mean_val ); // Check ADC Mean value
 		check_adc_spin_direction( chk_data_s ,curr_phase ); // Check ADC spin direction
 
 		// Check if we have enough data for period test
@@ -335,6 +383,8 @@ static void process_state_change( // Update accumulators due to state-change, an
 	chk_data_s.prev_phase = curr_phase;
 	chk_data_s.stats[curr_phase].half_period = duration;
 	chk_data_s.stats[curr_phase].change_time = chk_data_s.curr_time;
+	chk_data_s.stats[curr_phase].half_adc = chk_data_s.stats[curr_phase].sum_adcs;
+	chk_data_s.stats[curr_phase].sum_adcs = 0; // Clear accumulator ready for next half period
 
 	chk_data_s.stats[curr_phase].num_changes++; // Increment No of state changes detected
 
@@ -352,23 +402,41 @@ static void detect_phase_state_change( // Detect if state-change occured for cur
 	ADC_TYP curr_val = chk_data_s.curr_params.vals[curr_phase]; // Current ADC value	
 
 
+	chk_data_s.stats[curr_phase].sum_adcs += (int)curr_val; // Update ADC value accumulator
+
 	// Check for change of state
 	if (POSITIVE == chk_data_s.stats[curr_phase].state)
 	{
+		// Check if max value needs updating
+		if (chk_data_s.stats[curr_phase].max < curr_val)
+		{
+			chk_data_s.stats[curr_phase].max = curr_val;
+		} // if (chk_data_s.stats[curr_phase].max < curr_val)
+
 		// Check if ADC value is sufficiently negative
 		if (-NOISE_THRESH > curr_val)
 		{
 			process_state_change( chk_data_s ,curr_phase );
+
+			chk_data_s.stats[curr_phase].min = curr_val; // Initialise new minimum test
 
 			chk_data_s.stats[curr_phase].state = NEGATIVE; // Update adc state					
 		} // if (0 > curr_val)
 	} // if (POSITIVE == chk_data_s.stats[curr_phase].state)
 	else
 	{ // NEGATIVE
+		// Check if min value needs updating
+		if (chk_data_s.stats[curr_phase].min > curr_val)
+		{
+			chk_data_s.stats[curr_phase].min = curr_val;
+		} // if (chk_data_s.stats[curr_phase].min < curr_val)
+
 		// Check if ADC value is sufficiently positive
 		if (NOISE_THRESH <= curr_val)
 		{
 			process_state_change( chk_data_s ,curr_phase );
+
+			chk_data_s.stats[curr_phase].max = curr_val; // Initialise new maximum test
 
 			chk_data_s.stats[curr_phase].state = POSITIVE; // Update adc state					
 		} // if (0 <= curr_val)

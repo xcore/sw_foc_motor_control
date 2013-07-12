@@ -36,10 +36,10 @@
 #define GAIN_BITS 8 
 
 /** Define value for Maximum Gain test*/
-#define MAX_GAIN ((1 << 8) - 1) // 255 Maximum Gain
+#define MAX_GAIN ((1 << GAIN_BITS) - 1) // 255 Maximum Gain
 
 /** Define value for Minimum Gain test*/
-#define MIN_GAIN 1
+#define MIN_GAIN 1  // 1 Minimum Gain
 
 /** Define value for Fast speed test*/
 #define HI_SPEED MAX_SPEC_RPM // Fast Speed
@@ -56,8 +56,7 @@ typedef unsigned short PORT_TIME_TYP;
 /** Enumeration of ADC Test Options */
 typedef enum ADC_TEST_ETAG
 {
-  TST_SUM = 0,	// Zero-Sum Tests
-  TST_SMALL,		// Small-Gain tests (Also tests Non-Paced, Fast-Speed, and Clockwise)
+  TST_SMALL = 0,		// Small-Gain tests (Also tests Non-Paced, Fast-Speed, and Clockwise)
   TST_PACE,			// Paced ADC sampling tests (Also tests Large-Gain, Fast-Speed, and Anti-Clockwise) 
   TST_SLOW,			// Slow speed Tests (Also tests Non-Paced, Large-Gain, and Clockwise)
   NUM_TEST_OPTS	// Handy Value!-)
@@ -68,6 +67,7 @@ typedef enum VECT_COMP_ETAG
 {
   CNTRL = 0,	// Special Case: Control/Comunications state
   SUM,				// Sum-state
+  MEAN,				// Mean-state
   SPIN,				// Spin-state
   GAIN,				// Amplitude-state
   SPEED,			// Speed-state
@@ -80,6 +80,13 @@ typedef enum SUM_ADC_ETAG
   SUM_ON,				// Do Zero-Sum test
   NUM_ADC_SUMS	// Handy Value!-)
 } SUM_ADC_ENUM;
+
+typedef enum MEAN_ADC_ETAG
+{
+  NO_MEAN = 0,		// No Zero-Mean test
+  MEAN_ON,				// Do Zero-Mean test
+  NUM_ADC_MEANS	// Handy Value!-)
+} MEAN_ADC_ENUM;
 
 /** Enumeration of ADC Spin states */
 typedef enum SPIN_ADC_ETAG

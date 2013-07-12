@@ -32,11 +32,20 @@
 #define NUM_PERIODS (1 << PERIOD_BITS) // No. of period times to capture (in ADC Sine-Wave)
 #define HALF_PERIODS (NUM_PERIODS >> 1) // Used for rounding
 
-#define LO_SKIP_CHANGES 4 // 3 Low No. of skipped state-changes while Sine-wave settles (used for large gain)
+#define LO_SKIP_CHANGES 4 // 4 Low No. of skipped state-changes while Sine-wave settles (used for large gain)
 #define HI_SKIP_CHANGES 4 // 4 High No. of skipped state-changes while Sine-wave settles (used for small gain)
 
 /** Noise threshold used to control ADC state-change. NB Currently only noise is due to diffusion error */
 #define NOISE_THRESH 1 // Noise Threshold
+
+/** Minimum possible ADC value */
+#define MIN_ADC_VAL (-(1 << (ADC_ACTIVE_BITS - 1))) // Currently -2048
+
+/** Maximum possible ADC value */
+#define MAX_ADC_VAL (-1 -MIN_ADC_VAL) // Currently -2048
+
+#define LARGE_BOUND 600000 // Zero-mean error-bound for Large Gain
+#define SMALL_BOUND 1600000 // Zero-mean error-bound for Small Gain
 
 /** Enumeration of ADC states */
 typedef enum ADC_STATE_ETAG
@@ -50,9 +59,13 @@ typedef enum ADC_STATE_ETAG
 typedef struct STATS_ADC_TAG // Structure containing ADC check data
 {
 	unsigned sum_periods; // Accumulator for period-times
-	unsigned change_time; // time-stamp for ADC state change
 	unsigned half_period; // Half of period-time (between ADC-state changes)
+	int sum_adcs; 		// Accumulator for ADC values
+	int half_adc; 		// Sum of ADC values over half a period (between ADC-state changes)
+	unsigned change_time; // time-stamp for ADC state change
 	ADC_STATE_ENUM state; // current ADC state for this phase
+	ADC_TYP max; // Maximum measured ADC value
+	ADC_TYP min; // Minimum measured ADC value
 	int num_changes;	// Number of recorded ADC state changes
 	int done; // Flag set when enough data collected for this phase
 } STATS_ADC_TYP;
@@ -74,7 +87,10 @@ typedef struct CHECK_ADC_TAG // Structure containing ADC check data
 	unsigned curr_time; // time value when current ADC parameters received
 	unsigned prev_time; // time value when previous ADC parameters received 
 	unsigned chk_period; // Check value for period duration
-	unsigned period_bound; // Error bound for period duration check
+	int chk_ampli; // Theoretical maximum peak-to-peak amplitude of ADC wave-train
+	unsigned period_bound; // Error bound for period-duration check
+	unsigned mean_bound; // Error bound for zero-mean check
+	int ampli_bound; // Error bound for ADC gain check
 	unsigned speed; // Magnitude of angular velocity
 	int sign; // Sign of angular velocity
 	int veloc; // Angular velocity

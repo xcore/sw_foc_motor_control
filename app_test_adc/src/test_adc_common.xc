@@ -40,6 +40,31 @@ static void init_sum_component( // Initialise ADC Test data for zero-sum test ve
 	// Add any new component states here 
 } // init_sum_component
 /*****************************************************************************/
+static void init_mean_component( // Initialise ADC Test data for zero-mean test vector component
+	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
+	int inp_states, // No. of states for this test vector component
+	const char inp_name[] // input name for current test vector component
+)
+{
+	// Check enough room for all states
+	if (MAX_COMP_STATES < inp_states)
+	{
+		acquire_lock(); // Acquire Display Mutex
+		printstr( "ERROR on line "); printint( __LINE__ ); printstr( " of "); printstr( __FILE__ );
+		printstrln( ": MAX_COMP_STATES < inp_states, Update value for MAX_COMP_STATES in test_adc_common.h" );
+		release_lock(); // Release Display Mutex
+		assert(0 == 1);
+	} // if (MAX_COMP_STATES < inp_states)
+
+	vect_comp_s.num_states = inp_states; // Assign number of states for current component
+	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
+
+	safestrcpy( vect_comp_s.state_names[MEAN_ON].str ," Mean_On" );
+	safestrcpy( vect_comp_s.state_names[NO_MEAN].str ," No_Mean" );
+
+	// Add any new component states here 
+} // init_mean_component
+/*****************************************************************************/
 static void init_spin_component( // Initialise ADC Test data for spin-direction test vector component
 	VECT_COMP_TYP &vect_comp_s, // Reference to structure of common data for one test vector component
 	int inp_states, // No. of states for this test vector component
@@ -186,6 +211,7 @@ void init_common_data( // Initialise ADC Test data
 )
 {
 	init_sum_component(			comm_adc_s.comp_data[SUM]		,NUM_ADC_SUMS		,"  Sum  " );
+	init_mean_component(		comm_adc_s.comp_data[MEAN]	,NUM_ADC_MEANS	,"  Mean " );
 	init_spin_component(		comm_adc_s.comp_data[SPIN]	,NUM_ADC_SPINS	,"  Spin " );
 	init_gain_component(		comm_adc_s.comp_data[GAIN]	,NUM_ADC_GAINS	,"  Gain " );
 	init_speed_component(		comm_adc_s.comp_data[SPEED]	,NUM_ADC_SPEEDS	," Speed " );
