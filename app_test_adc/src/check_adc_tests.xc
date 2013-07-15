@@ -557,7 +557,7 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
-	printstr("Start Checks For Motor_"); printintln( MOTOR_ID ); 
+	printstr("Start Checks For Motor_"); printintln( chk_data_s.common.options.flags[TST_MOTOR] ); 
 	release_lock(); // Release Display Mutex
 
 	// Loop until end condition found
@@ -639,7 +639,7 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 	{
 		printstr( chk_data_s.padstr1 );
 		printstr( "All Motor_" );
-		printint( MOTOR_ID );
+		printint( chk_data_s.common.options.flags[TST_MOTOR] );
  		printstrln( " Tests PASSED" );
 	} // else !(motor_errs)
 
@@ -655,14 +655,14 @@ void check_all_adc_client_data( // Display ADC results for all motors
 
 
 
+	c_gen :> chk_data_s.common.options; // Get test options from generator core
+
 	// Initialise parameter values by calling Client function
-	foc_adc_get_parameters( chk_data_s.curr_params ,c_adc[MOTOR_ID]  );
+	foc_adc_get_parameters( chk_data_s.curr_params ,c_adc[chk_data_s.common.options.flags[TST_MOTOR]]  );
 
 	init_check_data( chk_data_s ); // Initialise check data
 
-	c_gen :> chk_data_s.common.options; // Get test options from generator core
-
-	check_motor_adc_client_data( chk_data_s ,c_gen ,c_adc[MOTOR_ID] );
+	check_motor_adc_client_data( chk_data_s ,c_gen ,c_adc[chk_data_s.common.options.flags[TST_MOTOR]] );
 
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );

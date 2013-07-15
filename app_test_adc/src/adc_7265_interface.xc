@@ -64,11 +64,14 @@ void adc_7265_interface( // Generate ADC Test data for all motors
 )
 {
 	int port_cnt; // port counter
+	int motor_id; // Motor Identifier
 	ADC_TYP adc_val; // ADC value
 	unsigned out_val;
 
 
 	configure_test_ports( pb32_tst_data ,p1_tst_ready ,p1_tst_sclk ,tst_xclk );
+
+	c_gen :> motor_id; // Get identifier for motor under test
 
 	// loop forever
 	while(1)
@@ -86,7 +89,7 @@ void adc_7265_interface( // Generate ADC Test data for all motors
 // acquire_lock(); printstr("   I_Ang="); printintln(adc_val); release_lock(); // MB~
 
 		// Send synchronisation token to correct motor to initiate ADC sampling
-		outct( c_adc_trig[MOTOR_ID] ,XS1_CT_END );
+		outct( c_adc_trig[motor_id] ,XS1_CT_END );
 
 		// Wait for ready signal signalling ADC started
 		p1_tst_ready when pinseq(0) :> void;

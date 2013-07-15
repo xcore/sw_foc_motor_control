@@ -56,7 +56,8 @@ typedef unsigned short PORT_TIME_TYP;
 /** Enumeration of ADC Test Options */
 typedef enum ADC_TEST_ETAG
 {
-  TST_SMALL = 0,		// Small-Gain tests (Also tests Non-Paced, Fast-Speed, and Clockwise)
+  TST_MOTOR = 0,	// Select which motor to test
+  TST_SMALL,		// Small-Gain tests (Also tests Non-Paced, Fast-Speed, and Clockwise)
   TST_PACE,			// Paced ADC sampling tests (Also tests Large-Gain, Fast-Speed, and Anti-Clockwise) 
   TST_SLOW,			// Slow speed Tests (Also tests Non-Paced, Large-Gain, and Clockwise)
   NUM_TEST_OPTS	// Handy Value!-)

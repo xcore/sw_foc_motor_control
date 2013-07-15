@@ -180,7 +180,8 @@ static void init_sine_data( // Initialise Sine data
 /*****************************************************************************/
 static void init_test_data( // Initialise ADC Test data
 	GENERATE_TST_TYP &gen_data_s, // Reference to structure of ADC test data	
-	streaming chanend c_chk // Channel for communication with Checker cores
+	streaming chanend c_chk, // Channel for communication with Checker cores
+	streaming chanend c_adc // Channel for communication with ADC_Interface core
 )
 {
 	int opt_flag; // Options flag
@@ -214,6 +215,8 @@ static void init_test_data( // Initialise ADC Test data
 	} // if (0 == opt_flag)
 
 	c_chk <: gen_data_s.common.options; // Send test options to checker core
+
+	c_adc <: gen_data_s.common.options.flags[TST_MOTOR] ; // Send Motor_Id to ADC-Interface
 
 	gen_data_s.curr_vect.comp_state[CNTRL] = NO_PACE; // Initialise to No pacing (Fast execution)
 	gen_data_s.prev_vect.comp_state[CNTRL] = QUIT; // Initialise to something that will force an update
@@ -612,7 +615,7 @@ static void gen_motor_adc_test_data( // Generate ADC Test data for one motor
 	if (gen_data_s.print)
 	{
 		acquire_lock(); // Acquire Display Mutex
-		printstr( " Start Test Gen. For Motor_"); printintln( MOTOR_ID );
+		printstr( " Start Test Gen. For Motor_"); printintln( gen_data_s.common.options.flags[TST_MOTOR] );
 		release_lock(); // Release Display Mutex
 	} // if (gen_data_s.print)
 
@@ -667,7 +670,7 @@ void gen_all_adc_test_data( // Generate ADC Test data
 	GENERATE_TST_TYP gen_data_s; // Structure of ADC test data
 
 
-	init_test_data( gen_data_s ,c_chk );
+	init_test_data( gen_data_s ,c_chk ,c_adc );
 
 	gen_motor_adc_test_data( gen_data_s ,c_chk ,c_adc );
 
