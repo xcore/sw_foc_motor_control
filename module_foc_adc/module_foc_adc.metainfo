@@ -1,0 +1,121 @@
+-------------------------------------------------------------------------------
+-- Descriptive metadata
+-------------------------------------------------------------------------------
+
+componentName = "ADC Component"
+componentFullName = "Analogue-to-Digital Conversion Interface (ADC) Function Library"
+alternativeNames = { }
+componentDescription = ""
+componentVersion = "1v0"
+
+-------------------------------------------------------------------------------
+-- Parameter descriptions.
+-------------------------------------------------------------------------------
+
+configPoints =
+{
+  NoOfMotors= {
+    short   = "Number Of Motors",
+    help    = "Number of Motors attached to Motor Power Board, Currently set in app_global.h",
+    long    = "",
+    units   = "",
+    define  = "NUMBER_OF_MOTORS",
+    type    = "int",
+    options = {1,2},
+    resourceUsageFlags = {"linear"},
+    default = 2
+  },
+  ReferenceFrequency= {
+    short   = "Platform Reference Frequency",
+    help    = "This must macth the value set in the Platform Configuration File (.XN), Currently set in app_global.h",
+    long    = "",
+    units   = "",
+    define  = "PLATFORM_REFERENCE_HZ",
+    type    = "int",
+    options = {100,250,500},
+    resourceUsageFlags = {"linear"},
+    default = 250 
+  },
+  ADC_Filter=
+  {
+    short   = "Filters within each phase of ADC",
+    help    = "Reduces noise component in raw data from ADC sensors, Currently set in app_global.h",
+    long    = "",
+    units   = "",
+    define  = "ADC_FILTER",
+    type    = "int",
+    options = {0,1}, 
+    resourceUsageFlags = {"orthogonal"},
+    default = 1
+  },
+}
+
+derivedValues = {}
+
+ports = {
+  pb32_adc_data = {
+    short   = "ADC input data port",
+    long    = "raw ADC data from Motor",
+    help    = "",
+    width   = 1
+  },
+  p1_adc_sclk = {
+    short   = "Serial Clock to pace ADC chip",
+    long    = "",
+    help    = "",
+    width   = 1
+  },
+  p1_ready = {
+    short   = "Ready signal, to gate transfer of ADC values",
+    long    = "",
+    help    = "",
+    width   = 1
+  },
+  p4_adc_mux= {
+    short   = "Set-up signals for ADC_7265 chip",
+    long    = "Controls data-flow on ADC_7265 chip",
+    help    = "",
+    width   = 1
+  },
+}
+
+channels = {
+  c_adc_cntrl = {
+    short = "Connects ADC Client and Server",
+    type = "streaming",
+    long  = "Client requests ADC parameters, Server transmits structure containing newest ADC parameters",
+    help  = "",
+  },
+  c_pwm2adc_trig = {
+    short = "Trigger signal from PWM module",
+    type = "streaming",
+    long  = "Used to synchronise ADC sampling to middle of PWM pulse"
+    help  = "",
+  },
+}        
+
+function getConfigStatus()
+  local status = "Valid Configuration"
+  local issues = {}
+
+  -- Everything *should* be valid...
+
+  return status, issues
+end
+
+-------------------------------------------------------------------------------
+-- Source generation functions
+-------------------------------------------------------------------------------
+
+generatedCode = {
+	includes = 
+	{ 
+		"module_foc_adc_example_conf.h"
+	},
+  globals = "",
+  body = ""
+}
+
+api = {'foc_adc_get_parameters','foc_adc_7265_triggered'}
+
+files = {["module_foc_adc/src/module_foc_adc_example_conf.h"] = "src/app_global.h"}

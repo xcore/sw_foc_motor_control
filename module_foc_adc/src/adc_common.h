@@ -17,7 +17,7 @@
 #ifndef _ADC_COMMON_H_
 #define _ADC_COMMON_H_
 
-#include "use_locks.h" //MB~ Dbg
+// #include "use_locks.h" //MB~ Dbg
 
 /** Different ADC Phases */
 typedef enum ADC_PHASE_ETAG

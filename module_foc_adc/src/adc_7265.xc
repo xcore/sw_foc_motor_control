@@ -367,6 +367,7 @@ void foc_adc_7265_triggered( // Thread for ADC server
 	
 			// If guard is OFF, load 'my_timer' at time 'time_stamp' 
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) all_adc_data[trig_id].guard_off => all_adc_data[trig_id].my_timer when timerafter( all_adc_data[trig_id].time_stamp ) :> void:
+// acquire_lock(); printstr("   R_Ang="); printintln( adc_data_s.phase_data[0].adc_val ); release_lock(); // MB~
 				update_adc_trigger_data( all_adc_data[trig_id] ,p32_data ,p1_ready ,trig_id ,p4_mux ); 
 			break;
 	

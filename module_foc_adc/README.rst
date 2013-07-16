@@ -1,9 +1,21 @@
-<Add title here>
-================
+Analogue-to-Digital Conversion (ADC) Component
+==============================================
 
-:scope: <Put one of Roadmap, Example, Early Development or General Use>
-:description: <Add one line here>
-:keywords: <Add comma separated list of keywords>
-:boards: <Add comma separated list of supported boards>
+:scope: Early Development
+:description: A component for interfacing to an ADC_7265 chip
+:keywords: Analogue, Digital, Conversion, Sampling, FOC, Motor Control
+:boards: XP-MC-CTRL-L2, XA-MC-PWR-DLV
 
-<Add description of software block>
+Features
+--------
+
+   * Captures raw ADC input data (from motor)
+   * Computes the following ADC parameters: signed 12-bit ADC value for Phase_A, Phase_B, and Phase_C
+   * Can handle ADC for multiple motors in one logical core
+
+Evaluation
+----------
+
+This module can be evaluated using the following demo applications:
+
+   * ADC test harness ``Analogue-to-Digital Conversion Interface (ADC) Test Harness``

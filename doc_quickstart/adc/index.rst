@@ -137,9 +137,9 @@ Configure And Run The Simulator
 Test Results 
 ------------
 
-After a few seconds, output will start to appear in the console window. A dot is printed every time a ADC client request is made. This gives confidence that the test harness is doing something! The test lasts about 2 minutes. It should complete with the message "ALL TESTS PASSED". If any tests fail, extra output will be generated giving details on the test(s) that failed.
+After a few seconds, output will start to appear in the console window. A dot is printed every time a ADC client request is made. This gives confidence that the test harness is doing something! The default test lasts about 1 minute. It should complete with the message "ALL TESTS PASSED". If any tests fail, extra output will be generated giving details on the test(s) that failed.
 
-An example of working test output from a working ADC component can be found in a file named ``adc_results.txt``
+An example of the default test output from a working ADC component can be found in a file named ``adc_min_results.txt``
 
 
 Using The ``Value Change Dump`` (VCD) File
@@ -193,7 +193,7 @@ Look at the Code
          * The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used to control a MutEx which allows only one core at a time to print to the display.
    #. Find the file ``check_adc_tests.xc``. In here the function ``get_adc_client_data()`` requests new the ADC parameters via the ADC Client function ``foc_adc_get_parameters()``. It communicates with the ADC server function ``foc_adc_7265_triggered()`` via channel ``c_adc``. 
    #. Find the ``app_global.h`` header. At the top are the motor definitions. Next down are the ADC definitions.
-   #. Note in ``app_global.h`` the define PRINT_TST_ADC used to switch on verbose printing. An example of this can be found in file ``adc_results.txt``.
+   #. Note in ``app_global.h`` the define PRINT_TST_ADC used to switch on verbose printing. If verbose printing is on, in the left hand column are the data values used by the test generator. These are a time-stamp, the Gain, and two 25-bit 'standardised' ADC values for Phase_A and Phase_B. In the right hand column are the data values received by the test checker. These are: the time-stamp, and a 12-bit ADC value for each of the 3 phases.
    #. Find the ``adc_tests.txt`` file. In the left hand column are a set of flags to switch On/Off various sets of tests.
-   #. Now that the application has been run with the default settings, you could try switching off Selection_1 tests, and switching on Selection_2 tests, by changing the flags in the left hand column. Make this change and then re-run the simulation (no need to re-build). The test harness will run a lot slower as 'Paced' mode is being used. An example of the verbose printout for the minimum set of tests is in file ``adc_min_results.txt``, an example of running the maximum set of tests is in file ``adc_max_results.txt``.
+   #. Now that the application has been run with the default settings, you could try switching off Selection_1 tests, and switching on Selection_2 tests, by changing the flags in the left hand column. Make this change and then re-run the simulation (no need to re-build). The test harness will run a lot slower as 'Paced' mode is being used. An example of running the maximum set of tests is in file ``adc_max_results.txt``. 
    #. To further explore the capabilities of the simulator, find the items under ``XMOS Examples:Simulator`` in the xSOFTip browser pane. Drag one of them into the Project Explorer to get started.
