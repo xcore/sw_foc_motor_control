@@ -80,16 +80,16 @@ ports = {
 }
 
 channels = {
+  c_pwm2adc_trig = {
+    short = "Trigger signal from PWM module",
+    type = "streaming",
+    long  = "Used to synchronise ADC sampling to middle of PWM pulse",
+    help  = "",
+	},
   c_adc_cntrl = {
     short = "Connects ADC Client and Server",
     type = "streaming",
     long  = "Client requests ADC parameters, Server transmits structure containing newest ADC parameters",
-    help  = "",
-  },
-  c_pwm2adc_trig = {
-    short = "Trigger signal from PWM module",
-    type = "streaming",
-    long  = "Used to synchronise ADC sampling to middle of PWM pulse"
     help  = "",
   },
 }        

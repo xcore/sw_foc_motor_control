@@ -134,13 +134,13 @@ typedef struct ADC_DATA_TAG // Structure containing data for one ADC Trigger
  *  This implements the AD hardware interface to the 7265 ADC device.  
  *	It has two ports to allow reading two simultaneous current readings for a single motor.
  *
- *  \param c_adc the array of ADC server control channels
+ *  \param c_control the array of ADC server control channels
  *  \param c_trigger the array of channels to recieve triggers from the PWM modules
  *	\param p32_data the Array of ADC data ports 
  *  \param adc_xclk an XCORE clock to provide clocking to the ADC
  *  \param p1_serial_clk the external serial clock pin on the ADC
  *  \param p1_ready the convert strobe on the ADC
- *  \param p_mux port to allow the selection of the analogue MUX input
+ *  \param p4_mux port to allow the selection of the analogue MUX input
  */
 void foc_adc_7265_triggered( // On request, Transmits new sampled ADC values over Client <--> Server channel
 	streaming chanend c_control[NUM_ADC_TRIGGERS], // Array of ADC Client <--> Server channels

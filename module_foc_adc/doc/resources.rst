@@ -16,7 +16,7 @@ Resource Requirements
 +---------------+-------+
 | Clocks        |   1   |
 +---------------+-------+
-| Code Memory   |  5KB  | TODO
+| Code Memory   |  5KB  |
 +---------------+-------+
 | Data Memory   |  1KB  |
 +---------------+-------+

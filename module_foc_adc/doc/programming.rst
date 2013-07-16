@@ -13,9 +13,9 @@ Usage
 The following 2 functions are designed to be called from an xC file.
 
    * ``foc_adc_get_parameters()`` Client function designed to be called from an xC file each time a new set of ADC parameters are required.
-   * ``foc_adc_7265_triggered()``, Server function designed to be called from an xC file. It runs on its own core, and receives data from one ADC_7265 chip which multiplexes together the data from all motors.
+   * ``foc_adc_7265_triggered()``, Server function designed to be called from an xC file. It runs on its own core, and receives data from one ADC_7265 chip. The chip multiplexes together the data from all motors.
 
-The following ADC definitions are required. These are set in ``adc_common.h`` or ``app_global.h``
+The following ADC definitions are required. These are set in ``app_global.h``
 
    * PWM_RES_BITS 12 // Number of bits used to define number of different PWM pulse-widths
    * PLATFORM_REFERENCE_HZ // Platform Reference Frequency
@@ -23,7 +23,7 @@ The following ADC definitions are required. These are set in ``adc_common.h`` or
    * MAX_SPEC_RPM // Maximium specified motor speed
 
 Test Applications
-=================
+-----------------
 
 This module has a test harness called ``Analogue-to-Digital Converter (ADC) Test Harness`` which can be found in the xSOFTip Explorer pane.
 
@@ -36,7 +36,7 @@ The Makefile is found in the top level directory of the application (e.g. app_te
 
 The application is for the simulator. 
 However the platform being simulated is a Motor control board.
-The Makefile TARGET variable needs to be set to Motor control board being used.
+The Makefile TARGET variable needs to be set to the Motor control board being used.
 E.g. If the platform configuration file is XP-MC-CTRL-L2.xn, then
 TARGET = XP-MC-CTRL-L2
 
