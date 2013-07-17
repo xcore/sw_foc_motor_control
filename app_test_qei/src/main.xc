@@ -20,6 +20,21 @@ on tile[MOTOR_TILE]: port in p4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER ,PORT_
 // Test ports (Borrowed from Hall Sensor)
 on tile[MOTOR_TILE]: port out p4_tst[NUMBER_OF_MOTORS] = { PORT_M1_HALLSENSOR ,PORT_M2_HALLSENSOR };
 
+#if (USE_XSCOPE)
+/*****************************************************************************/
+void xscope_user_init()
+{
+	xscope_register( 3
+		,XSCOPE_CONTINUOUS, "adc_a", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "adc_b", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "adc_c", XSCOPE_INT , "n"
+	); // xscope_register 
+
+	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
+} // xscope_user_init
+/*****************************************************************************/
+#endif // (USE_XSCOPE)
+
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {

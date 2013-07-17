@@ -27,6 +27,21 @@ on tile[MOTOR_TILE]: in port p1_tst_ready = PORT_M1_LO_C; // 1-bit Input port as
 on tile[MOTOR_TILE]: in port p1_tst_sclk = PORT_M1_HI_C; // 1-bit port receives serial clock
 on tile[MOTOR_TILE]: clock tst_xclk = XS1_CLKBLK_3; // Internal XMOS clock, slaved to received ADC serial clock
 
+#if (USE_XSCOPE)
+/*****************************************************************************/
+void xscope_user_init()
+{
+	xscope_register( 3
+		,XSCOPE_CONTINUOUS, "ADC_A", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "ADC_B", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "ADC_C", XSCOPE_INT , "n"
+	); // xscope_register 
+
+	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
+} // xscope_user_init
+/*****************************************************************************/
+#endif // (USE_XSCOPE)
+
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {

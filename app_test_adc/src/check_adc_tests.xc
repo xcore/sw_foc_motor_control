@@ -510,6 +510,12 @@ static void get_adc_client_data( // Get next set of ADC parameters
 	
 		// Get new parameter values from Client function under test
 		foc_adc_get_parameters( chk_data_s.curr_params ,c_adc );
+
+#if (USE_XSCOPE)
+		xscope_int( 0 ,chk_data_s.curr_params.vals[ADC_PHASE_A] );
+		xscope_int( 1 ,chk_data_s.curr_params.vals[ADC_PHASE_B] );
+		xscope_int( 2 ,chk_data_s.curr_params.vals[ADC_PHASE_C] );
+#endif // (USE_XSCOPE)
 	
 		// Check for change in non-speed parameters
 		diff_params = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 

@@ -20,14 +20,14 @@ The following ADC definitions are required. These are set in ``app_global.h``
    * PWM_RES_BITS 12 // Number of bits used to define number of different PWM pulse-widths
    * PLATFORM_REFERENCE_HZ // Platform Reference Frequency
    * ADC_FILTER // ADC filter switch (0 == Off)
-   * MAX_SPEC_RPM // Maximium specified motor speed
+   * MAX_SPEC_RPM // Maximum specified motor speed
 
 Test Applications
 -----------------
 
 This module has a test harness called ``Analogue-to-Digital Converter (ADC) Test Harness`` which can be found in the xSOFTip Explorer pane.
 
-To get started with this application, run through the instructions in the quickstart guide for the test harness. More details about using this test harness are given below.
+To get started with this application, run through the instructions in the quick-start guide for the test harness. More details about using this test harness are given below.
 
 Makefile
 ........
@@ -60,7 +60,7 @@ Remember this is a simulator, and is very slow.
 The default test takes about a minute to run.
 The 'slow' test make take over an hour.
 
-For a explanation of the test results refer to the quickstart guide in doc_quickstart/adc/index.rst
+For a explanation of the test results refer to the quick-start guide in doc_quickstart/adc/index.rst
 
 Trouble-shooting
 ................
