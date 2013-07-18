@@ -66,9 +66,6 @@ static void init_check_data( // Initialise check data for QEI tests
 	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-	int motor_cnt; // counts Motors 
-
-
 	init_common_data( chk_data_s.common ); // Initialise data common to Generator and Checker
 
 	safestrcpy( chk_data_s.padstr1 ,"                                             " );
@@ -83,24 +80,14 @@ static void init_check_data( // Initialise check data for QEI tests
 	chk_data_s.print = PRINT_TST_QEI; // Set print mode
 	chk_data_s.dbg = 0; // Set debug mode
 
-	// Clear error and test accumulators
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{
-		chk_data_s.all_errs[motor_cnt] = 0;
-		chk_data_s.all_tsts[motor_cnt] = 0;
-	} // for motor_cnt
-
 } // init_check_data
 /*****************************************************************************/
 static void init_motor_checks( // Initialise QEI parameter structure
-	CHECK_QEI_TYP &chk_data_s, // Reference to structure containing test check data
-	int motor_id	// Unique Motor identifier
+	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int comp_cnt; // Counter for Test Vector components
 
-
-	chk_data_s.id = motor_id; // Assign Motor identifier
 
 	chk_data_s.err_cnt = 0; // Clear count-down counter used in error_status test
 	chk_data_s.err_chk = QEI_ERR_OFF; // Initialise expected error_status test result
@@ -131,8 +118,7 @@ static void print_qei_parameters( // Print QEI parameters
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
 
-	printint( chk_data_s.id );
-	printstr( ":  E=" );
+	printstr( "E=" );
 	printint( chk_data_s.curr_params.err );
 	printstr( ":  R=" );
 	printint( chk_data_s.curr_params.rev_cnt );
@@ -489,11 +475,7 @@ static void check_qei_parameters( // Check all QEI parameters
 		check_qei_error_status( chk_data_s ); // Check QEI error status
 	} // if (chk_data_s.common.options.flags[TST_ERROR])
 
-	// Check if Origin-bit test is activated
-	if (chk_data_s.common.options.flags[TST_ORIGIN])
-	{
-		check_qei_origin_detection( chk_data_s ); // Check QEI origin detection
-	} // if (chk_data_s.common.options.flags[TST_ORIGIN])
+	check_qei_origin_detection( chk_data_s ); // Check QEI origin detection
 
 	check_qei_spin_direction( chk_data_s ); // Check QEI spin direction
 
@@ -524,6 +506,14 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 
 	// Get new parameter values from Client function under test
 	foc_qei_get_parameters( chk_data_s.curr_params ,c_qei );
+
+#if (USE_XSCOPE)
+		xscope_int( 0 ,chk_data_s.curr_params.rev_cnt );
+		xscope_int( 1 ,chk_data_s.curr_params.theta );
+		xscope_int( 2 ,chk_data_s.curr_params.veloc );
+		xscope_int( 3 ,chk_data_s.curr_params.err );
+#endif // (USE_XSCOPE)
+	
 
 	// Check for change in non-speed parameters
 	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
@@ -679,7 +669,7 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
-	printstr("Start Checks For Motor_"); printintln( chk_data_s.id ); 
+	printstr("Start Checks For Motor_"); printintln( chk_data_s.common.options.flags[TST_MOTOR] ); 
 	release_lock(); // Release Display Mutex
 
 	c_tst :> chk_data_s.curr_vect; // Initialise test-vector structure with 1st test
@@ -732,9 +722,6 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 		motor_tsts += chk_data_s.motor_tsts[comp_cnt]; 
 	} // for comp_cnt
 
-	chk_data_s.all_errs[chk_data_s.id] += motor_errs;
-	chk_data_s.all_tsts[chk_data_s.id] += motor_tsts;
-
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
@@ -774,7 +761,7 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 	{
 		printstr( chk_data_s.padstr1 );
 		printstr( "All Motor_" );
-		printint( chk_data_s.id );
+		printint( chk_data_s.common.options.flags[TST_MOTOR] );
  		printstrln( " Tests PASSED" );
 	} // else !(motor_errs)
 
@@ -789,50 +776,19 @@ void check_all_qei_client_data( // Display QEI results for all motors
 )
 {
 	CHECK_QEI_TYP chk_data_s; // Structure containing test check data
-	int motor_cnt; // counts Motors 
-	int errs_all = 0;	// Preset flag to NO errors for all motors
-	int tsts_all = 0;	// Clear test counter for all motors
 
 
 	init_check_data( chk_data_s ); // Initialise check data
 
 	c_tst :> chk_data_s.common.options; // Get test options from generator core
 
-	// Loop through motors, so we can print results serially
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{
-		init_motor_checks( chk_data_s ,motor_cnt ); // Initialise QEI parameter structure
+	init_motor_checks( chk_data_s ); // Initialise QEI parameter structure
 
-		check_motor_qei_client_data( chk_data_s ,c_tst ,c_qei[motor_cnt] );
-	} // for motor_cnt
+	check_motor_qei_client_data( chk_data_s ,c_tst ,c_qei[ chk_data_s.common.options.flags[TST_MOTOR] ] );
 
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
 	printstrln( "Test Check Ends " );
 
-	// Update error statistics for all motors
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{
-		errs_all += chk_data_s.all_errs[motor_cnt]; 
-		tsts_all += chk_data_s.all_tsts[motor_cnt]; 
-	} // for motor_cnt
-
-	printint( tsts_all );
-	printstrln( " tests run" );
-
-	// Check for any errors
-	if (errs_all)
-	{
-		printint( errs_all );
-		printstr( " TESTS FAILED");
-		printstrln( "   (See individual motors for details)" );
-	} // if (errs_all)
-	else
-	{
-		printstrln( "ALL TESTS PASSED" );
-	} // else !(errs_all)
-
-	printcharln( ' ' );
-	release_lock(); // Release Display Mutex
 } // check_all_qei_client_data
 /*****************************************************************************/

@@ -170,7 +170,14 @@ When the executable has stopped running, view the VCD file as follows:-
 Using The ``xSCOPE`` (xmt) File
 -------------------------------
 
-The values of variables in the program can be inspected using the xSCOPE functionality. This allow time-varying changes in variable values to be plotted in a similar manner to using an oscilloscope for real-signals. In order to switch on xSCOPE capability for the ADC test harness find the ``app_globals.h`` header file. Near the top, set the define USE_XSCOPE to 1, then rebuild the code as follows:-
+The values of variables in the program can be inspected using the xSCOPE functionality. This allow time-varying changes in variable values to be plotted in a similar manner to using an oscilloscope for real-signals. In order to use xSCOPE the following actions are required. (For this application they have already been done) :-
+
+   #. In the ``Makefile`` the option ``-fxscope`` needs to be added to the ``XCC`` flags.
+   #. In the ``xC`` files that use xSCOPE functions, the header file <xscope.h> needs to be included.
+   #. In the ``main.xc`` file, the xSCOPE initialisation function xscope_user_init() needs to be added.
+   #. In each ``xC`` file that uses xSCOPE to plot variables, one or more xSCOPE capture functions are required.
+
+The above requirements are discussed in more detail below in the section ``Look at the Code``. Now rebuild the code as follows:-
 
    #. In the ``Run Configurations`` dialogue box (see above), select the xSCOPE tab
    #. Now select the ``Offline`` button, then click ``Apply``, then click ``Run``

@@ -24,10 +24,11 @@ on tile[MOTOR_TILE]: port out p4_tst[NUMBER_OF_MOTORS] = { PORT_M1_HALLSENSOR ,P
 /*****************************************************************************/
 void xscope_user_init()
 {
-	xscope_register( 3
-		,XSCOPE_CONTINUOUS, "adc_a", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "adc_b", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "adc_c", XSCOPE_INT , "n"
+	xscope_register( 4
+		,XSCOPE_CONTINUOUS, "Rev_Cnt", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Angle", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Velocity", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Error", XSCOPE_INT , "n"
 	); // xscope_register 
 
 	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing

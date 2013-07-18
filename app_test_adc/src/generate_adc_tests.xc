@@ -124,6 +124,7 @@ static void parse_control_file( // Parse ADC control file and set up test option
 	assert(test_cnt == NUM_TEST_OPTS); // Check read required number of test options found
 	assert(NUM_TEST_OPTS <= line_cnt); // Check enough file lines read
 	assert(test_cnt <= line_cnt); // Check no more than one test/line
+	assert(gen_data_s.common.options.flags[TST_MOTOR] < NUMBER_OF_MOTORS); // Check Motor Identifier in range
  
 	return;
 } // parse_control_file

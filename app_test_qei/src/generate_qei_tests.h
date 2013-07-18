@@ -71,7 +71,6 @@ typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 	TEST_VECT_TYP prev_vect; // Structure of containing previous QEI test vector (QEI conditions to be tested)
 	QEI_PHASE_TYP phases;	// Structure containing all possible QEI phase values;
 	int inc;			// QEI rotation increment (+1 for clock-wise, -1 for anti-clockwise)
-	int id;			// Current motor identifier
 	int hi_ticks;			// No. of ticks/QEI at high speed
 	int lo_ticks;			// No. of ticks/QEI at low speed
 	unsigned cnt;			// QEI position counter
@@ -81,6 +80,8 @@ typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 	int scale; // velocity scaling factor (used for acceleration and deceleration)
 	PORT_TIME_TYP time; // port timer value
 	unsigned period; // period (in ticks) between tests
+	unsigned tim; // time (in ticks) of test
+	unsigned tim2; // time (in ticks) of test
 	int prev_qei;  // Previous QEI value
 	int print;  // Print flag
 	int dbg;  // Debug flag

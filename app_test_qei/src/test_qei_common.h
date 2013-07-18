@@ -35,9 +35,9 @@
 /** Enumeration of PWM Test Options */
 typedef enum PWM_TEST_ETAG
 {
-  TST_ANTI = 0,	// Test Anti-Clockwise spin
-  TST_ERROR,	// Test Error-Status
-  TST_ORIGIN,	// Test Origin-bit
+  TST_MOTOR = 0,	// Select which motor to test
+  TST_ANTI,				// Test Anti-Clockwise spin
+  TST_ERROR,			// Test Error-Status
   NUM_TEST_OPTS	// Handy Value!-)
 } PWM_TEST_ENUM;
 

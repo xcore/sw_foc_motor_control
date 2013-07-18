@@ -49,9 +49,6 @@ typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 	QEI_PARAM_TYP prev_params;	// Structure containing previouis QEI parameters (received from Client)
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
-	int all_errs[NUMBER_OF_MOTORS]; // Array of Error accumulators for each motor
-	int all_tsts[NUMBER_OF_MOTORS]; // Array of Test accumulators for each motor
- 	int id; // Unique motor identifier
 	int fail_cnt;	// Counter of failed tests
 	int err_chk;	// error check value
 	int err_cnt;	// Counter used in error test
