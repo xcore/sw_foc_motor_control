@@ -153,8 +153,8 @@
 									<listOptionValue builtIn="false" value="__EXCEPTIONS=1"/>
 									<listOptionValue builtIn="false" value="__WCHAR_UNSIGNED__=1"/>
 								</option>
-								<option id="com.xmos.c.compiler.option.include.paths.42075954" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath"/>
-								<option id="gnu.c.compiler.option.include.paths.16427788" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath"/>
+								<option id="com.xmos.c.compiler.option.include.paths.42075954" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths"/>
+								<option id="gnu.c.compiler.option.include.paths.16427788" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths"/>
 								<option id="com.xmos.xc.compiler.option.include.paths.989859333" name="com.xmos.xc.compiler.option.include.paths" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${XMOS_DOC_PATH}/../target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_DOC_PATH}/../target/include/gcc&quot;"/>
@@ -419,8 +419,8 @@
 									<listOptionValue builtIn="false" value="__EXCEPTIONS=1"/>
 									<listOptionValue builtIn="false" value="__WCHAR_UNSIGNED__=1"/>
 								</option>
-								<option id="com.xmos.c.compiler.option.include.paths.60196610" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath"/>
-								<option id="gnu.c.compiler.option.include.paths.48064607" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath"/>
+								<option id="com.xmos.c.compiler.option.include.paths.60196610" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths"/>
+								<option id="gnu.c.compiler.option.include.paths.48064607" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths"/>
 								<option id="com.xmos.xc.compiler.option.include.paths.1106701301" name="com.xmos.xc.compiler.option.include.paths" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${XMOS_DOC_PATH}/../target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_DOC_PATH}/../target/include/gcc&quot;"/>
@@ -705,8 +705,8 @@
 									<listOptionValue builtIn="false" value="__EXCEPTIONS=1"/>
 									<listOptionValue builtIn="false" value="__WCHAR_UNSIGNED__=1"/>
 								</option>
-								<option id="com.xmos.c.compiler.option.include.paths.2478994" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath"/>
-								<option id="gnu.c.compiler.option.include.paths.64436050" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath"/>
+								<option id="com.xmos.c.compiler.option.include.paths.2478994" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths"/>
+								<option id="gnu.c.compiler.option.include.paths.64436050" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths"/>
 								<option id="com.xmos.xc.compiler.option.include.paths.1978048256" name="com.xmos.xc.compiler.option.include.paths" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${XMOS_DOC_PATH}/../target/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${XMOS_DOC_PATH}/../target/include/gcc&quot;"/>

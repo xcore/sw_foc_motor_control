@@ -63,7 +63,7 @@ static unsigned eval_speed_bound( // Evaluate error bounds for given speed
 }	// eval_speed_bound
 /*****************************************************************************/
 static void init_check_data( // Initialise check data for QEI tests
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	init_common_data( chk_data_s.common ); // Initialise data common to Generator and Checker
@@ -83,7 +83,7 @@ static void init_check_data( // Initialise check data for QEI tests
 } // init_check_data
 /*****************************************************************************/
 static void init_motor_checks( // Initialise QEI parameter structure
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int comp_cnt; // Counter for Test Vector components
@@ -112,7 +112,7 @@ static void init_motor_checks( // Initialise QEI parameter structure
 } // init_motor_checks
 /*****************************************************************************/
 static void print_qei_parameters( // Print QEI parameters
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	acquire_lock(); // Acquire Display Mutex
@@ -131,10 +131,11 @@ static void print_qei_parameters( // Print QEI parameters
 } // print_qei_parameters
 /*****************************************************************************/
 static void check_qei_position_reset( // Check for correct position reset after origin detection
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int tmp_val;	// temporary manipulation variable
+	int ang_err;	// angular_position error
 	int ang_bound;	// angular_position margin of error
 
 
@@ -166,30 +167,43 @@ static void check_qei_position_reset( // Check for correct position reset after 
 	tmp_val *= QEI_PER_REV; // ~29 bits
 	ang_bound = (tmp_val + (PLATFORM_REFERENCE_HZ - 1)) / PLATFORM_REFERENCE_HZ; // division with round-up // ~2 bits
 
-	// Check for out-of-bounds angular position
-	if (ang_bound < abs(chk_data_s.curr_params.theta))
+	chk_data_s.motor_tsts[ORIGIN]++;
+
+	// Calculate angular position error ...
+
+	ang_err = abs(chk_data_s.curr_params.theta); // Initialise to error about zero
+
+	// Check if error too large
+	if (HALF_QEI_POS < ang_err)
 	{
+		ang_err = QEI_PER_REV - ang_err; // Correct error by one revolution
+	} // if (HALF_QEI_POS < ang_err)
+
+	// Check for out-of-bounds angular position
+	if (ang_bound < ang_err)
+	{
+		chk_data_s.motor_errs[ORIGIN]++;
+
 		acquire_lock(); // Acquire Display Mutex
 		printcharln(' ');
 		printstr( chk_data_s.padstr1 );
 		printstrln("ORIG_ANG_POS FAILURE");
 		release_lock(); // Release Display Mutex
-	} // if (ang_bound < abs(chk_data_s.curr_params.theta))
+	} // if (ang_bound < ang_err)
 
 } // check_qei_position_reset
 /*****************************************************************************/
 static void check_qei_origin_detection( // Check correct update of QEI parameters due to origin detection
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int rev_diff = chk_data_s.curr_params.rev_cnt - chk_data_s.prev_params.rev_cnt; // Change in rev. counter
 
 
-	chk_data_s.motor_tsts[ORIGIN]++;
-
 	// Check for expected value
 	if (rev_diff == chk_data_s.orig_chk)
 	{ // Found expected value (Test passed)
+		chk_data_s.motor_tsts[ORIGIN]++;
 
 		// Check if position reset expected
 		if (0 != chk_data_s.orig_chk)
@@ -202,12 +216,14 @@ static void check_qei_origin_detection( // Check correct update of QEI parameter
 	} // if (rev_diff == chk_data_s.orig_chk)
 	else
 	{ // Not expected value
+
 		if (0 < chk_data_s.orig_cnt)
 		{ // test NOT yet timed-out
 			chk_data_s.orig_cnt--; // Decrement 'timer'
 		} // if (0 < chk_data_s.orig_cnt)
 		else
 		{ // test timed-out (Test failed)
+			chk_data_s.motor_tsts[ORIGIN]++;
 			chk_data_s.motor_errs[ORIGIN]++;
 
 			acquire_lock(); // Acquire Display Mutex
@@ -240,17 +256,18 @@ static void check_qei_origin_detection( // Check correct update of QEI parameter
 } // check_qei_origin_detection
 /*****************************************************************************/
 static void check_qei_error_status( // Check for correct update of error status due to QEI error-bit changes
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int inp_err = chk_data_s.curr_params.err; // local copy of error_status parameter
 
 
-	chk_data_s.motor_tsts[ERROR]++;
 
 	// Check for expected value
 	if (inp_err == chk_data_s.err_chk)
 	{ // Found expected value (Test passed)
+		chk_data_s.motor_tsts[ERROR]++;
+
 		chk_data_s.err_cnt = 0; // Clear Time-out
 	} // if (inp_err == chk_data_s.err_chk)
 	else
@@ -261,6 +278,7 @@ static void check_qei_error_status( // Check for correct update of error status 
 		} // if (0 < chk_data_s.err_cnt)
 		else
 		{ // test timed-out (Test failed)
+			chk_data_s.motor_tsts[ERROR]++;
 			chk_data_s.motor_errs[ERROR]++;
 
 			acquire_lock(); // Acquire Display Mutex
@@ -292,7 +310,7 @@ static void check_qei_error_status( // Check for correct update of error status 
 } // check_qei_error_status
 /*****************************************************************************/
 static void check_qei_spin_direction( // Check correct update of QEI spin direction
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int inp_vel = chk_data_s.curr_params.veloc; // local copy of angular_velocity parameter
@@ -341,7 +359,7 @@ static void check_qei_spin_direction( // Check correct update of QEI spin direct
 } // check_qei_spin_direction
 /*****************************************************************************/
 static void update_qei_angular_speed( // Update accumulators for calculating QEI speed
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int curr_speed = abs( chk_data_s.curr_params.veloc ); // current angular speed
@@ -372,7 +390,7 @@ static void update_qei_angular_speed( // Update accumulators for calculating QEI
 } // update_qei_angular_speed
 /*****************************************************************************/
 static void check_qei_angular_speed( // Check all QEI speed as motor accelerates/decelerates
-	CHECK_QEI_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	const SPEED_QEI_ENUM cur_speed	// Speed-state to check
 )
 {
@@ -388,8 +406,6 @@ static void check_qei_angular_speed( // Check all QEI speed as motor accelerates
 	{  // +ve Rounding
 		mean = (chk_data_s.speed_sum + (chk_data_s.speed_num >> 1)) / chk_data_s.speed_num;
 	} // else !(0 > chk_data_s.speed_sum)
-
-// acquire_lock(); printstr("NUM="); printint( chk_data_s.speed_num ); printstr("  MEAN="); printintln( mean ); release_lock(); // MB~
 
 	switch( cur_speed )
 	{
@@ -466,7 +482,7 @@ static void check_qei_angular_speed( // Check all QEI speed as motor accelerates
 } // check_qei_angular_speed
 /*****************************************************************************/
 static void check_qei_parameters( // Check all QEI parameters
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	// Check if Error-status test is activated
@@ -497,7 +513,7 @@ static int parameter_compare( // Check if 2 sets of QEI parameters are different
 } // parameter_compare
 /*****************************************************************************/
 static void get_new_qei_client_data( // Get next set of QEI parameters
-	CHECK_QEI_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	streaming chanend c_qei // QEI channel between Client and Server
 )
 {
@@ -538,7 +554,7 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 } // get_new_qei_client_data
 /*****************************************************************************/
 static void initialise_speed_test_vector( // Initialise data for new speed test
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	// Clear accumulated data
@@ -547,7 +563,7 @@ static void initialise_speed_test_vector( // Initialise data for new speed test
 } // initialise_speed_test_vector 
 /*****************************************************************************/
 static void finalise_speed_test_vector( // terminate speed test and check results
-	CHECK_QEI_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	const SPEED_QEI_ENUM cur_speed	// Speed-state to finalise
 )
 {
@@ -555,7 +571,7 @@ static void finalise_speed_test_vector( // terminate speed test and check result
 } // finalise_speed_test_vector 
 /*****************************************************************************/
 static void process_new_test_vector( // Process new test vector
-	CHECK_QEI_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int change = 0; // Clear flag indicating change in test vector detected
@@ -630,8 +646,6 @@ static void process_new_test_vector( // Process new test vector
 	{
 		finalise_speed_test_vector( chk_data_s ,chk_data_s.prev_vect.comp_state[SPEED] );
 
-// if ((chk_data_s.curr_vect.comp_state[SPEED] == FAST) &&	(chk_data_s.curr_vect.comp_state[SPIN] == ANTI)) chk_data_s.print = 1; //MB~
-
 		initialise_speed_test_vector( chk_data_s );
 
 		change = 1; // Set flag indicating change in test vector detected
@@ -651,7 +665,7 @@ static void process_new_test_vector( // Process new test vector
 } // process_new_test_vector
 /*****************************************************************************/
 static void check_motor_qei_client_data( // Display QEI results for one motor
-	CHECK_QEI_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	streaming chanend c_tst, // Channel for receiving test vectors from test generator
 	streaming chanend c_qei // QEI channel between Client and Server
 )
@@ -775,7 +789,7 @@ void check_all_qei_client_data( // Display QEI results for all motors
 	streaming chanend c_qei[] // Array of QEI channel between Client and Server
 )
 {
-	CHECK_QEI_TYP chk_data_s; // Structure containing test check data
+	CHECK_TST_TYP chk_data_s; // Structure containing test check data
 
 
 	init_check_data( chk_data_s ); // Initialise check data

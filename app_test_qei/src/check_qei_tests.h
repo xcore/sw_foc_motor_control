@@ -37,10 +37,12 @@
 /** Define time period between QEI Client requests for data */
 #define QEI_PERIOD (40 * MICRO_SEC) // Time period between QEI Client requests for data
 
+#define HALF_QEI_POS (QEI_PER_REV >> 1) // Half No. of QEI positions
+
 /** Type containing all check data */
 typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 {
-	COMMON_QEI_TYP common; // Structure of QEI data common to Generator and Checker
+	COMMON_TST_TYP common; // Structure of QEI data common to Generator and Checker
 	char padstr1[STR_LEN]; // Padding string used to format display output
 	char padstr2[STR_LEN]; // Padding string used to format display output
 	TEST_VECT_TYP curr_vect; // Structure of containing current QEI test vector (QEI conditions to be tested)
@@ -61,7 +63,7 @@ typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 	unsigned time; // time value when new QEI parameters received
 	int print;  // Print flag
 	int dbg;  // Debug flag
-} CHECK_QEI_TYP;
+} CHECK_TST_TYP;
 
 /*****************************************************************************/
 /** Display QEI results for all motors

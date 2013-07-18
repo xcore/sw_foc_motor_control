@@ -25,6 +25,7 @@
 #include "qei_server.h"
 #include "check_qei_tests.h"
 #include "generate_qei_tests.h"
+#include "display_generator_data.h"
 
 // Define where everything is
 

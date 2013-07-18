@@ -143,7 +143,7 @@ static void init_control_component( // Initialise QEI Test data for Control/Comm
 } // init_speed_component
 /*****************************************************************************/
 void print_test_vector( // print test vector details
-	COMMON_QEI_TYP &comm_qei_s, // Reference to structure of common QEI data
+	COMMON_TST_TYP &comm_qei_s, // Reference to structure of common QEI data
 	TEST_VECT_TYP inp_vect, // Structure containing current QEI test vector to be printed
 	const char prefix_str[] // prefix string
 )
@@ -183,7 +183,7 @@ void print_test_vector( // print test vector details
 } // print_test_vector
 /*****************************************************************************/
 void init_common_data( // Initialise QEI Test data
-	COMMON_QEI_TYP &comm_qei_s // Reference to structure of common QEI data
+	COMMON_TST_TYP &comm_qei_s // Reference to structure of common QEI data
 )
 {
 	init_error_component(		comm_qei_s.comp_data[ERROR]		,NUM_QEI_ERRS		," Status" );

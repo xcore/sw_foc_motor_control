@@ -30,8 +30,6 @@ void xscope_user_init()
 		,XSCOPE_CONTINUOUS, "Velocity", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Error", XSCOPE_INT , "n"
 	); // xscope_register 
-
-	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
 } // xscope_user_init
 /*****************************************************************************/
 #endif // (USE_XSCOPE)
@@ -39,8 +37,9 @@ void xscope_user_init()
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {
-	streaming chan c_qei[NUMBER_OF_MOTORS]; // Channel connecting Client and Server
-	streaming chan c_tst; // Channel for sending test vectors from Generator to Checker core
+	streaming chan c_gen_qei[NUMBER_OF_MOTORS]; // For each motor, a channel connecting test generator to QEI Server
+	streaming chan c_gen_chk; // Channel for sending test vectors from Generator to Checker core
+	streaming chan c_gen_dis; // Channel for sending data from Generator to Display core
 
 
 	par
@@ -51,11 +50,13 @@ int main ( void ) // Program Entry Point
 
 			par
 			{
-				gen_all_qei_test_data( c_tst ,p4_tst ); // Generate test data
+				gen_all_qei_test_data( c_gen_chk ,c_gen_dis ,p4_tst ); // Generate test data
+
+				disp_gen_data( c_gen_dis ); // Display generated test data
 		
-				foc_qei_do_multiple( c_qei, p4_qei ); // Server function under test
+				foc_qei_do_multiple( c_gen_qei, p4_qei ); // Server function under test
 		
-				check_all_qei_client_data( c_tst ,c_qei ); // Check results using QEI Client
+				check_all_qei_client_data( c_gen_chk ,c_gen_qei ); // Check results using QEI Client
 			} // par
 		
 		  free_locks(); // Free Mutex for display

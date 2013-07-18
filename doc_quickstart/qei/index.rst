@@ -128,9 +128,8 @@ When the executable has stopped running, view the VCD file as follows:-
    #. If not already active, open a ``Waveform`` window as follows:-
    #. In the main toolbar, select Window->Show_View->Waves
    #. Now add some signals to the Waves window as follows:-
-   #. In the Signals window, select tile[1]->ports->XS1_PORT_4E, and drag this to the left-hand column of the Waveform window
-   #. This may not work first time, but try leaving a few seconds between selecting and dragging
-   #. When successful a set of 12 waveforms should appear in the right column of the Waveform window.
+   #. In the Signals window, open the Ports directory
+   #. Now double click on tile[1]->ports->XS1_PORT_4E, a set of 12 waveforms should appear in the right column of the Waveform window.
    #. To view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar
    #. Now repeatedly click on the ``Zoom In`` button until the numbers [a b 9 8] can be seen in the top waveform (PORT_M1_ENCODER) 
 
@@ -138,6 +137,33 @@ These are the QEI raw-data values and indicate that Motor_0 is turning clock-wis
 
 The waveforms for Motor_1 can be viewed by loading Port XS1_PORT_4F (PORT_M2_ENCODER).
 
+
+Using The ``xSCOPE`` (xmt) File
+-------------------------------
+
+The values of variables in the program can be inspected using the xSCOPE functionality. This allow time-varying changes in variable values to be plotted in a similar manner to using an oscilloscope for real-signals. In order to use xSCOPE the following actions are required. (For this application they have already been done) :-
+
+   #. In the ``Makefile`` the option ``-fxscope`` needs to be added to the ``XCC`` flags.
+   #. In the ``xC`` files that use xSCOPE functions, the header file <xscope.h> needs to be included.
+   #. In the ``main.xc`` file, the xSCOPE initialisation function xscope_user_init() needs to be added.
+   #. In each ``xC`` file that uses xSCOPE to plot variables, one or more xSCOPE capture functions are required.
+
+The above requirements are discussed in more detail below in the section ``Look at the Code``. Now rebuild the code as follows:-
+
+   #. In the ``Run Configurations`` dialogue box (see above), select the xSCOPE tab
+   #. Now select the ``Offline`` button, then click ``Apply``, then click ``Run``
+
+The program will build and start to produce test output in the Console window. When the test has completed, move to the Project explorer window. In the app_test_adc directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 4 signals listed: ``Rev_Cnt``, ``Angle``, ``Velocity``, and ``Error``. Use the boxes to the left of each signal to switch the traces on and off. The tests take about 31.3ms. Now lets look at each trace in more detail:
+
+   #. First, switch off all traces except the ``Error`` trace. The error signal is zero apart from at about 5.7ms when the error status was being tested.
+
+   #. Second, switch off all traces except the ``Velocity`` trace. From 0 to 17.5ms we have the clockwise tests, and the velocity is positive, from 17.5 to 31.3ms we have the anti-clockwise tests and the velocity is negative. For each spin direction there are four modes, Acceleration, Fast-steady, Deceleration, and Slow-steady. During the Fast-steady mode, the speed reaches 4000 RPM.
+
+   #. Third, switch off all traces except the ``Angle`` trace. Again, from 0 to 17.5ms we have the clockwise tests, and the angle increases to about 40 QEI points, then from 17.5 to 31.3ms we have the anti-clockwise tests and the angle decreases. Initially the angle value has not been calibrated, but by default it starts incrementing from arbitary zero. At 5.6ms the angle drops to back to zero. This is where the first origin signal has been detected and now the angle is calibrated (see also ``Rev_cnt`` below. During the anti-clockwise spin the angular position returns to zero at about 27.4ms, and wraps to a large value as the QEI position moves from 0 --> 1023. The angular position then continues to decrease until the end of the tests.
+
+   #. Finally, switch off all traces except the ``Rev_cnt`` trace. The revolution counter increments from 0 to 1 at about 5.6ms. This is when the origin is first detected and the angular is calibrated (See ``Angle`` above). During the anti-clockwise spin tests, the revolution counter returns to zero at about 27.4ms. This corresponds to the angular position decreasing and passing through the origin. 
+
+Note well, to view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar. To zoom in/out click the 'plus/minus' icons to the left of the ``Zoom Fit`` icon
 
 Look at the Code
 ----------------

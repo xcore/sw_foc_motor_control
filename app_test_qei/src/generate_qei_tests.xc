@@ -20,7 +20,7 @@
 
 /*****************************************************************************/
 static void parse_control_file( // Parse QEI control file and set up test options
-	GENERATE_QEI_TYP &tst_data_s // Reference to structure of QEI test data
+	GENERATE_TST_TYP &tst_data_s // Reference to structure of QEI test data
 )
 {
   unsigned char file_buf[FILE_SIZE];
@@ -146,7 +146,7 @@ static unsigned speed_to_ticks( // Convert Velocity (in RPM) to ticks per QEI po
 }	// speed_to_ticks
 /*****************************************************************************/
 static void init_test_data( // Initialise QEI Test data
-	GENERATE_QEI_TYP &tst_data_s, // Reference to structure of QEI test data	
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of QEI test data	
 	streaming chanend c_tst // Channel for sending test vecotrs to test checker
 )
 {
@@ -170,7 +170,7 @@ static void init_test_data( // Initialise QEI Test data
 } // init_test_data
 /*****************************************************************************/
 static void init_motor_tests( // Initialisation for each set of motor tests
-	GENERATE_QEI_TYP &tst_data_s // Reference to structure of QEI test data
+	GENERATE_TST_TYP &tst_data_s // Reference to structure of QEI test data
 )
 {
 	tst_data_s.period = tst_data_s.lo_ticks; // Set period for Low start speed
@@ -184,7 +184,7 @@ static void init_motor_tests( // Initialisation for each set of motor tests
 } // init_motor_tests
 /*****************************************************************************/
 static void assign_test_vector_error( // Assign Error-state of test vector
-	GENERATE_QEI_TYP &tst_data_s, // Reference to structure of QEI test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of QEI test data
 	ERROR_QEI_ENUM inp_err // Input Error-state
 )
 {
@@ -210,33 +210,15 @@ static void assign_test_vector_error( // Assign Error-state of test vector
 } // assign_test_vector_error
 /*****************************************************************************/
 static void assign_test_vector_origin( // Assign Origin-state of test vector
-	GENERATE_QEI_TYP &tst_data_s, // Reference to structure of QEI test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of QEI test data
 	ORIG_QEI_ENUM inp_orig // Input Origin-state
 )
 {
-	switch( inp_orig )
-	{
-		case ORIG_OFF: // No Origin
-//MB~			tst_data_s.orig = 0; // Clear origin flag (Bit_2 = 0)
-		break; // case ORIG_OFF:
-
-		case ORIG_ON: // Origin
-//MB~			tst_data_s.orig = QEI_ORIG_MASK; // Set origin flag (Bit_2 = 1)
-		break; // case ORIG_OFF:
-
-		default:
-			acquire_lock(); // Acquire Display Mutex
-			printstrln("ERROR: Unknown QEI Origin-state");
-			release_lock(); // Release Display Mutex
-			assert(0 == 1);
-		break; // default:
-	} // switch( inp_orig )
-
 	tst_data_s.curr_vect.comp_state[ORIGIN] = inp_orig; // Update Error-state of test vector
 } // assign_test_vector_origin
 /*****************************************************************************/
 static void assign_test_vector_spin( // Assign Spin-state of test vector
-	GENERATE_QEI_TYP &tst_data_s, // Reference to structure of QEI test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of QEI test data
 	SPIN_QEI_ENUM inp_spin // Input Spin-state
 )
 {
@@ -262,7 +244,7 @@ static void assign_test_vector_spin( // Assign Spin-state of test vector
 } // assign_test_vector_spin
 /*****************************************************************************/
 static void assign_test_vector_speed( // Assign Speed-state of test vector
-	GENERATE_QEI_TYP &tst_data_s, // Reference to structure of QEI test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of QEI test data
 	SPEED_QEI_ENUM inp_speed // Input speed-state
 )
 {
@@ -296,15 +278,13 @@ static void assign_test_vector_speed( // Assign Speed-state of test vector
 } // assign_test_vector_speed
 /*****************************************************************************/
 static void do_qei_test( // Performs one QEI test
-	GENERATE_QEI_TYP &tst_data_s, // Reference to structure of QEI test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of QEI test data
+	streaming chanend c_dis, // Channel for sending data to Display core
 	port out p4_tst  // current port on which to transmit test data
 )
 {
-	timer chronometer;
-	unsigned tmp_time; // Temporary time value
-	int qei_val;  // QEI value [E I B A]
+	QEI_RAW_TYP qei_val;  // QEI value [E I B A]
 	unsigned time_val; // Temporary time value
-	unsigned diff_time; // Temporary time value
 
 
 	tst_data_s.cnt = (tst_data_s.cnt + tst_data_s.inc) & QEI_REV_MASK; // Increment/Decrement (and wrap) QEI position
@@ -335,24 +315,14 @@ static void do_qei_test( // Performs one QEI test
 		time_val -= NUM_PORT_TIMES;
 	} // while (time_val >= NUM_PORT_TIMES)
 
-p4_tst <: tst_data_s.prev_qei @ tmp_time; // MB~
-
 	tst_data_s.time = (PORT_TIME_TYP)((unsigned)tst_data_s.time + time_val);
-
-// acquire_lock(); printint((int)tst_data_s.time - (int)tmp_time); release_lock(); // MB~
 	p4_tst @ tst_data_s.time <: qei_val; // Now send new value
 	tst_data_s.prev_qei = qei_val; // Store QEI value
 
 	if (tst_data_s.print)
 	{
-diff_time = tst_data_s.time - tmp_time;
-if (1000 < diff_time)
-{
-
-		acquire_lock(); // Acquire Display Mutex
-		printstr( "QEI=" ); printintln( qei_val ); 
-		release_lock(); // Release Display Mutex
-} // if (1000 < diff_time)
+		// NB There is no time to print the data here, so send it to another core.
+		c_dis <: qei_val;
 	} // if (tst_data_s.print)
 
 } // do_qei_test
@@ -374,8 +344,9 @@ static int vector_compare( // Check if 2 sets of test vector are different
 } // vector_compare
 /*****************************************************************************/
 static void do_qei_vector( // Do all tests for one QEI test vector
-	GENERATE_QEI_TYP &tst_data_s, // Reference to structure of QEI test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of QEI test data
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
+	streaming chanend c_dis, // Channel for sending data to Display core
 	port out p4_tst,  // current port on which to transmit test data
 	int test_cnt // count-down test counter
 )
@@ -402,7 +373,7 @@ static void do_qei_vector( // Do all tests for one QEI test vector
 	// Loop through tests for current test vector
 	while(test_cnt)
 	{
-		do_qei_test( tst_data_s ,p4_tst ); // Performs one QEI test
+		do_qei_test( tst_data_s ,c_dis ,p4_tst ); // Performs one QEI test
 
 		// Check which speed mode being tested
 		switch( tst_data_s.curr_vect.comp_state[SPEED] )
@@ -435,8 +406,9 @@ static void do_qei_vector( // Do all tests for one QEI test vector
 } // do_qei_vector
 /*****************************************************************************/
 static void check_for_origin( // Check if origin passed during this set of tests
-	GENERATE_QEI_TYP &tst_data_s, // Reference to structure of QEI test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of QEI test data
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
+	streaming chanend c_dis, // Channel for sending data to Display core
 	port out p4_tst,  // current port on which to transmit test data
 	int test_cnt // count-down test counter
 )
@@ -456,29 +428,30 @@ static void check_for_origin( // Check if origin passed during this set of tests
 		if (pre_cnt > 1)
 		{ // pre-origin test vector
 			assign_test_vector_origin( tst_data_s ,ORIG_OFF ); // Set test vector to No Origin
-			do_qei_vector( tst_data_s ,c_tst ,p4_tst ,(pre_cnt - 1) );
+			do_qei_vector( tst_data_s ,c_tst ,c_dis ,p4_tst ,(pre_cnt - 1) );
 		} // if (pre_cnt > 1)
 
 		assign_test_vector_origin( tst_data_s ,ORIG_ON ); // Set test vector to Origin
-		do_qei_vector( tst_data_s ,c_tst ,p4_tst ,1 );
+		do_qei_vector( tst_data_s ,c_tst ,c_dis ,p4_tst ,1 );
 
 		if (post_cnt > 0)
 		{ // pre-origin test vector
 			assign_test_vector_origin( tst_data_s ,ORIG_OFF ); // Set test vector to No Origin
-			do_qei_vector( tst_data_s ,c_tst ,p4_tst ,post_cnt );
+			do_qei_vector( tst_data_s ,c_tst ,c_dis ,p4_tst ,post_cnt );
 		} // if (post_cnt > 0)
 	} // if (pre_cnt <= test_cnt)
 	else
 	{ // No Origin traversal: Use one test vector
 		assign_test_vector_origin( tst_data_s ,ORIG_OFF ); // Set test vector to No Origin
 
-		do_qei_vector( tst_data_s ,c_tst ,p4_tst ,test_cnt );
+		do_qei_vector( tst_data_s ,c_tst ,c_dis ,p4_tst ,test_cnt );
 	} // else !(pre_cnt <= test_cnt)
 } // check_for_origin
 /*****************************************************************************/
 static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
-	GENERATE_QEI_TYP &tst_data_s, // Reference to structure of QEI test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of QEI test data
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
+	streaming chanend c_dis, // Channel for sending data to Display core
 	port out p4_tst  // current port on which to transmit test data
 )
 {
@@ -498,110 +471,109 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 	assign_test_vector_speed( tst_data_s ,ACCEL ); // Set test vector to Accelerate
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing
-	check_for_origin( tst_data_s ,c_tst ,p4_tst ,(START_UP_CHANGES - 1) ); // Start-up phase
+	check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,(START_UP_CHANGES - 1) ); // Start-up phase
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Start-up complete, Switch on testing
-	check_for_origin( tst_data_s ,c_tst ,p4_tst ,(ACC_TESTS - START_UP_CHANGES + 1) );
+	check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,(ACC_TESTS - START_UP_CHANGES + 1) );
 
 	// NB Do Origin tests while motor running fast, to speed-up simulation
 
 	assign_test_vector_speed( tst_data_s ,FAST ); // Set test vector to constant Fast speed
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing while motor settles
-	check_for_origin( tst_data_s ,c_tst ,p4_tst ,2 );
+	check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,2 );
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
-	check_for_origin( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 2) );
-
-	check_for_origin( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 2) ); //MB~ Used to be origin test
+	check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,(MAX_TESTS >> 1) ); // NB Origin traversed
 
 	// Check if Error-status test activated
 	if (tst_data_s.common.options.flags[TST_ERROR])
 	{ // Do Error-Status test
 		assign_test_vector_error( tst_data_s ,QEI_ERR_ON ); // Switch on error-bit
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive errors
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,MAX_QEI_STATUS_ERR );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,MAX_QEI_STATUS_ERR );
 	
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be set
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,MAX_QEI_STATUS_ERR );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,MAX_QEI_STATUS_ERR );
 	
 		assign_test_vector_error( tst_data_s ,QEI_ERR_OFF ); // Switch off error-bit
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive non-errors
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,MAX_QEI_STATUS_ERR );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,MAX_QEI_STATUS_ERR );
 	
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be cleared
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,((MAX_TESTS - (3 *MAX_QEI_STATUS_ERR)) >> 1) );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,((MAX_TESTS - (3 *MAX_QEI_STATUS_ERR)) >> 1) );
 	} // if (tst_data_s.common.options.flags[TST_ERROR])
 	else
 	{ // Skip Error-Status test
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,(MAX_TESTS >> 1) );
 	} // else !(tst_data_s.common.options.flags[TST_ERROR])
 
 	assign_test_vector_speed( tst_data_s ,DECEL ); // Set test vector to Decelerate
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing while motor starts braking
-	check_for_origin( tst_data_s ,c_tst ,p4_tst ,1 );
+	check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,1 );
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Braking started, Switch on testing
-	check_for_origin( tst_data_s ,c_tst ,p4_tst ,(DEC_TESTS - 1) );
+	check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,(DEC_TESTS - 1) );
 
 	assign_test_vector_speed( tst_data_s ,SLOW ); // Set test vector to constant Slow speed
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing while motor settles
-	check_for_origin( tst_data_s ,c_tst ,p4_tst ,1 );
+	check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,1 );
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
-	check_for_origin( tst_data_s ,c_tst ,p4_tst ,(MIN_TESTS - 1) );
+	check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,(MIN_TESTS - 1) );
 
 	// Check if Error-status test activated
 	if (tst_data_s.common.options.flags[TST_ANTI])
 	{ // Do Anti-Clockwise test
 		assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, until server is confident of new spin direction
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,(MAX_CONFID + 2) );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,(MAX_CONFID + 2) );
 	
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Server confident, Switch on testing
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,MIN_TESTS );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,MIN_TESTS );
 	
 		assign_test_vector_speed( tst_data_s ,ACCEL ); // Set test vector to Accelerate
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing while motor starts accelerating
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,1 );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,1 );
 	
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Acceleration started, Switch on testing
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,(ACC_TESTS - 1) );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,(ACC_TESTS - 1) );
 	
 		// NB Do Error tests while motor running fast, to speed-up simulation
 	
 		assign_test_vector_speed( tst_data_s ,FAST ); // Set test vector to constant Fast speed
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing while motor settles
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,2 );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,2 );
 	
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,MAX_TESTS );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,MAX_TESTS );
 	
 		assign_test_vector_speed( tst_data_s ,DECEL ); // Set test vector to Decelerate
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing while motor starts braking
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,1 );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,1 );
 	
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Braking started, Switch on testing
-		check_for_origin( tst_data_s ,c_tst ,p4_tst ,(DEC_TESTS - 1) );
+		check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,(DEC_TESTS - 1) );
 	} // if (tst_data_s.common.options.flags[TST_ANTI])
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
-	check_for_origin( tst_data_s ,c_tst ,p4_tst ,1 );
+	check_for_origin( tst_data_s ,c_tst ,c_dis ,p4_tst ,1 );
 
 } // gen_motor_qei_test_data
 /*****************************************************************************/
 void gen_all_qei_test_data( // Generate QEI Test data
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
+	streaming chanend c_dis, // Channel for sending data to Display core
 	port out p4_tst[]  // Array of ports on which to transmit test data
 )
 {
-	GENERATE_QEI_TYP tst_data_s; // Structure of QEI test data
+	GENERATE_TST_TYP tst_data_s; // Structure of QEI test data
 
 
 	init_test_data( tst_data_s ,c_tst );
 
 	init_motor_tests( tst_data_s ); // Initialise set of motor tests
 
-	gen_motor_qei_test_data( tst_data_s ,c_tst ,p4_tst[tst_data_s.common.options.flags[TST_MOTOR]] );
+	gen_motor_qei_test_data( tst_data_s ,c_tst ,c_dis ,p4_tst[tst_data_s.common.options.flags[TST_MOTOR]] );
 
 	if (tst_data_s.print)
 	{

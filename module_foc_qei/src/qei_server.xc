@@ -17,7 +17,7 @@
 /*****************************************************************************/
 static void init_qei_data( // Initialise  QEI data for one motor
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	unsigned &inp_pins, // raw data value on input port pins
+	QEI_RAW_TYP &inp_pins, // raw data value on input port pins
 	int inp_id  // Input unique motor identifier
 )
 {
@@ -301,7 +301,7 @@ static void update_speed( // Update speed estimate with from time period. (Angul
 /*****************************************************************************/
 static void service_input_pins( // Service detected change on input pins
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	unsigned inp_pins // Set of raw data values on input port pins
+	QEI_RAW_TYP inp_pins // Set of raw data values on input port pins
 )
 {
 	unsigned cur_phases; // Current set of phase values
@@ -427,7 +427,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 #define HALF_STATS (NUM_STATS >> 1)
 {
 	QEI_DATA_TYP all_qei_s[NUMBER_OF_MOTORS]; // Array of structures containing QEI parameters for all motor
-	unsigned inp_pins[NUMBER_OF_MOTORS]; // Set of raw data values on input port pins
+	QEI_RAW_TYP inp_pins[NUMBER_OF_MOTORS]; // Set of raw data values on input port pins
 	timer chronometer; // H/W timer
 
 

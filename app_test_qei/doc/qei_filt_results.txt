@@ -1,0 +1,22 @@
+ 
+Read following Test Options ...
+1  # Motor_ID: Select which motor to test [0 or 1]
+0  # Anti-clockwise tests
+1  # Error-status tests
+ 
+ 
+                                             Start Checks For Motor_1
+..................................................................................................................................................... 
+                                             FAST FAILURE
+.............................................................................................. 
+                                             DECEL FAILURE
+................................................................................ 
+                                             SLOW FAILURE
+ 
+                                             134 tests run
+                                             3 tests FAILED, as follows:
+                                              Status : 43 tests run 
+                                              Origin : 44 tests run 
+                                               Spin  : 43 tests run 
+                                              Speed  : 4 tests run, 3 FAILURES 
+                                             Test Check Ends 

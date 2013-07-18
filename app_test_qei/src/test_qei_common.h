@@ -123,14 +123,14 @@ typedef struct COMMON_QEI_TAG // Structure containing all common QEI test data
 {
 	VECT_COMP_TYP comp_data[NUM_VECT_COMPS]; // Array of data for each component of test vector
 	TEST_OPTS_TYP options; // Structure of test_option data
-} COMMON_QEI_TYP;
+} COMMON_TST_TYP;
 
 /*****************************************************************************/
 /** Initialise common QEI Test data
  * \param comm_qei_s, // Reference to structure of common QEI data
  */
 void init_common_data( // Initialise common QEI Test data
-	COMMON_QEI_TYP &comm_qei_s // Reference to structure of common QEI data
+	COMMON_TST_TYP &comm_qei_s // Reference to structure of common QEI data
 );
 /*****************************************************************************/
 /** Print test vector details
@@ -139,7 +139,7 @@ void init_common_data( // Initialise common QEI Test data
  * \param prefix_str[] // Prefix string
  */
 void print_test_vector( // Print test vector details
-	COMMON_QEI_TYP &comm_qei_s, // Reference to structure of common QEI data
+	COMMON_TST_TYP &comm_qei_s, // Reference to structure of common QEI data
 	TEST_VECT_TYP inp_vect, // Structure containing current QEI test vector to be printed
 	const char prefix_str[] // prefix string
 );

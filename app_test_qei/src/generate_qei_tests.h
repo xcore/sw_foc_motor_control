@@ -66,7 +66,7 @@ typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
 /** Type containing all QEI test generation data */
 typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 {
-	COMMON_QEI_TYP common; // Structure of QEI data common to Generator and Checker
+	COMMON_TST_TYP common; // Structure of QEI data common to Generator and Checker
 	TEST_VECT_TYP curr_vect; // Structure of containing current QEI test vector (QEI conditions to be tested)
 	TEST_VECT_TYP prev_vect; // Structure of containing previous QEI test vector (QEI conditions to be tested)
 	QEI_PHASE_TYP phases;	// Structure containing all possible QEI phase values;
@@ -82,18 +82,20 @@ typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 	unsigned period; // period (in ticks) between tests
 	unsigned tim; // time (in ticks) of test
 	unsigned tim2; // time (in ticks) of test
-	int prev_qei;  // Previous QEI value
+	QEI_RAW_TYP prev_qei;  // Previous QEI value
 	int print;  // Print flag
 	int dbg;  // Debug flag
-} GENERATE_QEI_TYP;
+} GENERATE_TST_TYP;
 
 /*****************************************************************************/
 /** Generate QEI test data for all motors
  * \param c_tst // Channel for sending test vecotrs to test checker
+ * \param c_dis // Channel for sending data to Display core
  * \param p4_tst[]  // Array of ports on which to transmit test data
  */
 void gen_all_qei_test_data( // Generate QEI Test data for all motors
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
+	streaming chanend c_dis, // Channel for sending data to Display core
 	port out p4_tst[]  // Array of ports on which to transmit test data
 );
 /*****************************************************************************/

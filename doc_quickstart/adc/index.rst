@@ -191,6 +191,8 @@ The program will build and start to produce test output in the Console window. W
 
 Note well, to view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar. To zoom in/out click the 'plus/minus' icons to the left of the ``Zoom Fit`` icon
 
+To learn more about xSCOPE look at the ``How To`` by selecting ``Window --> Show_View --> How_To_Browser``. Then in the search box type ``xscope``. This should find the section titled ``XMOS Examples: Instrumentation and xSCOPE``. In the sub-section ``Event Examples`` you will find more information on capturing events. In the sub-section ``IO Examples`` you will find more information on re-directing I/O using xSCOPE.
+
 Look at the Code
 ----------------
    #. Examine the application code. In xTIMEcomposer, navigate to the ``src`` directory under ``app_test_adc``  and double click on the ``main.xc`` file within it. The file will open in the central editor window.

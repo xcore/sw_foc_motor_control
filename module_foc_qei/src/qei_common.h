@@ -15,8 +15,6 @@
 #ifndef _QEI_COMMON_H_
 #define _QEI_COMMON_H_
 
-#include "use_locks.h" //MB~
-
 #include "app_global.h"
 
 #ifndef PLATFORM_REFERENCE_MHZ
@@ -43,6 +41,7 @@
 
 #define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK] 
 
+#define QEI_BITS 4 // No of Active bits in QEI value
 #define QEI_PHASE_MASK 0x3 // 2 LS-bits contain [A,B] phase info.
 #define QEI_ORIG_MASK 0x4 // Bit_2 contain origin info.
 #define QEI_NERR_MASK 0x8 // Bit_3 contains error status (1 == No Errors)
@@ -51,6 +50,9 @@
 
 // QEI Command Codes (Client --> Server) 
 #define QEI_CMD_DATA_REQ	1	// QEI Data Request
+
+/** Raw QEI data type (on input pins) */
+typedef unsigned long QEI_RAW_TYP;
 
 /** Different QEI Error states */
 typedef enum ERROR_QEI_ETAG
