@@ -36,8 +36,6 @@ void xscope_user_init()
 		,XSCOPE_CONTINUOUS, "ADC_B", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "ADC_C", XSCOPE_INT , "n"
 	); // xscope_register 
-
-	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
 } // xscope_user_init
 /*****************************************************************************/
 #endif // (USE_XSCOPE)

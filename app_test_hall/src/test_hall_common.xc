@@ -140,8 +140,37 @@ static void init_control_component( // Initialise HALL Test data for Control/Com
 	// Add any new component states here 
 } // init_speed_component
 /*****************************************************************************/
+void convert_unsigned_to_binary_string( // converts unsigned value to binary formatted string 
+	char out_str[], // On ouput contains binary formatted string
+	unsigned inp_val, // Input value to convert
+	int bit_len // Number of LS-bits to convert
+)
+{
+	unsigned bit_mask; // used to mask out 1 bit of input value
+	int bit_cnt; // Bit counter
+
+
+	bit_mask = 1; // Set bit-mask to LS-bit
+
+	for	(bit_cnt=(bit_len-1); bit_cnt>-1; bit_cnt--)
+	{
+		// Check for active bit
+		if (inp_val & bit_mask)
+		{
+			out_str[bit_cnt] = '1';
+		} // if (inp_val & bit_mask)
+		else
+		{
+			out_str[bit_cnt] = '0';
+		} // if (inp_val & bit_mask)
+
+		bit_mask <<= 1; // Right shift bit-mask by 1 bit
+	} // for bit_cnt
+
+} // convert_unsigned_to_binary_string
+/*****************************************************************************/
 void print_test_vector( // print test vector details
-	COMMON_HALL_TYP &comm_hall_s, // Reference to structure of common HALL data
+	COMMON_TST_TYP &comm_hall_s, // Reference to structure of common Hall test data
 	TEST_VECT_TYP inp_vect, // Structure containing current HALL test vector to be printed
 	const char prefix_str[] // prefix string
 )
@@ -181,7 +210,7 @@ void print_test_vector( // print test vector details
 } // print_test_vector
 /*****************************************************************************/
 void init_common_data( // Initialise HALL Test data
-	COMMON_HALL_TYP &comm_hall_s // Reference to structure of common HALL data
+	COMMON_TST_TYP &comm_hall_s // Reference to structure of common Hall test data
 )
 {
 	// Array of Hall Phase values [CBA} (NB Increment for clock-wise rotation)

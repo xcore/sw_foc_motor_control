@@ -7,13 +7,15 @@ This application is an xSIM test harness for the quadrature encoder interface us
 
 No hardware is required to run the test harness.
 
-The test application uses 3 cores containing the following components
+The test application uses 4 cores containing the following components
    #. A test-vector and QEI raw-data generator
+   #. The QEI value display function
    #. The QEI Server under test
    #. The QEI Client under test, and the test results checker
 
-The test application uses 2 channels for the following data
+The test application uses 3 channels for the following data
    #. Transmission of test vectors between the Generator and Checker cores
+   #. Transmission of raw QEI values between the Generator and Display cores
    #. Transmission of QEI parameters between Server and Client cores
 
 The test application uses 2 ports for the following data
@@ -165,17 +167,21 @@ The program will build and start to produce test output in the Console window. W
 
 Note well, to view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar. To zoom in/out click the 'plus/minus' icons to the left of the ``Zoom Fit`` icon
 
+To learn more about xSCOPE look at the ``How To`` by selecting ``Window --> Show_View --> How_To_Browser``. Then in the search box type ``xscope``. This should find the section titled ``XMOS Examples: Instrumentation and xSCOPE``. In the sub-section ``Event Examples`` you will find more information on capturing events. In the sub-section ``IO Examples`` you will find more information on re-directing I/O using xSCOPE.
+
 Look at the Code
 ----------------
 
    #. Examine the application code. In xTIMEcomposer, navigate to the ``src`` directory under ``app_test_qei``  and double click on the ``main.xc`` file within it. The file will open in the central editor window.
-   #. Review the ``main.xc`` and note that main() runs 3 tasks on 3 logical cores in parallel.
+   #. Review the ``main.xc`` and note that main() runs 4 tasks on 4 logical cores in parallel.
          * ``gen_all_qei_test_data()`` Generates test data and transmits it on the 4-bit test port (``p4_tst``).
+         * ``disp_gen_data()`` Accepts raw QEI data values over a channel (``c_gen_dis``), formats them, and then prints them.
          * ``foc_qei_do_multiple()`` is the QEI Server, receiving test data on the 4-bit QEI port (``p4_qei``), processes the data, and transmitting output data over channel ``c_qei``
          * ``check_all_qei_client_data()`` contains the QEI Client which receives QEI output parameters over channel ``c_qei``, checks the QEI parameters, and displays the results. ``gen_all_qei_test_data()`` and ``check_all_qei_client_data()`` both produce display information in parallel. 
          * The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used control a MutEx which allows only one core at a time to print to the display.
-   #. Find the ``app_global.h`` header. At the top are the motor definitions. The QEI definitions are specific to the type of motor being used and are currently set up for the LDO motors supplied with the development kit.
+         * As well as main(), there is a function called xscope_user_init(), this is called before main to initialise xSCOPE capability. In here are registered the 4 QEI signals that were described above, and seen in the xSCOPE viewer.
+   #. Find the ``app_global.h`` header. At the top are the xSCOPE definitions, followed by the motor definitions, and then the QEI definitions, which are specific to the type of motor being used and are currently set up for the LDO motors supplied with the development kit.
    #. Note in ``app_global.h`` the define PRINT_TST_QEI used to switch on verbose printing. An example of this can be found in file ``qei_results.txt``.
-   #. Find the file ``check_qei_tests.xc``. In here the function ``check_motor_qei_client_data()`` handles the QEI output data for one motor. In the 'while loop' is a function ``foc_qei_get_parameters()``. This is the QEI Client. It communicates with the QEI server function ``foc_qei_do_multiple()`` via channel ``c_qei``. The 'while loop' is paced to request QEI data over the ``c_qei`` channel every 40 micro-seconds. This is typical of the issue rate when using real hardware.
+   #. Find the file ``check_qei_tests.xc``. In here the function ``check_motor_qei_client_data()`` handles the QEI output data for one motor. In the 'while loop' is a function ``foc_qei_get_parameters()``. This is the QEI Client. It communicates with the QEI server function ``foc_qei_do_multiple()`` via channel ``c_qei``. The 'while loop' is paced to request QEI data over the ``c_qei`` channel every 40 micro-seconds. This is typical of the issue rate when using real hardware.  Directly after ``foc_qei_get_parameters()`` are the xSCOPE functions which allow the QEI values to be captured.
    #. Now that the application has been run with the default settings, you could try selecting the QEI filter by setting ``#define QEI_FILTER 1`` in the app_global.h file This selects a low-pass filter that smooths out changes in velocity values. Make this change and then rebuild and rerun the simulation. The test harness will now report many speed/spin failures due to the filtering applied. To get more information on which tests are failing select ``#define PRINT_TST_QEI 0`` in app_global.h. Make this change and then rebuild and rerun the simulation.
    #. To further explore the capabilities of the simulator, find the items under ``XMOS Examples:Simulator`` in the xSOFTip browser pane. Drag one of them into the Project Explorer to get started.

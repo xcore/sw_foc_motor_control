@@ -529,7 +529,6 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 		xscope_int( 2 ,chk_data_s.curr_params.veloc );
 		xscope_int( 3 ,chk_data_s.curr_params.err );
 #endif // (USE_XSCOPE)
-	
 
 	// Check for change in non-speed parameters
 	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 

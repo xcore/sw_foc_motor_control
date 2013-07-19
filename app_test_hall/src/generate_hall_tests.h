@@ -60,10 +60,10 @@ typedef unsigned short PORT_TIME_TYP;
 /** Type containing all Hall test generation data */
 typedef struct GENERATE_HALL_TAG // Structure containing Hall test generation data
 {
-	COMMON_HALL_TYP common; // Structure of Hall data common to Generator and Checker
+	COMMON_TST_TYP common; // Structure of Hall data common to Generator and Checker
 	TEST_VECT_TYP curr_vect; // Structure of containing current QEI test vector (QEI conditions to be tested)
 	TEST_VECT_TYP prev_vect; // Structure of containing previous QEI test vector (QEI conditions to be tested)
-	int id;			// Current motor identifier
+	char disp_str[(HALL_BITS + 1)]; // display string for Hall value
 	int hi_ticks;			// No. of ticks/HALL at high speed
 	int lo_ticks;			// No. of ticks/HALL at low speed
 	unsigned off;			// offset into Hall Phase cycle
@@ -74,7 +74,7 @@ typedef struct GENERATE_HALL_TAG // Structure containing Hall test generation da
 	int prev_hall;  // Previous Hall value
 	int print;  // Print flag
 	int dbg;  // Debug flag
-} GENERATE_HALL_TYP;
+} GENERATE_TST_TYP;
 
 /*****************************************************************************/
 /** Generate Hall test data for all motors

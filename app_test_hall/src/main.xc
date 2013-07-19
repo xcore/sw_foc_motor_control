@@ -24,29 +24,10 @@ on tile[MOTOR_TILE]: port out p4_tst[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER ,PORT
 /*****************************************************************************/
 void xscope_user_init()
 {
-	xscope_register( 9
-		,XSCOPE_CONTINUOUS, "SERVER", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "CLIENT", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "adc_c", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "set_Vq", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "pid_vel", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "req_vel", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "est_Iq", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "pid_Iq", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "targ_Iq", XSCOPE_INT , "n"
-/*
-		,XSCOPE_CONTINUOUS, "hall_0", XSCOPE_INT , "n"
-
-		,XSCOPE_CONTINUOUS, "rev_cnt", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "p_err", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "s_err", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "pwm_A", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "pwm_B", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "pwm_C", XSCOPE_INT , "n"
-*/
+	xscope_register( 2
+		,XSCOPE_CONTINUOUS, "Hall", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Err", XSCOPE_INT , "n"
 	); // xscope_register 
-
-	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
 } // xscope_user_init
 /*****************************************************************************/
 #endif // (USE_XSCOPE)

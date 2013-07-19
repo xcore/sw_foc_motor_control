@@ -20,7 +20,7 @@
 
 /*****************************************************************************/
 static void parse_control_file( // Parse Hall control file and set up test options
-	GENERATE_HALL_TYP &tst_data_s // Reference to structure of Hall test data
+	GENERATE_TST_TYP &tst_data_s // Reference to structure of Hall test data
 )
 {
   unsigned char file_buf[FILE_SIZE];
@@ -128,6 +128,7 @@ static void parse_control_file( // Parse Hall control file and set up test optio
 	assert(test_cnt == NUM_TEST_OPTS); // Check read required number of test options found
 	assert(NUM_TEST_OPTS <= line_cnt); // Check enough file lines read
 	assert(test_cnt <= line_cnt); // Check no more than one test/line
+	assert( tst_data_s.common.options.flags[TST_MOTOR] < NUMBER_OF_MOTORS ); // Check Motor Identifier in range
  
 	return;
 } // parse_control_file
@@ -145,7 +146,7 @@ static unsigned speed_to_ticks( // Convert Velocity (in RPM) to ticks per Hall p
 }	// speed_to_ticks
 /*****************************************************************************/
 static void init_test_data( // Initialise Hall Test data
-	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of Hall test data
 	streaming chanend c_tst // Channel for sending test vecotrs to test checker
 )
 {
@@ -157,6 +158,7 @@ static void init_test_data( // Initialise Hall Test data
 
 	tst_data_s.print = PRINT_TST_HALL; // Set print mode
 	tst_data_s.dbg = 0; // Set debug mode
+	tst_data_s.disp_str[HALL_BITS] = 0; // Add string terminator string
 
 	parse_control_file( tst_data_s ); 
 
@@ -164,11 +166,9 @@ static void init_test_data( // Initialise Hall Test data
 } // init_test_data
 /*****************************************************************************/
 static void init_motor_tests( // Initialisation for each set of motor tests
-	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
-	int motor_id // Unique Motor Identifier
+	GENERATE_TST_TYP &tst_data_s // Reference to structure of Hall test data
 )
 {
-	tst_data_s.id = motor_id; // Assign motor identifier
 	tst_data_s.period = tst_data_s.lo_ticks; // Set period for Low start speed
 	tst_data_s.off = 0; // Set Hall phase offset to arbitary number (< HALL_PER_POLE)
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Initialise to skipped test for start-up mode
@@ -177,7 +177,7 @@ static void init_motor_tests( // Initialisation for each set of motor tests
 } // init_motor_tests
 /*****************************************************************************/
 static void assign_test_vector_error( // Assign Error-state of test vector
-	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of Hall test data
 	ERROR_HALL_ENUM inp_err // Input Error-state
 )
 {
@@ -203,7 +203,7 @@ static void assign_test_vector_error( // Assign Error-state of test vector
 } // assign_test_vector_error
 /*****************************************************************************/
 static void assign_test_vector_phase( // Assign phase-state of test vector
-	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of Hall test data
 	PHASE_HALL_ENUM inp_phase // Input Phase-state
 )
 {
@@ -224,7 +224,7 @@ static void assign_test_vector_phase( // Assign phase-state of test vector
 } // assign_test_vector_spin
 /*****************************************************************************/
 static void assign_test_vector_spin( // Assign Spin-state of test vector
-	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of Hall test data
 	SPIN_HALL_ENUM inp_spin // Input Spin-state
 )
 {
@@ -248,7 +248,7 @@ static void assign_test_vector_spin( // Assign Spin-state of test vector
 } // assign_test_vector_spin
 /*****************************************************************************/
 static void assign_test_vector_speed( // Assign Speed-state of test vector
-	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of Hall test data
 	SPEED_HALL_ENUM inp_speed // Input speed-state
 )
 {
@@ -282,7 +282,7 @@ static void assign_test_vector_speed( // Assign Speed-state of test vector
 } // assign_test_vector_speed
 /*****************************************************************************/
 static void do_hall_test( // Performs one Hall test
-	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of Hall test data
 	port out p4_tst  // current port on which to transmit test data
 )
 {
@@ -344,9 +344,12 @@ static void do_hall_test( // Performs one Hall test
 
 	if (tst_data_s.print)
 	{
+		convert_unsigned_to_binary_string( tst_data_s.disp_str ,hall_val ,HALL_BITS ); 
+
 		acquire_lock(); // Acquire Display Mutex
-		printint( tst_data_s.id ); printstr( ":HALL:" ); printintln(hall_val); 
+		printstr( "HALL=" ); printstrln(tst_data_s.disp_str); 
 		release_lock(); // Release Display Mutex
+
 	} // if (tst_data_s.print)
 
 } // do_hall_test
@@ -368,7 +371,7 @@ static int vector_compare( // Check if 2 sets of test vector are different
 } // vector_compare
 /*****************************************************************************/
 static void do_hall_vector( // Do all tests for one Hall test vector
-	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of Hall test data
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
 	port out p4_tst,  // current port on which to transmit test data
 	int test_cnt // count-down test counter
@@ -429,7 +432,7 @@ static void do_hall_vector( // Do all tests for one Hall test vector
 } // do_hall_vector
 /*****************************************************************************/
 static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
-	GENERATE_HALL_TYP &tst_data_s, // Reference to structure of Hall test data
+	GENERATE_TST_TYP &tst_data_s, // Reference to structure of Hall test data
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
 	port out p4_tst  // current port on which to transmit test data
 )
@@ -437,7 +440,7 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 	if (tst_data_s.print)
 	{
 		acquire_lock(); // Acquire Display Mutex
-		printstr( " Start Test Gen. For Motor_"); printintln( tst_data_s.id );
+		printstr( " Start Test Gen. For Motor_"); printintln( tst_data_s.common.options.flags[TST_MOTOR] );
 		release_lock(); // Release Display Mutex
 	} // if (tst_data_s.print)
 
@@ -496,19 +499,14 @@ void gen_all_hall_test_data( // Generate Hall Test data
 	port out p4_tst[]  // Array of ports on which to transmit test data
 )
 {
-	GENERATE_HALL_TYP tst_data_s; // Structure of Hall test data
-	int motor_cnt; // counts Motors 
+	GENERATE_TST_TYP tst_data_s; // Structure of Hall test data
 
 
 	init_test_data( tst_data_s ,c_tst );
 
-	// Loop through motors, so we can print results serially
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{
-		init_motor_tests( tst_data_s ,motor_cnt ); // Initialise set of motor tests
+	init_motor_tests( tst_data_s ); // Initialise set of motor tests
 
-		gen_motor_hall_test_data( tst_data_s ,c_tst ,p4_tst[motor_cnt] );
-	} // for motor_cnt
+	gen_motor_hall_test_data( tst_data_s ,c_tst ,p4_tst[tst_data_s.common.options.flags[TST_MOTOR]] );
 
 	if (tst_data_s.print)
 	{

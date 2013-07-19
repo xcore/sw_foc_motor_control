@@ -37,7 +37,7 @@
 /** Type containing all check data */
 typedef struct CHECK_HALL_TAG // Structure containing Hall check data
 {
-	COMMON_HALL_TYP common; // Structure of Hall data common to Generator and Checker
+	COMMON_TST_TYP common; // Structure of Hall data common to Generator and Checker
 	char padstr1[STR_LEN]; // Padding string used to format display output
 	char padstr2[STR_LEN]; // Padding string used to format display output
 	TEST_VECT_TYP curr_vect; // Structure of containing current Hall test vector (HALL conditions to be tested)
@@ -46,9 +46,7 @@ typedef struct CHECK_HALL_TAG // Structure containing Hall check data
 	HALL_PARAM_TYP prev_params;	// Structure containing previouis Hall parameters (received from Client)
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
-	int all_errs[NUMBER_OF_MOTORS]; // Array of Error accumulators for each motor
-	int all_tsts[NUMBER_OF_MOTORS]; // Array of Test accumulators for each motor
- 	int id; // Unique motor identifier
+	char disp_str[HALL_BITS]; // display string for Hall value
 	int fail_cnt;	// Counter of failed tests
 	int err_chk;	// error check value
 	int err_cnt;	// Counter used in error test
@@ -56,7 +54,7 @@ typedef struct CHECK_HALL_TAG // Structure containing Hall check data
 	unsigned time; // time value when new Hall parameters received
 	int print;  // Print flag
 	int dbg;  // Debug flag
-} CHECK_HALL_TYP;
+} CHECK_TST_TYP;
 
 /*****************************************************************************/
 /** Display Hall results for all motors

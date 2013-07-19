@@ -16,12 +16,9 @@
 
 /*****************************************************************************/
 static void init_check_data( // Initialise check data for Hall tests
-	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-	int motor_cnt; // counts Motors 
-
-
 	init_common_data( chk_data_s.common ); // Initialise data common to Generator and Checker
 
 	safestrcpy( chk_data_s.padstr1 ,"                                             " );
@@ -29,27 +26,18 @@ static void init_check_data( // Initialise check data for Hall tests
 
 	chk_data_s.fail_cnt = 0; // Clear count of failed tests.
 
+	chk_data_s.disp_str[HALL_BITS-1] = 0; // Add string terminator string
 	chk_data_s.print = PRINT_TST_HALL; // Set print mode
 	chk_data_s.dbg = 0; // Set debug mode
-
-	// Clear error and test accumulators
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{
-		chk_data_s.all_errs[motor_cnt] = 0;
-		chk_data_s.all_tsts[motor_cnt] = 0;
-	} // for motor_cnt
 
 } // init_check_data
 /*****************************************************************************/
 static void init_motor_checks( // Initialise Hall parameter structure
-	CHECK_HALL_TYP &chk_data_s, // Reference to structure containing test check data
-	int motor_id	// Unique Motor identifier
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int comp_cnt; // Counter for Test Vector components
 
-
-	chk_data_s.id = motor_id; // Assign Motor identifier
 
 	chk_data_s.err_cnt = 0; // Clear count-down counter used in error_status test
 	chk_data_s.err_chk = HALL_ERR_OFF; // Initialise expected error_status test result
@@ -70,23 +58,23 @@ static void init_motor_checks( // Initialise Hall parameter structure
 } // init_motor_checks
 /*****************************************************************************/
 static void print_hall_parameters( // Print Hall parameters
-	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
+	convert_unsigned_to_binary_string( chk_data_s.disp_str ,chk_data_s.curr_params.hall_val ,(HALL_BITS - 1) ); 
+
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
-
-	printint( chk_data_s.id );
-	printstr( ":  E=" );
+	printstr( "E=" );
 	printint( chk_data_s.curr_params.err );
 	printstr( "  H=" );
-	printint( chk_data_s.curr_params.hall_val );
+	printstr(chk_data_s.disp_str); 
 	printcharln(' ');
 	release_lock(); // Release Display Mutex
 } // print_hall_parameters
 /*****************************************************************************/
 static void check_hall_error_status( // Check for correct update of error status due to Hall error-bit changes
-	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int inp_err = chk_data_s.curr_params.err; // local copy of error_status parameter
@@ -138,7 +126,7 @@ static void check_hall_error_status( // Check for correct update of error status
 } // check_hall_error_status
 /*****************************************************************************/
 static void check_hall_phase_change( // Check for valid phase change
-	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	unsigned curr_val = chk_data_s.curr_params.hall_val; // local copy of current Hall phase value
@@ -225,7 +213,7 @@ static void check_hall_phase_change( // Check for valid phase change
 } // check_hall_phase_change
 /*****************************************************************************/
 static void check_hall_spin_direction( // Check correct update of Hall spin direction
-	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	chk_data_s.motor_tsts[SPIN]++;
@@ -271,7 +259,7 @@ static void check_hall_spin_direction( // Check correct update of Hall spin dire
 } // check_hall_spin_direction
 /*****************************************************************************/
 static void check_hall_parameters( // Check all Hall parameters
-	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	// Check if Error-status test is activated
@@ -300,7 +288,7 @@ static int parameter_compare( // Check if 2 sets of Hall parameters are differen
 } // parameter_compare
 /*****************************************************************************/
 static void get_new_hall_client_data( // Get next set of Hall parameters
-	CHECK_HALL_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	streaming chanend c_hall // Hall channel between Client and Server
 )
 {
@@ -309,6 +297,11 @@ static void get_new_hall_client_data( // Get next set of Hall parameters
 
 	// Get new parameter values from Client function under test
 	foc_hall_get_parameters( chk_data_s.curr_params ,c_hall );
+
+#if (USE_XSCOPE)
+		xscope_int( 0 ,chk_data_s.curr_params.hall_val );
+		xscope_int( 1 ,chk_data_s.curr_params.err );
+#endif // (USE_XSCOPE)
 
 	// Check for change in non-speed parameters
 	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
@@ -337,7 +330,7 @@ static void get_new_hall_client_data( // Get next set of Hall parameters
 } // get_new_hall_client_data
 /*****************************************************************************/
 static void process_new_test_vector( // Process new test vector
-	CHECK_HALL_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int change = 0; // Clear flag indicating change in test vector detected
@@ -379,7 +372,7 @@ static void process_new_test_vector( // Process new test vector
 } // process_new_test_vector
 /*****************************************************************************/
 static void check_motor_hall_client_data( // Display Hall results for one motor
-	CHECK_HALL_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	streaming chanend c_tst, // Channel for receiving test vectors from test generator
 	streaming chanend c_hall // Hall channel between Client and Server
 )
@@ -396,7 +389,7 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
-	printstr("Start Checks For Motor_"); printintln( chk_data_s.id ); 
+	printstr("Start Checks For Motor_"); printintln( chk_data_s.common.options.flags[TST_MOTOR] ); 
 	release_lock(); // Release Display Mutex
 
 	c_tst :> chk_data_s.curr_vect; // Initialise test-vector structure with 1st test
@@ -444,9 +437,6 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 		motor_tsts += chk_data_s.motor_tsts[comp_cnt]; 
 	} // for comp_cnt
 
-	chk_data_s.all_errs[chk_data_s.id] += motor_errs;
-	chk_data_s.all_tsts[chk_data_s.id] += motor_tsts;
-
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
@@ -486,7 +476,7 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 	{
 		printstr( chk_data_s.padstr1 );
 		printstr( "All Motor_" );
-		printint( chk_data_s.id );
+		printint( chk_data_s.common.options.flags[TST_MOTOR] );
  		printstrln( " Tests PASSED" );
 	} // else !(motor_errs)
 
@@ -500,51 +490,21 @@ void check_all_hall_client_data( // Display Hall results for all motors
 	streaming chanend c_hall[] // Array of Hall channel between Client and Server
 )
 {
-	CHECK_HALL_TYP chk_data_s; // Structure containing test check data
-	int motor_cnt; // counts Motors 
-	int errs_all = 0;	// Preset flag to NO errors for all motors
-	int tsts_all = 0;	// Clear test counter for all motors
+	CHECK_TST_TYP chk_data_s; // Structure containing test check data
 
 
 	init_check_data( chk_data_s ); // Initialise check data
 
 	c_tst :> chk_data_s.common.options; // Get test options from generator core
 
-	// Loop through motors, so we can print results serially
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{
-		init_motor_checks( chk_data_s ,motor_cnt ); // Initialise Hall parameter structure
+	init_motor_checks( chk_data_s ); // Initialise Hall parameter structure
 
-		check_motor_hall_client_data( chk_data_s ,c_tst ,c_hall[motor_cnt] );
-	} // for motor_cnt
+	check_motor_hall_client_data( chk_data_s ,c_tst ,c_hall[chk_data_s.common.options.flags[TST_MOTOR]] );
 
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
 	printstrln( "Test Check Ends " );
 
-	// Update error statistics for all motors
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{
-		errs_all += chk_data_s.all_errs[motor_cnt]; 
-		tsts_all += chk_data_s.all_tsts[motor_cnt]; 
-	} // for motor_cnt
-
-	printint( tsts_all );
-	printstrln( " tests run" );
-
-	// Check for any errors
-	if (errs_all)
-	{
-		printint( errs_all );
-		printstr( " TESTS FAILED");
-		printstrln( "   (See individual motors for details)" );
-	} // if (errs_all)
-	else
-	{
-		printstrln( "ALL TESTS PASSED" );
-	} // else !(errs_all)
-
-	printcharln( ' ' );
 	release_lock(); // Release Display Mutex
 } // check_all_hall_client_data
 /*****************************************************************************/

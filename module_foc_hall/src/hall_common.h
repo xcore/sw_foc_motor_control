@@ -33,11 +33,9 @@
 	#error Define. HALL_PER_REV in app_global.h
 #endif // HALL_PER_REV
 
-/** Used to mask out Hall error-bit */
-#define HALL_NERR_MASK (0b1000) // Used to mask out Hall Error Bit(s)
-
-/** Used to mask out 3 Hall Sensor Phase Bits */
+#define HALL_BITS 4 // No of Active bits in QEI value
 #define HALL_PHASE_MASK (0b0111) // Used to mask out 3 Hall Sensor Phase Bits
+#define HALL_NERR_MASK (0b1000) // Used to mask out Hall Error Bit(s)
 
 /** Hall Request Data Command */
 #define HALL_CMD_DATA_REQ 1 // Request new hall sensor data
@@ -53,6 +51,12 @@
  */
 #define TICKS_PER_SEC_PER_HALL ((PLATFORM_REFERENCE_HZ + (HALL_PER_REV >> 1)) / HALL_PER_REV) // Ticks/sec/angular_position (rounded) // 14-bits
 #define TICKS_PER_MIN_PER_HALL (SECS_PER_MIN * TICKS_PER_SEC_PER_HALL) // Ticks/min/angular_position // 30 bits
+
+// QEI Command Codes (Client --> Server) 
+#define QEI_CMD_DATA_REQ	1	// QEI Data Request
+
+/** Raw Hall data type (on input pins) */
+typedef unsigned long HALL_RAW_TYP;
 
 /** Different Hall Error states */
 typedef enum ERROR_HALL_ETAG

@@ -35,7 +35,8 @@
 /** Enumeration of PWM Test Options */
 typedef enum PWM_TEST_ETAG
 {
-  TST_ANTI = 0,	// Test Anti-Clockwise spin
+  TST_MOTOR = 0,	// Select which motor to test
+  TST_ANTI,				// Test Anti-Clockwise spin
   TST_ERROR,	// Test Error-Status
   NUM_TEST_OPTS	// Handy Value!-)
 } PWM_TEST_ENUM;
@@ -123,15 +124,26 @@ typedef struct COMMON_HALL_TAG // Structure containing all common Hall test data
 	TEST_OPTS_TYP options; // Structure of test_option data
 	int phases[HALL_PER_POLE];	// array of all possible Hall phase values;
 	int inverse[HALL_PHASE_MASK];	// inverse phase array (converts Hall Phase values back to array offsets)
-} COMMON_HALL_TYP;
+} COMMON_TST_TYP;
 
 /*****************************************************************************/
 /** Initialise common Hall Test data
  * \param comm_hall_s, // Reference to structure of common Hall data
  */
 void init_common_data( // Initialise common Hall Test data
-	COMMON_HALL_TYP &comm_hall_s // Reference to structure of common Hall data
+	COMMON_TST_TYP &comm_hall_s // Reference to structure of common Hall data
 );
+/*****************************************************************************/
+/** Converts unsigned value to binary formatted string 
+ * \param out_str[], // On ouput contains binary formatted string
+ * \param inp_val, // Input value to convert
+ * \param bit_len // Number of LS-bits to convert
+ */
+void convert_unsigned_to_binary_string( // converts unsigned value to binary formatted string 
+	char out_str[], // On ouput contains binary formatted string
+	unsigned inp_val, // Input value to convert
+	int bit_len // Number of LS-bits to convert
+	);
 /*****************************************************************************/
 /** Print test vector details
  * \param comm_hall_s, // Reference to structure of common Hall data
@@ -139,7 +151,7 @@ void init_common_data( // Initialise common Hall Test data
  * \param prefix_str[] // Prefix string
  */
 void print_test_vector( // Print test vector details
-	COMMON_HALL_TYP &comm_hall_s, // Reference to structure of common Hall data
+	COMMON_TST_TYP &comm_hall_s, // Reference to structure of common Hall data
 	TEST_VECT_TYP inp_vect, // Structure containing current Hall test vector to be printed
 	const char prefix_str[] // prefix string
 );

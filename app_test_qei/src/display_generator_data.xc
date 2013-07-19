@@ -15,7 +15,7 @@
 #include "display_generator_data.h"
 
 /*****************************************************************************/
-void print_qei_value( // Prints QEI value in binary format
+static void print_qei_value( // Prints QEI value in binary format
 	streaming chanend c_gen, // Channel for receiving generated QEI values
 	char disp_str[], // Display string
 	QEI_RAW_TYP qei_val // Input QEI value
