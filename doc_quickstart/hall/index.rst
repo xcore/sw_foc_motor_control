@@ -25,11 +25,14 @@ The output pins driven by the generator are looped back to the Hall Server input
 The generator runs through a set of tests, these are specified formally as a *test vector* and transmitted to the test checker. For each test the generator creates the appropriate Hall raw-data and drives this onto the output pins. The Hall Server recognises changes on its input pins, processes the new raw-data, and updates the Hall parameters (Hall_Sensor_value and Error_Status). The test checker reads the specification in the received test vector, then polls the Hall Client for parameters. These parameters are checked for correctness against the test vector specification.
 
 The following tests are always performed
+
    #. A *Phase_Value* test: the 3 phase values should form a valid combination
 
 The following tests are optional
-   #. An *Error Status* test: the error-status flag should be raised when 3 consecutive error-bits are detected.
+
+   #. Select which Motor to test: Motor_0 or Motor_1
    #. A *Spin Direction* test: the phase values should change in the required order
+   #. An *Error Status* test: the error-status flag should be raised when 3 consecutive error-bits are detected.
 
 The options are selected by editing the flags in the file hall_tests.txt
 
@@ -52,7 +55,7 @@ Configure And Run The Simulator
 -------------------------------
 
    #. Double click ``app_test_hall`` in the left hand ``Project Explorer`` window.
-   #. Click on the ``Run`` icon (the white arrow in the green circle) in the top menu bar. Select ``Run Configurations``
+   #. Click on the arrow next to the ``Run`` icon (the white arrow in the green circle) in the top menu bar. Select ``Run Configurations``
    #. In ``Run Configurations`` window, double click on ``xCORE Application``.
    #. You should find that the left hand side of the ``Run Configurations`` window, should be populated with details from the ``app_test_hall`` project. If the details are blank, this is probably because the project was not selected correctly in the first step. If this has happened, and the problem persists, browse to the correct project, and select the executable.
    #. Select the ``run on simulator`` button.
@@ -82,13 +85,10 @@ Configure And Run The Simulator
       #. Click ``Run``
 
 
-Results 
---------
+Test Results 
+------------
 
-After a few seconds, test results will start to appear in the console window, and note that there may be pauses of upto 1 minute in console output. The test lasts upto 10 minutes. It is completed when the following 2 messages have appeared::
-
-   Test Generation Ends       
-   Test Check Ends
+After a few seconds, output will start to appear in the console window. A dot is printed every time a Hall client request is made. This gives confidence that the test harness is doing something! The test lasts upto 5 minutes. It should complete with the message "ALL TESTS PASSED". If any tests fail, extra output will be generated giving details on the test(s) that failed.
 
 For background on the Hall protocol see the ``Overview`` document for module_foc_hall
 
@@ -126,9 +126,8 @@ When the executable has stopped running, view the VCD file as follows:-
    #. If not already active, open a ``Waveform`` window as follows:-
    #. In the main toolbar, select Window->Show_View->Waves
    #. Now add some signals to the Waves window as follows:-
-   #. In the Signals window, select tile[1]->ports->XS1_PORT_4A, and drag this to the left-hand column of the Waveform window
-   #. This may not work first time, but try leaving a few seconds between selecting and dragging
-   #. When successful a set of 12 waveforms should appear in the right column of the Waveform window.
+   #. In the Signals window, open the Ports directory
+   #. Now double click on tile[1]->ports->XS1_PORT_4A, a set of 12 waveforms should appear in the right column of the Waveform window.
    #. To view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar
    #. Now repeatedly click on the ``Zoom In`` button until the numbers [b a e c d 9] can be seen in the top waveform (PORT_M1_HALLSENSOR) 
 
@@ -137,15 +136,43 @@ These are the Hall raw-data values and indicate that Motor_0 is turning clock-wi
 The waveforms for Motor_1 can be viewed by loading Port XS1_PORT_4B (PORT_M2_HALLSENSOR).
 
 
+Using The ``xSCOPE`` (xmt) File
+-------------------------------
+
+The values of variables in the program can be inspected using the xSCOPE functionality. This allow time-varying changes in variable values to be plotted in a similar manner to using an oscilloscope for real-signals. In order to use xSCOPE the following actions are required. (For this application they have already been done) :-
+
+   #. In the ``Makefile`` the option ``-fxscope`` needs to be added to the ``XCC`` flags.
+   #. In the ``xC`` files that use xSCOPE functions, the header file <xscope.h> needs to be included.
+   #. In the ``main.xc`` file, the xSCOPE initialisation function xscope_user_init() needs to be added.
+   #. In each ``xC`` file that uses xSCOPE to plot variables, one or more xSCOPE capture functions are required.
+
+The above requirements are discussed in more detail below in the section ``Look at the Code``. Now rebuild the code as follows:-
+
+   #. In the ``Run Configurations`` dialogue box (see above), select the xSCOPE tab
+   #. Now select the ``Offline`` button, then click ``Apply``, then click ``Run``
+
+The program will build and start to produce test output in the Console window. When the test has completed, move to the Project explorer window. In the app_test_hall directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 3 signals listed: ``Input_Pins``, ``Hall_Value``, and ``Err_Status``. Use the boxes to the left of each signal to switch the traces on and off. The tests take about 17.5ms. The tick marks at the bottom of the window show at what time xSCOPE sampled the signals. The signal is only sampled when the patterns on the Input-pins changes. This is currently approximately every 620us, but varies with both the speed and type of the motor. Now lets look at each trace in more detail:
+
+   #. First, switch off all traces except the ``Err_Status`` trace. The error flag is zero apart from between 6.3 and 8.1ms when the error status was being tested. Now. switch on the Input-pins trace, it will be seen that this corresponds to bit_3 of the Input_pins going to zero (NERR bit). Note that, the Err_status does NOT switch on immediately. This is due to 'noise-filtering': a set of consecutive zero NERR bits are required to switch on the Err_status. Currently, this is set to 2 (using define MAX_HALL_STATUS_ERR in hall_server.h). Also the same number of NERR bits of value one are required to switch OFF the Err_Status flag.
+
+   #. Second, switch off all traces except the ``Hall_Value`` trace. From 0 to 10.8ms we have the clockwise tests, where the Hall value sequence is 001 -> 011 -> 010 -> 110 -> 100 -> 101 -> 001, then from 10.9 to 16.8ms we have the anti-clockwise tests, where the Hall value sequence is 001 -> 101 -> 100 -> 110 -> 010 -> 0111 -> 001. The change in spin direction can be seen in the trace as a vertical line of symmetry at about 10.0ms.
+
+Note well, to view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar. To zoom in/out click the 'plus/minus' icons to the left of the ``Zoom Fit`` icon
+
+To learn more about xSCOPE look at the ``How To`` by selecting ``Window --> Show_View --> How_To_Browser``. Then in the search box type ``xscope``. This should find the section titled ``XMOS Examples: Instrumentation and xSCOPE``. In the sub-section ``Event Examples`` you will find more information on capturing events. In the sub-section ``IO Examples`` you will find more information on re-directing I/O using xSCOPE.
+
 Look at the Code
 ----------------
 
    #. Examine the application code. In xTIMEcomposer, navigate to the ``src`` directory under ``app_test_hall``  and double click on the ``main.xc`` file within it. The file will open in the central editor window.
    #. Find the ``main.xc`` file and note that main() runs 3 cores (processes) in parallel. All cores run on the same tile at a reference frequency of 100 MHz.
-   #. ``gen_all_hall_test_data()`` Generates test data and transmits it on the 32-bit buffered test port (``p4_tst``).
-   #. ``foc_hall_do_multiple()`` is the Hall sensor Server, receiving test data on the 4-bit Hall sensor port (``p4_hall``), processes the data, and transmitting output data over channel ``c_hall``
-   #. ``check_all_hall_client_data()`` contains the Hall sensor Client which receives Hall sensor output data over channel ``c_hall``, and displays the results. ``gen_all_hall_test_data()`` and ``check_all_hall_client_data()`` both produce display information in parallel. The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used control a MutEx which only allows one core at a time to print to the display.
-   #. Find the ``app_global.h`` header. At the top are the motor definitions. The Hall sensor definitions are specific to the type of motor being used and are currently set up for the LDO motors supplied with the development kit.
+      * ``gen_all_hall_test_data()`` Generates test vectors and test data. The test vectors are transmitted using channel ``c_gen_chk`` to the Checker core. The test data is output on the 32-bit buffered test output port (``p4_tst``).
+      * ``foc_hall_do_multiple()`` is the Hall sensor Server, receiving test data on the 4-bit Hall sensor port (``p4_hall``), processes the data, and transmitting output data over channel ``c_hall_chk``
+      * ``check_all_hall_client_data()`` contains the Hall sensor Client which receives Hall sensor output data over channel ``c_hall_chk``, and displays the results. ``gen_all_hall_test_data()`` and ``check_all_hall_client_data()`` both produce display information in parallel. The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used control a MutEx which only allows one core at a time to print to the display.
+      * Find the ``app_global.h`` header. At the top are the motor definitions. The Hall sensor definitions are specific to the type of motor being used and are currently set up for the LDO motors supplied with the development kit.
+      * As well as main(), there is a function called xscope_user_init(), this is called before main to initialise xSCOPE capability. In here are registered the 3 Hall signals that were described above, and seen in the xSCOPE viewer.
+   #. Find the ``app_global.h`` header. At the top are the xSCOPE definitions, followed by the motor definitions, and then the Hall Sensor definitions, which are specific to the type of motor being used and are currently set up for the LDO motors supplied with the development kit.
    #. Note in ``app_global.h`` the define PRINT_TST_HALL used to switch on verbose printing. An example of this can be found in file ``hall_results.txt``.
-   #. Find the file ``check_hall_tests.xc``. In here the function ``check_motor_hall_client_data()`` handles the Hall sensor output data for one motor. In the 'while loop' is a function ``foc_hall_get_parameters()``. This is the Hall sensor Client. It communicates with the Hall sensor server function ``foc_hall_do_multiple()`` via channel ``c_hall``. The 'while loop' is paced to request Hall sensor data over the ``c_hall`` channel every 40 micro-seconds. This is typical of the issue rate when using real hardware.
+   #. Find the file ``check_hall_tests.xc``. In here the function ``check_motor_hall_client_data()`` handles the Hall sensor output data for one motor. In the 'while loop' is a function ``foc_hall_get_parameters()``. This is the Hall sensor Client. It communicates with the Hall sensor server function ``foc_hall_do_multiple()`` via channel ``c_hall_chk``. The 'while loop' is paced to request Hall sensor data over the ``c_hall_chk`` channel every 40 micro-seconds. This is typical of the issue rate when using real hardware.
+   #. Find the file ``hall_server.xc`` in the Hall Sensor module directory (``module_foc_hall``). Near the end of function ``foc_hall_do_multiple()`` are the xSCOPE instructions used to capture the signals seen in the xSCOPE viewer. Signal capture occurs each time a change on the input pins is detected.
 

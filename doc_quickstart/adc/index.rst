@@ -46,7 +46,7 @@ The following tests are always performed
 
 The following tests are optional
 
-   #. Which motor to test (0 or 1)
+   #. Select which Motor to test: Motor_0 or Motor_1
    #. Selection_1 tests: Small-Gain, Non-Paced, Clock-wise and Fast-Speed
    #. Selection_2 tests: Pacing-On, Large-Gain, Anti-Clockwise and Fast-Speed
    #. Slow_Speed tests: Non-Paced, Large-Gain, and Clock-wise (WARNING: Very Long Test)
@@ -205,7 +205,7 @@ Look at the Code
          * ``check_all_adc_client_data()`` receives ADC parameters from the ADC Client down channel c_adc_chk. After sufficient sets of parameters are received, a number of checks are performed, and the results displayed. ``gen_all_adc_test_data()`` and ``check_all_adc_client_data()`` both produce display information in parallel. 
          * The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used to control a MutEx which allows only one core at a time to print to the display.
          * As well as main(), there is a function called xscope_user_init(), this is called before main to initialise xSCOPE capability. In here are registered the 3 ADC signals that were described above, and seen in the xSCOPE viewer.
-   #. Find the file ``check_adc_tests.xc``. In here the function ``get_adc_client_data()`` requests new ADC parameters via the ADC Client function ``foc_adc_get_parameters()``. It communicates with the ADC server function ``foc_adc_7265_triggered()`` via channel ``c_adc``. Directly after ``foc_adc_get_parameters()`` are the xSCOPE functions which allow the ADC values to be captured. 
+   #. Find the file ``check_adc_tests.xc``. In here the function ``get_adc_client_data()`` requests new ADC parameters via the ADC Client function ``foc_adc_get_parameters()``. It communicates with the ADC server function ``foc_adc_7265_triggered()`` via channel ``c_adc``. Directly after ``foc_adc_get_parameters()`` are the xSCOPE functions which allow the ADC values to be captured.
    #. Find the ``app_global.h`` header. At the top are the xSCOPE definitions, followed by the motor definitions, and then the ADC definitions.
    #. Note in ``app_global.h`` the define PRINT_TST_ADC used to switch on verbose printing. If verbose printing is on, in the left hand column are the data values used by the test generator. These are a time-stamp, the gain, and two 25-bit 'standardised' ADC values for Phase_A and Phase_B. (The 25 bits are assigned as follows 1 sign-bit, 8 gain-bits and the remaining 16 bits are sinusoid values). In the right hand column are the data values received by the test checker. These are: the time-stamp, and a 12-bit ADC value for each of the 3 phases.
    #. Find the ``adc_tests.txt`` file. In the left hand column are a set of flags to switch On/Off various sets of tests.

@@ -98,9 +98,7 @@ static void service_hall_client_request( // Send processed HALL data to client
 	streaming chanend c_hall // Data channel to client (carries processed HALL data)
 )
 {
-// printstr("S5:"); printintln( hall_data_s.params.hall_val );
 	c_hall <: hall_data_s.params;
-// printstr("S6:"); printintln( hall_data_s.params.hall_val );
 
 	return;
 } // service_hall_client_request
@@ -131,6 +129,13 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) p4_hall[motor_id] when pinsneq(hall_bufs[motor_id]) :> hall_bufs[motor_id] :
 			{
 				service_hall_input_pins( all_hall_data[motor_id] ,hall_bufs[motor_id] );
+
+#if (USE_XSCOPE)
+				// NB These signals have to be registered in the file main.xc for the target application
+				xscope_int( 0 ,hall_bufs[motor_id] );
+				xscope_int( 1 ,all_hall_data[motor_id].params.hall_val );
+				xscope_int( 2 ,all_hall_data[motor_id].params.err );
+#endif // (USE_XSCOPE)
 			} // case
 			break;
 

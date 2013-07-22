@@ -298,11 +298,6 @@ static void get_new_hall_client_data( // Get next set of Hall parameters
 	// Get new parameter values from Client function under test
 	foc_hall_get_parameters( chk_data_s.curr_params ,c_hall );
 
-#if (USE_XSCOPE)
-		xscope_int( 0 ,chk_data_s.curr_params.hall_val );
-		xscope_int( 1 ,chk_data_s.curr_params.err );
-#endif // (USE_XSCOPE)
-
 	// Check for change in non-speed parameters
 	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
 

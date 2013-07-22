@@ -27,15 +27,17 @@ The output pins driven by the generator are looped back to the QEI Server input 
 The generator runs through a set of tests, these are specified formally as a *test vector* and transmitted to the test checker. For each test the generator creates the appropriate QEI raw-data and drives this onto the output pins. The QEI Server recognises changes on its input pins, processes the new raw-data, and updates the QEI parameters (Velocity, Direction, etc). The test checker reads the specification in the received test vector, then polls the QEI Client for parameters. These parameters are checked for correctness against the test vector specification.
 
 The following tests are always performed
+
    #. A *Fast* test: the speed should be fast and steady
    #. A *Slow* test: the speed should be slow and steady
    #. An *Acceleration* test: the speed should increase
    #. A *Deceleration* test: the speed should decrease
 
 The following tests are optional
-   #. An *Origin* test: the revolution counter should increment when the origin is detected.
-   #. An *Error Status* test: the error-status flag should be raised when 3 consecutive error-bits are detected.
+
+   #. Select which Motor to test: Motor_0 or Motor_1
    #. A *Spin Direction* test: the spin direction bit should be correctly set
+   #. An *Error Status* test: the error-status flag should be raised when 3 consecutive error-bits are detected.
 
 The options are selected by editing the flags in the file qei_tests.txt
 
@@ -91,8 +93,7 @@ Configure And Run The Simulator
 Test Results 
 ------------
 
-After a few seconds, output will start to appear in the console window. A dot is printed every time a QEI client request is made. This gives confidence that the test harness is doing something! First Motor_0 is tested, and then Motor_1. The test lasts upto 10 minutes. It should complete with the message "ALL TESTS PASSED". If any tests fail, extra output will be generated giving details on the test(s) that failed.
-
+After a few seconds, output will start to appear in the console window. A dot is printed every time a QEI client request is made. This gives confidence that the test harness is doing something! The test lasts upto 5 minutes. It should complete with the message "ALL TESTS PASSED". If any tests fail, extra output will be generated giving details on the test(s) that failed.
 
 For background on the QEI protocol see the ``Overview`` document for module_foc_qei
 
@@ -155,7 +156,7 @@ The above requirements are discussed in more detail below in the section ``Look 
    #. In the ``Run Configurations`` dialogue box (see above), select the xSCOPE tab
    #. Now select the ``Offline`` button, then click ``Apply``, then click ``Run``
 
-The program will build and start to produce test output in the Console window. When the test has completed, move to the Project explorer window. In the app_test_adc directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 4 signals listed: ``Rev_Cnt``, ``Angle``, ``Velocity``, and ``Error``. Use the boxes to the left of each signal to switch the traces on and off. The tests take about 31.3ms. Now lets look at each trace in more detail:
+The program will build and start to produce test output in the Console window. When the test has completed, move to the Project explorer window. In the app_test_qei directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 4 signals listed: ``Rev_Cnt``, ``Angle``, ``Velocity``, and ``Error``. Use the boxes to the left of each signal to switch the traces on and off. The tests take about 31.3ms. Now lets look at each trace in more detail:
 
    #. First, switch off all traces except the ``Error`` trace. The error signal is zero apart from at about 5.7ms when the error status was being tested.
 
@@ -173,11 +174,11 @@ Look at the Code
 ----------------
 
    #. Examine the application code. In xTIMEcomposer, navigate to the ``src`` directory under ``app_test_qei``  and double click on the ``main.xc`` file within it. The file will open in the central editor window.
-   #. Review the ``main.xc`` and note that main() runs 4 tasks on 4 logical cores in parallel.
-         * ``gen_all_qei_test_data()`` Generates test data and transmits it on the 4-bit test port (``p4_tst``).
+   #. Review the ``main.xc`` and note that main() runs 4 tasks on 4 logical cores in parallel. All cores run on the same tile at a reference frequency of 100 MHz.
+         * ``gen_all_qei_test_data()`` generates test vectors and test data. The test vectors are transmitted using channel ``c_gen_chk`` to the Checker core. The test data is output on the 32-bit buffered test output port (``p4_tst``).
          * ``disp_gen_data()`` Accepts raw QEI data values over a channel (``c_gen_dis``), formats them, and then prints them.
-         * ``foc_qei_do_multiple()`` is the QEI Server, receiving test data on the 4-bit QEI port (``p4_qei``), processes the data, and transmitting output data over channel ``c_qei``
-         * ``check_all_qei_client_data()`` contains the QEI Client which receives QEI output parameters over channel ``c_qei``, checks the QEI parameters, and displays the results. ``gen_all_qei_test_data()`` and ``check_all_qei_client_data()`` both produce display information in parallel. 
+         * ``foc_qei_do_multiple()`` is the QEI Server, receiving test data on the 4-bit QEI port (``p4_qei``), processes the data, and transmitting output data over channel ``c_qei_chk``
+         * ``check_all_qei_client_data()`` contains the QEI Client which receives QEI output parameters over channel ``c_qei_chk``, checks the QEI parameters, and displays the results. ``gen_all_qei_test_data()`` and ``check_all_qei_client_data()`` both produce display information in parallel. 
          * The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used control a MutEx which allows only one core at a time to print to the display.
          * As well as main(), there is a function called xscope_user_init(), this is called before main to initialise xSCOPE capability. In here are registered the 4 QEI signals that were described above, and seen in the xSCOPE viewer.
    #. Find the ``app_global.h`` header. At the top are the xSCOPE definitions, followed by the motor definitions, and then the QEI definitions, which are specific to the type of motor being used and are currently set up for the LDO motors supplied with the development kit.

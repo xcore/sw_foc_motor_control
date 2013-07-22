@@ -24,9 +24,10 @@ on tile[MOTOR_TILE]: port out p4_tst[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER ,PORT
 /*****************************************************************************/
 void xscope_user_init()
 {
-	xscope_register( 2
-		,XSCOPE_CONTINUOUS, "Hall", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "Err", XSCOPE_INT , "n"
+	xscope_register( 3
+		,XSCOPE_CONTINUOUS, "Input_Pins", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Hall_Value", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Err_Status", XSCOPE_INT , "n"
 	); // xscope_register 
 } // xscope_user_init
 /*****************************************************************************/
@@ -35,8 +36,8 @@ void xscope_user_init()
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {
-	streaming chan c_hall[NUMBER_OF_MOTORS]; // Channel connecting Client and Server
-	streaming chan c_tst; // Channel for sending test vectors from Generator to Checker core
+	streaming chan c_hall_chk[NUMBER_OF_MOTORS]; // Channel connecting Hall Server and Checker cores
+	streaming chan c_gen_chk; // Channel for sending test vectors from Generator to Checker core
 
 
 	par
@@ -47,11 +48,11 @@ int main ( void ) // Program Entry Point
 
 			par
 			{
-				gen_all_hall_test_data( c_tst ,p4_tst ); // Generate test data
+				gen_all_hall_test_data( c_gen_chk ,p4_tst ); // Generate test data
 		
-				foc_hall_do_multiple( c_hall, p4_hall ); // Server function under test
+				foc_hall_do_multiple( c_hall_chk, p4_hall ); // Server function under test
 		
-				check_all_hall_client_data( c_tst ,c_hall ); // Check results using Hall Client
+				check_all_hall_client_data( c_gen_chk ,c_hall_chk ); // Check results using Hall Client
 			} // par
 		
 		  free_locks(); // Free Mutex for display

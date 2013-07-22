@@ -37,7 +37,7 @@ void xscope_user_init()
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {
-	streaming chan c_gen_qei[NUMBER_OF_MOTORS]; // For each motor, a channel connecting test generator to QEI Server
+	streaming chan c_qei_chk[NUMBER_OF_MOTORS]; // For each motor, a channel connecting QEI Server and Checker cores
 	streaming chan c_gen_chk; // Channel for sending test vectors from Generator to Checker core
 	streaming chan c_gen_dis; // Channel for sending data from Generator to Display core
 
@@ -54,9 +54,9 @@ int main ( void ) // Program Entry Point
 
 				disp_gen_data( c_gen_dis ); // Display generated test data
 		
-				foc_qei_do_multiple( c_gen_qei, p4_qei ); // Server function under test
+				foc_qei_do_multiple( c_qei_chk, p4_qei ); // Server function under test
 		
-				check_all_qei_client_data( c_gen_chk ,c_gen_qei ); // Check results using QEI Client
+				check_all_qei_client_data( c_gen_chk ,c_qei_chk ); // Check results using QEI Client
 			} // par
 		
 		  free_locks(); // Free Mutex for display
