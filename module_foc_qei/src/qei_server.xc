@@ -79,7 +79,7 @@ static const ANG_INC_TYP get_spin_state[NUM_QEI_PHASES][NUM_QEI_PHASES] = {
 		{ QEI_JUMP,		QEI_CLOCK,	QEI_ANTI,		QEI_STALL	}
 };
 
-	QEI_ENUM_TYP cur_state = get_spin_state[inp_qei_s.prev_phases][cur_phases]; // Estimated new spin-state fom phase info.
+	QEI_ENUM_TYP cur_state = get_spin_state[cur_phases][inp_qei_s.prev_phases]; // Estimated new spin-state fom phase info.
 	QEI_ENUM_TYP prev_state = inp_qei_s.prev_state; // local copy of previous QEI-state
 	ANG_INC_TYP out_ang_inc; // Output angular increment value
 
@@ -445,6 +445,16 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 			{
 				chronometer :> all_qei_s[motor_id].curr_time;	// Get new time stamp as soon as possible
 				service_input_pins( all_qei_s[motor_id] ,inp_pins[motor_id] );
+
+#if (USE_XSCOPE)
+		xscope_int( 0 ,inp_pins[motor_id] );
+		xscope_int( 1 ,all_qei_s[motor_id].prev_state );
+		xscope_int( 2 ,all_qei_s[motor_id].confid );
+		xscope_int( 3 ,all_qei_s[motor_id].params.rev_cnt );
+		xscope_int( 4 ,all_qei_s[motor_id].params.theta );
+		xscope_int( 5 ,all_qei_s[motor_id].params.veloc );
+		xscope_int( 6 ,all_qei_s[motor_id].params.err );
+#endif // (USE_XSCOPE)
 			} // case
 			break;
 
@@ -452,6 +462,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) c_qei[motor_id] :> int :
 			{
 				service_client_request( all_qei_s[motor_id] ,c_qei[motor_id] );
+
 			} // case
 			break;
 		} // select

@@ -75,6 +75,7 @@ typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 	int lo_ticks;			// No. of ticks/QEI at low speed
 	unsigned cnt;			// QEI position counter
 	unsigned off;			// offset into QEI Phase cycle
+	unsigned rnd;		// Random No. from CRC
 	int orig; // QEI origin flag (Bit_2 is 1 at origin)
 	int nerr; // QEI error flag (Bit_3 is 1 for NO errors)
 	int scale; // velocity scaling factor (used for acceleration and deceleration)

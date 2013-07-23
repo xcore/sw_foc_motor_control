@@ -26,7 +26,7 @@ XCC_FLAGS = -O3 -g -report -Wno-timing -fxscope
 USED_MODULES = module_foc_display module_foc_loop module_foc_qei module_foc_adc module_foc_hall module_foc_comms 
 USED_MODULES += module_pwm_foc
 USED_MODULES += module_xtcp module_ethernet_board_support module_can 
-USED_MODULES += module_lib_uint_32 module_lib_uint_64
+USED_MODULES += module_lib_uint_32 module_lib_uint_64 module_locks
 
 USE_XTCP_MAC_CUSTOM_FILTER = 1
 

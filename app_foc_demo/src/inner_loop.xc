@@ -330,7 +330,7 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 
 	// To calculate alpha and beta currents from measured data
 //MB~ clarke_transform( motor_s.adc_params.vals[ADC_PHASE_A], motor_s.adc_params.vals[ADC_PHASE_B], motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
-/* MB~ FIXME There is problem with a inverse sign here. Need to work out why this bodge is required */
+/* MB~ FIXME There is problem with an inverse sign here. Need to work out why this bodge is required */
 
 	clarke_transform( -motor_s.adc_params.vals[ADC_PHASE_A], -motor_s.adc_params.vals[ADC_PHASE_B], -motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
 // if (motor_s.xscope) xscope_probe_data( 6 ,beta_meas );
@@ -973,6 +973,12 @@ static void use_motor ( // Start motor, and run step through different motor sta
 				{
 					/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
 					foc_qei_get_parameters( motor_s.qei_params ,c_qei );
+
+//MB~ FIXME: There was a sign change in the QEI module, this needs working through control loop
+motor_s.qei_params.veloc = -motor_s.qei_params.veloc; 
+motor_s.qei_params.theta = -motor_s.qei_params.theta;
+motor_s.qei_params.rev_cnt = -motor_s.qei_params.rev_cnt;
+
 					motor_s.meas_speed = abs( motor_s.qei_params.veloc ); // NB Used to spot stalling behaviour
 
 					if (4400 < motor_s.meas_speed) // Safety

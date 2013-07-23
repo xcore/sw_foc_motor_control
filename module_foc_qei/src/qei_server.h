@@ -53,6 +53,8 @@
 #ifndef _QEI_SERVER_H_
 #define _QEI_SERVER_H_
 
+#include <stdlib.h>
+
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
@@ -72,7 +74,7 @@
 #define MIN_TICKS_PER_QEI (TICKS_PER_MIN_PER_QEI / MAX_SPEC_RPM) // Min. expected Ticks/QEI // 12 bits
 #define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
 
-#define MAX_CONFID 2 // Maximum confidence value
+#define MAX_CONFID 4 // Maximum confidence value
 #define MAX_QEI_STATE_ERR 8 // Maximum number of consecutive QEI state-transition errors allowed
 
 #define QEI_CNT_LIMIT (QEI_PER_REV + HALF_QEI_CNT) // 540 degrees of rotation
@@ -108,15 +110,20 @@ typedef struct QEI_DATA_TAG //
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
 	unsigned diff_time; // Difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
+	unsigned interval; // expected interval between QEI phase changes
+	unsigned vel_time; // MB~
+	unsigned acc_time; // MB~
 	QEI_ENUM_TYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
 	int status_errs; // counter for invalid QEI status errors
 	int ang_cnt; // Counts angular position of motor (from origin)
+	int prev_ang; // MB~
+	ANG_INC_TYP ang_inc; // angular increment value
 	int theta; // angular position returned to client
 	int spin_sign; // Sign of spin direction
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
 	int prev_orig; // Previous origin flag
-	int confid; // Confidence in current qei-state
+	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
 	int id; // Unique motor identifier
 	int dbg; // Debug
 

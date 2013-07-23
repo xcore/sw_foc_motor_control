@@ -397,6 +397,8 @@ static void check_qei_angular_speed( // Check all QEI speed as motor accelerates
 	int mean; // Mean speed parameter under-test
 
 
+	assert(0 < chk_data_s.speed_num); // ERROR: No test data collected. Unexpected behaviour
+
 	// Calculate mean from accumulated data (with rounding to -infinity)
 	if (0 > chk_data_s.speed_sum)
 	{  // -ve Rounding
@@ -522,13 +524,6 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 
 	// Get new parameter values from Client function under test
 	foc_qei_get_parameters( chk_data_s.curr_params ,c_qei );
-
-#if (USE_XSCOPE)
-		xscope_int( 0 ,chk_data_s.curr_params.rev_cnt );
-		xscope_int( 1 ,chk_data_s.curr_params.theta );
-		xscope_int( 2 ,chk_data_s.curr_params.veloc );
-		xscope_int( 3 ,chk_data_s.curr_params.err );
-#endif // (USE_XSCOPE)
 
 	// Check for change in non-speed parameters
 	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
@@ -802,6 +797,7 @@ void check_all_qei_client_data( // Display QEI results for all motors
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
 	printstrln( "Test Check Ends " );
+	release_lock(); // Release Display Mutex
 
 } // check_all_qei_client_data
 /*****************************************************************************/

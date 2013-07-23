@@ -24,11 +24,14 @@ on tile[MOTOR_TILE]: port out p4_tst[NUMBER_OF_MOTORS] = { PORT_M1_HALLSENSOR ,P
 /*****************************************************************************/
 void xscope_user_init()
 {
-	xscope_register( 4
-		,XSCOPE_CONTINUOUS, "Rev_Cnt", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "Angle", XSCOPE_INT , "n"
+	xscope_register( 7
+		,XSCOPE_CONTINUOUS, "Input_Pins", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Spin_State", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Confidence", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "RevCounter", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "AngularPos", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Velocity", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "Error", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Err_Status", XSCOPE_INT , "n"
 	); // xscope_register 
 } // xscope_user_init
 /*****************************************************************************/
