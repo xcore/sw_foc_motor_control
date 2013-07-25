@@ -15,7 +15,7 @@
 #ifndef _QEI_COMMON_H_
 #define _QEI_COMMON_H_
 
-// #include "use_locks.h" //MB~
+#include "use_locks.h" //MB~
 
 #include "app_global.h"
 
