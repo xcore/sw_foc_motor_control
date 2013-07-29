@@ -525,6 +525,13 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 	// Get new parameter values from Client function under test
 	foc_qei_get_parameters( chk_data_s.curr_params ,c_qei );
 
+#if (USE_XSCOPE)
+		xscope_int( 0 ,chk_data_s.curr_params.rev_cnt );
+		xscope_int( 1 ,chk_data_s.curr_params.theta );
+		xscope_int( 2 ,chk_data_s.curr_params.veloc );
+		xscope_int( 3 ,chk_data_s.curr_params.err );
+#endif // (USE_XSCOPE)
+
 	// Check for change in non-speed parameters
 	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
 

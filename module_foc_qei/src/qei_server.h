@@ -111,13 +111,10 @@ typedef struct QEI_DATA_TAG //
 	unsigned prev_time; // Previous port time-stamp
 	unsigned diff_time; // Difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	unsigned interval; // expected interval between QEI phase changes
-	unsigned vel_time; // MB~
-	unsigned acc_time; // MB~
 	QEI_ENUM_TYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
 	int status_errs; // counter for invalid QEI status errors
 	int ang_cnt; // Counts angular position of motor (from origin)
-	int prev_ang; // MB~
 	ANG_INC_TYP ang_inc; // angular increment value
 	int theta; // angular position returned to client
 	int spin_sign; // Sign of spin direction

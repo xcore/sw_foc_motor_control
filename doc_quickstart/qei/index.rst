@@ -156,7 +156,7 @@ The above requirements are discussed in more detail below in the section ``Look 
    #. In the ``Run Configurations`` dialogue box (see above), select the xSCOPE tab
    #. Now select the ``Offline`` button, then click ``Apply``, then click ``Run``
 
-The program will build and start to produce test output in the Console window. When the test has completed, move to the Project explorer window. In the app_test_qei directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 4 signals listed: ``Rev_Cnt``, ``Angle``, ``Velocity``, and ``Error``. Use the boxes to the left of each signal to switch the traces on and off. The tests take about 31.3ms. Now lets look at each trace in more detail:
+The program will build and start to produce test output in the Console window. When the test has completed, move to the Project explorer window. In the app_test_qei directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 4 signals listed: ``RevCounter``, ``AngularPos``, ``Velocity``, and ``Err_Status``. Use the boxes to the left of each signal to switch the traces on and off. The tests take about 31.3ms. Now lets look at each trace in more detail:
 
    #. First, switch off all traces except the ``Error`` trace. The error signal is zero apart from at about 5.7ms when the error status was being tested.
 

@@ -15,8 +15,6 @@
 #ifndef _QEI_COMMON_H_
 #define _QEI_COMMON_H_
 
-#include "use_locks.h" //MB~
-
 #include "app_global.h"
 
 #ifndef PLATFORM_REFERENCE_MHZ
@@ -63,6 +61,12 @@ typedef enum ERROR_QEI_ETAG
   QEI_ERR_ON,			// Error
   NUM_QEI_ERRS	// Handy Value!-)
 } ERROR_QEI_ENUM;
+
+/** Type containing array of QEI Phase values */
+typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
+{
+	int vals[NUM_QEI_PHASES];	// Array of QEI Phase values (NB Increment for clockwise rotation)
+} QEI_PHASE_TYP;
 
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_PARAM_TAG // 

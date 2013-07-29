@@ -31,17 +31,12 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.diff_time = 0; // NB Initially this is used to count input-pin changes
 	inp_qei_s.id = inp_id; // Clear Previous phase values
 	inp_qei_s.ang_cnt = 0; // Reset counter indicating angular position of motor (from origin)
-	inp_qei_s.ang_inc = 0; // Reset angular position increment
-	inp_qei_s.prev_ang = 0; // MB~
 	inp_qei_s.spin_sign = 0; // Clear Sign of spin direction
 	inp_qei_s.prev_state = QEI_STALL; // Initialise previous QEI state
 	inp_qei_s.state_errs = 0; // Initialise counter for invalid QEI state transitions
 	inp_qei_s.status_errs = 0; // Initialise counter for QEI status errors
-	inp_qei_s.confid = 0; // Initialise spin-direction confidence value (zero: No confidence)
+	inp_qei_s.confid = 1; // Initialise confidence value
 
-	inp_qei_s.acc_time = 0; //MB~
-	inp_qei_s.vel_time = 0; //MB~
-	inp_qei_s.interval = 0; // Clear expected interval between QEI phase changes
 	inp_qei_s.prev_time = 0;
 	inp_qei_s.prev_orig = 0;
 	inp_qei_s.prev_phases = 0;
@@ -84,10 +79,9 @@ static const ANG_INC_TYP get_spin_state[NUM_QEI_PHASES][NUM_QEI_PHASES] = {
 		{ QEI_JUMP,		QEI_CLOCK,	QEI_ANTI,		QEI_STALL	}
 };
 
-	QEI_ENUM_TYP curr_state = get_spin_state[cur_phases][inp_qei_s.prev_phases]; // Estimated new spin-state fom phase info.
+	QEI_ENUM_TYP cur_state = get_spin_state[cur_phases][inp_qei_s.prev_phases]; // Estimated new spin-state fom phase info.
 	QEI_ENUM_TYP prev_state = inp_qei_s.prev_state; // local copy of previous QEI-state
 	ANG_INC_TYP out_ang_inc; // Output angular increment value
-	int new_confid; // new unclamped spin-direction confidence level
 
 
 	// Update spin Finite-State-Machine ...
@@ -97,81 +91,74 @@ static const ANG_INC_TYP get_spin_state[NUM_QEI_PHASES][NUM_QEI_PHASES] = {
 	{ // Valid previous spin state (CLOCK or ANTI)
 
 		// Check bit_0 of current state
-		if (curr_state & 0x1)
+		if (cur_state & 0x1)
 		{ // Valid current spin state (CLOCK or ANTI)
-			// Check for change of spin-direction (CLOCK <--> ANTI)
-			if (0 > (curr_state * inp_qei_s.confid))
+			out_ang_inc = prev_state; // Use previous state (For this case state-value is increment-value)
+
+			// Check for change of valid state (CLOCK <--> ANTI)
+			if (cur_state != prev_state)
 			{
-				assert(MAX_QEI_STATE_ERR > inp_qei_s.state_errs); // Too Many QEI errors
-
-				inp_qei_s.state_errs++; // Increment invalid state cnt
-
-				// NB This could be a genuine change of direction, so do confidence again to speed-up change-over
-				new_confid = inp_qei_s.confid + curr_state; // new (unclamped) confidence level
-				if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
-			} // if (0 > (curr_state * inp_qei_s.confid))
+				// Check confidence levels
+				if (0 < inp_qei_s.confid)
+				{ // Still have some confidence
+					cur_state = prev_state; // Revert to previous state
+					inp_qei_s.confid--; // Decrease confidence level
+				} // if (0 < inp_qei_s.confid)
+				else
+				{ // No confidence left. (Move to STALL state next time)
+					cur_state = QEI_STALL; // Revert to previous state
+					inp_qei_s.state_errs = 0; // Reset count of invalid states
+				} // else !(0 < inp_qei_s.confid)
+			} // if (cur_state != prev_state)
 			else
-			{ // Consistent spin-direction
-				inp_qei_s.state_errs = 0; // Reset error count
-			} // else !(0 > (curr_state * inp_qei_s.confid))
-
-			new_confid = inp_qei_s.confid + curr_state; // new (unclamped) confidence level
-			if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
-
-			out_ang_inc = 1; // Single position increment/decrement
-		} // if (curr_state & 0x1)
+			{ // Normal Case: Maintaining same valid spin direction
+				if (MAX_CONFID > inp_qei_s.confid) inp_qei_s.confid++; // Increase confidence level
+			} // else !(cur_state != prev_state)
+		} // if (cur_state & 0x1)
 		else
 		{ // Invalid current spin state (STALL or JUMP)
-			// Check for missed time slot
-			out_ang_inc = 2; // Double position increment/decrement as phase jump detected
-		} // else !(curr_state & 0x1)
+			if (QEI_JUMP != cur_state)
+			{ // cur_state == QEI_STALL 
+				out_ang_inc = prev_state; // Stay with previous state for possible STALL
+			} // if (QEI_JUMP != cur_state)
+			else
+			{ // cur_state == QEI_JUMP 
+				out_ang_inc = (prev_state << 1); // Double increment as phase jump detected
+			} // else !(QEI_JUMP != cur_state)
+
+			// Check confidence levels
+			if (0 < inp_qei_s.confid)
+			{ // Still have some confidence
+				cur_state = prev_state; // Revert to previous state
+				inp_qei_s.confid--; // Decrease confidence level
+			} // if (0 < inp_qei_s.confid)
+			else
+			{ // No confidence left. (Will move to current invalid state next time)
+				inp_qei_s.state_errs = 0; // Reset count of invalid states
+			} // else !(0 < inp_qei_s.confid)
+		} // else !(cur_state & 0x1)
 	} // if (prev_state & 0x1)
 	else
 	{ // Invalid previous spin state
 
 		// Check bit_0 of current state
-		if (curr_state & 0x1)
+		if (cur_state & 0x1)
 		{ // Valid current spin state (CLOCK or ANTI)
-			new_confid = inp_qei_s.confid + curr_state; // new (unclamped) confidence level
-			if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
+			out_ang_inc = cur_state; // Use new state value
 
-			out_ang_inc = 1; // Single position increment/decrement
-		} // if (curr_state & 0x1)
+			if (MAX_CONFID > inp_qei_s.confid) inp_qei_s.confid++; // Increase confidence level
+		} // if (cur_state & 0x1)
 		else
 		{ // Invalid current spin state (STALL or JUMP)
+			out_ang_inc = 0; // Zero Spin for invalid state
+
 			assert(MAX_QEI_STATE_ERR > inp_qei_s.state_errs); // Too Many QEI errors
 
 			inp_qei_s.state_errs++; // Increment invalid state cnt
-
-			// Consistent jumps so reduce confidence
-			if (0 < inp_qei_s.confid)
-			{ // Probably Clock-wise
-				inp_qei_s.confid--;
-			} // if (0 < inp_qei_s.confid)
-			else
-			{
-				if (0 > inp_qei_s.confid) inp_qei_s.confid++; // Probably Anti-clockwise
-			} // else !(0 < inp_qei_s.confid)
-
-			// Check for missed time slot
-			out_ang_inc = 2; // Double position increment/decrement as phase jump detected
-		} // else !(curr_state & 0x1)
+		} // else !(cur_state & 0x1)
 	} // else !(prev_state & 0x1)
 
-	// Check spin-direction confidence
-	if (1 > inp_qei_s.confid)
-	{ // NON Clock-wise
-		if (0 > inp_qei_s.confid)
-		{ // Anti-clockwise
-			out_ang_inc -= out_ang_inc ; // Decrement for Anti-clockwise spin
-		} // if (0 > inp_qei_s.confid)
-		else
-		{ // Indeterminate spin direction
-			out_ang_inc = 0; // Clear position increment/decrement as no confidence
-		} // else !(0 > inp_qei_s.confid)
-	} // if (1 >  inp_qei_s.confid)
-
-	inp_qei_s.prev_state = curr_state; // Store old QEI state value
+	inp_qei_s.prev_state = cur_state; // Store old QEI state value
 
 	return out_ang_inc; // Return output increment value
 } // estimate_angular_increment
@@ -260,23 +247,26 @@ static void update_qei_state( // Update QEI state
 	ERROR_QEI_ENUM err_flg // Flag set when Error condition detected
 )
 {
+	ANG_INC_TYP ang_inc; // angular increment value
+
+
 	// Update estimate of error status using new error flag
 	estimate_error_status( inp_qei_s ,err_flg ); // NB Updates inp_qei_s.params.err
 
 	// Update estimate of angular increment value using new spin state
-	inp_qei_s.ang_inc = estimate_angular_increment( inp_qei_s ,cur_phases ); 
+	ang_inc = estimate_angular_increment( inp_qei_s ,cur_phases ); 
 
-	inp_qei_s.ang_cnt += inp_qei_s.ang_inc; // Increment/Decrement angular position
+	inp_qei_s.ang_cnt += ang_inc; // Increment/Decrement angular position
 
-	// Update estimate of spin direction based on spin-direction confidence
-	if (inp_qei_s.confid < 0)
+	// Update estimate of spin direction based on angular increment
+	if (ang_inc < 0)
 	{
 		inp_qei_s.spin_sign = -1; // -ve spin direction
-	} // if (inp_qei_s.ang_inc < 0)
+	} // if (ang_inc < 0)
 	else
 	{
 		inp_qei_s.spin_sign = 1;  // +ve spin direction
-	} // else !(inp_qei_s.ang_inc < 0)
+	} // else !(ang_inc < 0)
 
 	// Check if motor at origin
 	if (orig_flg != inp_qei_s.prev_orig)
@@ -303,46 +293,10 @@ static void update_speed( // Update speed estimate with from time period. (Angul
 )
 {
 	unsigned ticks = inp_qei_s.diff_time; // ticks per QEI position (in Reference Frequency Cycles)
-	int const_val = (TICKS_PER_MIN_PER_QEI * inp_qei_s.ang_inc) + inp_qei_s.speed_err; // Add diffusion error to constant;
-	int ratio;
-
-#ifdef MB
-	unsigned ticks = (inp_qei_s.curr_time - inp_qei_s.vel_time); // ticks per QEI position (in Reference Frequency Cycles)
-	unsigned diff_ang = ((inp_qei_s.ang_cnt - inp_qei_s.prev_ang) & QEI_REV_MASK); // force into range [0..QEI_REV_MASK]
-	int const_val = ((TICKS_PER_MIN_PER_QEI * diff_ang) + inp_qei_s.speed_err); // Add diffusion error to constant;
-if (diff_ang < 3)
-{
-	inp_qei_s.acc_time += ticks;
-	inp_qei_s.vel_time = inp_qei_s.curr_time; 
-	inp_qei_s.prev_ang = inp_qei_s.ang_cnt; 
-} // if (diff_ang < 3)
-#endif //MB~
+	int const_val = TICKS_PER_MIN_PER_QEI + inp_qei_s.speed_err; // Add diffusion error to constant;
 
 	inp_qei_s.ang_speed = (const_val + (ticks >> 1)) / ticks;  // Evaluate speed
 	inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
-
-if (inp_qei_s.interval < ticks)
-{
-	ratio = ((inp_qei_s.interval << 8) + (ticks >> 1)) / ticks;
-} //if (inp_qei_s.interval> ticks)
-else
-{
-	ratio = ((ticks << 8) + (inp_qei_s.interval >> 1)) / inp_qei_s.interval;
-} //if (inp_qei_s.interval> ticks)
-
-acquire_lock(); printstrln(""); 
-printstr("R="); printint(ratio);
-printstr(" I="); printuint(inp_qei_s.interval);
-printstr(" T="); printuintln(ticks);
-release_lock(); //MB~
-/*
-printstr("V="); printuint(inp_qei_s.ang_speed); 
-printstr(" A="); printuint(diff_ang); 
-printstr(" E="); printintln(inp_qei_s.speed_err); 
-*/
-
-	inp_qei_s.interval = ticks; // ticks per QEI position (in Reference Frequency Cycles)
-
 }	// update_speed
 /*****************************************************************************/
 static void service_input_pins( // Service detected change on input pins
@@ -361,7 +315,7 @@ static void service_input_pins( // Service detected change on input pins
 	// Check if phases have changed
 	if (cur_phases != inp_qei_s.prev_phases) 
 	{
-		// Get new time stamp
+		// Get new time stamp ..
 		test_diff = (int)(inp_qei_s.curr_time - inp_qei_s.prev_time);
 
 		// Check for sensible time
@@ -456,8 +410,6 @@ static void service_client_request( // Send processed QEI data to client
 		inp_qei_s.params.veloc = meas_veloc;
 	} // else !(QEI_FILTER)
 
-// if (inp_qei_s.id) xscope_probe_data( 2 ,inp_qei_s.params.rev_cnt );
-
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
 
 	return;
@@ -491,17 +443,6 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 			{
 				chronometer :> all_qei_s[motor_id].curr_time;	// Get new time stamp as soon as possible
 				service_input_pins( all_qei_s[motor_id] ,inp_pins[motor_id] );
-
-#if (USE_XSCOPE)
-		xscope_int( 0 ,inp_pins[motor_id] );
-		xscope_int( 1 ,all_qei_s[motor_id].prev_state );
-		xscope_int( 2 ,all_qei_s[motor_id].confid );
-		xscope_int( 3 ,((all_qei_s[motor_id].acc_time + 512) >> 10));
-//MB~		xscope_int( 3 ,all_qei_s[motor_id].params.rev_cnt );
-		xscope_int( 4 ,all_qei_s[motor_id].params.theta );
-		xscope_int( 5 ,(all_qei_s[motor_id].params.veloc >> 7) );
-		xscope_int( 6 ,all_qei_s[motor_id].params.err );
-#endif // (USE_XSCOPE)
 			} // case
 			break;
 
@@ -509,6 +450,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) c_qei[motor_id] :> int :
 			{
 				service_client_request( all_qei_s[motor_id] ,c_qei[motor_id] );
+
 			} // case
 			break;
 		} // select

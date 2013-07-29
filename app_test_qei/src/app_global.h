@@ -39,14 +39,17 @@
 /** Define default Filter Mode  1 == On */
 #define QEI_FILTER 0
 
-/** Define seconds in a minute */
-#define SECS_PER_MIN 60
-
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000
 
 /** Define flag for verbose printing */
-#define PRINT_TST_QEI 1
+#define PRINT_TST_QEI 0
+
+/** Define seconds in a minute */
+#define SECS_PER_MIN 60
+
+/** Define Bits in Byte */
+#define BITS_IN_BYTE 8
 
 /* This is a bit of a cludge, we are using a non-standard configuration
  * where the timer on the tile for inner_loop() is running at 250 MHz,
