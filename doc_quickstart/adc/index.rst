@@ -111,14 +111,13 @@ When the executable has stopped running, view the VCD file as follows:-
    #. If not already active, open a ``Waveform`` window as follows:-
    #. In the main toolbar, select Window->Show_View->Waves
    #. Now add some signals to the Waves window as follows:-
-   #. In the Signals window, select tile[1]->ports->XS1_PORT_1J, and drag this to the left-hand column of the Waveform window
-   #. This may not work first time, but try leaving a few seconds between selecting and dragging
-   #. When successful a set of 12 waveforms should appear in the right column of the Waveform window. These are for ADC Serial clock. The top trace (PORT_ADC_CLK) should have a period of 140ns (about 7.142 MHz).
-   #. Repeat the above process for tile[1]->ports->XS1_PORT_1G, This is the ready signal. The top trace (PORT_ADC_CONV) goes high during ADC sample conversion. This should occur on average about every 8 us (When run in 'Non-Paced' mode). 
-   #. Repeat the above process for tile[1]->ports->XS1_PORT_1H, This is the data port for Phase_A. The 5th trace down (shiftReg[32]) shows the data being clocked out. 14 bits while the ready signal is high.
+   #. In the Signals window, expand the signal tree as far as tile[1]->ports->XS1_PORT_1J, now double click on the signal PORT_ADC_CLK
+   #. This signal should appear in the right column of the Waveform window. It is the ADC Serial clock, and should have a period of 140ns (about 7.142 MHz).
+   #. Repeat the above process for tile[1]->ports->XS1_PORT_1G->PORT_ADC_CONV. This is the ready signal and goes high during ADC sample conversion. This should occur on average about every 8 us (When run in 'Non-Paced' mode). 
+   #. Finally, repeat the above process for tile[1]->ports->XS1_PORT_1H->shiftReg, This is the data port for Phase_A, and shows the data being clocked out. 14 bits while the ready signal is high.
    #. Note well, to view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar. To zoom in/out click the 'plus/minus' icons to the left of the ``Zoom Fit`` icon.
 
-.. figure:: vcd_adc.jpg
+.. figure:: vcd_adc.*
    :width: 100%
    :align: center
    :alt: Example VCD Waveform
@@ -145,7 +144,7 @@ The program will build and start to produce test output in the Console window. W
 
 Note well, to view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar. To zoom in/out click the 'plus/minus' icons to the left of the ``Zoom Fit`` icon
 
-.. figure:: xscope_adc.jpg
+.. figure:: xscope_adc.*
    :align: center
    :width: 100%
    :alt: Example xSCOPE trace

@@ -97,14 +97,14 @@ When the executable has stopped running, view the VCD file as follows:-
    #. If not already active, open a ``Waveform`` window as follows:-
    #. In the main toolbar, select Window->Show_View->Waves
    #. Now add some signals to the Waves window as follows:-
-   #. In the Signals window, open the Ports directory
-   #. Now double click on tile[1]->ports->XS1_PORT_4A, a set of 12 waveforms should appear in the right column of the Waveform window.
+   #. In the Signals window, expand the signal tree as far as tile[1]->ports->XS1_PORT_4A, now double click on the signal PORT_M1_HALLSENSOR
+   #. A trace should appear in the right column of the Waveform window.
    #. To view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar
-   #. Now repeatedly click on the ``Zoom In`` button until the numbers [b a e c d 9] can be seen in the top waveform (PORT_M1_HALLSENSOR) 
+   #. Now repeatedly click on the ``Zoom In`` button until the numbers [b a e c d 9] can be seen.
 
 These are the Hall raw-data values and indicate that Motor_0 is turning clock-wise. When the numbers change to [4 5 1 3] the error-bit has been set low to indicate an error condition. Near the middle of the trace, the numbers change order and become [9 d c e a b], this means the motor is now spinning in an anti-clockwise direction.
 
-.. figure:: vcd_hall.jpg
+.. figure:: vcd_hall.*
    :width: 100%
    :align: center
    :alt: Example VCD Waveform
@@ -131,7 +131,7 @@ The program will build and start to produce test output in the Console window. W
 
 Note well, to view all the trace click the ``Zoom Fit`` icon (House) at the right of the Waveform window view-bar. To zoom in/out click the 'plus/minus' icons to the left of the ``Zoom Fit`` icon
 
-.. figure:: xscope_hall.jpg
+.. figure:: xscope_hall.*
    :align: center
    :width: 100%
    :alt: Example xSCOPE trace
