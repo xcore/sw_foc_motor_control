@@ -36,34 +36,11 @@
             <keyword>Motor Control</keyword>
         </component>
     </components>
-    <dependency repo = "sc_xtcp">
-        <githash>a9e68fadfd28eb79294cd9239dd3ddc8bb0712d4</githash>
-        <uri>https://github.com/beaumontm/sc_xtcp.git</uri>
-    </dependency>
-    <dependency repo = "sc_ethernet">
-        <githash>495505ee09b0d1d4ef94e4296d386eb0040db2ae</githash>
-        <uri>https://github.com/beaumontm/sc_ethernet.git</uri>
-    </dependency>
-    <dependency repo = "sc_pwm">
-        <githash>0667d09983e7377315df765b68ff4fdf6c41427f</githash>
-        <uri>https://github.com/xcore/sc_pwm</uri>
-    </dependency>
-    <dependency repo = "sc_lib_fixed_point">
-        <githash>91958a108e363a99290b53ca99aae669ed5600d7</githash>
-        <uri>https://github.com/xcore/sc_lib_fixed_point</uri>
-    </dependency>
     <dependency repo = "sc_util">
         <githash>2e01d7324df84ad199833e012b5942e43fb0ccbb</githash>
         <uri>https://github.com/xcore/sc_util</uri>
     </dependency>
-    <dependency repo = "sc_can">
-        <githash>3ec6bf50a5de2b5e9dbd57400b69439f30ee7e02</githash>
-        <uri>https://github.com/xcore/sc_can</uri>
-    </dependency>
     <description>This repository contains S/W to support Field-Oriented Control (FOC) of motors.</description>
-    <exclude_dir>app_test_adc</exclude_dir>
-    <exclude_dir>app_test_pwm</exclude_dir>
-    <exclude_dir>app_test_hall</exclude_dir>
     <exclude_dir>app_foc_demo</exclude_dir>
     <exclude_dir>module_foc_comms</exclude_dir>
     <exclude_dir>module_foc_display</exclude_dir>
