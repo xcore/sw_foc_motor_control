@@ -69,7 +69,8 @@
     <release parenthash = "d1174184af1fc0330913c7bbe5623d06218e5aee" version = "0.0.1beta2" githash = "f0887e19d521afab253fb7cd2140c8a67d04e1d8"></release>
     <release parenthash = "426f7d9f6e2fec30253751aec5e8b9888c6ac229" version = "1.0.0beta0" githash = "d6e551a02a18df5809c34e101cc5b2bd5e0de465"></release>
     <release parenthash = "4c5035e4846544fde062243be4ae729beb7756ed" version = "1.0.0beta1" githash = "ad29916f6094f670d8c31baf3f082f42a3bde4f6"></release>
-    <release parenthash = "ad29916f6094f670d8c31baf3f082f42a3bde4f6" version = "1.0.0beta2"></release>
+    <release parenthash = "ad29916f6094f670d8c31baf3f082f42a3bde4f6" version = "1.0.0beta2" githash = "ebebb3e372aed41477f979209f38c8576c579498"></release>
+    <release parenthash = "4ebbc95f14b1fb1b010684b73232c0ee4b52b1b9" version = "1.0.0beta3"></release>
     <subpartnumber>XM-003000-SM</subpartnumber>
     <vendor>XMOS Ltd.</vendor>
     <version_defines></version_defines>
