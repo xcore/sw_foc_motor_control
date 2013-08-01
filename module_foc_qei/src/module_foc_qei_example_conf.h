@@ -59,7 +59,7 @@
 #define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ) 
 
 /** Define Referency Frequency to Match that in platform configuration (.XN) file */
-#define PLATFORM_REFERENCE_HZ  (1000 * PLATFORM_REFERENCE_KHZ) // NB Uses 28-bits
+#define PLATFORM_REFERENCE_HZ (1000 * PLATFORM_REFERENCE_KHZ) // NB Uses 28-bits
 #endif
 
 #define SECOND PLATFORM_REFERENCE_HZ // One Second in Clock ticks

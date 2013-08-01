@@ -293,7 +293,8 @@ static void update_speed( // Update speed estimate with from time period. (Angul
 )
 {
 	unsigned ticks = inp_qei_s.diff_time; // ticks per QEI position (in Reference Frequency Cycles)
-	int const_val = TICKS_PER_MIN_PER_QEI + inp_qei_s.speed_err; // Add diffusion error to constant;
+	int const_val = TICKS_PER_MIN_PER_QEI + inp_qei_s.speed_err; // Add diffusion error to constan
+
 
 	inp_qei_s.ang_speed = (const_val + (ticks >> 1)) / ticks;  // Evaluate speed
 	inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
