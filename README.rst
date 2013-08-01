@@ -1,7 +1,7 @@
 Advanced Motor Control 
 .......................
 
-:Latest release: 0.0.1beta2
+:Latest release: 1.0.0beta0
 :Maintainer: markb
 :Description: This repository contains S/W to support Field-Oriented Control (FOC) of motors.
 
@@ -74,10 +74,5 @@ Issues may be submitted via the Issues tab in this github repo. Response to any 
 Required software (dependencies)
 ================================
 
-  * sc_xtcp (https://github.com/beaumontm/sc_xtcp.git)
-  * sc_ethernet (https://github.com/beaumontm/sc_ethernet.git)
-  * sc_pwm (https://github.com/xcore/sc_pwm)
-  * sc_lib_fixed_point (https://github.com/xcore/sc_lib_fixed_point)
   * sc_util (https://github.com/xcore/sc_util)
-  * sc_can (https://github.com/xcore/sc_can)
 
