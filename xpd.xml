@@ -51,8 +51,9 @@
         </component>
     </components>
     <dependency repo = "sc_util">
-        <githash>2e01d7324df84ad199833e012b5942e43fb0ccbb</githash>
+        <githash>d0531d7c68ab67334582c324828e36d617baf8b3</githash>
         <uri>https://github.com/xcore/sc_util</uri>
+        <version>1.0.3rc0</version>
     </dependency>
     <description>This repository contains S/W to support Field-Oriented Control (FOC) of motors.</description>
     <exclude_dir>app_foc_demo</exclude_dir>
@@ -67,7 +68,8 @@
     <release parenthash = "496f41a5e457a8356870f4277e63e18d7c7a40da" version = "0.0.1beta1" githash = "4d840a9f866c7ec6dd4d0632d792792daf224ede"></release>
     <release parenthash = "d1174184af1fc0330913c7bbe5623d06218e5aee" version = "0.0.1beta2" githash = "f0887e19d521afab253fb7cd2140c8a67d04e1d8"></release>
     <release parenthash = "426f7d9f6e2fec30253751aec5e8b9888c6ac229" version = "1.0.0beta0" githash = "d6e551a02a18df5809c34e101cc5b2bd5e0de465"></release>
-    <release parenthash = "4c5035e4846544fde062243be4ae729beb7756ed" version = "1.0.0beta1"></release>
+    <release parenthash = "4c5035e4846544fde062243be4ae729beb7756ed" version = "1.0.0beta1" githash = "ad29916f6094f670d8c31baf3f082f42a3bde4f6"></release>
+    <release parenthash = "ad29916f6094f670d8c31baf3f082f42a3bde4f6" version = "1.0.0beta2"></release>
     <subpartnumber>XM-003000-SM</subpartnumber>
     <vendor>XMOS Ltd.</vendor>
     <version_defines></version_defines>
