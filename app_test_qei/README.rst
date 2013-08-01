@@ -1,19 +1,19 @@
-Analogue to Digital Conversion (ADC) Test Harness
-=================================================
+Quadrature Encoder Interface (QEI) Test Harness
+===============================================
 
 :scope: Example
-:description: The ADC module is a xSoftIP component of the FOC Motor control suite, It processess raw ADC data supplied by an ADC chip.
-:keywords: Field-Oriented-Control FOC Analogue-To-Digital ADC Motor-Control
-:boards: XP-MC-CTRL-L2, XA-MC-PWR-DLV
+:description: xSIM testbench for QEI component
+:keywords: Quadrature-Encoder-Interface QEI Field-Oriented-Control FOC Motor-Control
+:boards: None (works on simulator)
 
 Features
 --------
 
-   * Allows ADC component to be tested before integration into Motor Control loop
+   * Allows QEI component to be tested before integration into Motor Control loop
    * No Hardware required
    * Tests multiple motors, (Current H/W limit of 2 Motors)
 
 Test Output
 -----------
 
-For an explanation of the test result output please refer to doc/adc_results.txt
+For an explanation of the test results output please refer to doc/qei_results.txt

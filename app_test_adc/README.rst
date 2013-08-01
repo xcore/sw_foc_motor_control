@@ -2,9 +2,9 @@ Analogue to Digital Conversion (ADC) Test Harness
 =================================================
 
 :scope: Example
-:description: The ADC module is a xSoftIP component of the FOC Motor control suite, It processess raw ADC data supplied by an ADC chip.
+:description: xSIM testbench for ADC component
 :keywords: Field-Oriented-Control FOC Analogue-To-Digital ADC Motor-Control
-:boards: XP-MC-CTRL-L2, XA-MC-PWR-DLV
+:boards: None (works on simulator)
 
 Features
 --------
@@ -16,4 +16,4 @@ Features
 Test Output
 -----------
 
-For an explanation of the test result output please refer to doc/adc_results.txt
+For an explanation of the test results output please refer to doc/adc_results.txt
