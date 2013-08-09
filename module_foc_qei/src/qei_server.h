@@ -90,13 +90,33 @@
 
 #define MAX_QEI_STATUS_ERR 3  // Maximum number of consecutive QEI status errors allowed
 
+#define MIN_RPM 50 // In order to estimate the angular position, a minimum expected RPM has to be specified
+// Now we can calculate the maximum expected time difference (in ticks) between QEI phase changes
+#define MAX_TIME_DIFF (((MIN_RPM * TICKS_PER_SEC_PER_QEI) + (SECS_PER_MIN - 1)) / SECS_PER_MIN) // Round-up maximum expected time-diff (17-bits)
+
+// WARNING: Values used in test harness need to be less severe than these. e.g. 807 and 1300
+#define LO_QEI_SCALE 700 // Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
+#define HI_QEI_SCALE 1500 // Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+#define THIRD 341 // Scaling factor Used for calculating one third
+
+/** Define No. of Bits for Scaling Factor Divisor */
+#define SCALE_QEI_BITS 10 // No. of Bits for Scaling Factor Divisor
+#define HALF_QEI_SCALE (1 << (SCALE_QEI_BITS - 1)) // Half Scaling factor Used for Rounding
+
+typedef signed long long S64_T; //MB~ Put this in app_global.h
+typedef unsigned long long U64_T; //MB~ Put this in app_global.h
+
+#define INT16_BITS (sizeof(short) * BITS_IN_BYTE) // No. of bits in 16-bit integer
+#define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer
+#define INT64_BITS (sizeof(S64_T) * BITS_IN_BYTE) // No. of bits in signed 64-bit type!
+
 /** Different Motor Phases */
 typedef enum QEI_ENUM_TAG
 {
   QEI_ANTI = -1,		// Anti-Clockwise Phase change
   QEI_STALL = 0,  // Same Phase
-  QEI_CLOCK = 1, // Clockwise Phase change
-  QEI_JUMP = 2,		// Jumped 2 Phases
+  QEI_CLOCK, // Clockwise Phase change
+  QEI_JUMP,		// Jumped 2 Phases
 } QEI_ENUM_TYP;
 
 typedef signed char ANG_INC_TYP; // Angular Increment type
@@ -105,16 +125,28 @@ typedef signed char ANG_INC_TYP; // Angular Increment type
 typedef struct QEI_DATA_TAG // 
 {
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
+	QEI_PHASE_TYP inv_phase;	// Structure containing all inverse QEI phase values;
 	unsigned inp_pins; // Raw data values on input port pins
 	unsigned prev_phases; // Previous phase values
+	int phase_index; // Converts [BA] phase value into circular index [0, 1, 2, 3]
+	int prev_index; // previous circular phase index
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
 	unsigned diff_time; // Difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	unsigned interval; // expected interval between QEI phase changes
+	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 
+	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
+	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
+	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
+	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
+	int scale_bits; // Bit-shift used when down-scaling
+	unsigned half_scale; // Used to round when down-scaling
+	U64_T max_thr; // down-scaling threshold
 	QEI_ENUM_TYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
 	int status_errs; // counter for invalid QEI status errors
 	int ang_cnt; // Counts angular position of motor (from origin)
+	int prev_ang; // MB~
 	ANG_INC_TYP ang_inc; // angular increment value
 	int theta; // angular position returned to client
 	int spin_sign; // Sign of spin direction

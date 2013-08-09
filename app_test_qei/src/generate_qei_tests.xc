@@ -17,8 +17,22 @@
 /*	[BA] order is 00 -> 01 -> 11 -> 10  Clockwise direction
  *	[BA] order is 00 -> 10 -> 11 -> 01  Anti-Clockwise direction
  */
+
+
+
 /*****************************************************************************/
-static void parse_control_file( // Parse QEI control file and set up test options
+static unsigned crc_rand(
+	GENERATE_TST_TYP &tst_data_s // Reference to structure of QEI test data
+) // Returns random bit value
+{
+  crc32( tst_data_s.rnd ,~0 ,0xEDB88320 );
+
+//MB~ acquire_lock(); printstr("R="); printintln( out_bit ); release_lock();
+return (tst_data_s.rnd < (1 << 29)); // NB 12% 1's
+//MB~ 		return 0;
+}
+/*****************************************************************************/
+ static void parse_control_file( // Parse QEI control file and set up test options
 	GENERATE_TST_TYP &tst_data_s // Reference to structure of QEI test data
 )
 {
@@ -150,6 +164,7 @@ static void init_test_data( // Initialise QEI Test data
 )
 {
 	QEI_PHASE_TYP clkwise = {{ 0 ,1 ,3 ,2 }};	// Array of QEI Phase values [BA} (NB Increment for clock-wise rotation)
+//MB~		QEI_PHASE_TYP clkwise = {{ 0 ,2 ,3 ,1 }};	// Anti-clockwise rotation
 
 
 	init_common_data( tst_data_s.common ); // Initialise data common to Generator and Checker
@@ -306,6 +321,9 @@ static void do_qei_test( // Performs one QEI test
 	qei_val |= tst_data_s.orig; // OR with origin flag (Bit_2)
 	qei_val |= tst_data_s.nerr; // OR with error flag (Bit_3)
 
+	if (crc_rand(tst_data_s)) qei_val ^= 1; // Flip bit_0 with low probability
+	if (crc_rand(tst_data_s)) qei_val ^= 2; // Flip bit-1 with low probability 
+
 	// Wait till test period elapsed
 	time_val = tst_data_s.period;
 
@@ -428,7 +446,7 @@ static void check_for_origin( // Check if origin passed during this set of tests
 		if (pre_cnt > 1)
 		{ // pre-origin test vector
 			assign_test_vector_origin( tst_data_s ,ORIG_OFF ); // Set test vector to No Origin
-			do_qei_vector( tst_data_s ,c_tst ,c_dis ,p4_tst ,(pre_cnt - 1) );
+			do_qei_vector( tst_data_s ,c_tst ,c_dis ,p4_tst ,(pre_cnt - 1) );  
 		} // if (pre_cnt > 1)
 
 		assign_test_vector_origin( tst_data_s ,ORIG_ON ); // Set test vector to Origin

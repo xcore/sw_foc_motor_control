@@ -43,10 +43,10 @@
 #define NUM_PORT_TIMES (1 << 16) // No. of port timer values (16-bit)
 
 /** Define Scaling factor Used for Acceleration */
-#define ACC_SCALE 807 // Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
+#define ACC_SCALE 807// 909 807 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
 
 /** Define Scaling factor Used for Deceleration */
-#define DEC_SCALE 1300 // Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+#define DEC_SCALE 1300 // 1154 1300 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
 
 /** Define No. of Bits for Scaling Factor Divisor */
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
