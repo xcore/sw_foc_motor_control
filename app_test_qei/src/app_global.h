@@ -43,7 +43,13 @@
 #define MAX_SPEC_RPM 4000
 
 /** Define flag for verbose printing */
-#define PRINT_TST_QEI 0
+#define VERBOSE_PRINT 0
+
+/** Define flag for printing Micro-test info. */
+#define MICRO_TESTS 0
+
+/** Print width - fix for non-wrapped output in xTIMEcomposer */
+#define PRINT_WID 72
 
 /** Define seconds in a minute */
 #define SECS_PER_MIN 60

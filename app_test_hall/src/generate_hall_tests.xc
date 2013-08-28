@@ -156,7 +156,7 @@ static void init_test_data( // Initialise Hall Test data
 	tst_data_s.hi_ticks = speed_to_ticks( HIGH_SPEED ); // Convert HIGH_SPEED to ticks
 	tst_data_s.lo_ticks = speed_to_ticks( LOW_SPEED ); // Convert LOW_SPEED to ticks
 
-	tst_data_s.print = PRINT_TST_HALL; // Set print mode
+	tst_data_s.print = VERBOSE_PRINT; // Set print mode
 	tst_data_s.dbg = 0; // Set debug mode
 	tst_data_s.disp_str[HALL_BITS] = 0; // Add string terminator string
 
@@ -437,12 +437,9 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 	port out p4_tst  // current port on which to transmit test data
 )
 {
-	if (tst_data_s.print)
-	{
-		acquire_lock(); // Acquire Display Mutex
-		printstr( " Start Test Gen. For Motor_"); printintln( tst_data_s.common.options.flags[TST_MOTOR] );
-		release_lock(); // Release Display Mutex
-	} // if (tst_data_s.print)
+	acquire_lock(); // Acquire Display Mutex
+	printstr( " Start Test Generation For Motor_"); printintln( tst_data_s.common.options.flags[TST_MOTOR] );
+	release_lock(); // Release Display Mutex
 
 	p4_tst <: 0 @ tst_data_s.time; // Get start time
 
@@ -490,7 +487,7 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 	} // if (tst_data_s.common.options.flags[TST_ANTI])
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
-	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,1 );
+	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,0 );
 
 } // gen_motor_hall_test_data
 /*****************************************************************************/
@@ -508,11 +505,10 @@ void gen_all_hall_test_data( // Generate Hall Test data
 
 	gen_motor_hall_test_data( tst_data_s ,c_tst ,p4_tst[tst_data_s.common.options.flags[TST_MOTOR]] );
 
-	if (tst_data_s.print)
-	{
-		acquire_lock(); // Acquire Display Mutex
-		printstrln( "Test Generation Ends " );
-		release_lock(); // Release Display Mutex
-	} // if (tst_data_s.print)
+	acquire_lock(); // Acquire Display Mutex
+	printstrln("");
+	printstrln( "Test Generation Ends " );
+	release_lock(); // Release Display Mutex
+
 } // gen_all_hall_test_data
 /*****************************************************************************/

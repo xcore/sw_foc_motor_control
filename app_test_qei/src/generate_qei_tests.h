@@ -39,24 +39,27 @@
 /** Define No. of tests used for Deceleration check */
 #define DEC_TESTS 18 // No. of tests used for Deceleration check
 
-/** Define No. of port timer values (16-bit) */
-#define NUM_PORT_TIMES (1 << 16) // No. of port timer values (16-bit)
-
-/** Define Scaling factor Used for Acceleration */
-#define ACC_SCALE 807// 909 807 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
-
-/** Define Scaling factor Used for Deceleration */
-#define DEC_SCALE 1300 // 1154 1300 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
-
-/** Define No. of Bits for Scaling Factor Divisor */
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
 #define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
 
+/** Define Scaling factor Used for Acceleration */
+#define ACC_SCALE 807 // 935 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
+
+/** Define Scaling factor Used for Deceleration */
+#define DEC_SCALE 1104 // 1300 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+
 #define FILE_SIZE (STR_LEN * NUM_TEST_OPTS) // Size of PWM control file (in Bytes)
+
+#define MIN_WAIT_TIME 440 // Minimum wait time in Port-Timer ticks
+
+/** Define No. of port timer values (16-bit) */
+#define NUM_PORT_TIMES (1 << INT16_BITS) // No. of port timer values (16-bit)
+#define HALF_PORT_TIMES (NUM_PORT_TIMES >> 1) // Half No. of port timer values
 
 /** Type for Port timer values */
 typedef unsigned short PORT_TIME_TYP;
 
+/** Define No. of Bits for Scaling Factor Divisor */
 /** Type containing all QEI test generation data */
 typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 {
@@ -73,13 +76,15 @@ typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 	int orig; // QEI origin flag (Bit_2 is 1 at origin)
 	int nerr; // QEI error flag (Bit_3 is 1 for NO errors)
 	int scale; // velocity scaling factor (used for acceleration and deceleration)
-	PORT_TIME_TYP time; // port timer value
+	PORT_TIME_TYP time_p; // port timer transmit time for QEI data
 	unsigned period; // period (in ticks) between tests
 	unsigned tim; // time (in ticks) of test
 	unsigned tim2; // time (in ticks) of test
 	QEI_RAW_TYP prev_qei;  // Previous QEI value
 	int print;  // Print flag
 	int dbg;  // Debug flag
+	unsigned tx_time; // Time of QEI data transmission from Big Timer
+	timer Big_Timer; // Big Timer
 } GENERATE_TST_TYP;
 
 /*****************************************************************************/
@@ -91,7 +96,7 @@ typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 void gen_all_qei_test_data( // Generate QEI Test data for all motors
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
 	streaming chanend c_dis, // Channel for sending data to Display core
-	port out p4_tst[]  // Array of ports on which to transmit test data
+	buffered port:4 out pb4_tst[]  // Array of buffered 4-bit output ports on which to transmit test data
 );
 /*****************************************************************************/
 #endif /* _GENERATE_QEI_TESTS_H_ */

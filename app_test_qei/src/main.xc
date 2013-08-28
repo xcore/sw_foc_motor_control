@@ -15,10 +15,10 @@
 #include "main.h"
 
 // QEI ports
-on tile[MOTOR_TILE]: port in p4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER ,PORT_M2_ENCODER };
+on tile[MOTOR_TILE]: buffered port:4 in pb4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER ,PORT_M2_ENCODER };
 
 // Test ports (Borrowed from Hall Sensor)
-on tile[MOTOR_TILE]: port out p4_tst[NUMBER_OF_MOTORS] = { PORT_M1_HALLSENSOR ,PORT_M2_HALLSENSOR };
+on tile[MOTOR_TILE]: buffered port:4 out pb4_tst[NUMBER_OF_MOTORS] = { PORT_M1_HALLSENSOR ,PORT_M2_HALLSENSOR };
 
 #if (USE_XSCOPE)
 /*****************************************************************************/
@@ -50,18 +50,20 @@ int main ( void ) // Program Entry Point
 
 			par
 			{
-				gen_all_qei_test_data( c_gen_chk ,c_gen_dis ,p4_tst ); // Generate test data
+				gen_all_qei_test_data( c_gen_chk ,c_gen_dis ,pb4_tst ); // Generate test data
 
 				disp_gen_data( c_gen_dis ); // Display generated test data
 		
-				foc_qei_do_multiple( c_qei_chk, p4_qei ); // Server function under test
+				foc_qei_do_multiple( c_qei_chk, pb4_qei ); // Server function under test
 		
 				check_all_qei_client_data( c_gen_chk ,c_qei_chk ); // Check results using QEI Client
 			} // par
-		
+
 		  free_locks(); // Free Mutex for display
+
 		} // on tile[MOTOR_TILE] : 
 	} // par 
+
 
 	return 0;
 } // main

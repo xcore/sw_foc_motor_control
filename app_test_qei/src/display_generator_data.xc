@@ -58,12 +58,17 @@ void disp_gen_data( // Displays generated QEI test data
 	int write_cnt = 0; // No of QEI values written to buffer
 	unsigned read_off = 0; // read offset into buffer
 	unsigned write_off = 0; // wtite offset into buffer
+	int do_loop = 1;   // Flag set until loop-end condition found 
 
+
+	acquire_lock(); // Acquire Display Mutex
+	printstrln("Display Core Starts");
+	release_lock(); // Release Display Mutex
 
 	disp_str[QEI_BITS] = 0; // Add string terminator
 
 	// loop forever
-	while(1)
+	while(do_loop)
 	{
 		select
 		{
@@ -79,14 +84,26 @@ void disp_gen_data( // Displays generated QEI test data
 				// Check if any buffer data needs printing
 				if (write_cnt > read_cnt)
 				{
-					print_qei_value( c_gen ,disp_str ,buffer[read_off] );
+					// Check for loop termination
+					if (QEI_CMD_LOOP_STOP == buffer[read_off])
+					{
+						do_loop = 0; // Signal loop to stop
+					} // if (QEI_CMD_LOOP_STOP == buffer[read_off])
+					else
+					{
+						print_qei_value( c_gen ,disp_str ,buffer[read_off] );
+					} // else !(QEI_CMD_LOOP_STOP == buffer[read_off])
 
 					read_cnt++; // Increment read counter
 					read_off = read_cnt & DISP_BUF_MASK; // Wrap into buffer range
 				} // if (write_off != read_off)
 			break; // default
 		} // select
-	} // while(1)
+	} // while(do_loop)
 
+	acquire_lock(); // Acquire Display Mutex
+	printstrln("");
+	printstrln("Display Ends");
+	release_lock(); // Release Display Mutex
 } // disp_gen_data
 /*****************************************************************************/

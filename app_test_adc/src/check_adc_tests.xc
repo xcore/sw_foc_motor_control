@@ -16,7 +16,7 @@
 
 /*****************************************************************************/
 static void init_check_data( // Initialise check data for ADC tests
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	VECT_COMP_ENUM comp_cnt; // Counter for Test Vector components
@@ -29,7 +29,9 @@ static void init_check_data( // Initialise check data for ADC tests
 	safestrcpy( chk_data_s.padstr2 ,"                              " );
 
 	chk_data_s.skips = LO_SKIP_CHANGES; // Initialise No. of skipped state-changes while settling
-	chk_data_s.print = PRINT_TST_ADC; // Set print mode
+
+	chk_data_s.print_on = VERBOSE_PRINT; // Set print mode
+	chk_data_s.print_cnt = 1; // Initialise print counter
 	chk_data_s.dbg = 0; // Set debug mode
 
 	chk_data_s.all_errs = 0;
@@ -52,7 +54,7 @@ static void init_check_data( // Initialise check data for ADC tests
 } // init_check_data
 /*****************************************************************************/
 static void init_ang_velocity( // Initialises angular velocity
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	switch( chk_data_s.curr_vect.comp_state[SPIN] )
@@ -97,7 +99,7 @@ static void init_ang_velocity( // Initialises angular velocity
 } // init_ang_velocity
 /*****************************************************************************/
 static void init_gain( // Initialises ADC gain
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	switch( chk_data_s.curr_vect.comp_state[GAIN] )
@@ -129,7 +131,7 @@ static void init_gain( // Initialises ADC gain
 } // init_gain
 /*****************************************************************************/
 static void initialise_one_phase_test_vector( // Initialise one set of ADC phase data
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	ADC_PHASE_ENUM curr_phase, // current ADC phase
 	ADC_STATE_ENUM init_state // initial ADC-state
 )
@@ -148,7 +150,7 @@ static void initialise_one_phase_test_vector( // Initialise one set of ADC phase
 } // initialise_one_phase_test_vector 
 /*****************************************************************************/
 static void initialise_test_vector( // Initialise all ADC phase data
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	unsigned tmp_val; // temporary manipulation variable
@@ -171,8 +173,25 @@ static void initialise_test_vector( // Initialise all ADC phase data
 
 } // initialise_test_vector 
 /*****************************************************************************/
+static void print_progress( // Print progress indicator
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	// Check for display-wrap
+	if (PRINT_WID > chk_data_s.print_cnt)
+	{
+		printchar('.');
+		chk_data_s.print_cnt++;
+	} // if (PRINT_WID > chk_data_s.print_cnt)
+	else
+	{
+		printcharln('.');
+		chk_data_s.print_cnt = 1;
+	} // if (PRINT_WID > chk_data_s.print_cnt)
+} // print_progress
+/*****************************************************************************/
 static void print_adc_parameters( // Print ADC parameters
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	ADC_PHASE_ENUM phase_cnt; // Counter for ADC phases
@@ -194,7 +213,7 @@ static void print_adc_parameters( // Print ADC parameters
 } // print_adc_parameters
 //*****************************************************************************/
 static void check_adc_sum( // Check all phases sum to zero
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	ADC_PHASE_ENUM phase_cnt; // Counter for ADC phases
@@ -220,7 +239,7 @@ static void check_adc_sum( // Check all phases sum to zero
 } // check_adc_sum
 //*****************************************************************************/
 static void check_adc_gain( // Check gain of wave-train is approximately correct
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	ADC_TYP inp_max, 					// Maximum measured ADC value
 	ADC_TYP inp_min 					// Minimum measured ADC value
 )
@@ -237,9 +256,6 @@ static void check_adc_gain( // Check gain of wave-train is approximately correct
 		chk_data_s.motor_errs[GAIN]++;
 
 		acquire_lock(); // Acquire Display Mutex
-printstrln(""); //MB~
-printstr("AMP="); printint(amplitude);
-printstr(" ERR="); printintln(ampli_err);
 		printcharln(' ');
 		printstr( chk_data_s.padstr1 );
 		printstrln("ADC-Gain FAILURE");
@@ -248,7 +264,7 @@ printstr(" ERR="); printintln(ampli_err);
 } // check_adc_gain
 //*****************************************************************************/
 static void check_adc_mean( // Check all mean ADC value is approximately zero
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	int inp_mean 								// Input mean ADC value to test
 )
 {
@@ -267,7 +283,7 @@ static void check_adc_mean( // Check all mean ADC value is approximately zero
 } // check_adc_mean
 /*****************************************************************************/
 static void check_adc_spin_direction( // Check for correct ADC spin direction
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	ADC_PHASE_ENUM curr_phase	// current phase to update
 )
 // NB Difference in phase index is of opposite sign to spin
@@ -296,7 +312,7 @@ static void check_adc_spin_direction( // Check for correct ADC spin direction
 } // check_adc_spin_direction
 /*****************************************************************************/
 static void check_adc_period( // Check one set of ADC phase data
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	ADC_PHASE_ENUM curr_phase	// current phase to update
 )
 {
@@ -326,7 +342,7 @@ static void check_adc_period( // Check one set of ADC phase data
 } // check_adc_period
 /*****************************************************************************/
 static void check_all_adc_phase_data( // Check all ADC phase data
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	ADC_PHASE_ENUM phase_cnt; // Counter for ADC phases
@@ -339,7 +355,7 @@ static void check_all_adc_phase_data( // Check all ADC phase data
 } // check_all_adc_phase_data
 /*****************************************************************************/
 static void process_state_change( // Update accumulators due to state-change, and check spin
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	ADC_PHASE_ENUM curr_phase	// current phase to update
 )
 {
@@ -391,7 +407,7 @@ static void process_state_change( // Update accumulators due to state-change, an
 } // process_state_change
 /*****************************************************************************/
 static void detect_phase_state_change( // Detect if state-change occured for current ADC phase, and check spin
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	ADC_PHASE_ENUM curr_phase	// current phase to update
 )
 /* A noise threshold has to be crossed before a state-change is accepted.
@@ -445,7 +461,7 @@ static void detect_phase_state_change( // Detect if state-change occured for cur
 } // detect_phase_state_change
 /*****************************************************************************/
 static void update_adc_phase_data( // Updates phase data and checks spin
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	ADC_PHASE_ENUM phase_cnt; // Counter for ADC phases
@@ -465,7 +481,7 @@ static void update_adc_phase_data( // Updates phase data and checks spin
 } // update_adc_phase_data
 /*****************************************************************************/
 static void process_new_adc_parameters( // Process new ADC parameters
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	check_adc_sum( chk_data_s ); // Check ADC zero-sum
@@ -490,7 +506,7 @@ static int parameter_compare( // Check if 2 sets of ADC parameters are different
 } // parameter_compare
 /*****************************************************************************/
 static void get_adc_client_data( // Get next set of ADC parameters
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	streaming chanend c_gen, // Channel for communication with Test_Generator
 	streaming chanend c_adc // ADC channel between Client and Server
 )
@@ -505,7 +521,7 @@ static void get_adc_client_data( // Get next set of ADC parameters
 	{
 		c_gen :> chk_data_s.curr_time; // get time-stamp for new ADC parameters
 
-		// To improve speed, a speculative request is issued (NB the last one will NOT be unused)
+		// To improve speed, a speculative request is issued (NB the last one will NOT be used)
 		c_gen <: (int)TST_REQ_CMD; // Request next ADC value
 	
 		// Get new parameter values from Client function under test
@@ -520,20 +536,20 @@ static void get_adc_client_data( // Get next set of ADC parameters
 		// Check for change in non-speed parameters
 		diff_params = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
 	
-		if (chk_data_s.print & diff_params )
+		if (chk_data_s.print_on & diff_params )
 		{
 			print_adc_parameters( chk_data_s ); // Print new ADC parameters
-		} // if (chk_data_s.print & diff_params )
+		} // if (chk_data_s.print_on & diff_params )
 	
 		process_new_adc_parameters( chk_data_s ); // Process new ADC parameters
 	
 		chk_data_s.prev_time = chk_data_s.curr_time; // Store previous time-stamp
 		chk_data_s.prev_params = chk_data_s.curr_params; // Store previous parameter values
 
-		if (0 == chk_data_s.print)
+		if (0 == chk_data_s.print_on)
 		{
-			printchar('.'); // Progress indicator
-		} // if (0 == chk_data_s.print)
+			print_progress( chk_data_s ); // Progress indicator
+		} // if (0 == chk_data_s.print_on)
 
 	} // while (0 == chk_data_s.done)
 
@@ -543,22 +559,19 @@ static void get_adc_client_data( // Get next set of ADC parameters
 } // get_adc_client_data
 /*****************************************************************************/
 static void finalise_phase_test_vector( // terminate ADC phase test and check results
-	CHECK_ADC_TYP &chk_data_s // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	check_all_adc_phase_data( chk_data_s ); // Check all ADC phase data
 } // finalise_phase_test_vector 
 /*****************************************************************************/
 static void check_motor_adc_client_data( // Display ADC results for one motor
-	CHECK_ADC_TYP &chk_data_s, // Reference to structure containing test check data
+	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	streaming chanend c_gen, // Channel for receiving test vectors from test generator
 	streaming chanend c_adc // ADC channel communication with between ADC Client
 )
 {
-	int comp_cnt; // Counter for Test Vector components
 	int do_loop = 1;   // Flag set until loop-end condition found 
-	int motor_errs = 0;   // Preset flag to NO errors for current motor
-	int motor_tsts = 0;   // Clear test ccounter for current motor
 
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
@@ -571,14 +584,16 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 	{
 		c_gen :> chk_data_s.curr_vect; // get new test-vector
 
-		if (chk_data_s.print)
+		if (chk_data_s.print_on)
 		{
 			print_test_vector( chk_data_s.common ,chk_data_s.curr_vect ,chk_data_s.padstr1 ); // Print new test vector details
-		} // if (chk_data_s.print)
+		} // if (chk_data_s.print_on)
 
 		// Check if testing has ended for current motor
 		if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
 		{
+			c_adc <: ADC_CMD_LOOP_STOP;	// Signal ADC Server to terminate
+
 			do_loop = 0; // Error flag signals end-of-loop
 		} // if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
 		else
@@ -596,27 +611,48 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 		c_gen <: (int)END_TST_CMD; // Signal to test generator that this test is complete
 	} // while( loop )
 
+} // check_motor_adc_client_data
+/*****************************************************************************/
+static void display_test_results( // Display QEI results for one motor
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int comp_cnt; // Counter for Test Vector components
+	int micro_errs = 0;   // Preset flag to NO micro-errors for current motor
+	int micro_tsts = 0;   // Clear micro-test counter for current motor
+	int macro_errs = 0;   // Preset flag to NO macro-errors for current motor
+	int macro_tsts = 0;   // Clear macro-test counter for current motor
+
+
 	// Update error statistics for current motor
 	for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
-		motor_errs += chk_data_s.motor_errs[comp_cnt]; 
-		motor_tsts += chk_data_s.motor_tsts[comp_cnt]; 
+		// Check if any micro-tests where done for current test vector component
+		if (0 < chk_data_s.motor_tsts[comp_cnt])
+		{
+			macro_tsts++; // Update macro-test counter
+			micro_tsts += chk_data_s.motor_tsts[comp_cnt]; 
+
+			// Check if any micro-errors where detected for current test vector component
+			if (0 < chk_data_s.motor_errs[comp_cnt])
+			{
+				macro_errs++; // Update macro-error counter
+				micro_errs += chk_data_s.motor_errs[comp_cnt]; 
+			} // if (0 < chk_data_s.motor_errs[comp_cnt])
+		} // if (0 < chk_data_s.motor_tsts[comp_cnt])
 	} // for comp_cnt
 
-	chk_data_s.all_errs += motor_errs;
-	chk_data_s.all_tsts += motor_tsts;
-
 	acquire_lock(); // Acquire Display Mutex
-	printcharln(' ');
+	printstrln("");
 	printstr( chk_data_s.padstr1 );
-	printint( motor_tsts );
+	printint( macro_tsts );
 	printstrln( " tests run" );
 
 	// Check if this motor had any errors
-	if (motor_errs)
+	if (macro_errs)
 	{
 		printstr( chk_data_s.padstr1 );
-		printint( motor_errs );
+		printint( macro_errs );
 		printstrln( " tests FAILED, as follows:" );
 
 		// Print Vector Component Names
@@ -627,38 +663,58 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 			{
 				printstr( chk_data_s.padstr1 );
 				printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
-				printstr(" : ");
-				printint( chk_data_s.motor_tsts[comp_cnt] );
-				printstr( " tests run" );
 	
 				if (chk_data_s.motor_errs[comp_cnt])
 				{
-					printstr( ", " );
-					printint( chk_data_s.motor_errs[comp_cnt] );
-					printstr(" FAILURES");
+					printstr(" Test FAILED");
+
+					// Check for verbose test output
+					if (1 == MICRO_TESTS)
+					{
+						printstr(" : ");
+						printint( chk_data_s.motor_errs[comp_cnt] );
+						printstr( " failed out of " );
+						printint( chk_data_s.motor_tsts[comp_cnt] );
+						printstr( " tests run" );
+					} // if (1 == MICRO_TESTS)
 				} // if (chk_data_s.motor_errs[comp_cnt])
-				printcharln(' ');
+				else
+				{
+					printstr(" Test Passed");
+
+					// Check for verbose test output
+					if (1 == MICRO_TESTS)
+					{
+						printstr(" : ");
+						printint( chk_data_s.motor_tsts[comp_cnt] );
+						printstr( " tests run" );
+					} // if (1 == MICRO_TESTS)
+				} // if (chk_data_s.motor_errs[comp_cnt])
+
+				printstrln("");
+
 			} // if (chk_data_s.motor_tsts[comp_cnt])
 		} // for comp_cnt
-	} // if (motor_errs)
+	} // if (micro_errs)
 	else
 	{
 		printstr( chk_data_s.padstr1 );
 		printstr( "All Motor_" );
 		printint( chk_data_s.common.options.flags[TST_MOTOR] );
- 		printstrln( " Tests PASSED" );
-	} // else !(motor_errs)
+ 		printstrln( " Tests Passed" );
+	} // else !(micro_errs)
 
+	printstrln("");
 	release_lock(); // Release Display Mutex
-} // check_motor_adc_client_data
+
+} // display_test_results
 /*****************************************************************************/
 void check_all_adc_client_data( // Display ADC results for all motors
 	streaming chanend c_adc[], // Array of channel for communication with ADC_Server
 	streaming chanend c_gen // Channel for communication with Test_Generator
 )
 {
-	CHECK_ADC_TYP chk_data_s; // Structure containing test check data
-
+	CHECK_TST_TYP chk_data_s; // Structure containing test check data
 
 
 	c_gen :> chk_data_s.common.options; // Get test options from generator core
@@ -670,9 +726,13 @@ void check_all_adc_client_data( // Display ADC results for all motors
 
 	check_motor_adc_client_data( chk_data_s ,c_gen ,c_adc[chk_data_s.common.options.flags[TST_MOTOR]] );
 
+	display_test_results( chk_data_s );
+
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
 	printstrln( "Test Check Ends " );
 	release_lock(); // Release Display Mutex
+
+	_Exit(0); // Exit without house-keeping
 } // check_all_adc_client_data
 /*****************************************************************************/

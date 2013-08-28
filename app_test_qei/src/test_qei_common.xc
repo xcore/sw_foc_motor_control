@@ -151,7 +151,6 @@ void print_test_vector( // print test vector details
 	int comp_cnt; // Counter for Test Vector components
 	int comp_state; // state of current component of input test vector
 
-
 	acquire_lock(); // Acquire Display Mutex
 	printstr( prefix_str ); // Print prefix string
 

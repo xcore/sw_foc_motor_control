@@ -39,6 +39,10 @@
 
 #define HALF_QEI_POS (QEI_PER_REV >> 1) // Half No. of QEI positions
 
+#define VECT_BUF_BITS 2 // No. of bits used to represent vector buffer size
+#define VECT_BUF_SIZ (1 << VECT_BUF_BITS) // vector buffer size
+#define VECT_BUF_MASK (VECT_BUF_SIZ  - 1) // Used to wrap buffer offsets
+
 /** Type containing all check data */
 typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 {
@@ -61,7 +65,8 @@ typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 	int hi_bound; // error bound for high speed test
 	int lo_bound; // error bound for low speed test
 	unsigned time; // time value when new QEI parameters received
-	int print;  // Print flag
+	int print_on;  // Print flag
+	int print_cnt; // Print counter
 	int dbg;  // Debug flag
 } CHECK_TST_TYP;
 

@@ -15,7 +15,7 @@
 #ifndef _QEI_COMMON_H_
 #define _QEI_COMMON_H_
 
-#include "use_locks.h" //MB~
+#include "use_locks.h"
 
 #include "app_global.h"
 
@@ -50,19 +50,27 @@
 
 #define NUM_QEI_PHASES (QEI_PHASE_MASK + 1) // Number of QEI Phases
 
-// QEI Command Codes (Client --> Server) 
-#define QEI_CMD_DATA_REQ	1	// QEI Data Request
+#define WAIT_TIME SECOND // Termination wait-time
 
-/** Raw QEI data type (on input pins) */
-typedef unsigned long QEI_RAW_TYP;
+/** Different QEI Commands (Client --> Server) */
+typedef enum CMD_QEI_ETAG
+{
+	QEI_CMD_LOOP_STOP = (-1), // Stop while-loop. NB Can't use non-negative integer, due to conflicts in test harness
+	QEI_CMD_DATA_REQ = 1,	// QEI Data Request
+  NUM_QEI_CMDS	// Handy Value!-)
+} CMD_QEI_ENUM;
 
 /** Different QEI Error states */
 typedef enum ERROR_QEI_ETAG
 {
   QEI_ERR_OFF = 0,	// No Error
   QEI_ERR_ON,			// Error
+  QEI_TERMINATED,	// QEI Server Terminated (Control)
   NUM_QEI_ERRS	// Handy Value!-)
 } ERROR_QEI_ENUM;
+
+/** Raw QEI data type (on input pins) */
+typedef unsigned long QEI_RAW_TYP;
 
 /** Type containing array of QEI Phase values */
 typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values

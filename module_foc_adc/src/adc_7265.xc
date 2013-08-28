@@ -299,7 +299,7 @@ static void service_data_request( // Services client command data request for th
 
 	switch(inp_cmd)
 	{
-		case ADC_CMD_REQ : // Request for ADC data
+		case ADC_CMD_DATA_REQ : // Request for ADC data
 			adc_sum = 0; // Clear Accumulator for transmitted ADC Phases
 
 			// Loop through used ADC phases
@@ -318,7 +318,7 @@ static void service_data_request( // Services client command data request for th
 // acquire_lock(); printstr("   R_Ang="); printintln( adc_data_s.phase_data[0].adc_val ); release_lock(); // MB~
 
 			c_control <: adc_data_s.params; // Return structure of ADC parameters
-		break; // case ADC_CMD_REQ 
+		break; // case ADC_CMD_DATA_REQ 
 	
     default: // Unsupported Command
 			assert(0 == 1); // Error: Received unsupported ADC command
@@ -336,13 +336,19 @@ void foc_adc_7265_triggered( // Thread for ADC server
 	out port p4_mux	// 4-bit port used to control multiplexor on ADC chip
 )
 {
-	int trigger_channel_to_adc_mux[NUM_ADC_TRIGGERS] = { 0, 2 }; // Mapping array from 'trigger channel' to 'analogue ADC mux input' See. AD7265 data-sheet
-	ADC_DATA_TYP all_adc_data[NUM_ADC_TRIGGERS];
+	// Mapping array from 'trigger channel' to 'analogue ADC mux input' See. AD7265 data-sheet
+	int trigger_channel_to_adc_mux[NUM_ADC_TRIGGERS] = { 0, 2 };
 
+	ADC_DATA_TYP all_adc_data[NUM_ADC_TRIGGERS];
 	unsigned char cntrl_token; // control token
 	int cmd_id; // command identifier
 	int trig_id; // trigger identifier
+	int do_loop = 1;   // Flag set until loop-end condition found 
 
+
+	acquire_lock(); 
+	printstrln("                                             ADC Server Starts");
+	release_lock();
 
 	// Initialise data structure for each trigger
 	for (trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) 
@@ -354,7 +360,8 @@ void foc_adc_7265_triggered( // Thread for ADC server
 
 	configure_adc_ports_7265( p32_data ,xclk ,p1_serial_clk ,p1_ready ,p4_mux );
 
-	while (1)
+	// Loop until loop termination condition detected
+	while (do_loop)
 	{
 #pragma xta endpoint "adc_7265_main_loop"
 #pragma ordered // If multiple cases fire at same time, service top-most first
@@ -373,11 +380,23 @@ void foc_adc_7265_triggered( // Thread for ADC server
 	
 			// Service any client request for ADC data
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) c_control[trig_id] :> cmd_id:
-				service_data_request( all_adc_data[trig_id] ,c_control[trig_id] ,trig_id ,cmd_id );
+				if (ADC_CMD_LOOP_STOP != cmd_id)
+				{
+					service_data_request( all_adc_data[trig_id] ,c_control[trig_id] ,trig_id ,cmd_id );
+				} // if (ADC_CMD_LOOP_STOP != cmd_id)
+				else
+				{
+					do_loop = 0; // Terminate loop
+				} // else !(ADC_CMD_LOOP_STOP != cmd_id)
 			break;
 		} // select
+	} // while (do_loop)
 
-	} // while (1)
+	acquire_lock(); 
+	printstrln("");
+	printstrln("                                             ADC Server Ends");
+	release_lock();
+
 } // foc_adc_7265_triggered
 /*****************************************************************************/
 // adc_7265.xc

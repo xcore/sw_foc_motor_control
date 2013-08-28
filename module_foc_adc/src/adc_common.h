@@ -17,7 +17,7 @@
 #ifndef _ADC_COMMON_H_
 #define _ADC_COMMON_H_
 
-// #include "use_locks.h" //MB~ Dbg
+#include "use_locks.h"
 
 /** Different ADC Phases */
 typedef enum ADC_PHASE_ETAG
@@ -33,7 +33,8 @@ typedef enum ADC_PHASE_ETAG
 /** Different ADC Commands */
 typedef enum CMD_ADC_ETAG
 {
-  ADC_CMD_REQ = 0,  // Request ADC data
+  ADC_CMD_DATA_REQ = 0,  // Request ADC data
+	ADC_CMD_LOOP_STOP, // Stop while-loop. NB Can't use non-negative integer, due to conflicts in test harness
   NUM_ADC_CMDS    // Handy Value!-)
 } CMD_ADC_ENUM;
 

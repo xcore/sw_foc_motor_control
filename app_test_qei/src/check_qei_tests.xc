@@ -77,7 +77,8 @@ static void init_check_data( // Initialise check data for QEI tests
 	chk_data_s.hi_bound = eval_speed_bound( HIGH_SPEED ); 
 	chk_data_s.lo_bound = eval_speed_bound( LOW_SPEED ); 
 
-	chk_data_s.print = PRINT_TST_QEI; // Set print mode
+	chk_data_s.print_on = VERBOSE_PRINT; // Set print mode
+	chk_data_s.print_cnt = 1; // Initialise print counter
 	chk_data_s.dbg = 0; // Set debug mode
 
 } // init_check_data
@@ -110,6 +111,23 @@ static void init_motor_checks( // Initialise QEI parameter structure
 	} // for comp_cnt
 
 } // init_motor_checks
+/*****************************************************************************/
+static void print_progress( // Print progress indicator
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	// Check for display-wrap
+	if (PRINT_WID > chk_data_s.print_cnt)
+	{
+		printchar('.');
+		chk_data_s.print_cnt++;
+	} // if (PRINT_WID > chk_data_s.print_cnt)
+	else
+	{
+		printcharln('.');
+		chk_data_s.print_cnt = 1;
+	} // if (PRINT_WID > chk_data_s.print_cnt)
+} // print_progress
 /*****************************************************************************/
 static void print_qei_parameters( // Print QEI parameters
 	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
@@ -296,7 +314,7 @@ static void check_qei_error_status( // Check for correct update of error status 
 				break; // case QEI_ERR_ON:
 		
 				default:
-					printstrln("ERROR: Unknown QEI Error-state");
+					printstrln("ERROR: Unexpected QEI Error-state");
 					assert(0 == 1);
 				break; // default:
 			} // switch( chk_data_s.curr_vect.comp_state[ERROR] )
@@ -525,12 +543,14 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 	// Get new parameter values from Client function under test
 	foc_qei_get_parameters( chk_data_s.curr_params ,c_qei );
 
+/* MB~
 #if (USE_XSCOPE)
 		xscope_int( 0 ,chk_data_s.curr_params.rev_cnt );
 		xscope_int( 1 ,chk_data_s.curr_params.theta );
 		xscope_int( 2 ,chk_data_s.curr_params.veloc );
 		xscope_int( 3 ,chk_data_s.curr_params.err );
 #endif // (USE_XSCOPE)
+*/
 
 	// Check for change in non-speed parameters
 	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
@@ -539,10 +559,10 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 	if (do_test)
 	{ // Parameters changed
 
-		if (chk_data_s.print)
+		if (chk_data_s.print_on)
 		{
 			print_qei_parameters( chk_data_s ); // Print new QEI parameters
-		} // if (chk_data_s.print)
+		} // if (chk_data_s.print_on)
 
 		// Check if this current test vector is valid
 		if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
@@ -589,7 +609,7 @@ static void process_new_test_vector( // Process new test vector
 			printstr( chk_data_s.padstr1 );
 			printstrln("ERROR: Previous Error-status test NOT completed");
 			release_lock(); // Release Display Mutex
-			assert(0 == 1); // Abort
+//MB~			assert(0 == 1); // Abort
 		} // if (0 < chk_data_s.err_cnt)
 		else
 		{ // Start new test
@@ -658,24 +678,26 @@ static void process_new_test_vector( // Process new test vector
 		chk_data_s.prev_vect = chk_data_s.curr_vect; // Update previous test-vector
 	} // if (change)
 
-	if (chk_data_s.print)
+	if (chk_data_s.print_on)
 	{
 		print_test_vector( chk_data_s.common ,chk_data_s.curr_vect ,chk_data_s.padstr1 ); // Print new test vector details
-	} // if (chk_data_s.print)
+	} // if (chk_data_s.print_on)
 
 } // process_new_test_vector
 /*****************************************************************************/
-static void check_motor_qei_client_data( // Display QEI results for one motor
+static void check_motor_qei_client_data( // Check QEI results for one motor
 	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
 	streaming chanend c_tst, // Channel for receiving test vectors from test generator
 	streaming chanend c_qei // QEI channel between Client and Server
 )
 {
+	TEST_VECT_TYP buffer[VECT_BUF_SIZ]; // Buffer for QEI test vectors (QEI conditions to be tested)
 	timer chronometer; // XMOS timer
-	int comp_cnt; // Counter for Test Vector components
+	int read_cnt = 0; // No of QEI values read from buffer
+	int write_cnt = 0; // No of QEI values written to buffer
+	unsigned read_off = 0; // read offset into buffer
+	unsigned write_off = 0; // wtite offset into buffer
 	int do_loop = 1;   // Flag set until loop-end condition found 
-	int motor_errs = 0;   // Preset flag to NO errors for current motor
-	int motor_tsts = 0;   // Clear test ccounter for current motor
 
 
 	chronometer :> chk_data_s.time; // Get start time
@@ -694,60 +716,115 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 
 	initialise_speed_test_vector( chk_data_s ); 
 
-	if (chk_data_s.print)
+	if (chk_data_s.print_on)
 	{
 		print_test_vector( chk_data_s.common ,chk_data_s.curr_vect ,chk_data_s.padstr1 ); // Print new test vector details
-	} // if (chk_data_s.print)
+	} // if (chk_data_s.print_on)
 
-	// Loop until end condition found
+	// Loop until end-of-testing condition found (QUIT)
 	while( do_loop )
 	{
 		select {
 			// Service any change on test channel
-			case c_tst :> chk_data_s.curr_vect :
+			case c_tst :> buffer[write_off] : // Check for new test vector
 				// New test vector detected.
-				process_new_test_vector( chk_data_s ); // Process new test vector
+				write_cnt++; // Increment write counter
+				write_off = write_cnt & VECT_BUF_MASK; // Wrap into buffer range
 
-				// Check if testing has ended for current motor
-				if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
-				{
-					do_loop = 0; // Error flag signals end-of-loop
-				} // if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
+				assert( (write_cnt - read_cnt) < VECT_BUF_MASK); // Check for buffer overflow
 			break; // c_tst 
 
 			// Pace QEI Client requests, so as NOT to overload QEI server
 			case chronometer when timerafter(chk_data_s.time + QEI_PERIOD) :> chk_data_s.time :
 				get_new_qei_client_data( chk_data_s ,c_qei ); // Request data from server & check
 
-				if (0 == chk_data_s.print)
+				if (0 == chk_data_s.print_on)
 				{
-					printchar('.'); // Progress indicator
-				} // if (0 == chk_data_s.print)
+					print_progress( chk_data_s ); // Progress indicator
+				} // if (0 == chk_data_s.print_on)
 			break; // case chronometer
+
+			default :
+				// Check if any test-vectors needs processing
+				if (write_cnt > read_cnt)
+				{
+					chk_data_s.curr_vect = buffer[read_off];
+
+					process_new_test_vector( chk_data_s ); // Process new test vector
+
+					// Check if testing has ended for current motor
+					if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
+					{
+						// Signal QEI server to stop
+						c_qei <: QEI_CMD_LOOP_STOP;
+
+						do_loop = 0; // Error flag signals end-of-loop
+					} // if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
+
+					read_cnt++; // Increment read counter
+					read_off = read_cnt & VECT_BUF_MASK; // Wrap into buffer range
+				} // if (write_off != read_off)
+			break; // default
 		} // select
 	} // while( loop )
+
+	// Loop until QEI Server terminates
+	while(QEI_TERMINATED != chk_data_s.curr_params.err)
+	{
+		chronometer when timerafter(chk_data_s.time + QEI_PERIOD) :> chk_data_s.time;
+		get_new_qei_client_data( chk_data_s ,c_qei ); // Request data from server & check
+
+		if (0 == chk_data_s.print_on)
+		{
+			print_progress( chk_data_s ); // Progress indicator
+		} // if (0 == chk_data_s.print_on)
+	} // while(QEI_TERMINATED != chk_data_s.curr_params.err)
 
 	// special case: finalisation for last speed test
 	finalise_speed_test_vector( chk_data_s ,chk_data_s.curr_vect.comp_state[SPEED] ); 
 
+} // check_motor_qei_client_data
+/*****************************************************************************/
+static void display_test_results( // Display QEI results for one motor
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int comp_cnt; // Counter for Test Vector components
+	int micro_errs = 0;   // Preset flag to NO micro-errors for current motor
+	int micro_tsts = 0;   // Clear micro-test counter for current motor
+	int macro_errs = 0;   // Preset flag to NO macro-errors for current motor
+	int macro_tsts = 0;   // Clear macro-test counter for current motor
+
+
 	// Update error statistics for current motor
 	for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
-		motor_errs += chk_data_s.motor_errs[comp_cnt]; 
-		motor_tsts += chk_data_s.motor_tsts[comp_cnt]; 
+		// Check if any micro-tests where done for current test vector component
+		if (0 < chk_data_s.motor_tsts[comp_cnt])
+		{
+			macro_tsts++; // Update macro-test counter
+			micro_tsts += chk_data_s.motor_tsts[comp_cnt]; 
+
+			// Check if any micro-errors where detected for current test vector component
+			if (0 < chk_data_s.motor_errs[comp_cnt])
+			{
+				macro_errs++; // Update macro-error counter
+				micro_errs += chk_data_s.motor_errs[comp_cnt]; 
+			} // if (0 < chk_data_s.motor_errs[comp_cnt])
+		} // if (0 < chk_data_s.motor_tsts[comp_cnt])
 	} // for comp_cnt
 
 	acquire_lock(); // Acquire Display Mutex
-	printcharln(' ');
+	printstrln("");
 	printstr( chk_data_s.padstr1 );
-	printint( motor_tsts );
+	printint( macro_tsts );
 	printstrln( " tests run" );
 
 	// Check if this motor had any errors
-	if (motor_errs)
+	if (macro_errs)
 	{
 		printstr( chk_data_s.padstr1 );
-		printint( motor_errs );
+		printint( macro_errs );
 		printstrln( " tests FAILED, as follows:" );
 
 		// Print Vector Component Names
@@ -758,32 +835,51 @@ static void check_motor_qei_client_data( // Display QEI results for one motor
 			{
 				printstr( chk_data_s.padstr1 );
 				printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
-				printstr(" : ");
-				printint( chk_data_s.motor_tsts[comp_cnt] );
-				printstr( " tests run" );
 	
 				if (chk_data_s.motor_errs[comp_cnt])
 				{
-					printstr( ", " );
-					printint( chk_data_s.motor_errs[comp_cnt] );
-					printstr(" FAILURES");
+					printstr(" Test FAILED");
+
+					// Check for verbose test output
+					if (1 == MICRO_TESTS)
+					{
+						printstr(" : ");
+						printint( chk_data_s.motor_errs[comp_cnt] );
+						printstr( " failed out of " );
+						printint( chk_data_s.motor_tsts[comp_cnt] );
+						printstr( " tests run" );
+					} // if (1 == MICRO_TESTS)
 				} // if (chk_data_s.motor_errs[comp_cnt])
-				printcharln(' ');
+				else
+				{
+					printstr(" Test Passed");
+
+					// Check for verbose test output
+					if (1 == MICRO_TESTS)
+					{
+						printstr(" : ");
+						printint( chk_data_s.motor_tsts[comp_cnt] );
+						printstr( " tests run" );
+					} // if (1 == MICRO_TESTS)
+				} // if (chk_data_s.motor_errs[comp_cnt])
+
+				printstrln("");
+
 			} // if (chk_data_s.motor_tsts[comp_cnt])
 		} // for comp_cnt
-	} // if (motor_errs)
+	} // if (micro_errs)
 	else
 	{
 		printstr( chk_data_s.padstr1 );
 		printstr( "All Motor_" );
 		printint( chk_data_s.common.options.flags[TST_MOTOR] );
- 		printstrln( " Tests PASSED" );
-	} // else !(motor_errs)
+ 		printstrln( " Tests Passed" );
+	} // else !(micro_errs)
 
+	printstrln("");
 	release_lock(); // Release Display Mutex
 
-	chronometer when timerafter(chk_data_s.time + MILLI_SEC) :> chk_data_s.time; // Wait for Test Generation to End
-} // check_motor_qei_client_data
+} // display_test_results
 /*****************************************************************************/
 void check_all_qei_client_data( // Display QEI results for all motors
 	streaming chanend c_tst, // Channel for receiving test vectors from test generator
@@ -801,10 +897,13 @@ void check_all_qei_client_data( // Display QEI results for all motors
 
 	check_motor_qei_client_data( chk_data_s ,c_tst ,c_qei[ chk_data_s.common.options.flags[TST_MOTOR] ] );
 
+	display_test_results( chk_data_s );
+
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
 	printstrln( "Test Check Ends " );
 	release_lock(); // Release Display Mutex
 
+	_Exit(0); // Exit without house-keeping
 } // check_all_qei_client_data
 /*****************************************************************************/

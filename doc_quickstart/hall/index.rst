@@ -69,7 +69,7 @@ An example of working test output from a working Hall component can be found in 
 Using The ``Value Change Dump`` (VCD) File
 ------------------------------------------
 
-The waveforms on the output pins can be inspected by using a VCD file. This requires a lot of memory and considerably slows down the simulator. First ensure enough memory has been requested in the xTIMEcomposer init file. Go to the root directory where the XMOS tools are installed. Then edit file ``xtimecomposer_bin/xtimecomposer.exe.ini`` and ensure the requested memory is at least 4 GBytes (``-Xmx4096m``)
+The waveforms on the output pins can be inspected by using a VCD file. This can require a lot of memory and considerably slows down the simulator. First ensure enough memory has been requested in the xTIMEcomposer init file. Go to the root directory where the XMOS tools are installed. Then edit file ``xtimecomposer_bin/xtimecomposer.exe.ini`` and ensure the requested memory is at least 2 GBytes (``-Xmx2048m``)
 
 Now launch xTIMEcomposer and switch on VCD tracing as follows ...
    #. Repeat the actions described above up to but NOT including ...
@@ -78,7 +78,7 @@ Now launch xTIMEcomposer and switch on VCD tracing as follows ...
    #. Tick the ``Enable Signal Tracing`` box
    #. Click the ``Add`` button
    #. Select ``tile[1]``
-   #. Tick the ``+details`` box
+   #. Tick the ``ports`` box
    #. Click ``Apply``
    #. Click ``Run``
 
@@ -123,7 +123,7 @@ Now rebuild the code as follows:-
    #. In the ``Run Configurations`` dialogue box (see above), select the xSCOPE tab
    #. Now select the ``Offline`` button, then click ``Apply``, then click ``Run``
 
-The program will build and start to produce test output in the Console window. When the test has completed, move to the Project explorer window. In the app_test_hall directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 3 signals listed: ``Input_Pins``, ``Hall_Value``, and ``Err_Status``. Use the boxes to the left of each signal to switch the traces on and off. The tests take about 17.5ms. The tick marks at the bottom of the window show at what time xSCOPE sampled the signals. The signal is only sampled when the patterns on the Input-pins changes. This is currently approximately every 620us, but varies with both the speed and type of the motor. Now lets look at each trace in more detail:
+The program will compile and build with the warning ``Constraints checks PASSED WITH CAVEATS``. This is because xSCOPE introduces an unspecified number of chan-ends. Test output will start to appear in the Console window. When the test has completed, move to the Project explorer window. In the app_test_hall directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 3 signals listed: ``Input_Pins``, ``Hall_Value``, and ``Err_Status``. Use the boxes to the left of each signal to switch the traces on and off. The tests take about 17.5ms. The tick marks at the bottom of the window show at what time xSCOPE sampled the signals. The signal is only sampled when the patterns on the Input-pins changes. This is currently approximately every 620us, but varies with both the speed and type of the motor. Now lets look at each trace in more detail:
 
    #. First, switch off all traces except the ``Err_Status`` trace. The error flag is zero apart from between 6.3 and 8.1ms when the error status was being tested. Now. switch on the Input-pins trace, it will be seen that this corresponds to bit_3 of the Input_pins going to zero (NERR bit). Note that, the Err_status does NOT switch on immediately. This is due to 'noise-filtering': a set of consecutive zero NERR bits are required to switch on the Err_status. Currently, this is set to 2 (using define MAX_HALL_STATUS_ERR in hall_server.h). Also the same number of NERR bits of value one are required to switch OFF the Err_Status flag.
 

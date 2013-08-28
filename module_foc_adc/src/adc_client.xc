@@ -20,7 +20,7 @@ void foc_adc_get_parameters( // Read 2 of 3 ADC values from the motor, and conve
 	streaming chanend c_adc_cntrl // channel connecting to ADC client and server
 )
 {
-	c_adc_cntrl <: ADC_CMD_REQ;	// Request ADC data
+	c_adc_cntrl <: ADC_CMD_DATA_REQ;	// Request ADC data
 	c_adc_cntrl :> adc_param_s;	// Receive ADC parameters
 
 	return;

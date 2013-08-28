@@ -81,7 +81,7 @@ An example of the default test output from a working ADC component can be found 
 Using The ``Value Change Dump`` (VCD) File
 ------------------------------------------
 
-The waveforms on the output pins can be inspected by using a VCD file. This requires a lot of memory and considerably slows down the simulator. First ensure enough memory has been requested in the xTIMEcomposer init file. Go to the root directory where the XMOS tools are installed. Then edit file ``xtimecomposer_bin/xtimecomposer.exe.ini`` and ensure the requested memory is at least 4 GBytes (``-Xmx4096m``)
+The waveforms on the output pins can be inspected by using a VCD file. This can require a lot of memory and considerably slows down the simulator. First ensure enough memory has been requested in the xTIMEcomposer init file. Go to the root directory where the XMOS tools are installed. Then edit file ``xtimecomposer_bin/xtimecomposer.exe.ini`` and ensure the requested memory is at least 2 GBytes (``-Xmx2048m``)
 
 Now launch xTIMEcomposer and switch on VCD tracing as follows ...
 
@@ -135,7 +135,7 @@ Now rebuild the code as follows:-
    #. In the ``Run Configurations`` dialogue box (see above), select the xSCOPE tab
    #. Now select the ``Offline`` button, then click ``Apply``, then click ``Run``
 
-The program will build and start to produce test output in the Console window. When the test has completed, move to the Project explorer window. In the app_test_adc directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 3 signals listed: ADC_A, ADC_B, and ADC_C. Use the boxes to the left of each signal to switch the trace on and off. Note the following features:-
+The program will compile and build with the warning ``Constraints checks PASSED WITH CAVEATS``. This is because xSCOPE introduces an unspecified number of chan-ends. Test output will start to appear in the Console window. When the test has completed, move to the Project explorer window. In the app_test_adc directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 3 signals listed: ADC_A, ADC_B, and ADC_C. Use the boxes to the left of each signal to switch the trace on and off. Note the following features:-
 
    #. The traces have a transient at the start (left), which quickly decays to a steady-state by the end of the test (right).
    #. The traces for all 3 phases start at zero, therefore the DC bias is non-zero, as time progresses, each trace drifts towards a DC bias of zero.

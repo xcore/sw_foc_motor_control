@@ -27,7 +27,9 @@ static void init_check_data( // Initialise check data for Hall tests
 	chk_data_s.fail_cnt = 0; // Clear count of failed tests.
 
 	chk_data_s.disp_str[HALL_BITS-1] = 0; // Add string terminator string
-	chk_data_s.print = PRINT_TST_HALL; // Set print mode
+
+	chk_data_s.print_on = VERBOSE_PRINT; // Set print mode
+	chk_data_s.print_cnt = 1; // Initialise print counter
 	chk_data_s.dbg = 0; // Set debug mode
 
 } // init_check_data
@@ -56,6 +58,23 @@ static void init_motor_checks( // Initialise Hall parameter structure
 	} // for comp_cnt
 
 } // init_motor_checks
+/*****************************************************************************/
+static void print_progress( // Print progress indicator
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	// Check for display-wrap
+	if (PRINT_WID > chk_data_s.print_cnt)
+	{
+		printchar('.');
+		chk_data_s.print_cnt++;
+	} // if (PRINT_WID > chk_data_s.print_cnt)
+	else
+	{
+		printcharln('.');
+		chk_data_s.print_cnt = 1;
+	} // if (PRINT_WID > chk_data_s.print_cnt)
+} // print_progress
 /*****************************************************************************/
 static void print_hall_parameters( // Print Hall parameters
 	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
@@ -305,10 +324,10 @@ static void get_new_hall_client_data( // Get next set of Hall parameters
 	if (do_test)
 	{ // Parameters changed
 
-		if (chk_data_s.print)
+		if (chk_data_s.print_on)
 		{
 			print_hall_parameters( chk_data_s ); // Print new Hall parameters
-		} // if (chk_data_s.print)
+		} // if (chk_data_s.print_on)
 
 		// Check if this current test vector is valid
 		if (VALID == chk_data_s.curr_vect.comp_state[CNTRL])
@@ -359,10 +378,10 @@ static void process_new_test_vector( // Process new test vector
 		chk_data_s.prev_vect = chk_data_s.curr_vect; // Update previous test-vector
 	} // if (change)
 
-	if (chk_data_s.print)
+	if (chk_data_s.print_on)
 	{
 		print_test_vector( chk_data_s.common ,chk_data_s.curr_vect ,chk_data_s.padstr1 ); // Print new test vector details
-	} // if (chk_data_s.print)
+	} // if (chk_data_s.print_on)
 
 } // process_new_test_vector
 /*****************************************************************************/
@@ -373,10 +392,7 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 )
 {
 	timer chronometer; // XMOS timer
-	int comp_cnt; // Counter for Test Vector components
 	int do_loop = 1;   // Flag set until loop-end condition found 
-	int motor_errs = 0;   // Preset flag to NO errors for current motor
-	int motor_tsts = 0;   // Clear test ccounter for current motor
 
 
 	chronometer :> chk_data_s.time; // Get start time
@@ -392,12 +408,12 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 	// special case: initialisation for first speed test
   chk_data_s.prev_vect = chk_data_s.curr_vect;
 
-	if (chk_data_s.print)
+	if (chk_data_s.print_on)
 	{
 		print_test_vector( chk_data_s.common ,chk_data_s.curr_vect ,chk_data_s.padstr1 ); // Print new test vector details
-	} // if (chk_data_s.print)
+	} // if (chk_data_s.print_on)
 
-	// Loop until end condition found
+	// Loop until end-of-testing condition found (QUIT)
 	while( do_loop )
 	{
 		select {
@@ -409,6 +425,9 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 				// Check if testing has ended for current motor
 				if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
 				{
+					// Signal Hall Server to stop
+					c_hall <: HALL_CMD_LOOP_STOP;
+
 					do_loop = 0; // Error flag signals end-of-loop
 				} // if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
 			break; // c_tst 
@@ -417,32 +436,68 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 			case chronometer when timerafter(chk_data_s.time + HALL_PERIOD) :> chk_data_s.time :
 				get_new_hall_client_data( chk_data_s ,c_hall ); // Request data from server & check
 
-				if (0 == chk_data_s.print)
+				if (0 == chk_data_s.print_on)
 				{
-					printchar('.'); // Progress indicator
-				} // if (0 == chk_data_s.print)
+					print_progress( chk_data_s ); // Print progress indicator
+				} // if (0 == chk_data_s.print_on)
 			break; // case chronometer
 		} // select
 	} // while( loop )
 
+	// Loop until Hall Server terminates
+	while(HALL_TERMINATED != chk_data_s.curr_params.err)
+	{
+		chronometer when timerafter(chk_data_s.time + HALL_PERIOD) :> chk_data_s.time;
+		get_new_hall_client_data( chk_data_s ,c_hall ); // Request data from server & check
+
+		if (0 == chk_data_s.print_on)
+		{
+			print_progress( chk_data_s ); // Print progress indicator
+		} // if (0 == chk_data_s.print_on)
+	} // while(QEI_TERMINATED != chk_data_s.curr_params.err)
+
+} // check_motor_hall_client_data
+/*****************************************************************************/
+static void display_test_results( // Display test results for one motor
+	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
+)
+{
+	int comp_cnt; // Counter for Test Vector components
+	int micro_errs = 0;   // Preset flag to NO micro-errors for current motor
+	int micro_tsts = 0;   // Clear micro-test counter for current motor
+	int macro_errs = 0;   // Preset flag to NO macro-errors for current motor
+	int macro_tsts = 0;   // Clear macro-test counter for current motor
+
+
 	// Update error statistics for current motor
 	for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
-		motor_errs += chk_data_s.motor_errs[comp_cnt]; 
-		motor_tsts += chk_data_s.motor_tsts[comp_cnt]; 
+		// Check if any micro-tests where done for current test vector component
+		if (0 < chk_data_s.motor_tsts[comp_cnt])
+		{
+			macro_tsts++; // Update macro-test counter
+			micro_tsts += chk_data_s.motor_tsts[comp_cnt]; 
+
+			// Check if any micro-errors where detected for current test vector component
+			if (0 < chk_data_s.motor_errs[comp_cnt])
+			{
+				macro_errs++; // Update macro-error counter
+				micro_errs += chk_data_s.motor_errs[comp_cnt]; 
+			} // if (0 < chk_data_s.motor_errs[comp_cnt])
+		} // if (0 < chk_data_s.motor_tsts[comp_cnt])
 	} // for comp_cnt
 
 	acquire_lock(); // Acquire Display Mutex
-	printcharln(' ');
+	printstrln("");
 	printstr( chk_data_s.padstr1 );
-	printint( motor_tsts );
+	printint( macro_tsts );
 	printstrln( " tests run" );
 
 	// Check if this motor had any errors
-	if (motor_errs)
+	if (macro_errs)
 	{
 		printstr( chk_data_s.padstr1 );
-		printint( motor_errs );
+		printint( macro_errs );
 		printstrln( " tests FAILED, as follows:" );
 
 		// Print Vector Component Names
@@ -453,32 +508,51 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 			{
 				printstr( chk_data_s.padstr1 );
 				printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
-				printstr(" : ");
-				printint( chk_data_s.motor_tsts[comp_cnt] );
-				printstr( " tests run" );
 	
 				if (chk_data_s.motor_errs[comp_cnt])
 				{
-					printstr( ", " );
-					printint( chk_data_s.motor_errs[comp_cnt] );
-					printstr(" FAILURES");
+					printstr(" Test FAILED");
+
+					// Check for verbose test output
+					if (1 == MICRO_TESTS)
+					{
+						printstr(" : ");
+						printint( chk_data_s.motor_errs[comp_cnt] );
+						printstr( " failed out of " );
+						printint( chk_data_s.motor_tsts[comp_cnt] );
+						printstr( " tests run" );
+					} // if (1 == MICRO_TESTS)
 				} // if (chk_data_s.motor_errs[comp_cnt])
-				printcharln(' ');
+				else
+				{
+					printstr(" Test Passed");
+
+					// Check for verbose test output
+					if (1 == MICRO_TESTS)
+					{
+						printstr(" : ");
+						printint( chk_data_s.motor_tsts[comp_cnt] );
+						printstr( " tests run" );
+					} // if (1 == MICRO_TESTS)
+				} // if (chk_data_s.motor_errs[comp_cnt])
+
+				printstrln("");
+
 			} // if (chk_data_s.motor_tsts[comp_cnt])
 		} // for comp_cnt
-	} // if (motor_errs)
+	} // if (micro_errs)
 	else
 	{
 		printstr( chk_data_s.padstr1 );
 		printstr( "All Motor_" );
 		printint( chk_data_s.common.options.flags[TST_MOTOR] );
- 		printstrln( " Tests PASSED" );
-	} // else !(motor_errs)
+ 		printstrln( " Tests Passed" );
+	} // else !(micro_errs)
 
+	printstrln("");
 	release_lock(); // Release Display Mutex
 
-	chronometer when timerafter(chk_data_s.time + MILLI_SEC) :> chk_data_s.time; // Wait for Test Generation to End
-} // check_motor_hall_client_data
+} // display_test_results
 /*****************************************************************************/
 void check_all_hall_client_data( // Display Hall results for all motors
 	streaming chanend c_tst, // Channel for receiving test vectors from test generator
@@ -496,10 +570,13 @@ void check_all_hall_client_data( // Display Hall results for all motors
 
 	check_motor_hall_client_data( chk_data_s ,c_tst ,c_hall[chk_data_s.common.options.flags[TST_MOTOR]] );
 
+	display_test_results( chk_data_s );
+
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
 	printstrln( "Test Check Ends " );
-
 	release_lock(); // Release Display Mutex
+
+	_Exit(0); // Exit without house-keeping
 } // check_all_hall_client_data
 /*****************************************************************************/

@@ -61,7 +61,8 @@ int main ( void ) // Program Entry Point
 
 				// I/O via H/W specific interface
 #if (1 == HW_ADC_7265)
-				adc_7265_interface( c_pwm2adc_trig ,c_gen_adc ,pb32_tst_data ,p1_tst_ready ,p1_tst_sclk ,tst_xclk ); // Simulate ADC_7265 I/F
+				// Simulate ADC_7265 I/F
+				adc_7265_interface( c_pwm2adc_trig ,c_gen_adc ,pb32_tst_data ,p1_tst_ready ,p1_tst_sclk ,tst_xclk );
 
 				// ADC_7265 Server under test		
 				foc_adc_7265_triggered( c_adc_chk ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_adc_ready ,p4_adc_mux );

@@ -22,7 +22,6 @@ void foc_hall_get_parameters( // Returns (4-bit) Hall sensor parameters from cha
 {
 	c_hall <: HALL_CMD_DATA_REQ;	// Request new hall sensor data
 	c_hall :> hall_param_s; // Read new hall sensor parameters
-// printstr("C:"); printintln( hall_param_s.hall_val );
 
 	return;
 } // foc_hall_get_data

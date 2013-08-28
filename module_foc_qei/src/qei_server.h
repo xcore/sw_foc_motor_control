@@ -74,7 +74,7 @@
 #define MIN_TICKS_PER_QEI (TICKS_PER_MIN_PER_QEI / MAX_SPEC_RPM) // Min. expected Ticks/QEI // 12 bits
 #define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
 
-#define MAX_CONFID 4 // Maximum confidence value
+#define MAX_CONFID 7 // Maximum confidence value
 #define MAX_QEI_STATE_ERR 8 // Maximum number of consecutive QEI state-transition errors allowed
 
 #define QEI_CNT_LIMIT (QEI_PER_REV + HALF_QEI_CNT) // 540 degrees of rotation
@@ -110,16 +110,28 @@ typedef unsigned long long U64_T; //MB~ Put this in app_global.h
 #define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer
 #define INT64_BITS (sizeof(S64_T) * BITS_IN_BYTE) // No. of bits in signed 64-bit type!
 
+#define QEI_BUF_BITS 3 // Use power-of-2 size to get all 1's mask
+#define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
+#define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
+
 /** Different Motor Phases */
 typedef enum QEI_ENUM_TAG
 {
-  QEI_ANTI = -1,		// Anti-Clockwise Phase change
-  QEI_STALL = 0,  // Same Phase
-  QEI_CLOCK, // Clockwise Phase change
+  QEI_ANTI = -2,		// Anti-Clockwise Phase change
+  QEI_STALL,  // Same Phase
+  QEI_BIT_ERR,		// Jumped 2 Phases
   QEI_JUMP,		// Jumped 2 Phases
+  QEI_CLOCK = 2 // Clockwise Phase change
 } QEI_ENUM_TYP;
 
 typedef signed char ANG_INC_TYP; // Angular Increment type
+
+typedef struct QEI_BUF_TAG // 
+{
+	QEI_RAW_TYP inp_pins; // Set of raw data values on input port pins
+	int id; // Motor Id
+	unsigned time; // Time when port-pins read
+} QEI_BUF_TYP;
 
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_DATA_TAG // 
@@ -132,8 +144,9 @@ typedef struct QEI_DATA_TAG //
 	int prev_index; // previous circular phase index
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
-	unsigned diff_time; // Difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
-	unsigned interval; // expected interval between QEI phase changes
+	int diff_time; // Difference between 2 adjacent time-stamps.
+	int prev_diff; // Previous Difference between 2 adjacent time-stamps.
+	int pin_changes; // Counts pin changes during start-up phase
 	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 
 	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
@@ -148,12 +161,13 @@ typedef struct QEI_DATA_TAG //
 	int ang_cnt; // Counts angular position of motor (from origin)
 	int prev_ang; // MB~
 	ANG_INC_TYP ang_inc; // angular increment value
+	unsigned prev_inc; // previous absolute angular increment value
 	int theta; // angular position returned to client
-	int spin_sign; // Sign of spin direction
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
 	int prev_orig; // Previous origin flag
 	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
 	int id; // Unique motor identifier
+	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
 	int dbg; // Debug
 
 	int filt_val; // filtered value
@@ -169,7 +183,7 @@ typedef struct QEI_DATA_TAG //
  */
 void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to client
 	streaming chanend c_qei[], // Array of channels connecting server & client
-	port in p4_qei[] // Array of QEI data ports for each motor
+	buffered port:4 in pb4_qei[] // Array of buffered QEI data ports for each motor
 );
 /*****************************************************************************/
 

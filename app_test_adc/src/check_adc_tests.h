@@ -71,7 +71,7 @@ typedef struct STATS_ADC_TAG // Structure containing ADC check data
 } STATS_ADC_TYP;
 
 /** Type containing all check data */
-typedef struct CHECK_ADC_TAG // Structure containing ADC check data
+typedef struct CHECK_TST_TAG // Structure containing ADC check data
 {
 	COMMON_ADC_TYP common; // Structure of ADC data common to Generator and Checker
 	char padstr1[STR_LEN]; // Padding string used to format display output
@@ -98,9 +98,10 @@ typedef struct CHECK_ADC_TAG // Structure containing ADC check data
 	int all_errs; // Error accumulator
 	int all_tsts; // Test accumulator
 	int done;		// Flag set when test data collected for all phases
-	int print;  // Print flag
+	int print_on;  // Print flag
+	int print_cnt; // Print counter
 	int dbg;  // Debug flag
-} CHECK_ADC_TYP;
+} CHECK_TST_TYP;
 
 /*****************************************************************************/
 /** Display ADC results for all motors

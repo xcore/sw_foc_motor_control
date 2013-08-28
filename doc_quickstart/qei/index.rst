@@ -69,7 +69,7 @@ An example of working test output from a working QEI component can be found in a
 Using The ``Value Change Dump`` (VCD) File
 ------------------------------------------
 
-The waveforms on the output pins can be inspected by using a VCD file. This requires a lot of memory and considerably slows down the simulator. First ensure enough memory has been requested in the xTIMEcomposer init file. Go to the root directory where the XMOS tools are installed. Then edit file ``xtimecomposer_bin/xtimecomposer.exe.ini`` and ensure the requested memory is at least 4 GBytes (``-Xmx4096m``)
+The waveforms on the output pins can be inspected by using a VCD file. This can require a lot of memory and considerably slows down the simulator. First ensure enough memory has been requested in the xTIMEcomposer init file. Go to the root directory where the XMOS tools are installed. Then edit file ``xtimecomposer_bin/xtimecomposer.exe.ini`` and ensure the requested memory is at least 2 GBytes (``-Xmx2048m``)
 
 Now launch xTIMEcomposer and switch on VCD tracing as follows ...
    #. Repeat the actions described above up to but NOT including ...
@@ -78,7 +78,7 @@ Now launch xTIMEcomposer and switch on VCD tracing as follows ...
    #. Tick the ``Enable Signal Tracing`` box
    #. Click the ``Add`` button
    #. Select ``tile[1]``
-   #. Tick the ``+details`` box
+   #. Tick the ``ports`` box
    #. Click ``Apply``
    #. Click ``Run``
 
@@ -111,7 +111,7 @@ These are the QEI raw-data values and indicate that Motor_0 is turning clock-wis
 
    VCD Waveform
 
-The waveforms for Motor_1 can be viewed by loading Port XS1_PORT_4F (PORT_M2_ENCODER).
+The waveforms for Motor_1 can be viewed by loading Port XS1_PORT_4F (PORT_M2_ENCODER). Note well, these wavefoms will be empty, unless Motor_1 has been selected in the test options file (``qei_tests.txt``).
 
 
 Using The ``xSCOPE`` (xmt) File
@@ -124,7 +124,7 @@ Now rebuild the code as follows:-
    #. In the ``Run Configurations`` dialogue box (see above), select the xSCOPE tab
    #. Now select the ``Offline`` button, then click ``Apply``, then click ``Run``
 
-The program will build and start to produce test output in the Console window. When the test has completed, move to the Project explorer window. In the app_test_qei directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 4 signals listed: ``RevCounter``, ``AngularPos``, ``Velocity``, and ``Err_Status``. Use the boxes to the left of each signal to switch the traces on and off. The tests take about 31.3ms. Now lets look at each trace in more detail:
+The program will compile and build with the warning ``Constraints checks PASSED WITH CAVEATS``. This is because xSCOPE introduces an unspecified number of chan-ends. Test output will start to appear in the Console window. When the test has completed, move to the Project explorer window. In the app_test_qei directory there should be a file called ``xscope.xmt``. Double click on this file, and the xSCOPE viewer should launch. On the left-hand side of the viewer, under ``Captured Metrics``, select the arrow next to ``n``. A sub menu will open with 4 signals listed: ``RevCounter``, ``AngularPos``, ``Velocity``, and ``Err_Status``. Use the boxes to the left of each signal to switch the traces on and off. The tests take about 31.3ms. Now lets look at each trace in more detail:
 
    #. First, switch off all traces except the ``Error`` trace. The error signal is zero apart from at about 5.7ms when the error status was being tested.
 

@@ -15,6 +15,8 @@
 #ifndef _DISPLAY_GENERATOR_DATA_H_
 #define _DISPLAY_GENERATOR_DATA_H_
 
+#include <stdlib.h>
+
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
@@ -23,8 +25,8 @@
 #include "use_locks.h"
 #include "qei_common.h"
 
-#define BUF_SIZ_BITS 3 // No. of bits used to represent buffer size
-#define DISP_BUF_SIZ (1 << BUF_SIZ_BITS) // No. of bits used to represent buffer size
+#define DISP_BUF_BITS 3 // No. of bits used to represent buffer size
+#define DISP_BUF_SIZ (1 << DISP_BUF_BITS) // buffer size
 #define DISP_BUF_MASK (DISP_BUF_SIZ  - 1) // Used to wrap buffer offsets
  
 /*****************************************************************************/

@@ -138,7 +138,7 @@ static void read_sine_data( // read in tabulated sine values from file and set u
   int status = 0; // Error status
 
 
-  file_id = _open( SIN_NAME ,O_RDONLY ,0 ); // Open control file for ADC tests
+  file_id = _open( SIN_NAME ,(O_RDONLY | O_BINARY) ,0 ); // Open control file for ADC tests
 
   assert(-1 != file_id); // ERROR: Open file failed (_open)
 
@@ -194,7 +194,7 @@ static void init_test_data( // Initialise ADC Test data
 
 	gen_data_s.period = ADC_PERIOD; // Typical time between ADC capture in FOC motor control loop
 
-	gen_data_s.print = PRINT_TST_ADC; // Set print mode
+	gen_data_s.print = VERBOSE_PRINT; // Set print mode
 	gen_data_s.dbg = 0; // Set debug mode
 
 	parse_control_file( gen_data_s ); 
@@ -613,12 +613,9 @@ static void gen_motor_adc_test_data( // Generate ADC Test data for one motor
 	streaming chanend c_adc // Channel for communication with ADC_Interface core
 )
 {
-	if (gen_data_s.print)
-	{
-		acquire_lock(); // Acquire Display Mutex
-		printstr( " Start Test Gen. For Motor_"); printintln( gen_data_s.common.options.flags[TST_MOTOR] );
-		release_lock(); // Release Display Mutex
-	} // if (gen_data_s.print)
+	acquire_lock(); // Acquire Display Mutex
+	printstr( " Start Test Generation For Motor_"); printintln( gen_data_s.common.options.flags[TST_MOTOR] );
+	release_lock(); // Release Display Mutex
 
 	// NB These tests assume ADC_FILTER = 0
 
@@ -675,11 +672,9 @@ void gen_all_adc_test_data( // Generate ADC Test data
 
 	gen_motor_adc_test_data( gen_data_s ,c_chk ,c_adc );
 
-	if (gen_data_s.print)
-	{
-		acquire_lock(); // Acquire Display Mutex
-		printstrln( "Test Generation Ends " );
-		release_lock(); // Release Display Mutex
-	} // if (gen_data_s.print)
+	acquire_lock(); // Acquire Display Mutex
+	printstrln("");
+	printstrln( "Test Generation Ends " );
+	release_lock(); // Release Display Mutex
 } // gen_all_adc_test_data
 /*****************************************************************************/
