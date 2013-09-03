@@ -40,10 +40,12 @@ The steps below are designed to guide an initial understanding of how the testbe
 
    #. Examine the application code. In xTIMEcomposer, navigate to the ``src`` directory under ``app_test_hall``  and double click on the ``main.xc`` file within it. The file will open in the central editor window.
    #. Find the ``main.xc`` file and note that main() runs 3 cores (processes) in parallel. All cores run on the same tile at a reference frequency of 100 MHz.
+
       * ``gen_all_hall_test_data()`` Generates test vectors and test data. The test vectors are transmitted using channel ``c_gen_chk`` to the Checker core. The test data is output on the 32-bit buffered test output port (``p4_tst``).
       * ``foc_hall_do_multiple()`` is the Hall sensor Server, receiving test data on the 4-bit Hall sensor port (``p4_hall``), processes the data, and transmitting output data over channel ``c_hall_chk``
       * ``check_all_hall_client_data()`` contains the Hall sensor Client which receives Hall sensor output data over channel ``c_hall_chk``, and displays the results. ``gen_all_hall_test_data()`` and ``check_all_hall_client_data()`` both produce display information in parallel. The other 2 functions in ``main.xc`` are ``init_locks()`` and ``free_locks()``. These are used control a MutEx which only allows one core at a time to print to the display.
       * As well as main(), there is a function called xscope_user_init(), this is called before main to initialise xSCOPE capability. In here are registered the 3 Hall signals that were described above, and seen in the xSCOPE viewer.
+
    #. Find the ``app_global.h`` header. At the top are the xSCOPE definitions, followed by the motor definitions, and then the Hall Sensor definitions, which are specific to the type of motor being used and are currently set up for the LDO motors supplied with the development kit.
    #. Note in ``app_global.h`` the define VERBOSE_PRINT used to switch on verbose printing. An example of this can be found in file ``hall_results.txt``.
    #. Find the file ``check_hall_tests.xc``. In here the function ``check_motor_hall_client_data()`` handles the Hall sensor output data for one motor. In the 'while loop' is a function ``foc_hall_get_parameters()``. This is the Hall sensor Client. It communicates with the Hall sensor server function ``foc_hall_do_multiple()`` via channel ``c_hall_chk``. The 'while loop' is paced to request Hall sensor data over the ``c_hall_chk`` channel every 40 micro-seconds. This is typical of the issue rate when using real hardware.
@@ -53,17 +55,19 @@ Testbench Structure
 -------------------
 
 The test application uses 3 cores containing the following components
+
    #. A test-vector and Hall raw-data generator
    #. The Hall Server under test
    #. The Hall Client under test, and the test results checker
 
 The test application uses 2 channels for the following data
+
    #. Transmission of test vectors between the Generator and Checker cores
    #. Transmission of Hall parameters between Server and Client cores
 
 The test application uses 2 ports for the following data
+
    #. A 4-bit output port for transmission of generated Hall raw-data
    #. A 4-bit input port for the Hall server to receive Hall raw-data
 
 The output pins driven by the generator are looped back to the Hall Server input pins using the *loopback plugin* functionality included within the xSIM simulator, which allows arbitrary definition of pin level loopbacks.
-

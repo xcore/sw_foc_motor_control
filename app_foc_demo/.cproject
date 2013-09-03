@@ -170,6 +170,8 @@
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
 								</option>
 								<inputType id = "com.xmos.cdt.xc.compiler.input.62490231" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
@@ -295,6 +297,8 @@
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
 								</option>
 								<inputType id = "com.xmos.cdt.c.compiler.input.c.27770887" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
@@ -426,6 +430,8 @@
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
 								</option>
 								<inputType id = "com.xmos.cdt.cxx.compiler.input.cpp.63316016" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
@@ -693,6 +699,8 @@
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
 								</option>
 								<inputType id = "com.xmos.cdt.xc.compiler.input.47377234" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
@@ -818,6 +826,8 @@
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
 								</option>
 								<inputType id = "com.xmos.cdt.c.compiler.input.c.58193244" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
@@ -949,6 +959,8 @@
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
 								</option>
 								<inputType id = "com.xmos.cdt.cxx.compiler.input.cpp.17212986" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
@@ -1216,6 +1228,8 @@
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
 								</option>
 								<inputType id = "com.xmos.cdt.xc.compiler.input.88038254" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
@@ -1341,6 +1355,8 @@
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
 								</option>
 								<inputType id = "com.xmos.cdt.c.compiler.input.c.20814143" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
@@ -1472,6 +1488,8 @@
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_loop}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_qei}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
 								</option>
 								<inputType id = "com.xmos.cdt.cxx.compiler.input.cpp.1984889" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>

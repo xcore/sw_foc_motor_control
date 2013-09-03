@@ -430,7 +430,7 @@ static void service_client_stop_request( // Acknowledge termination request from
 #pragma unsafe arrays
 void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	streaming chanend c_qei[], // Array of data channel to client (carries processed QEI data)
-	buffered port:4 in pb4_QEI[] // Array of buffered 4-bit input ports (carries raw QEI motor data)
+	buffered port:4 in pb4_qei[] // Array of buffered 4-bit input ports (carries raw QEI motor data)
 )
 #define STAT_BITS 12
 #define NUM_STATS (1 << STAT_BITS)
@@ -464,7 +464,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 #pragma ordered // If multiple cases fire at same time, service top-most first
 		select {
 			// Service any change on input port pins
-			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pb4_QEI[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] :
+			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pb4_qei[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] :
 			{
 				chronometer :> buffer[write_off].time;	// Get new time stamp as soon as possible
 				buffer[write_off].inp_pins = inp_pins[motor_id];
@@ -525,40 +525,3 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	return;
 } // foc_qei_do_multiple
 /*****************************************************************************/
-#ifdef MB
-{
-	QEI_DATA_TYP all_qei_s[NUMBER_OF_MOTORS]; // Array of structures containing QEI parameters for all motor
-	QEI_RAW_TYP inp_pins[NUMBER_OF_MOTORS]; // Set of raw data values on input port pins
-	timer chronometer; // H/W timer
-
-
-	for (int motor_id=0; motor_id<NUMBER_OF_MOTORS; ++motor_id) 
-	{
-		init_qei_data( all_qei_s[motor_id] ,inp_pins[motor_id] ,motor_id ); // Initialise QEI data for current motor
-	} // for motor_id
-
-	while (1) {
-#pragma xta endpoint "qei_main_loop"
-#pragma ordered // If multiple cases fire at same time, service top-most first
-		select {
-			// Service any change on input port pins
-			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pQEI[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] :
-			{
-				chronometer :> all_qei_s[motor_id].curr_time;	// Get new time stamp as soon as possible
-				service_input_pins( all_qei_s[motor_id] ,inp_pins[motor_id] );
-			} // case
-			break;
-
-			// Service any client request for data
-			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) c_qei[motor_id] :> int :
-			{
-				service_client_data_request( all_qei_s[motor_id] ,c_qei[motor_id] );
-
-			} // case
-			break;
-		} // select
-	}	// while (1)
-
-	return;
-} // foc_qei_do_multiple
-#endif //MB~
