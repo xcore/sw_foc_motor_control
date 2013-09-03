@@ -25,7 +25,7 @@
 #include "use_locks.h"
 #include "qei_common.h"
 
-#define DISP_BUF_BITS 3 // No. of bits used to represent buffer size
+#define DISP_BUF_BITS 4 // No. of bits used to represent buffer size
 #define DISP_BUF_SIZ (1 << DISP_BUF_BITS) // buffer size
 #define DISP_BUF_MASK (DISP_BUF_SIZ  - 1) // Used to wrap buffer offsets
  

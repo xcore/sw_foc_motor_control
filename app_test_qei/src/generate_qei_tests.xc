@@ -17,22 +17,8 @@
 /*	[BA] order is 00 -> 01 -> 11 -> 10  Clockwise direction
  *	[BA] order is 00 -> 10 -> 11 -> 01  Anti-Clockwise direction
  */
-
-
-
 /*****************************************************************************/
-static unsigned crc_rand(
-	GENERATE_TST_TYP &tst_data_s // Reference to structure of QEI test data
-) // Returns random bit value
-{
-  crc32( tst_data_s.rnd ,~0 ,0xEDB88320 );
-
-//MB~ acquire_lock(); printstr("R="); printintln( out_bit ); release_lock();
-return (tst_data_s.rnd < (1 << 29)); // NB 12% 1's
-//MB~ 		return 0;
-}
-/*****************************************************************************/
- static void parse_control_file( // Parse QEI control file and set up test options
+static void parse_control_file( // Parse QEI control file and set up test options
 	GENERATE_TST_TYP &tst_data_s // Reference to structure of QEI test data
 )
 {
@@ -324,9 +310,6 @@ static void do_qei_test( // Performs one QEI test
 	qei_val |= tst_data_s.orig; // OR with origin flag (Bit_2)
 	qei_val |= tst_data_s.nerr; // OR with error flag (Bit_3)
 
-//MB~	if (crc_rand(tst_data_s)) qei_val ^= 1; // Flip bit_0 with low probability
-//MB~		if (crc_rand(tst_data_s)) qei_val ^= 2; // Flip bit-1 with low probability 
-
 	// Wait till test period elapsed ...
 
 	tst_data_s.Big_Timer :> big_time; // Get current time from Big timer
@@ -434,10 +417,10 @@ static void do_qei_vector( // Do all tests for one QEI test vector
 			case ACCEL: // Accelerate
 				tst_data_s.period = (tst_data_s.scale * tst_data_s.period + HALF_SCALE) >> SCALE_PRECISION; // Alter period to change speed
 
-				// Check fo end of acceleration phase
+				// Check for end of acceleration phase
 				if (tst_data_s.period < tst_data_s.hi_ticks)
 				{
-				  tst_data_s.period = tst_data_s.hi_ticks; // Clip into range
+					tst_data_s.period = tst_data_s.hi_ticks; // Clip into range
 					test_cnt = 0; // End-test
 				} // if (tst_data_s.period < tst_data_s.hi_ticks)
 			break; // case ACCEL:
@@ -448,10 +431,10 @@ static void do_qei_vector( // Do all tests for one QEI test vector
 			case DECEL: // Accelerate
 				tst_data_s.period = (tst_data_s.scale * tst_data_s.period + HALF_SCALE) >> SCALE_PRECISION; // Alter period to change speed
 
-				// Check fo end of deceleration phase
+				// Check for end of deceleration phase
 				if (tst_data_s.period > tst_data_s.lo_ticks)
 				{
-				  tst_data_s.period = tst_data_s.lo_ticks; // Clip into range  
+					tst_data_s.period = tst_data_s.lo_ticks; // Clip into range  
 					test_cnt = 0; // End-test
 				} // if (tst_data_s.period > tst_data_s.lo_ticks)
 			break; // case ACCEL:
@@ -529,7 +512,6 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 
 	// NB These tests assume QEI_FILTER = 0
 	assign_test_vector_error( tst_data_s ,QEI_ERR_OFF ); // Set test vector to NO errors
-#ifdef MB
 	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
 	assign_test_vector_speed( tst_data_s ,ACCEL ); // Set test vector to Accelerate
 
@@ -583,20 +565,17 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
 	check_for_origin( tst_data_s ,c_tst ,c_dis ,pb4_tst ,(MIN_TESTS - 1) );
-#endif //MB~
-assign_test_vector_speed( tst_data_s ,SLOW ); // Set test vector to constant Slow speed
 
 	// Check if Anti-clockwise tests activated
 	if (tst_data_s.common.options.flags[TST_ANTI])
 	{ // Do Anti-Clockwise test
 		assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
-/* MB~
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, until server is confident of new spin direction
 		check_for_origin( tst_data_s ,c_tst ,c_dis ,pb4_tst ,(MAX_CONFID + 2) );
 	
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Server confident, Switch on testing
 		check_for_origin( tst_data_s ,c_tst ,c_dis ,pb4_tst ,MIN_TESTS );
-*/	
+
 		assign_test_vector_speed( tst_data_s ,ACCEL ); // Set test vector to Accelerate
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing while motor starts accelerating
 		check_for_origin( tst_data_s ,c_tst ,c_dis ,pb4_tst ,1 );

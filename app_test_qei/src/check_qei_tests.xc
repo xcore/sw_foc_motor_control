@@ -543,14 +543,12 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 	// Get new parameter values from Client function under test
 	foc_qei_get_parameters( chk_data_s.curr_params ,c_qei );
 
-/* MB~
 #if (USE_XSCOPE)
 		xscope_int( 0 ,chk_data_s.curr_params.rev_cnt );
 		xscope_int( 1 ,chk_data_s.curr_params.theta );
 		xscope_int( 2 ,chk_data_s.curr_params.veloc );
 		xscope_int( 3 ,chk_data_s.curr_params.err );
 #endif // (USE_XSCOPE)
-*/
 
 	// Check for change in non-speed parameters
 	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
@@ -609,7 +607,7 @@ static void process_new_test_vector( // Process new test vector
 			printstr( chk_data_s.padstr1 );
 			printstrln("ERROR: Previous Error-status test NOT completed");
 			release_lock(); // Release Display Mutex
-//MB~			assert(0 == 1); // Abort
+			assert(0 == 1); // Abort
 		} // if (0 < chk_data_s.err_cnt)
 		else
 		{ // Start new test
@@ -785,15 +783,15 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 
 } // check_motor_qei_client_data
 /*****************************************************************************/
-static void display_test_results( // Display QEI results for one motor
+static void display_test_results( // Display test results for one motor
 	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
 	int comp_cnt; // Counter for Test Vector components
-	int micro_errs = 0;   // Preset flag to NO micro-errors for current motor
-	int micro_tsts = 0;   // Clear micro-test counter for current motor
-	int macro_errs = 0;   // Preset flag to NO macro-errors for current motor
-	int macro_tsts = 0;   // Clear macro-test counter for current motor
+	int check_errs = 0;   // Preset flag to NO check errors for current motor
+	int num_checks = 0;   // Clear check counter for current motor
+	int test_errs = 0;   // Preset flag to NO test errors for current motor
+	int num_tests = 0;   // Clear test counter for current motor
 
 
 	// Update error statistics for current motor
@@ -802,14 +800,14 @@ static void display_test_results( // Display QEI results for one motor
 		// Check if any micro-tests where done for current test vector component
 		if (0 < chk_data_s.motor_tsts[comp_cnt])
 		{
-			macro_tsts++; // Update macro-test counter
-			micro_tsts += chk_data_s.motor_tsts[comp_cnt]; 
+			num_tests++; // Update macro-test counter
+			num_checks += chk_data_s.motor_tsts[comp_cnt]; 
 
 			// Check if any micro-errors where detected for current test vector component
 			if (0 < chk_data_s.motor_errs[comp_cnt])
 			{
-				macro_errs++; // Update macro-error counter
-				micro_errs += chk_data_s.motor_errs[comp_cnt]; 
+				test_errs++; // Update macro-error counter
+				check_errs += chk_data_s.motor_errs[comp_cnt]; 
 			} // if (0 < chk_data_s.motor_errs[comp_cnt])
 		} // if (0 < chk_data_s.motor_tsts[comp_cnt])
 	} // for comp_cnt
@@ -817,15 +815,25 @@ static void display_test_results( // Display QEI results for one motor
 	acquire_lock(); // Acquire Display Mutex
 	printstrln("");
 	printstr( chk_data_s.padstr1 );
-	printint( macro_tsts );
-	printstrln( " tests run" );
+	printint( num_tests );
+	printstr( " Tests run" );
+
+	// Check for verbose test output
+	if (1 == MICRO_TESTS)
+	{
+		printstr(" (Comprising ");
+		printint( num_checks );
+		printstr( " checks)" );
+	} // if (1 == MICRO_TESTS)
+
+	printstrln("");
 
 	// Check if this motor had any errors
-	if (macro_errs)
+	if (test_errs)
 	{
 		printstr( chk_data_s.padstr1 );
-		printint( macro_errs );
-		printstrln( " tests FAILED, as follows:" );
+		printint( test_errs );
+		printstrln( " Tests FAILED, as follows:" );
 
 		// Print Vector Component Names
 		for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
@@ -843,11 +851,11 @@ static void display_test_results( // Display QEI results for one motor
 					// Check for verbose test output
 					if (1 == MICRO_TESTS)
 					{
-						printstr(" : ");
+						printstr(" (");
 						printint( chk_data_s.motor_errs[comp_cnt] );
-						printstr( " failed out of " );
+						printstr( " out of " );
 						printint( chk_data_s.motor_tsts[comp_cnt] );
-						printstr( " tests run" );
+						printstr( " checks failed)" );
 					} // if (1 == MICRO_TESTS)
 				} // if (chk_data_s.motor_errs[comp_cnt])
 				else
@@ -857,9 +865,9 @@ static void display_test_results( // Display QEI results for one motor
 					// Check for verbose test output
 					if (1 == MICRO_TESTS)
 					{
-						printstr(" : ");
+						printstr(" (");
 						printint( chk_data_s.motor_tsts[comp_cnt] );
-						printstr( " tests run" );
+						printstr( " checks run)" );
 					} // if (1 == MICRO_TESTS)
 				} // if (chk_data_s.motor_errs[comp_cnt])
 
@@ -867,14 +875,14 @@ static void display_test_results( // Display QEI results for one motor
 
 			} // if (chk_data_s.motor_tsts[comp_cnt])
 		} // for comp_cnt
-	} // if (micro_errs)
+	} // if (check_errs)
 	else
 	{
 		printstr( chk_data_s.padstr1 );
 		printstr( "All Motor_" );
 		printint( chk_data_s.common.options.flags[TST_MOTOR] );
  		printstrln( " Tests Passed" );
-	} // else !(micro_errs)
+	} // else !(check_errs)
 
 	printstrln("");
 	release_lock(); // Release Display Mutex

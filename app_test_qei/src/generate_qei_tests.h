@@ -39,14 +39,11 @@
 /** Define No. of tests used for Deceleration check */
 #define DEC_TESTS 18 // No. of tests used for Deceleration check
 
-#define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
-#define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
-
 /** Define Scaling factor Used for Acceleration */
 #define ACC_SCALE 807 // 935 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
 
 /** Define Scaling factor Used for Deceleration */
-#define DEC_SCALE 1104 // 1300 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+#define DEC_SCALE 1300 // 1104 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
 
 #define FILE_SIZE (STR_LEN * NUM_TEST_OPTS) // Size of PWM control file (in Bytes)
 
@@ -56,10 +53,13 @@
 #define NUM_PORT_TIMES (1 << INT16_BITS) // No. of port timer values (16-bit)
 #define HALF_PORT_TIMES (NUM_PORT_TIMES >> 1) // Half No. of port timer values
 
+/** Define No. of Bits for Scaling Factor Divisor */
+#define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor
+#define HALF_SCALE (1 << (SCALE_PRECISION - 1)) // Half Scaling factor Used for Rounding
+
 /** Type for Port timer values */
 typedef unsigned short PORT_TIME_TYP;
 
-/** Define No. of Bits for Scaling Factor Divisor */
 /** Type containing all QEI test generation data */
 typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 {
