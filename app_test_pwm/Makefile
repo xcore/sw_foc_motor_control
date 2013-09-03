@@ -18,12 +18,11 @@ APP_NAME =
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to 
 # xcc for the final link (mapping) stage.
 
-XCC_FLAGS = -O3 -g -report -fxscope
-# XCC_FLAGS = -O3 -g -report -Wno-timing
+XCC_FLAGS = -O3 -g -report -Wno-timing -save-temps -fxscope
 
 # The USED_MODULES variable lists other module used by the application. 
 
-USED_MODULES = module_foc_qei module_foc_util module_locks
+USED_MODULES = module_foc_pwm module_foc_util module_locks
 
 XCC_FLAGS_Debug = $(XCC_FLAGS)
 XCC_FLAGS_Release = $(XCC_FLAGS)

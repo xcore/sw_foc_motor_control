@@ -26,9 +26,9 @@ The following QEI definitions are required. These are set in ``qei_common.h`` or
    * MAX_SPEC_RPM // Maximium specified motor speed
 
 Test Applications
-=================
+-----------------
 
-This module has a test harness called ``Quadrature Encoder Interface (QEI) xSIM Simulator`` which can be found in the xSOFTip Explorer pane.
+This module has a test harness called ``Quadrature Encoder Interface (QEI) Test Harness`` which can be found in the xSOFTip Explorer pane.
 
 To get started with this application, run through the instructions in the quickstart guide for the test harness. More details about using this test harness are given below.
 

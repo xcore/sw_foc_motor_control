@@ -59,9 +59,11 @@
     <description>This repository contains S/W to support Field-Oriented Control (FOC) of motors.</description>
     <docdir>module_foc_adc/doc</docdir>
     <docdir>module_foc_hall/doc</docdir>
+    <docdir>module_foc_pwm/doc</docdir>
     <docdir>module_foc_qei/doc</docdir>
     <docdir>doc_quickstart/adc</docdir>
     <docdir>doc_quickstart/hall</docdir>
+    <docdir>doc_quickstart/pwm</docdir>
     <docdir>doc_quickstart/qei</docdir>
     <exclude_dir>app_foc_demo</exclude_dir>
     <exclude_dir>module_foc_comms</exclude_dir>

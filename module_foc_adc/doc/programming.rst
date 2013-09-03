@@ -25,7 +25,7 @@ The following ADC definitions are required. These are set in ``app_global.h``
 Test Applications
 -----------------
 
-This module has a test harness called ``Analogue-to-Digital Converter (ADC) Test Harness`` which can be found in the xSOFTip Explorer pane.
+This module has a test harness called ``Analogue-to-Digital Convertion (ADC) Test Harness`` which can be found in the xSOFTip Explorer pane.
 
 To get started with this application, run through the instructions in the quick-start guide for the test harness. More details about using this test harness are given below.
 

@@ -25,18 +25,11 @@ The following Hall definitions are required. These are set in ``hall_common.h`` 
    * MAX_SPEC_RPM // Maximium specified motor speed
 
 Test Applications
-=================
+-----------------
 
-Hall Sensor Interface (HALL) Xcore Simulator
---------------------------------------------------
+This module has a test harness called ``Hall Sensor Interface Test Harness`` which can be found in the xSOFTip Explorer pane.
 
-To get started with this application, run through the instructions in the quickstart guide.
-The application is in app_test_hall
-The quickstart guide is in doc_quickstart/hall/index.rst
-
-This application uses module_foc_hall to process simulated Hall input test data.
-The Hall input data is received on a 4-bit port.
-The Hall outputs (phase-values and error-status) are transmitted in a Hall data structure.
+To get started with this application, run through the instructions in the quickstart guide for the test harness. More details about using this test harness are given below.
 
 Makefile
 ........

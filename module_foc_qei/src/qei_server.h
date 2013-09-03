@@ -146,7 +146,7 @@ typedef struct QEI_DATA_TAG //
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client
  * \param c_qei // Array of channels connecting server & client
- * \param p4_qei // Array of QEI data ports for each motor
+ * \param pb4_qei // Array of QEI data ports for each motor
  */
 void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to client
 	streaming chanend c_qei[], // Array of channels connecting server & client

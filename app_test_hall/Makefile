@@ -22,7 +22,7 @@ XCC_FLAGS = -O3 -g -report -Wno-timing -fxscope
 
 # The USED_MODULES variable lists other module used by the application. 
 
-USED_MODULES = module_foc_hall module_locks
+USED_MODULES = module_foc_hall module_foc_util module_locks
 
 XCC_FLAGS_Debug = $(XCC_FLAGS)
 XCC_FLAGS_Release = $(XCC_FLAGS)
