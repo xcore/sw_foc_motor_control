@@ -26,7 +26,7 @@ Test Harness
 
 This application runs on the xCORE Simulator. Example stand alone usage of this module can be found within the xSOFTip suite as follows:
 
-   * Package: sc_pwm
+   * Package: sw_foc_motor_control
    * Application: app_test_pwm
 
 FOC Motor Control Demo

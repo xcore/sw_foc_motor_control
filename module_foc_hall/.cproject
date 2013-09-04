@@ -158,6 +158,8 @@
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/gcc&quot;"/>
                                     <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_util/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_util}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
@@ -273,6 +275,8 @@
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/gcc&quot;"/>
                                     <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_util/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_util}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 
@@ -394,6 +398,8 @@
 									<listOptionValue builtIn="false" value="&quot;${XMOS_TOOL_PATH}/target/include/c++/4.2.1/xcore-xmos-elf&quot;"/>
                                     <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_hall}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_util/src}&quot;' />
+<listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_foc_util}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks/src}&quot;' />
 <listOptionValue builtIn="false" value='&quot;${workspace_loc:/module_locks}&quot;' />
 

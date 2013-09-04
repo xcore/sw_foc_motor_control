@@ -1,4 +1,4 @@
-﻿.. _sec_api:
+﻿.. _sec_module_foc_hall_api:
 
 API
 ===

@@ -97,21 +97,26 @@ The ADC component can be used in conjunction with the PWM component. For more de
     chan c_pwm2adc_trig[NUMBER_OF_MOTORS];
     chan c_pwm[NUMBER_OF_MOTORS];
     streaming chan c_adc_cntrl[NUMBER_OF_MOTORS];
+
   
     par
     {
-      // Loop through all motors
-      par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+      on tile[MOTOR_TILE] : 
       {
-        on tile[MOTOR_TILE] : run_motor( motor_cnt ,c_pwm[motor_cnt] ,c_adc_cntrl[motor_cnt] );
+        par
+        {
+          // Loop through all motors
+          par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+          {
+            run_motor( motor_cnt ,c_pwm[motor_cnt] ,c_adc_cntrl[motor_cnt] );
   
-        on tile[MOTOR_TILE] : foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] 
-          ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] ,c_pwm2adc_trig[motor_cnt] 
-          ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
-      }
-  
-      on tile[MOTOR_TILE] : foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig 
-        ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
+            foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] 
+              ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
+          } // par motor_cnt
+
+          foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
+        } // par
+      } // on tile[MOTOR_TILE]
     } // par
   
     return 0;

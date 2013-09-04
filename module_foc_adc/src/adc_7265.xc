@@ -135,7 +135,6 @@ static void get_adc_port_data( // Get ADC data from one port
 	word_16 = (short)(tmp_val & ADC_MASK);	// Mask out active bits and convert to signed word
 	int_32 = ((int)word_16) >> ADC_DIFF_BITS; // Convert to int and recover original magnitude
 
-// acquire_lock(); printstr("        S="); printintln(int_32); release_lock(); // MB~
 	// Check if filtering selected
 	if (1 == ADC_FILTER)
 	{
@@ -179,7 +178,6 @@ static void get_trigger_data_7265(
 	{
 		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] );
 	} // for port_cnt
-// acquire_lock(); printstr("   S_Ang="); printintln( adc_data_s.phase_data[0].adc_val ); release_lock(); // MB~
 
 } // get_trigger_data_7265
 /*****************************************************************************/
@@ -307,15 +305,12 @@ static void service_data_request( // Services client command data request for th
 			{
 				// Convert parameter phase values to zero mean
 				adc_val = adc_data_s.phase_data[phase_cnt].adc_val - adc_data_s.phase_data[phase_cnt].mean;
-//MB~		adc_val = adc_data_s.phase_data[phase_cnt].adc_val;
 				adc_sum += adc_val; // Add adc value to sum
 				adc_data_s.params.vals[phase_cnt] = adc_val; // Load adc value into parameter structure
 			} // for phase_cnt
 
 			// Calculate last ADC phase from previous phases (NB Sum of phases is zero)
 			adc_data_s.params.vals[(NUM_ADC_PHASES - 1)] = -adc_sum;
-
-// acquire_lock(); printstr("   R_Ang="); printintln( adc_data_s.phase_data[0].adc_val ); release_lock(); // MB~
 
 			c_control <: adc_data_s.params; // Return structure of ADC parameters
 		break; // case ADC_CMD_DATA_REQ 
@@ -374,7 +369,6 @@ void foc_adc_7265_triggered( // Thread for ADC server
 	
 			// If guard is OFF, load 'my_timer' at time 'time_stamp' 
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) all_adc_data[trig_id].guard_off => all_adc_data[trig_id].my_timer when timerafter( all_adc_data[trig_id].time_stamp ) :> void:
-// acquire_lock(); printstr("   R_Ang="); printintln( adc_data_s.phase_data[0].adc_val ); release_lock(); // MB~
 				update_adc_trigger_data( all_adc_data[trig_id] ,p32_data ,p1_ready ,trig_id ,p4_mux ); 
 			break;
 	

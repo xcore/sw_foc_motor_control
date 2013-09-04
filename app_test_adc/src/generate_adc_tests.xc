@@ -588,7 +588,6 @@ static void do_adc_vector( // Do all tests for one ADC test vector
 	// Check for new test-vector
 	if (new_vect)
 	{
-// acquire_lock(); printstr("Vec_S="); printintln(gen_data_s.curr_vect.comp_state[SPEED]); release_lock(); // MB~
 		c_chk <: gen_data_s.curr_vect; // Send new test-vector
 
 		// Check if verbose printing required

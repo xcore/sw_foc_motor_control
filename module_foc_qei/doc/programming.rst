@@ -71,3 +71,62 @@ Trouble-shooting
 **The information in the 'check results' column may disappear**: This and almost any other problem are probably due to not setting the port configuration correctly when calling xSIM.
 
 **The printout may stop** Depending on the speed of your PC (or Mac), there can be upto 1 minute gap between printed lines.
+
+Example Usage In A Motor Control Loop
+-------------------------------------
+
+The code example below demonstrates how to use the QEI component with other components in a motor control loop. It shows part of a main.xc file. In here a set of ``par`` statements are used to run a number of components in parallel with a function called ``run_motor``, which contains all the code for a motor control loop.
+
+::
+
+  // PWM ports
+  on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
+    = {  {PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
+  on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
+    = {  {PORT_M1_LO_A, PORT_M1_LO_B, PORT_M1_LO_C} ,{PORT_M2_LO_A, PORT_M2_LO_B, PORT_M2_LO_C} };
+  on tile[MOTOR_TILE]: clock pwm_clk[NUMBER_OF_MOTORS] = { XS1_CLKBLK_5 ,XS1_CLKBLK_4 };
+  on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
+  
+  // ADC ports
+  on tile[MOTOR_TILE]: buffered in port:32 pb32_adc_data[NUM_ADC_DATA_PORTS] = { PORT_ADC_MISOA ,PORT_ADC_MISOB }; 
+  on tile[MOTOR_TILE]: out port p1_adc_sclk = PORT_ADC_CLK; // 1-bit port connecting to external ADC serial clock
+  on tile[MOTOR_TILE]: port p1_ready = PORT_ADC_CONV; // 1-bit port used to as ready signal for pb32_adc_data ports and ADC chip
+  on tile[MOTOR_TILE]: out port p4_adc_mux = PORT_ADC_MUX; // 4-bit port used to control multiplexor on ADC chip
+  on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
+  
+  // QEI ports
+  on tile[MOTOR_TILE]: buffered in port:4 pb4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER, PORT_M2_ENCODER };
+  
+  /*****************************************************************************/
+  int main ( void ) // Program Entry Point
+  {
+    chan c_pwm2adc_trig[NUMBER_OF_MOTORS];
+    chan c_pwm[NUMBER_OF_MOTORS];
+    streaming chan c_qei[NUMBER_OF_MOTORS];
+    streaming chan c_adc_cntrl[NUMBER_OF_MOTORS];
+  
+  
+    par 
+    {
+      on tile[MOTOR_TILE] :
+      {
+        par 
+        {
+          foc_qei_do_multiple( c_qei, pb4_qei );
+      
+          foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
+    
+          // Loop through all motors
+          par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+          {
+            run_motor( motor_cnt ,c_pwm[motor_cnt] ,c_qei[motor_cnt] ,c_adc_cntrl[motor_cnt] );
+    
+            foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] 
+              ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
+          } // par motor_cnt
+        } // par
+      } // on tile[MOTOR_TILE]
+    } // par
+  
+    return 0;
+  } // main

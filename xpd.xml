@@ -1,16 +1,37 @@
 <?xml version="1.0" ?>
 <xpd>
     <components>
+        <component name = "Symmetrical Pulse Wave Modulation (PWM) Component for FOC" type = "component" buildresults_path = "module_foc_pwm/.module_foc_pwm.buildinfo" scope = "Early Development" path = "module_foc_pwm" metainfo_path = "module_foc_pwm/module_foc_pwm.metainfo" local = "false" id = "module_foc_pwm" description = "PWM driver component for FOC Motor control">
+            <board>XP-MC-CTRL-L2</board>
+            <board>XA-MC-PWR-DLV</board>
+            <componentDependency>module_locks</componentDependency>
+            <componentDependency>module_foc_util</componentDependency>
+            <keyword>PWM</keyword>
+            <keyword>FOC</keyword>
+            <keyword>Motor Control</keyword>
+        </component>
         <component description = "xSIM testbench for QEI component" type = "demoCode" scope = "Example" path = "app_test_qei" local = "false" id = "app_test_qei" name = "Quadrature Encoder Interface (QEI) Test Harness">
             <board>None (works on simulator)</board>
             <componentDependency>module_foc_qei</componentDependency>
             <componentDependency>module_locks</componentDependency>
+            <componentDependency>module_foc_util</componentDependency>
             <keyword>Quadrature-Encoder-Interface QEI Field-Oriented-Control FOC Motor-Control</keyword>
+        </component>
+        <component description = "xSIM testbench for PWM component" type = "demoCode" scope = "Example" path = "app_test_pwm" local = "false" id = "app_test_pwm" name = "Pulse Width Modulation (PWM) For FOC Test Harness">
+            <board>None (works on simulator)</board>
+            <componentDependency>module_foc_pwm</componentDependency>
+            <componentDependency>module_locks</componentDependency>
+            <componentDependency>module_foc_util</componentDependency>
+            <keyword>PWM</keyword>
+            <keyword>"Pulse Width Modulation"</keyword>
+            <keyword>FOC</keyword>
+            <keyword>Motor Control</keyword>
         </component>
         <component name = "Quadrature Encoder Interface (QEI) Component" type = "component" buildresults_path = "module_foc_qei/.module_foc_qei.buildinfo" scope = "Early Development" path = "module_foc_qei" metainfo_path = "module_foc_qei/module_foc_qei.metainfo" local = "false" id = "module_foc_qei" description = "A component for interfacing to quadrature encoders with A, B and Index outputs, and optionally an error output">
             <board>XP-MC-CTRL-L2</board>
             <board>XA-MC-PWR-DLV</board>
             <componentDependency>module_locks</componentDependency>
+            <componentDependency>module_foc_util</componentDependency>
             <keyword>position encoder</keyword>
             <keyword>FOC</keyword>
             <keyword>Motor Control</keyword>
@@ -19,6 +40,7 @@
             <board>XP-MC-CTRL-L2</board>
             <board>XA-MC-PWR-DLV</board>
             <componentDependency>module_locks</componentDependency>
+            <componentDependency>module_foc_util</componentDependency>
             <keyword>Hall</keyword>
             <keyword>"Hall Sensor"</keyword>
             <keyword>FOC</keyword>
@@ -28,6 +50,7 @@
             <board>None (works on simulator)</board>
             <componentDependency>module_foc_hall</componentDependency>
             <componentDependency>module_locks</componentDependency>
+            <componentDependency>module_foc_util</componentDependency>
             <keyword>Hall</keyword>
             <keyword>"Hall Sensor"</keyword>
             <keyword>FOC</keyword>
@@ -37,12 +60,14 @@
             <board>None (works on simulator)</board>
             <componentDependency>module_foc_adc</componentDependency>
             <componentDependency>module_locks</componentDependency>
+            <componentDependency>module_foc_util</componentDependency>
             <keyword>Field-Oriented-Control FOC Analogue-To-Digital ADC Motor-Control</keyword>
         </component>
         <component name = "Analogue-to-Digital Conversion (ADC) Component" type = "component" buildresults_path = "module_foc_adc/.module_foc_adc.buildinfo" scope = "Early Development" path = "module_foc_adc" metainfo_path = "module_foc_adc/module_foc_adc.metainfo" local = "false" id = "module_foc_adc" description = "A component for interfacing to an ADC_7265 chip">
             <board>XP-MC-CTRL-L2</board>
             <board>XA-MC-PWR-DLV</board>
             <componentDependency>module_locks</componentDependency>
+            <componentDependency>module_foc_util</componentDependency>
             <keyword>Analogue</keyword>
             <keyword>Digital</keyword>
             <keyword>Conversion</keyword>
@@ -61,10 +86,12 @@
     <docdir>module_foc_hall/doc</docdir>
     <docdir>module_foc_pwm/doc</docdir>
     <docdir>module_foc_qei/doc</docdir>
+    <docdir>module_foc_util/doc</docdir>
     <docdir>doc_quickstart/adc</docdir>
     <docdir>doc_quickstart/hall</docdir>
     <docdir>doc_quickstart/pwm</docdir>
     <docdir>doc_quickstart/qei</docdir>
+    <docdir>module_foc_util</docdir>
     <exclude_dir>app_foc_demo</exclude_dir>
     <exclude_dir>module_foc_comms</exclude_dir>
     <exclude_dir>module_foc_display</exclude_dir>

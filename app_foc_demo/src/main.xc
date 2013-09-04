@@ -124,46 +124,54 @@ int main ( void ) // Program Entry Point
 
 	par
 	{
+		on tile[INTERFACE_TILE] :
+		par {
 #if (USE_ETH)
-		// MB~ WARNING: Ethernet not yet tested
-		on ETHERNET_DEFAULT_TILE: foc_comms_init_eth( xtcp_ports ,ipconfig ,c_ethernet ); // Ethernet & TCP/IP server core
-		on tile[INTERFACE_TILE] : foc_comms_do_eth( c_commands, c_ethernet[0] ); // Core to extract Motor commands from ethernet commands
+			// MB~ WARNING: Ethernet not yet tested
+			foc_comms_init_eth( xtcp_ports ,ipconfig ,c_ethernet ); // Ethernet & TCP/IP server core
+	
+			foc_comms_do_eth( c_commands, c_ethernet[0] ); // Core to extract Motor commands from ethernet commands
 #endif // (USE_ETH)
-
+	
 #if (USE_CAN)
-		// MB~ WARNING: CAN not yet tested
-		on tile[INTERFACE_TILE] : foc_comms_init_can( c_rxChan, c_txChan, p_can_clk, pb32_can_rx, p_can_tx, p_shared_rs ); // Can server core
-		on tile[INTERFACE_TILE] : foc_comms_do_can( c_commands, c_rxChan, c_txChan ); // Core to extract Motor commands from CAN commands
+			// MB~ WARNING: CAN not yet tested
+			foc_comms_init_can( c_rxChan, c_txChan, p_can_clk, pb32_can_rx, p_can_tx, p_shared_rs ); // Can server core
+	
+			foc_comms_do_can( c_commands, c_rxChan, c_txChan ); // Core to extract Motor commands from CAN commands
 #endif // (USE_CAN)
-
-		on tile[INTERFACE_TILE] : foc_display_shared_io_manager( c_speed ,lcd_ports ,p_btns, p_leds );
-
-		/* NB Ideally WatchDog Server Core should be on Tile most likely to Hang,
-		 * However, unfortunately p2_i2c_wd port is on INTERFACE_TILE
-		 */
-		on tile[INTERFACE_TILE] : foc_loop_do_wd( c_wd, p2_i2c_wd );
+	
+			foc_display_shared_io_manager( c_speed ,lcd_ports ,p_btns, p_leds );
+	
+			/* NB Ideally WatchDog Server Core should be on Tile most likely to Hang,
+			 * However, unfortunately p2_i2c_wd port is on INTERFACE_TILE
+			 */
+			foc_loop_do_wd( c_wd, p2_i2c_wd );
+		} // on tile[INTERFACE_TILE]
 
 		on tile[MOTOR_TILE] : 
-		{
+		par {
 			run_motor( 0 ,null ,c_pwm[0] ,c_hall[0] ,c_qei[0] ,c_adc_cntrl[0] ,c_speed[0] ,c_commands[0] ); // Special case of 1st Motor
+
+			// Loop through remaining motors
+			par (int motor_cnt=1; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+			{
+				run_motor( motor_cnt ,c_wd ,c_pwm[motor_cnt] ,c_hall[motor_cnt] ,c_qei[motor_cnt] 
+					,c_adc_cntrl[motor_cnt] ,c_speed[motor_cnt] ,c_commands[motor_cnt] );
+			} // par motor_cnt
+	
+			// Loop through all motors
+			par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+			{
+				foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
+			} // par motor_cnt
+
+	
+			foc_qei_do_multiple( c_qei, pb4_qei );
+	
+			foc_hall_do_multiple( c_hall ,p4_hall );
+	
+			foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
 		} // on tile[MOTOR_TILE]
-
-		// Loop through remaining motors
-		par (int motor_cnt=1; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-			on tile[MOTOR_TILE] : run_motor( motor_cnt ,c_wd ,c_pwm[motor_cnt] ,c_hall[motor_cnt] ,c_qei[motor_cnt] 
-				,c_adc_cntrl[motor_cnt] ,c_speed[motor_cnt] ,c_commands[motor_cnt] );
-
-		// Loop through all motors
-		par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-		{
-			on tile[MOTOR_TILE] : foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
-		}
-
-		on tile[MOTOR_TILE] : foc_qei_do_multiple( c_qei, pb4_qei );
-
-		on tile[MOTOR_TILE] : foc_hall_do_multiple( c_hall ,p4_hall );
-
-		on tile[MOTOR_TILE] : foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
 	} // par
 
 	return 0;

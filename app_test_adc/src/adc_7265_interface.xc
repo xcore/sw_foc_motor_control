@@ -86,7 +86,6 @@ void adc_7265_interface( // Generate ADC Test data for all motors
 			// Place ADC-bits on output ready to send
 			partout( pb32_tst_data[port_cnt] ,ADC_TOTAL_BITS ,out_val ); // NB Partial Output (ADC_TOTAL_BITS <= 32)
 		} // for port_cnt
-// acquire_lock(); printstr("   I_Ang="); printintln(adc_val); release_lock(); // MB~
 
 		// Send synchronisation token to correct motor to initiate ADC sampling
 		outct( c_adc_trig[motor_id] ,XS1_CT_END );

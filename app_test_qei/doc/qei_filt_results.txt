@@ -1,22 +1,36 @@
+Display Core Starts
+                                             QEI Server Starts
  
 Read following Test Options ...
 1  # Motor_ID: Select which motor to test [0 or 1]
 0  # Anti-clockwise tests
 1  # Error-status tests
  
+ Start Test Generation For Motor_1
  
                                              Start Checks For Motor_1
-..................................................................................................................................................... 
+........................................................................
+........................................................................
+..... 
                                              FAST FAILURE
-.............................................................................................. 
+...................................................................
+.......................................... 
                                              DECEL FAILURE
-................................................................................ 
-                                             SLOW FAILURE
+..............................
+..........................................................
+Test Generation Ends 
+
+Display Ends
+
+.                                             QEI Server Ends
  
-                                             134 tests run
-                                             3 tests FAILED, as follows:
-                                              Status : 43 tests run 
-                                              Origin : 44 tests run 
-                                               Spin  : 43 tests run 
-                                              Speed  : 4 tests run, 3 FAILURES 
+                                             SLOW FAILURE
+
+                                             4 Tests run
+                                             1 Tests FAILED, as follows:
+                                              Status Test Passed
+                                              Origin Test Passed
+                                               Spin  Test Passed
+                                              Speed  Test FAILED
+
                                              Test Check Ends 
