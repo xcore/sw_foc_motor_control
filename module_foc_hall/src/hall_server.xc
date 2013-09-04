@@ -86,7 +86,7 @@ static void service_hall_input_pins( // Process new Hall data
 	// Update estimate of error status using new error flag
 	estimate_error_status( hall_data_s ,err_flg ); // NB Updates hall_data_s.params.err
 
-//MB~ TODO: Insert filter here
+	// NB Filter could be inserted here
 
 	hall_data_s.params.hall_val = phase_val; // NB Filtering not yet implemented
 
