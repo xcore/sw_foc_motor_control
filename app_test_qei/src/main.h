@@ -25,7 +25,8 @@
 #include "qei_server.h"
 #include "check_qei_tests.h"
 #include "generate_qei_tests.h"
-#include "display_generator_data.h"
+#include "slave_print_data.h"
+#include "master_print_scheduler.h"
 
 // Define where everything is
 

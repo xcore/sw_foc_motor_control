@@ -27,6 +27,7 @@
 #include "qei_common.h"
 #include "qei_client.h"
 #include "test_qei_common.h"
+#include "master_print_scheduler.h"
 
 /** Define allowed error-status delay */
 #define ERR_TIMEOUT 1 // Allowed error-status delay
@@ -46,13 +47,12 @@
 /** Type containing all check data */
 typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 {
-	COMMON_TST_TYP common; // Structure of QEI data common to Generator and Checker
-	char padstr1[STR_LEN]; // Padding string used to format display output
-	char padstr2[STR_LEN]; // Padding string used to format display output
+	TEST_OPTS_TYP options; // Structure of test_option data
 	TEST_VECT_TYP curr_vect; // Structure of containing current QEI test vector (QEI conditions to be tested)
 	TEST_VECT_TYP prev_vect; // Structure of containing previous QEI test vector
 	QEI_PARAM_TYP curr_params;	// Structure containing current QEI parameters (received from Client)
 	QEI_PARAM_TYP prev_params;	// Structure containing previouis QEI parameters (received from Client)
+	STRING_TYP prefix; // prefix string for each display output
 	int motor_errs[NUM_VECT_COMPS]; // Array of error counters for one motor
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
 	int fail_cnt;	// Counter of failed tests
@@ -66,7 +66,6 @@ typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 	int lo_bound; // error bound for low speed test
 	unsigned time; // time value when new QEI parameters received
 	int print_on;  // Print flag
-	int print_cnt; // Print counter
 	int dbg;  // Debug flag
 } CHECK_TST_TYP;
 
@@ -74,10 +73,13 @@ typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 /** Display QEI results for all motors
  * \param c_tst // Channel for sending test vecotrs to test checker
  * \param c_qei[]	// Array of channels connecting QEI client & server
+ * \param c_disp // Channel for sending display data to print scheduler core
  */
 void check_all_qei_client_data( // Display QEI results for all motors
+	const COMMON_TST_TYP &comm_data_s, // Structure containing common test data
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
-	streaming chanend c_qei[] // Array of QEI channels between Client and Server
+	streaming chanend c_qei[], // Array of QEI channels between Client and Server
+	streaming chanend c_disp // Channel for sending display data to print scheduler core
 );
 /*****************************************************************************/
 #endif /* _CHECK_QEI_TESTS_H_ */

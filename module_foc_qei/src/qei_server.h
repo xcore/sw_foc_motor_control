@@ -58,6 +58,7 @@
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
+#include <safestring.h>
 
 #include "qei_common.h"
 
@@ -74,7 +75,7 @@
 #define MIN_TICKS_PER_QEI (TICKS_PER_MIN_PER_QEI / MAX_SPEC_RPM) // Min. expected Ticks/QEI // 12 bits
 #define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
 
-#define MAX_CONFID 4 // Maximum confidence value
+#define MAX_CONFID 7 // Maximum confidence value
 #define MAX_QEI_STATE_ERR 8 // Maximum number of consecutive QEI state-transition errors allowed
 
 #define QEI_CNT_LIMIT (QEI_PER_REV + HALF_QEI_CNT) // 540 degrees of rotation
@@ -90,19 +91,40 @@
 
 #define MAX_QEI_STATUS_ERR 3  // Maximum number of consecutive QEI status errors allowed
 
-#define INT16_BITS (sizeof(short) * BITS_IN_BYTE) // No. of bits in 16-bit integer
+#define MIN_RPM 50 // In order to estimate the angular position, a minimum expected RPM has to be specified
+// Now we can calculate the maximum expected time difference (in ticks) between QEI phase changes
+#define MAX_TIME_DIFF (((MIN_RPM * TICKS_PER_SEC_PER_QEI) + (SECS_PER_MIN - 1)) / SECS_PER_MIN) // Round-up maximum expected time-diff (17-bits)
 
-#define QEI_BUF_BITS 3 // Use power-of-2 size to get all 1's mask
+// WARNING: Values used in test harness need to be less severe than these. e.g. 807 and 1300
+#define LO_QEI_SCALE 700 // Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
+#define HI_QEI_SCALE 1500 // Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+#define THIRD 341 // Scaling factor Used for calculating one third
+
+/** Define No. of Bits for Scaling Factor Divisor */
+#define SCALE_QEI_BITS 10 // No. of Bits for Scaling Factor Divisor
+#define HALF_QEI_SCALE (1 << (SCALE_QEI_BITS - 1)) // Half Scaling factor Used for Rounding
+
+typedef signed long long S64_T; //MB~ Put this in app_global.h
+typedef unsigned long long U64_T; //MB~ Put this in app_global.h
+
+#define INT16_BITS (sizeof(short) * BITS_IN_BYTE) // No. of bits in 16-bit integer
+#define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer
+#define INT64_BITS (sizeof(S64_T) * BITS_IN_BYTE) // No. of bits in signed 64-bit type!
+
+#define QEI_BUF_BITS 5 // Use power-of-2 size to get all 1's mask
 #define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
 #define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
+
+#define DBG_SIZ 512
 
 /** Different Motor Phases */
 typedef enum QEI_ENUM_TAG
 {
-  QEI_ANTI = -1,		// Anti-Clockwise Phase change
-  QEI_STALL = 0,  // Same Phase
-  QEI_CLOCK = 1, // Clockwise Phase change
-  QEI_JUMP = 2,		// Jumped 2 Phases
+  QEI_ANTI = -2,		// Anti-Clockwise Phase change
+  QEI_STALL,  // Same Phase
+  QEI_BIT_ERR,		// Jumped 2 Phases
+  QEI_JUMP,		// Jumped 2 Phases
+  QEI_CLOCK = 2 // Clockwise Phase change
 } QEI_ENUM_TYP;
 
 typedef signed char ANG_INC_TYP; // Angular Increment type
@@ -114,27 +136,60 @@ typedef struct QEI_BUF_TAG //
 	unsigned time; // Time when port-pins read
 } QEI_BUF_TYP;
 
+typedef struct DBG_SMP_TAG // MB~ Dbg
+{
+	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
+	int diff_time; // Difference between 2 adjacent time-stamps.
+	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
+	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
+	ANG_INC_TYP phase_inc; // angular increment value
+	ANG_INC_TYP out_ang_inc; // angular increment value
+	QEI_ENUM_TYP curr_state; // Curremt QEI state
+	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
+} DBG_SMP_TYP;
+
+typedef struct ALL_DBG_TAG // MB~ Dbg
+{
+	DBG_SMP_TYP ss[DBG_SIZ]; // Array of all Debug data
+	int cnt; // Counts No of dbg array entries
+} ALL_DBG_TYP;
+
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_DATA_TAG // 
 {
+	ALL_DBG_TYP dd; // All Debug data MB~
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
+	QEI_PHASE_TYP inv_phase;	// Structure containing all inverse QEI phase values;
 	unsigned inp_pins; // Raw data values on input port pins
 	unsigned prev_phases; // Previous phase values
+	int phase_index; // Converts [BA] phase value into circular index [0, 1, 2, 3]
+	int prev_index; // previous circular phase index
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
-	unsigned diff_time; // Difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
-	unsigned interval; // expected interval between QEI phase changes
+	int diff_time; // Difference between 2 adjacent time-stamps.
+	int prev_diff; // Previous Difference between 2 adjacent time-stamps.
+	int pin_changes; // Counts pin changes during start-up phase
+	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 
+	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
+	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
+	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
+	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
+	int scale_bits; // Bit-shift used when down-scaling
+	unsigned half_scale; // Used to round when down-scaling
+	U64_T max_thr; // down-scaling threshold
 	QEI_ENUM_TYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
 	int status_errs; // counter for invalid QEI status errors
 	int ang_cnt; // Counts angular position of motor (from origin)
+	int prev_ang; // MB~
 	ANG_INC_TYP ang_inc; // angular increment value
+	unsigned prev_inc; // previous absolute angular increment value
 	int theta; // angular position returned to client
-	int spin_sign; // Sign of spin direction
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
 	int prev_orig; // Previous origin flag
 	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
 	int id; // Unique motor identifier
+	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
 	int dbg; // Debug
 
 	int filt_val; // filtered value
@@ -146,7 +201,7 @@ typedef struct QEI_DATA_TAG //
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client
  * \param c_qei // Array of channels connecting server & client
- * \param pb4_qei // Array of QEI data ports for each motor
+ * \param p4_qei // Array of QEI data ports for each motor
  */
 void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to client
 	streaming chanend c_qei[], // Array of channels connecting server & client
