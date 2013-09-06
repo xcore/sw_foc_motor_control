@@ -1,4 +1,4 @@
-﻿Overview
+Overview
 ========
 
 This module contains a Quadrature Encoder Interface (QEI) component for Motor Control systems.

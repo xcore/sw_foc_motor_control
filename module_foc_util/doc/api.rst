@@ -1,4 +1,4 @@
-﻿.. _sec_module_foc_util_api:
+.. _sec_module_foc_util_api:
 
 API
 ===
