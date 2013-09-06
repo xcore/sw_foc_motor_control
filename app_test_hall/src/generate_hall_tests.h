@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #ifndef _GENERATE_HALL_TESTS_H_
 #define _GENERATE_HALL_TESTS_H_
@@ -43,10 +43,10 @@
 #define NUM_PORT_TIMES (1 << 16) // No. of port timer values (16-bit)
 
 /** Define Scaling factor Used for Acceleration */
-#define ACC_SCALE 807 // Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
+#define ACC_SCALE 807 // Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION)
 
 /** Define Scaling factor Used for Deceleration */
-#define DEC_SCALE 1300 // Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+#define DEC_SCALE 1300 // Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION)
 
 /** Define No. of Bits for Scaling Factor Divisor */
 #define SCALE_PRECISION 10 // No. of Bits for Scaling Factor Divisor

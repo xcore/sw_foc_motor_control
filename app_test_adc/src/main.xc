@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #include "main.h"
 
@@ -35,7 +35,7 @@ void xscope_user_init()
 		,XSCOPE_CONTINUOUS, "ADC_A", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "ADC_B", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "ADC_C", XSCOPE_INT , "n"
-	); // xscope_register 
+	); // xscope_register
 } // xscope_user_init
 /*****************************************************************************/
 #endif // (USE_XSCOPE)
@@ -51,7 +51,7 @@ int main ( void ) // Program Entry Point
 
 	par
 	{	// NB All cores are run on one tile so that all cores use the same clock frequency (250 MHz)
-		on tile[MOTOR_TILE] : 
+		on tile[MOTOR_TILE] :
 		{
 		  init_locks(); // Initialise Mutex for display
 
@@ -64,16 +64,16 @@ int main ( void ) // Program Entry Point
 				// Simulate ADC_7265 I/F
 				adc_7265_interface( c_pwm2adc_trig ,c_gen_adc ,pb32_tst_data ,p1_tst_ready ,p1_tst_sclk ,tst_xclk );
 
-				// ADC_7265 Server under test		
+				// ADC_7265 Server under test
 				foc_adc_7265_triggered( c_adc_chk ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_adc_ready ,p4_adc_mux );
 #endif // (1 == HW_ADC_7265)
-		
+
 				check_all_adc_client_data( c_adc_chk ,c_gen_chk ); // Check results using ADC Client
 			} // par
-		
+
 		  free_locks(); // Free Mutex for display
-		} // on tile[MOTOR_TILE] : 
-	} // par 
+		} // on tile[MOTOR_TILE] :
+	} // par
 
 	return 0;
 } // main

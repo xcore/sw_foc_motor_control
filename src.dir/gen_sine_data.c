@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/ 
+ **/
 
 #include "gen_sine_data.h"
 
@@ -43,7 +43,7 @@ void create_sine_table( // Populates table array with sine values
 		ang_val += ang_inc; // Increment angle
 	} // for tab_cnt
 
-} // create_sine_table 
+} // create_sine_table
 /*****************************************************************************/
 int dump_table_to_file( // Dumps table array to binary file
 	SIN_TYP sine_tab[] // Array of tabulated Sine values
@@ -77,9 +77,9 @@ int dump_table_to_file( // Dumps table array to binary file
   } // if (0 != fclose(file_id))
 
  	return 0;
-} // dump_table_to_file 
+} // dump_table_to_file
 /*****************************************************************************/
-int main( 
+int main(
 )
 {
 	SIN_TYP sine_tab[NUM_SIN_VALS]; // Array of tabulated Sine values
@@ -88,7 +88,7 @@ int main(
 	create_sine_table( sine_tab );
 
 	dump_table_to_file( sine_tab );
-	
+
 	return 0;
 } // main
 /*****************************************************************************/

@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #ifndef _CHECK_ADC_TESTS_H_
 #define _CHECK_ADC_TESTS_H_
@@ -85,7 +85,7 @@ typedef struct CHECK_TST_TAG // Structure containing ADC check data
 	int motor_tsts[NUM_VECT_COMPS]; // Array of test counters for one motor
 	ADC_PHASE_ENUM prev_phase; // Previous phase that had a state-change
 	unsigned curr_time; // time value when current ADC parameters received
-	unsigned prev_time; // time value when previous ADC parameters received 
+	unsigned prev_time; // time value when previous ADC parameters received
 	unsigned chk_period; // Check value for period duration
 	int chk_ampli; // Theoretical maximum peak-to-peak amplitude of ADC wave-train
 	unsigned period_bound; // Error bound for period-duration check

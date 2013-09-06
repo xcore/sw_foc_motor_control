@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,7 +8,7 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
  **/
 
@@ -23,11 +23,11 @@
 #include "app_global.h"
 #include "adc_common.h"
 
-#ifndef ADC_FILTER 
+#ifndef ADC_FILTER
 	#error Define. ADC_FILTER in app_global.h
 #endif // ADC_FILTER
 
-#ifndef NUMBER_OF_MOTORS 
+#ifndef NUMBER_OF_MOTORS
 	#error Define. NUMBER_OF_MOTORS in app_global.h
 #endif // NUMBER_OF_MOTORS
 
@@ -48,7 +48,7 @@
  *		RANGE:			Should be set to 0 for 0..Vref range.
  *
  *	The S/W application needs to set A[0..2].
- *	In differential mode (SGl/DIFF = 0): 
+ *	In differential mode (SGl/DIFF = 0):
  *		A[0] selects between Fully/Pseudo Differential. We choose A[0] = 0 for Fully Differential.
  *		A[1,2] is dependant on the motor identifier, and selects between Motor ports V1/V3/V5
  *
@@ -56,7 +56,7 @@
  *	For our configuration (SGL/DIFF=0, A[0]=0, RANGE=0), these bit are in 2's compliment format.
  *
  *	There can also be padding bits (of value zero) both before and after the active bits.
- *	For this application 14, 15, or 16-bit samples can be used. 
+ *	For this application 14, 15, or 16-bit samples can be used.
  *	If timings are set up correctly, the padding bits are expected to be as follows:-
  *
  *	Total-Sample-Size   Pre-Pad(MSB)   Post-Pad(LSB)
@@ -74,7 +74,7 @@
 #define WORD16_BITS (sizeof(short) * BITS_IN_BYTE) // No. of bits in 16-bit word
 #define ADC_MIN_BITS (ADC_ACTIVE_BITS + ADC_PRE_PAD_BITS) // Minimum No. of bits to transmit in ADC sample (including pre-padding bits)
 
-#define ADC_DIFF_BITS (WORD16_BITS - ADC_ACTIVE_BITS) //4 Difference between Word16 and active bits 
+#define ADC_DIFF_BITS (WORD16_BITS - ADC_ACTIVE_BITS) //4 Difference between Word16 and active bits
 #define ADC_TOTAL_BITS (ADC_MIN_BITS + ADC_POST_PAD_BITS) //14..16 Total No. of bits to in ADC sample (including post-padding bits)
 
 #define ADC_SHIFT_BITS (ADC_DIFF_BITS - ADC_POST_PAD_BITS) //4..2 No. of bits to shift to get 16-bit word alignment
@@ -82,7 +82,7 @@
 
 /*	The AD7265 clock frequency (SCLK) can be configured to between  4..16 MHz.
  *	The PWM requires a 16-bit sample every 61 KHz, this translates to a minimum ADC frequency of 977 KHz.
- *  In order to trigger capture from the ADC digital ouput on a rising edge, 
+ *  In order to trigger capture from the ADC digital ouput on a rising edge,
  *	the SCLK frequency must be less than 13.7 MHz.
  *	Considering all above constraints. We set the ADC frequency to 8 MHz
  */
@@ -106,12 +106,12 @@ typedef struct ADC_PHASE_TAG // Structure containing data for one phase of ADC T
 	ADC_TYP mean; // local mean value
 	int filt_val; // (Upscaled) filtered value
 	int coef_err; // (Upscaled) Coefficient diffusion error
-	int scale_err; // (Upscaled) Scaling diffusion error 
+	int scale_err; // (Upscaled) Scaling diffusion error
 } ADC_PHASE_TYP;
 
 typedef struct ADC_FILT_TAG // Structure containing data for one ADC Trigger
 {
-	int coef_div; // coef = 1/coef_div 
+	int coef_div; // coef = 1/coef_div
 	int coef_bits; // coef_div = 2^coef_bits
 	int half_div; // half coef_div (used for rounding)
 } ADC_FILT_TYP;
@@ -131,12 +131,12 @@ typedef struct ADC_DATA_TAG // Structure containing data for one ADC Trigger
 /*****************************************************************************/
 /** \brief Implements the AD7265 triggered ADC service
  *
- *  This implements the AD hardware interface to the 7265 ADC device.  
+ *  This implements the AD hardware interface to the 7265 ADC device.
  *	It has two ports to allow reading two simultaneous current readings for a single motor.
  *
  *  \param c_control the array of ADC server control channels
  *  \param c_trigger the array of channels to recieve triggers from the PWM modules
- *	\param p32_data the Array of ADC data ports 
+ *	\param p32_data the Array of ADC data ports
  *  \param adc_xclk an XCORE clock to provide clocking to the ADC
  *  \param p1_serial_clk the external serial clock pin on the ADC
  *  \param p1_ready the convert strobe on the ADC
@@ -145,7 +145,7 @@ typedef struct ADC_DATA_TAG // Structure containing data for one ADC Trigger
 void foc_adc_7265_triggered( // On request, Transmits new sampled ADC values over Client <--> Server channel
 	streaming chanend c_control[NUM_ADC_TRIGGERS], // Array of ADC Client <--> Server channels
 	chanend c_trigger[NUM_ADC_TRIGGERS], // Array of channels to receive triggers from the PWM modules
-	in buffered port:32 p32_data[NUM_ADC_DATA_PORTS], // Array of ADC data ports 
+	in buffered port:32 p32_data[NUM_ADC_DATA_PORTS], // Array of ADC data ports
 	clock adc_xclk, // XCORE clock to provide clocking to the ADC
 	out port p1_serial_clk, // External serial clock pin on the ADC
 	port p1_ready, // convert strobe on the ADC

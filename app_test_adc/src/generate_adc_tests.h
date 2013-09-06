@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #ifndef _GENERATE_ADC_TESTS_H_
 #define _GENERATE_ADC_TESTS_H_
@@ -95,7 +95,7 @@ typedef struct GENERATE_TST_TAG // Structure containing ADC test generation data
 /*****************************************************************************/
 /** Generate ADC test data for all motors
  * \param c_chk, // Channel for communication with Checker cores
- * \param c_adc, // Channel for communication with ADC_Interface 
+ * \param c_adc, // Channel for communication with ADC_Interface
  */
 void gen_all_adc_test_data( // Generate ADC Test data for all motors
 	streaming chanend c_chk, // Channel for communication with Checker core

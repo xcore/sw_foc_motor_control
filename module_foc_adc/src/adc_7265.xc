@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,7 +8,7 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
  **/
 
@@ -35,7 +35,7 @@ static void gen_filter_params( // Generates required filter parameters from 'inp
 	filt_s.coef_div = (1 << inp_bits); // coef_val = 1/coef_div
 	filt_s.half_div = (filt_s.coef_div >> 1); // Half coef_div (used for rounding)
 	filt_s.coef_bits = inp_bits; // Store to use for fast divide
-} // gen_filter_params( specify_filter 
+} // gen_filter_params( specify_filter
 /*****************************************************************************/
 static void init_adc_trigger( // Initialise the data for this ADC trigger
 	ADC_DATA_TYP &adc_data_s, // Reference to structure containing data for this ADC trigger
@@ -45,7 +45,7 @@ static void init_adc_trigger( // Initialise the data for this ADC trigger
 	int phase_cnt; // ADC Phase counter
 
 
-	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
+	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt)
 	{
 		init_adc_phase( adc_data_s.phase_data[phase_cnt] );
 	} // for phase_cnt
@@ -84,15 +84,15 @@ static void configure_adc_ports_7265( // Configure all ADC data ports
 		Succesive bits of the digital sample are output after a falling edge of SCLK. In the following order ...
 		[0, 0, Bit_11, Bit_10, ... Bit_1, Bit_0, 0, 0]. If CSi rises early, the LSB bits (and zeros) are NOT output.
 
-		We require the analogue signal to be sampled on the falling edge of the clock, 
+		We require the analogue signal to be sampled on the falling edge of the clock,
 		According to the AD7265 data-sheet, the output data is ready to be sampled 36 ns after the falling edge.
-		If we use the rising edge of the xclk to read the data, an xclk frequency of 13.8 MHz or less is required. 
+		If we use the rising edge of the xclk to read the data, an xclk frequency of 13.8 MHz or less is required.
 		Frequencies above 13.9 MHz require the data to be read on the next falling edge of xclk.
 
 		We require the analogue signal to be sampled when CSi goes low,
 		and we require data to be read when the ready signal goes high.
 		By using the set_port_inv() function to invert the ready signal, it can be used for both (1) & (2).
-		NB If an inverted port is used as ready signals to control another port, 
+		NB If an inverted port is used as ready signals to control another port,
     the internal signal (used by XMOS port) is inverted with respect to the external signal (used to control AD7265).
 	*/
 
@@ -121,7 +121,7 @@ static void get_adc_port_data( // Get ADC data from one port
 	unsigned inp_val; // input value read from buffered ports
 	unsigned tmp_val; // Temporary manipulation value
 	short word_16; // signed 16-bit value
-	ADC_TYP int_32; // signed (32-bit) ADC value 
+	ADC_TYP int_32; // signed (32-bit) ADC value
 
 
 	endin( inp_data_port ); // End the previous input on this buffered port
@@ -148,7 +148,7 @@ static void get_adc_port_data( // Get ADC data from one port
 
 } // get_adc_port_data
 /*****************************************************************************/
-static void get_trigger_data_7265( 
+static void get_trigger_data_7265(
 	ADC_DATA_TYP &adc_data_s, // Reference to structure containing data for this ADC trigger
 	in buffered port:32 p32_data[NUM_ADC_DATA_PORTS],  // Array of 32-bit buffered ADC data ports
 	port p1_ready,	 // 1-bit port used to as ready signal for p32_adc_data ports and ADC chip
@@ -169,7 +169,7 @@ static void get_trigger_data_7265(
 
 	p1_ready <: 1 @ time_stamp; // Switch ON input reads (and ADC conversion)
 	time_stamp += ADC_TOTAL_BITS; // Allows sample-bits to be read on buffered input ports
-	p1_ready @ time_stamp <: 0; // Switch OFF input reads, (and ADC conversion) 
+	p1_ready @ time_stamp <: 0; // Switch OFF input reads, (and ADC conversion)
 
 	sync( p1_ready ); // Wait until port has completed any pending outputs
 
@@ -185,7 +185,7 @@ static void filter_adc_data( // Low-pass filter generate a mean value which is u
 	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing adc phase data
 	ADC_FILT_TYP &filt_s // Reference to structure containing filter parameters
 )
-/* In its simplest from, this is a 1st order IIR filter, it is configured as a low-pass filter, 
+/* In its simplest from, this is a 1st order IIR filter, it is configured as a low-pass filter,
  * However, the impulse response of the filter can have a short decay or a long decay,
  * depending on the value of 'coef_bits'. Therefore the filter response can be changed dynamically.
  * Due to the changing coefficient, the output is NOT like a 1st order IIR filter, and may have overshoot.
@@ -205,14 +205,14 @@ static void filter_adc_data( // Low-pass filter generate a mean value which is u
 	// Multiply difference by filter coefficient (alpha)
 	diff_val += phase_data_s.coef_err; // Add in diffusion error;
 	increment = (diff_val + filt_s.half_div) >> filt_s.coef_bits ; // Multiply by filter coef (with rounding)
-	phase_data_s.coef_err = diff_val - (increment << filt_s.coef_bits); // Evaluate new quantisation error value 
+	phase_data_s.coef_err = diff_val - (increment << filt_s.coef_bits); // Evaluate new quantisation error value
 
 	phase_data_s.filt_val += increment; // Update (up-scaled) filtered output value
 
 	// Update mean value by down-scaling filtered output value
 	phase_data_s.filt_val += phase_data_s.scale_err; // Add in diffusion error;
 	phase_data_s.mean = (phase_data_s.filt_val + ADC_HALF_SCALE) >> ADC_SCALE_BITS; // Down-scale
-	phase_data_s.scale_err = phase_data_s.filt_val - (phase_data_s.mean << ADC_SCALE_BITS); // Evaluate new remainder value 
+	phase_data_s.scale_err = phase_data_s.filt_val - (phase_data_s.mean << ADC_SCALE_BITS); // Evaluate new remainder value
 
 } // filter_adc_data
 /*****************************************************************************/
@@ -227,17 +227,17 @@ static void update_adc_trigger_data( // Update ADC values for this trigger
 	int phase_cnt; // ADC Phase counter
 
 
-	get_trigger_data_7265( adc_data_s ,p32_data ,p1_ready ,p4_mux );	// Get ADC values for this trigger	
+	get_trigger_data_7265( adc_data_s ,p32_data ,p1_ready ,p4_mux );	// Get ADC values for this trigger
 
 	// Loop through used phases
-	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
+	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt)
 	{
 		filter_adc_data( adc_data_s.phase_data[phase_cnt] ,adc_data_s.filt ); // Sum ADC values
 	} // for phase_cnt
 
 	/* A low-pass filter is used to 'calibrate' the ADC values, see filter_adc_data for more detail.
-	 * The filter is initially dynamic. When there are only a few samples the filter has a fast response, 
-	 * as the number of samples increases the response gets slower, 
+	 * The filter is initially dynamic. When there are only a few samples the filter has a fast response,
+	 * as the number of samples increases the response gets slower,
 	 * until the filter is producing a mean over about ADC_MAX_COEF_DIV samples (e.g. 8192)
 	 */
 	// Check if filter in 'dynamic' mode
@@ -275,13 +275,13 @@ static void service_control_token( // Services client control token for this tri
 		case XS1_CT_END : // ADC values ready for capture
 			enable_adc_capture( adc_data_s ); // Enable capture of ADC values
 		break; // case XS1_CT_END
-	
+
     default: // Unsupported Control Token
 			assert(0 == 1); // Error: Unknown Control Token
 		break;
 	} // switch(inp_token)
 
-} // service_control_token 
+} // service_control_token
 /*****************************************************************************/
 static void service_data_request( // Services client command data request for this trigger
 	ADC_DATA_TYP &adc_data_s, // Reference to structure containing data for this trigger
@@ -301,7 +301,7 @@ static void service_data_request( // Services client command data request for th
 			adc_sum = 0; // Clear Accumulator for transmitted ADC Phases
 
 			// Loop through used ADC phases
-			for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
+			for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt)
 			{
 				// Convert parameter phase values to zero mean
 				adc_val = adc_data_s.phase_data[phase_cnt].adc_val - adc_data_s.phase_data[phase_cnt].mean;
@@ -313,13 +313,13 @@ static void service_data_request( // Services client command data request for th
 			adc_data_s.params.vals[(NUM_ADC_PHASES - 1)] = -adc_sum;
 
 			c_control <: adc_data_s.params; // Return structure of ADC parameters
-		break; // case ADC_CMD_DATA_REQ 
-	
+		break; // case ADC_CMD_DATA_REQ
+
     default: // Unsupported Command
 			assert(0 == 1); // Error: Received unsupported ADC command
 	  		  break;
 	} // switch(inp_cmd)
-} // service_data_request 
+} // service_data_request
 /*****************************************************************************/
 void foc_adc_7265_triggered( // Thread for ADC server
 	streaming chanend c_control[NUM_ADC_TRIGGERS], // Array of ADC control Channels connecting to Control (inner_loop.xc)
@@ -338,15 +338,15 @@ void foc_adc_7265_triggered( // Thread for ADC server
 	unsigned char cntrl_token; // control token
 	int cmd_id; // command identifier
 	int trig_id; // trigger identifier
-	int do_loop = 1;   // Flag set until loop-end condition found 
+	int do_loop = 1;   // Flag set until loop-end condition found
 
 
-	acquire_lock(); 
+	acquire_lock();
 	printstrln("                                             ADC Server Starts");
 	release_lock();
 
 	// Initialise data structure for each trigger
-	for (trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) 
+	for (trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id)
 	{
 		init_adc_trigger( all_adc_data[trig_id] ,trigger_channel_to_adc_mux[trig_id] );
 	} // for trig_id
@@ -366,12 +366,12 @@ void foc_adc_7265_triggered( // Thread for ADC server
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) inct_byref( c_trigger[trig_id], cntrl_token ):
 				service_control_token( all_adc_data[trig_id] ,trig_id ,cntrl_token );
 			break;
-	
-			// If guard is OFF, load 'my_timer' at time 'time_stamp' 
+
+			// If guard is OFF, load 'my_timer' at time 'time_stamp'
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) all_adc_data[trig_id].guard_off => all_adc_data[trig_id].my_timer when timerafter( all_adc_data[trig_id].time_stamp ) :> void:
-				update_adc_trigger_data( all_adc_data[trig_id] ,p32_data ,p1_ready ,trig_id ,p4_mux ); 
+				update_adc_trigger_data( all_adc_data[trig_id] ,p32_data ,p1_ready ,trig_id ,p4_mux );
 			break;
-	
+
 			// Service any client request for ADC data
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) c_control[trig_id] :> cmd_id:
 				if (ADC_CMD_LOOP_STOP != cmd_id)
@@ -386,7 +386,7 @@ void foc_adc_7265_triggered( // Thread for ADC server
 		} // select
 	} // while (do_loop)
 
-	acquire_lock(); 
+	acquire_lock();
 	printstrln("");
 	printstrln("                                             ADC Server Ends");
 	release_lock();

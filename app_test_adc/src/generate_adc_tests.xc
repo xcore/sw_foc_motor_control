@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/ 
+ **/
 
 #include "generate_adc_tests.h"
 
@@ -31,7 +31,7 @@ static void parse_control_file( // Parse ADC control file and set up test option
 
 
 	// Initialise file buffer
-  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt) 
+  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt)
 	{
     file_buf[char_cnt] = 0;
   } // for char_cnt
@@ -50,7 +50,7 @@ static void parse_control_file( // Parse ADC control file and set up test option
 	printstrln("Read following Test Options ..." );
 
 	// Parse the file buffer for test options
-  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt) 
+  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt)
 	{
     curr_char = file_buf[char_cnt]; // Get next character
 
@@ -110,7 +110,7 @@ static void parse_control_file( // Parse ADC control file and set up test option
 					char_cnt++;
 					assert(char_cnt < FILE_SIZE); // End-of-file found
 				} // while ('\n' != file_buf[char_cnt])
-	
+
 				line_cnt++;
 				new_line = 0; // Clear new_line flag
 			} // if (new_line)
@@ -125,7 +125,7 @@ static void parse_control_file( // Parse ADC control file and set up test option
 	assert(NUM_TEST_OPTS <= line_cnt); // Check enough file lines read
 	assert(test_cnt <= line_cnt); // Check no more than one test/line
 	assert(gen_data_s.common.options.flags[TST_MOTOR] < NUMBER_OF_MOTORS); // Check Motor Identifier in range
- 
+
 	return;
 } // parse_control_file
 /*****************************************************************************/
@@ -180,7 +180,7 @@ static void init_sine_data( // Initialise Sine data
 } // init_sine_data
 /*****************************************************************************/
 static void init_test_data( // Initialise ADC Test data
-	GENERATE_TST_TYP &gen_data_s, // Reference to structure of ADC test data	
+	GENERATE_TST_TYP &gen_data_s, // Reference to structure of ADC test data
 	streaming chanend c_chk, // Channel for communication with Checker cores
 	streaming chanend c_adc // Channel for communication with ADC_Interface core
 )
@@ -189,7 +189,7 @@ static void init_test_data( // Initialise ADC Test data
 
 
 	init_common_data( gen_data_s.common ); // Initialise data common to Generator and Checker
- 
+
 	init_sine_data( gen_data_s );
 
 	gen_data_s.period = ADC_PERIOD; // Typical time between ADC capture in FOC motor control loop
@@ -197,17 +197,17 @@ static void init_test_data( // Initialise ADC Test data
 	gen_data_s.print = VERBOSE_PRINT; // Set print mode
 	gen_data_s.dbg = 0; // Set debug mode
 
-	parse_control_file( gen_data_s ); 
+	parse_control_file( gen_data_s );
 
 	// Check for sensible options ...
 
-	opt_flag =	gen_data_s.common.options.flags[TST_SMALL] || 
+	opt_flag =	gen_data_s.common.options.flags[TST_SMALL] ||
 							gen_data_s.common.options.flags[TST_PACE] ||
 							gen_data_s.common.options.flags[TST_SLOW];
 
 	if (0 == opt_flag)
 	{
-		acquire_lock(); 
+		acquire_lock();
 		printstrln("ERROR Reading Test-Options file. Please select one of Selection_1/Selection_2/Slow_Speed");
 		printstrln("      Aborting Program");
 		printstrln("");
@@ -238,7 +238,7 @@ static ADC_GEN_TYP calc_one_adc_val( // Calculates one ADC value from angular po
  *
  * The angle is dependent on angular speed(f) and time(t). A = 2.PI.f.t Where f is measured in revs/sec.
  * Therefore the time period for a whole revolution Tr = 1/f
- * There are NUM_POLE_PAIRS (P=4) electrical cycles for every revolution of the motor. 
+ * There are NUM_POLE_PAIRS (P=4) electrical cycles for every revolution of the motor.
  * Therefore electrical (Sine) period Ts = 1/(P.f)
  * Therefore time for a Sine Quadrant Tq = 1/(4.P.f)
  * Therefore time between Sine table entries is Ti = 1/(4.P.f.n)
@@ -249,7 +249,7 @@ static ADC_GEN_TYP calc_one_adc_val( // Calculates one ADC value from angular po
  *   S = Tc/Fr = (2.i + 1)/(8.P.f.n)
  * Therefore i = (8.P.n.(f.Tc)/Fr - 1)/2
  *
- * In the above equation f and Tc are the only variables. 
+ * In the above equation f and Tc are the only variables.
  * The angular frequency is supplied as RPM, therefore let f = R/60, were R is measured in RPM.
  * 	i = (8.P.n.(R.Tc)/(60.Fr) - 1)/2
  *  Let A = R.Tc  the angular position measured in (RPM * Clock_Ticks)
@@ -261,17 +261,17 @@ static ADC_GEN_TYP calc_one_adc_val( // Calculates one ADC value from angular po
  * To improve speed we need a Divisor that is a power-of-2
  * Let (15.Fr) = (2^m)/X, then
  *  i = (2.P.n.X.A - (2^m))/(2^(m+1))       remembering that n is a power-of-2, Let n = 2^j, then
- * 
+ *
  *  i = (2.P.(2^j).X.A - (2^m))/(2^(m+1))
  *  i = (P.X.A - (2^(m-j-1))/(2^(m-j))
- * 
+ *
  * For Fr = 100MHz we choose X =733 and m=40 (then 15.100MHz is approx. (2^40)/733)
  *
  * Therefore with j = 12 we have
- * 
+ *
  * i = (733.P.A - (2^27)/(2^28)       and using bit-shift division
- * i = (733.P.A - (2^27) + (2^27)) >> 28;   // Conveniently rounding cancels with constant 
- * i = 733.P.A >> 28;   // Conveniently rounding cancels with constant 
+ * i = (733.P.A - (2^27) + (2^27)) >> 28;   // Conveniently rounding cancels with constant
+ * i = 733.P.A >> 28;   // Conveniently rounding cancels with constant
  *
  * Therefore let    i = scale.A >> 28,      where  scale = 733.P
  */
@@ -283,7 +283,7 @@ static ADC_GEN_TYP calc_one_adc_val( // Calculates one ADC value from angular po
 
 
 	tmp_val = (S64_T)gen_data_s.scale * ang_val; // 50-bits
-	tmp_val = tmp_val >> DIV_BITS; 
+	tmp_val = tmp_val >> DIV_BITS;
 	index = (int)tmp_val; // Convert to 32-bit
 
 
@@ -348,7 +348,7 @@ static void calc_pair_of_adc_vals( // Calculates Phase_A and Phase_B ADC values 
 		// Check for clock wrap
 		if (gen_data_s.sum_time < ((unsigned)0xFFFFFFFF - diff_time))
 		{
-			gen_data_s.sum_time += diff_time; // Convert to 32-bit time 
+			gen_data_s.sum_time += diff_time; // Convert to 32-bit time
 		} // if (gen_data_s.sum_time < ((unsigned)0xFFFFFFFF - diff_time))
 		else
 		{ // Clock Overflow
@@ -382,7 +382,7 @@ static void print_gen_data( // Print ADC generation data
 	printint( gen_data_s.curr_mtim );
 	printstr( " > " );
 	printint( gen_data_s.gain );
-	
+
 	switch(gen_data_s.gain)
 	{
 		case MAX_GAIN :
@@ -418,8 +418,8 @@ static void send_adc_values( // Calculates and send ADC values
 	c_adc <: gen_data_s.adc_a; // return ADC value for Phase_A
 	c_adc <: gen_data_s.adc_b; // return ADC value for Phase_B
 	c_chk <: gen_data_s.curr_mtim; // Pass on mock time to Checker core
-	
-	gen_data_s.curr_mtim += ADC_PERIOD; // Update mock time 
+
+	gen_data_s.curr_mtim += ADC_PERIOD; // Update mock time
 } // send_adc_values
 /*****************************************************************************/
 static void assign_test_vector_sum( // Assign Zero-sum state of test vector
@@ -446,11 +446,11 @@ static void assign_test_vector_spin( // Assign Spin-state of test vector
 	switch( inp_spin )
 	{
 		case CLOCK: // Clock-wise
-			gen_data_s.sign = 1; 
+			gen_data_s.sign = 1;
 		break; // case CLOCK:
 
 		case ANTI: // Anti-clockwise
-			gen_data_s.sign = -1; 
+			gen_data_s.sign = -1;
 		break; // case ANTI:
 
 		default:
@@ -472,11 +472,11 @@ static void assign_test_vector_gain( // Assign Gain-state of test vector
 	switch( inp_gain )
 	{
 		case SMALL: // Small amplitude
-			gen_data_s.gain = MIN_GAIN; 
+			gen_data_s.gain = MIN_GAIN;
 		break; // case SMALL
 
 		case LARGE: // large amplitude
-			gen_data_s.gain = MAX_GAIN; 
+			gen_data_s.gain = MAX_GAIN;
 		break; // case LARGE
 
 		default:

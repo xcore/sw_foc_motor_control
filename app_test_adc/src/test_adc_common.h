@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #ifndef _TEST_ADC_COMMON_H_
 #define _TEST_ADC_COMMON_H_
@@ -33,7 +33,7 @@
 #define STR_LEN 256
 
 /** Define Numeber of bits to represent gain */
-#define GAIN_BITS 8 
+#define GAIN_BITS 8
 
 /** Define value for Maximum Gain test*/
 #define MAX_GAIN ((1 << GAIN_BITS) - 1) // 255 Maximum Gain
@@ -58,7 +58,7 @@ typedef enum ADC_TEST_ETAG
 {
   TST_MOTOR = 0,	// Select which motor to test
   TST_SMALL,		// Small-Gain tests (Also tests Non-Paced, Fast-Speed, and Clockwise)
-  TST_PACE,			// Paced ADC sampling tests (Also tests Large-Gain, Fast-Speed, and Anti-Clockwise) 
+  TST_PACE,			// Paced ADC sampling tests (Also tests Large-Gain, Fast-Speed, and Anti-Clockwise)
   TST_SLOW,			// Slow speed Tests (Also tests Non-Paced, Large-Gain, and Clockwise)
   NUM_TEST_OPTS	// Handy Value!-)
 } ADC_TEST_ENUM;
@@ -113,10 +113,10 @@ typedef enum SPEED_ADC_ETAG
   NUM_ADC_SPEEDS	// Handy Value!-)
 } SPEED_ADC_ENUM;
 
-/* ADC values are normally generated about every 40usecs, or 4000 Cylces 
+/* ADC values are normally generated about every 40usecs, or 4000 Cylces
  * (at the default Reference Frequency of 100 MHz). This is referred to as the pacing period.
  * This is a long time to wait on a simulator!-(
- * Therefore Pacing can be switched off to speed up the simulation. 
+ * Therefore Pacing can be switched off to speed up the simulation.
  * In which case ADC values are produced as fast as possible.
  * Irrespective of if Pacing in on or off, the ADC values and time-stamps should be roughly the same.
  * The difference is the mechanism used to generate the time-stamp.
@@ -153,13 +153,13 @@ typedef struct STRING_TAG // Structure containing string array
 /** Type containing Test Vector */
 typedef struct TEST_VECT_TAG // Structure containing test vector (ADC conditions to be tested)
 {
-	int comp_state[NUM_VECT_COMPS]; // array containing current states for each test vector component 
+	int comp_state[NUM_VECT_COMPS]; // array containing current states for each test vector component
 } TEST_VECT_TYP;
 
 /** Type containing Meta-information for one Test Vector */
 typedef struct VECT_COMP_TAG // Structure containing common ADC test data for one test vector component
 {
-	STRING_TYP state_names[MAX_COMP_STATES]; // Array of names for each state of this test vector component 
+	STRING_TYP state_names[MAX_COMP_STATES]; // Array of names for each state of this test vector component
 	STRING_TYP comp_name; // name for this test vector component
 	int num_states; // number of states for this test vector component
 } VECT_COMP_TYP;

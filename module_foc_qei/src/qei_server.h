@@ -1,6 +1,6 @@
 /*
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- */                                   
+ */
 
 /*****************************************************************************\
 	This code is designed to work on a Motor with a Max speed of 4000 RPM,
@@ -33,19 +33,19 @@
 
 	During one revolution, BA will change 1024 times,
 	Index will take the value of zero 1023 times, and the value one once only,
-  at the position origin. 
+  at the position origin.
 	NB When the motor starts, it is NOT normally at the origin
 
 	A look-up table is used to decode the 2 phase bits, into a spin direction
-	with the following meanings: 
-		 1: Anit-Clocwise, 
+	with the following meanings:
+		 1: Anit-Clocwise,
 		 0: Unknown    (The motor has either stopped, or jumped one or more phases)
-		-1: Clocwise, 
+		-1: Clocwise,
 
 	The timer is read every time the phase bits change. I.E. 1024 times per revolution
 
-	The angular postion is incremented/decremented (with the spin value) if the 
-	motor is NOT at the origin. 
+	The angular postion is incremented/decremented (with the spin value) if the
+	motor is NOT at the origin.
 	If the motor is at the origin, the angular position is reset to zero.
 
 \*****************************************************************************/
@@ -67,7 +67,7 @@
 
 #define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
 
-#ifndef MAX_SPEC_RPM 
+#ifndef MAX_SPEC_RPM
 	#error Define. MAX_SPEC_RPM in app_global.h
 #endif // MAX_SPEC_RPM
 
@@ -93,7 +93,7 @@
 #define INT16_BITS (sizeof(short) * BITS_IN_BYTE) // No. of bits in 16-bit integer
 
 #define QEI_BUF_BITS 3 // Use power-of-2 size to get all 1's mask
-#define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
+#define QEI_BUF_SIZ (1 << QEI_BUF_BITS)
 #define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
 
 /** Different Motor Phases */
@@ -107,7 +107,7 @@ typedef enum QEI_ENUM_TAG
 
 typedef signed char ANG_INC_TYP; // Angular Increment type
 
-typedef struct QEI_BUF_TAG // 
+typedef struct QEI_BUF_TAG //
 {
 	QEI_RAW_TYP inp_pins; // Set of raw data values on input port pins
 	int id; // Motor Id
@@ -115,14 +115,14 @@ typedef struct QEI_BUF_TAG //
 } QEI_BUF_TYP;
 
 /** Structure containing QEI parameters for one motor */
-typedef struct QEI_DATA_TAG // 
+typedef struct QEI_DATA_TAG //
 {
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
 	unsigned inp_pins; // Raw data values on input port pins
 	unsigned prev_phases; // Previous phase values
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
-	unsigned diff_time; // Difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
+	unsigned diff_time; // Difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap
 	unsigned interval; // expected interval between QEI phase changes
 	QEI_ENUM_TYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
@@ -139,8 +139,8 @@ typedef struct QEI_DATA_TAG //
 
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error
-	int scale_err; // Scaling diffusion error 
-	int speed_err; // Speed diffusion error 
+	int scale_err; // Scaling diffusion error
+	int speed_err; // Speed diffusion error
 } QEI_DATA_TYP;
 
 /*****************************************************************************/

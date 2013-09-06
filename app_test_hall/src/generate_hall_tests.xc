@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/ 
+ **/
 
 #include "generate_hall_tests.h"
 
@@ -35,7 +35,7 @@ static void parse_control_file( // Parse Hall control file and set up test optio
 
 
 	// Initialise file buffer
-  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt) 
+  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt)
 	{
     file_buf[char_cnt] = 0;
   } // for char_cnt
@@ -54,7 +54,7 @@ static void parse_control_file( // Parse Hall control file and set up test optio
 	printstrln("Read following Test Options ..." );
 
 	// Parse the file buffer for test options
-  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt) 
+  for (char_cnt = 0; char_cnt < FILE_SIZE; ++char_cnt)
 	{
     curr_char = file_buf[char_cnt]; // Get next character
 
@@ -114,7 +114,7 @@ static void parse_control_file( // Parse Hall control file and set up test optio
 					char_cnt++;
 					assert(char_cnt < FILE_SIZE); // End-of-file found
 				} // while ('\n' != file_buf[char_cnt])
-	
+
 				line_cnt++;
 				new_line = 0; // Clear new_line flag
 			} // if (new_line)
@@ -129,7 +129,7 @@ static void parse_control_file( // Parse Hall control file and set up test optio
 	assert(NUM_TEST_OPTS <= line_cnt); // Check enough file lines read
 	assert(test_cnt <= line_cnt); // Check no more than one test/line
 	assert( tst_data_s.common.options.flags[TST_MOTOR] < NUMBER_OF_MOTORS ); // Check Motor Identifier in range
- 
+
 	return;
 } // parse_control_file
 /*****************************************************************************/
@@ -160,7 +160,7 @@ static void init_test_data( // Initialise Hall Test data
 	tst_data_s.dbg = 0; // Set debug mode
 	tst_data_s.disp_str[HALL_BITS] = 0; // Add string terminator string
 
-	parse_control_file( tst_data_s ); 
+	parse_control_file( tst_data_s );
 
 	c_tst <: tst_data_s.common.options; // Send test options to checker core
 } // init_test_data
@@ -210,7 +210,7 @@ static void assign_test_vector_phase( // Assign phase-state of test vector
 	switch( inp_phase )
 	{
 		case CHANGE: // Phase-change
-		break; // case CHANGE: 
+		break; // case CHANGE:
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
@@ -344,10 +344,10 @@ static void do_hall_test( // Performs one Hall test
 
 	if (tst_data_s.print)
 	{
-		convert_unsigned_to_binary_string( tst_data_s.disp_str ,hall_val ,HALL_BITS ); 
+		convert_unsigned_to_binary_string( tst_data_s.disp_str ,hall_val ,HALL_BITS );
 
 		acquire_lock(); // Acquire Display Mutex
-		printstr( "HALL=" ); printstrln(tst_data_s.disp_str); 
+		printstr( "HALL=" ); printstrln(tst_data_s.disp_str);
 		release_lock(); // Release Display Mutex
 
 	} // if (tst_data_s.print)
@@ -407,17 +407,17 @@ static void do_hall_vector( // Do all tests for one Hall test vector
 			case ACCEL: // Accelerate
 				tst_data_s.period = (tst_data_s.scale * tst_data_s.period + HALF_SCALE) >> SCALE_PRECISION; // Alter period to change speed
 			break; // case ACCEL:
-	
+
 			case FAST: // Constant Fast Speed
 			break; // case FAST:
-	
+
 			case DECEL: // Decelerate
 				tst_data_s.period = (tst_data_s.scale * tst_data_s.period + HALF_SCALE) >> SCALE_PRECISION; // Alter period to change speed
 			break; // case ACCEL:
-	
+
 			case SLOW: // Constant Slow Speed
 			break; // case FAST:
-	
+
 			default:
 				acquire_lock(); // Acquire Display Mutex
 				printstrln("ERROR: Unknown Hall Velocity-state");
@@ -459,14 +459,14 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 		assign_test_vector_error( tst_data_s ,HALL_ERR_ON ); // Switch on error-bit
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive errors
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
-	
+
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be set
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
-	
+
 		assign_test_vector_error( tst_data_s ,HALL_ERR_OFF ); // Switch off error-bit
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, while server counts required consecutive non-errors
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
-	
+
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Switch on testing, now error-status should be cleared
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,MAX_HALL_STATUS_ERR );
 	} // if (tst_data_s.common.options.flags[TST_ERROR])

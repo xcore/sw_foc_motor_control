@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/ 
+ **/
 
 #include "display_generator_data.h"
 
@@ -43,7 +43,7 @@ static void print_qei_value( // Prints QEI value in binary format
 	} // for bit_cnt
 
 	acquire_lock(); // Acquire Display Mutex
-	printstr( "QEI=" ); printstrln(disp_str); 
+	printstr( "QEI=" ); printstrln(disp_str);
 	release_lock(); // Release Display Mutex
 
 } // print_qei_value
@@ -58,7 +58,7 @@ void disp_gen_data( // Displays generated QEI test data
 	int write_cnt = 0; // No of QEI values written to buffer
 	unsigned read_off = 0; // read offset into buffer
 	unsigned write_off = 0; // wtite offset into buffer
-	int do_loop = 1;   // Flag set until loop-end condition found 
+	int do_loop = 1;   // Flag set until loop-end condition found
 
 
 	acquire_lock(); // Acquire Display Mutex
@@ -78,7 +78,7 @@ void disp_gen_data( // Displays generated QEI test data
 				write_off = write_cnt & DISP_BUF_MASK; // Wrap into buffer range
 
 				assert( (write_cnt - read_cnt) < DISP_BUF_MASK); // Check for buffer overflow
-			break; // case c_gen 
+			break; // case c_gen
 
 			default :
 				// Check if any buffer data needs printing

@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #include "hall_server.h"
 
@@ -81,7 +81,7 @@ static void service_hall_input_pins( // Process new Hall data
 
 
 	phase_val = inp_pins & HALL_PHASE_MASK; // Mask out phase bits of Hall Sensor data
-	err_flg = !(inp_pins & HALL_NERR_MASK); 	// NB Bit_3=0, and err_flg=1, if error detected, 
+	err_flg = !(inp_pins & HALL_NERR_MASK); 	// NB Bit_3=0, and err_flg=1, if error detected,
 
 	// Update estimate of error status using new error flag
 	estimate_error_status( hall_data_s ,err_flg ); // NB Updates hall_data_s.params.err
@@ -123,16 +123,16 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	unsigned hall_bufs[NUMBER_OF_MOTORS]; // Buffer array of raw hall data from input port pins for each motor
 	CMD_HALL_ENUM inp_cmd; // Hall command from Client
 	int motor_cnt; // Counts number of motors
-	int do_loop = 1;   // Flag set until loop-end condition found 
+	int do_loop = 1;   // Flag set until loop-end condition found
 
 
-	acquire_lock(); 
+	acquire_lock();
 	printstrln("                                             Hall Server Starts");
 	release_lock();
 
 	// Initialise Hall data for each motor
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{ 
+	{
 		init_hall_data( motor_cnt ,all_hall_data[motor_cnt] ,hall_bufs[motor_cnt] );
 	} // for motor_cnt
 
@@ -181,7 +181,7 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 		} // select
 	}	// while (1)
 
-	acquire_lock(); 
+	acquire_lock();
 	printstrln("");
 	printstrln("                                             Hall Server Ends");
 	release_lock();

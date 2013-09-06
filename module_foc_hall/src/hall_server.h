@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #ifndef _HALL_SERVER_H_
 #define _HALL_SERVER_H_
@@ -25,7 +25,7 @@
 #define MAX_HALL_STATUS_ERR 2  // Maximum number of consecutive HALL status errors allowed
 
 /** Structure containing HALL data for one motor */
-typedef struct HALL_DATA_TAG // 
+typedef struct HALL_DATA_TAG //
 {
 	HALL_PARAM_TYP params;	// structure containing Hall parameters (for Client)
 	int status_errs; // counter for invalid HALL status errors

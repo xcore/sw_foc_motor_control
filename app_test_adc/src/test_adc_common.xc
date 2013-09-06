@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/ 
+ **/
 
 #include "test_adc_common.h"
 
@@ -37,7 +37,7 @@ static void init_sum_component( // Initialise ADC Test data for zero-sum test ve
 	safestrcpy( vect_comp_s.state_names[SUM_ON].str ," Sum_On" );
 	safestrcpy( vect_comp_s.state_names[NO_SUM].str ," No_Sum" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_sum_component
 /*****************************************************************************/
 static void init_mean_component( // Initialise ADC Test data for zero-mean test vector component
@@ -62,7 +62,7 @@ static void init_mean_component( // Initialise ADC Test data for zero-mean test 
 	safestrcpy( vect_comp_s.state_names[MEAN_ON].str ," Mean_On" );
 	safestrcpy( vect_comp_s.state_names[NO_MEAN].str ," No_Mean" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_mean_component
 /*****************************************************************************/
 static void init_spin_component( // Initialise ADC Test data for spin-direction test vector component
@@ -87,7 +87,7 @@ static void init_spin_component( // Initialise ADC Test data for spin-direction 
 	safestrcpy( vect_comp_s.state_names[ANTI].str ," Anti-Clock" );
 	safestrcpy( vect_comp_s.state_names[CLOCK].str ," Clock-Wise" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_spin_component
 /*****************************************************************************/
 static void init_gain_component( // Initialise ADC Test data for Gain test vector component
@@ -112,7 +112,7 @@ static void init_gain_component( // Initialise ADC Test data for Gain test vecto
 	safestrcpy( vect_comp_s.state_names[SMALL].str	," Small" );
 	safestrcpy( vect_comp_s.state_names[LARGE].str	," Large" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_gain_component
 /*****************************************************************************/
 static void init_speed_component( // Initialise ADC Test data for speed test vector component
@@ -137,7 +137,7 @@ static void init_speed_component( // Initialise ADC Test data for speed test vec
 	safestrcpy( vect_comp_s.state_names[FAST].str ," Fast" );
 	safestrcpy( vect_comp_s.state_names[SLOW].str ," Slow" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_speed_component
 /*****************************************************************************/
 static void init_control_component( // Initialise ADC Test data for Control/Communications test vector component
@@ -163,7 +163,7 @@ static void init_control_component( // Initialise ADC Test data for Control/Comm
 	safestrcpy( vect_comp_s.state_names[NO_PACE].str ,"NO_PACE" );
 	safestrcpy( vect_comp_s.state_names[PACE_ON].str ,"PACE_ON" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_speed_component
 /*****************************************************************************/
 void print_test_vector( // print test vector details

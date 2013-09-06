@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #ifndef _ADC_7265_INTERFACE_H_
 #define _ADC_7265_INTERFACE_H_
@@ -27,7 +27,7 @@
 #include "test_adc_common.h"
 #include "sine_common.h"
 
-/** bit-shift used to convert standardised ADC value (Currently 25-bit) to 
+/** bit-shift used to convert standardised ADC value (Currently 25-bit) to
  *  format used by the ADC chip: Currently 14-bit, MSB transmitted 1st (bit-reversed)
  */
 #define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer

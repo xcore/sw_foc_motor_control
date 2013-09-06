@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/ 
+ **/
 
 #include "test_hall_common.h"
 
@@ -36,7 +36,7 @@ static void init_error_component( // Initialise HALL Test data for error_status 
 	safestrcpy( vect_comp_s.state_names[HALL_ERR_OFF].str ," No_Err" );
 	safestrcpy( vect_comp_s.state_names[HALL_ERR_ON].str ," Err_On" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_error_component
 /*****************************************************************************/
 static void init_phase_component( // Initialise HALL Test data for phase-change test vector component
@@ -59,7 +59,7 @@ static void init_phase_component( // Initialise HALL Test data for phase-change 
 
 	safestrcpy( vect_comp_s.state_names[CHANGE].str ,"" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_phase_component
 /*****************************************************************************/
 static void init_spin_component( // Initialise HALL Test data for spin-direction test vector component
@@ -84,7 +84,7 @@ static void init_spin_component( // Initialise HALL Test data for spin-direction
 	safestrcpy( vect_comp_s.state_names[ANTI].str ," Anti-Clock" );
 	safestrcpy( vect_comp_s.state_names[CLOCK].str ," Clock-Wise" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_spin_component
 /*****************************************************************************/
 static void init_speed_component( // Initialise HALL Test data for speed test vector component
@@ -111,7 +111,7 @@ static void init_speed_component( // Initialise HALL Test data for speed test ve
 	safestrcpy( vect_comp_s.state_names[DECEL].str	," Decelerating" );
 	safestrcpy( vect_comp_s.state_names[SLOW].str		," Slow-steady " );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_speed_component
 /*****************************************************************************/
 static void init_control_component( // Initialise HALL Test data for Control/Communications test vector component
@@ -137,10 +137,10 @@ static void init_control_component( // Initialise HALL Test data for Control/Com
 	safestrcpy( vect_comp_s.state_names[VALID].str	,"VALID" );
 	safestrcpy( vect_comp_s.state_names[SKIP].str		,"SKIP " );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_speed_component
 /*****************************************************************************/
-void convert_unsigned_to_binary_string( // converts unsigned value to binary formatted string 
+void convert_unsigned_to_binary_string( // converts unsigned value to binary formatted string
 	char out_str[], // On ouput contains binary formatted string
 	unsigned inp_val, // Input value to convert
 	int bit_len // Number of LS-bits to convert

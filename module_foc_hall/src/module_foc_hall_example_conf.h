@@ -1,6 +1,6 @@
 
 /******************************************************************************\
- * Description: This file is for XMOS internal use. 
+ * Description: This file is for XMOS internal use.
  * It allows an example application to be built and characterised.
  * (It contians definitions normally held in app_global.h)
  * NB These definitions will be passed to all modules used the example application
@@ -56,7 +56,7 @@
  */
 #ifndef PLATFORM_REFERENCE_MHZ
 #define PLATFORM_REFERENCE_MHZ 100
-#define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ) 
+#define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ)
 
 /** Define Referency Frequency to Match that in platform configuration (.XN) file */
 #define PLATFORM_REFERENCE_HZ  (1000 * PLATFORM_REFERENCE_KHZ) // NB Uses 28-bits

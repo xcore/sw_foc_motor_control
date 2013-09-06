@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,44 +8,44 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/ 
+ **/
 
 #include "check_qei_tests.h"
 
 /*****************************************************************************/
-static unsigned eval_speed_bound( // Evaluate error bounds for given speed 
+static unsigned eval_speed_bound( // Evaluate error bounds for given speed
 	int veloc_val // input velocity
 ) // Returns error_bound
 /* The Maths for this is a bit complicated as it used non-linear arithmetic.
  * However, here goes ...
- * 
- * The Speed (S) and time-period between QEI phase changes (T) are related by the following equation: 
+ *
+ * The Speed (S) and time-period between QEI phase changes (T) are related by the following equation:
  *		Cf = S * T   (where Cf is a floating-point constant, but in this code
- * is represented as an integer with rounding errors (Ci + dC), 
+ * is represented as an integer with rounding errors (Ci + dC),
  * Ci is TICKS_PER_MIN_PER_QEI , and  dC = SECS_PER_MIN/2 (currently 5859360 +/- 30 in qei_common.h)
- * 
+ *
  * The test-generator chooses a test Speed (Sg), this is converted to a time-period (T + dT) with rounding errors
  * which is used to generate raw QEI phase changes at the appropriate time.
- * 
+ *
  * The QEI Server, converts the time-period between QEI phase changes into a angular_velocity estimate,
  * this too has a rounding error.
- * 
+ *
  * The test-checker reads the QEI velocity parameter and converts it into a speed with rounding errors (Sc + dS).
  * The checker needs to calculate dS, in order to know the required error-bounds for Sc.
- * 
+ *
  *		T = C / Sg  ,  Therefore dT = dC/Sg. 			(NB Sg has no error)     --- (1)
  * Using integer division, and rounding-up:   dT = (dC + Sg - 1)/(int)Sg  or  dT ~= 1 + dC/(int)Sg    --- (2)
- * 
+ *
  *		Sc = C / T  ,  Therefore  dS ~= (T.dC + C.dT)/(T.T)  (differentiation of product rule)
  * Substituting for T for (1) gives:  dS = Sg(dC + Sg.dT)/Ci
  * Substituting for dT for (2) gives:  dS = Sg(2.dC + Sg)/Ci
  * Using integer division, and rounding-up:   dS = (Sg(2.dC + Sg) + Ci - 1)/(int)Ci  or  ...
- * 
+ *
  *		dS ~= 1 + (Sg(2.dC + Sg))/(int)Ci  --- (3)
  * 		----------------------------
- * 
+ *
  *  NB Currently, for all values of Sg <= 2390, dS is always 1
  */
 {
@@ -56,7 +56,7 @@ static unsigned eval_speed_bound( // Evaluate error bounds for given speed
 	bound = 1 + (bound / TICKS_PER_MIN_PER_QEI);		// NB we already rounded-up in (3)
 
 	/* When using the simulator, Occasionally QEI phases changes are not generated at the appropriate time
-	 * This introduces another source of error, which has yet to be quantfied, 
+	 * This introduces another source of error, which has yet to be quantfied,
 	 * so an empirically found fudge factor is used!-(
 	 */
 	return (2 * bound); // Multiply by fudge factor
@@ -74,8 +74,8 @@ static void init_check_data( // Initialise check data for QEI tests
 	chk_data_s.fail_cnt = 0; // Clear count of failed tests.
 
 	// Evaluate error bounds for speed checks
-	chk_data_s.hi_bound = eval_speed_bound( HIGH_SPEED ); 
-	chk_data_s.lo_bound = eval_speed_bound( LOW_SPEED ); 
+	chk_data_s.hi_bound = eval_speed_bound( HIGH_SPEED );
+	chk_data_s.lo_bound = eval_speed_bound( LOW_SPEED );
 
 	chk_data_s.print_on = VERBOSE_PRINT; // Set print mode
 	chk_data_s.print_cnt = 1; // Initialise print counter
@@ -106,8 +106,8 @@ static void init_motor_checks( // Initialise QEI parameter structure
 	// Clear error and test counters for current motor
 	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
-		chk_data_s.motor_errs[comp_cnt] = 0; 
-		chk_data_s.motor_tsts[comp_cnt] = 0; 
+		chk_data_s.motor_errs[comp_cnt] = 0;
+		chk_data_s.motor_tsts[comp_cnt] = 0;
 	} // for comp_cnt
 
 } // init_motor_checks
@@ -170,8 +170,8 @@ static void check_qei_position_reset( // Check for correct position reset after 
 
 	// Steady Speed
 
-	/* Calculate error bounds for angular position after reset: 
-		 In the worst case, the angular position may not be measured until 
+	/* Calculate error bounds for angular position after reset:
+		 In the worst case, the angular position may not be measured until
 		 a whole QEI_PERIOD after the reset. The amount the position changes during this time
      depends on the STEADY speed used for the test. We need to calculate the following
 
@@ -179,7 +179,7 @@ static void check_qei_position_reset( // Check for correct position reset after 
 
 		 This has to be done without overflow, and retaining as much precision as possible.
      So it is done in the following order ...
-	*/ 
+	*/
 	tmp_val = QEI_PERIOD * abs(chk_data_s.curr_params.veloc); // ~24 bits
 	tmp_val = (tmp_val + (SECS_PER_MIN - 1)) / SECS_PER_MIN; // division with round-up // ~19 bits
 	tmp_val *= QEI_PER_REV; // ~29 bits
@@ -253,11 +253,11 @@ static void check_qei_origin_detection( // Check correct update of QEI parameter
 				case ORIG_OFF:
 					printstrln("ORIG_OFF FAILURE");
 				break; // case ORIG_OFF:
-		
+
 				case ORIG_ON: // Start origin-bit test
 					printstrln("ORIG_ON FAILURE");
 				break; // case ORIG_ON:
-		
+
 				default:
 					printstrln("ERROR: Unknown QEI Origin-state");
 					assert(0 == 1);
@@ -308,11 +308,11 @@ static void check_qei_error_status( // Check for correct update of error status 
 				case QEI_ERR_OFF:
 					printstrln("ERR_OFF FAILURE");
 				break; // case QEI_ERR_OFF:
-		
+
 				case QEI_ERR_ON: // Start error_status test
 					printstrln("ERR_ON FAILURE");
 				break; // case QEI_ERR_ON:
-		
+
 				default:
 					printstrln("ERROR: Unexpected QEI Error-state");
 					assert(0 == 1);
@@ -388,11 +388,11 @@ static void update_qei_angular_speed( // Update accumulators for calculating QEI
 	{
  		case ACCEL: case DECEL: // Speed change
 			chk_data_s.speed_sum += (curr_speed - prev_speed); // Accumulate speed-change
-		break; // case ACCEL: DECEL: 
+		break; // case ACCEL: DECEL:
 
 		case FAST: case SLOW: // Constant Speed
 			chk_data_s.speed_sum += curr_speed; // Accumulate constant-speed
-		break; // case FAST: SLOW: 
+		break; // case FAST: SLOW:
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
@@ -551,7 +551,7 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 #endif // (USE_XSCOPE)
 
 	// Check for change in non-speed parameters
-	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
+	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params );
 
 	// Check for parameter change
 	if (do_test)
@@ -577,9 +577,9 @@ static void initialise_speed_test_vector( // Initialise data for new speed test
 )
 {
 	// Clear accumulated data
-	chk_data_s.speed_sum = 0; 
-	chk_data_s.speed_num = 0; 
-} // initialise_speed_test_vector 
+	chk_data_s.speed_sum = 0;
+	chk_data_s.speed_num = 0;
+} // initialise_speed_test_vector
 /*****************************************************************************/
 static void finalise_speed_test_vector( // terminate speed test and check results
 	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
@@ -587,7 +587,7 @@ static void finalise_speed_test_vector( // terminate speed test and check result
 )
 {
 	check_qei_angular_speed( chk_data_s ,cur_speed ); // Check QEI angular speed
-} // finalise_speed_test_vector 
+} // finalise_speed_test_vector
 /*****************************************************************************/
 static void process_new_test_vector( // Process new test vector
 	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
@@ -638,11 +638,11 @@ static void process_new_test_vector( // Process new test vector
 				case CLOCK: // Clock-wise
 					chk_data_s.orig_chk = 1; // Expected increment in rev. counter
 				break; // case CLOCK:
-		
+
 				case ANTI: // Anti-clockwise
 					chk_data_s.orig_chk = -1; // Expected decrement in rev. counter
 				break; // case ANTI:
-		
+
 				default:
 					acquire_lock(); // Acquire Display Mutex
 					printcharln(' ');
@@ -695,7 +695,7 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 	int write_cnt = 0; // No of QEI values written to buffer
 	unsigned read_off = 0; // read offset into buffer
 	unsigned write_off = 0; // wtite offset into buffer
-	int do_loop = 1;   // Flag set until loop-end condition found 
+	int do_loop = 1;   // Flag set until loop-end condition found
 
 
 	chronometer :> chk_data_s.time; // Get start time
@@ -704,7 +704,7 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
-	printstr("Start Checks For Motor_"); printintln( chk_data_s.common.options.flags[TST_MOTOR] ); 
+	printstr("Start Checks For Motor_"); printintln( chk_data_s.common.options.flags[TST_MOTOR] );
 	release_lock(); // Release Display Mutex
 
 	c_tst :> chk_data_s.curr_vect; // Initialise test-vector structure with 1st test
@@ -712,7 +712,7 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 	// special case: initialisation for first speed test
   chk_data_s.prev_vect = chk_data_s.curr_vect;
 
-	initialise_speed_test_vector( chk_data_s ); 
+	initialise_speed_test_vector( chk_data_s );
 
 	if (chk_data_s.print_on)
 	{
@@ -730,7 +730,7 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 				write_off = write_cnt & VECT_BUF_MASK; // Wrap into buffer range
 
 				assert( (write_cnt - read_cnt) < VECT_BUF_MASK); // Check for buffer overflow
-			break; // c_tst 
+			break; // c_tst
 
 			// Pace QEI Client requests, so as NOT to overload QEI server
 			case chronometer when timerafter(chk_data_s.time + QEI_PERIOD) :> chk_data_s.time :
@@ -779,7 +779,7 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 	} // while(QEI_TERMINATED != chk_data_s.curr_params.err)
 
 	// special case: finalisation for last speed test
-	finalise_speed_test_vector( chk_data_s ,chk_data_s.curr_vect.comp_state[SPEED] ); 
+	finalise_speed_test_vector( chk_data_s ,chk_data_s.curr_vect.comp_state[SPEED] );
 
 } // check_motor_qei_client_data
 /*****************************************************************************/
@@ -801,13 +801,13 @@ static void display_test_results( // Display test results for one motor
 		if (0 < chk_data_s.motor_tsts[comp_cnt])
 		{
 			num_tests++; // Update macro-test counter
-			num_checks += chk_data_s.motor_tsts[comp_cnt]; 
+			num_checks += chk_data_s.motor_tsts[comp_cnt];
 
 			// Check if any micro-errors where detected for current test vector component
 			if (0 < chk_data_s.motor_errs[comp_cnt])
 			{
 				test_errs++; // Update macro-error counter
-				check_errs += chk_data_s.motor_errs[comp_cnt]; 
+				check_errs += chk_data_s.motor_errs[comp_cnt];
 			} // if (0 < chk_data_s.motor_errs[comp_cnt])
 		} // if (0 < chk_data_s.motor_tsts[comp_cnt])
 	} // for comp_cnt
@@ -843,7 +843,7 @@ static void display_test_results( // Display test results for one motor
 			{
 				printstr( chk_data_s.padstr1 );
 				printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
-	
+
 				if (chk_data_s.motor_errs[comp_cnt])
 				{
 					printstr(" Test FAILED");

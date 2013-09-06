@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/ 
+ **/
 
 #include "test_qei_common.h"
 
@@ -36,7 +36,7 @@ static void init_error_component( // Initialise QEI Test data for error_status t
 	safestrcpy( vect_comp_s.state_names[QEI_ERR_OFF].str ," No_Err" );
 	safestrcpy( vect_comp_s.state_names[QEI_ERR_ON].str ," Err_On" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_error_component
 /*****************************************************************************/
 static void init_origin_component( // Initialise QEI Test data for origin-bit test vector component
@@ -61,7 +61,7 @@ static void init_origin_component( // Initialise QEI Test data for origin-bit te
 	safestrcpy( vect_comp_s.state_names[ORIG_OFF].str ," No_Orig" );
 	safestrcpy( vect_comp_s.state_names[ORIG_ON].str ," Orig_On" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_origin_component
 /*****************************************************************************/
 static void init_spin_component( // Initialise QEI Test data for spin-direction test vector component
@@ -86,7 +86,7 @@ static void init_spin_component( // Initialise QEI Test data for spin-direction 
 	safestrcpy( vect_comp_s.state_names[ANTI].str ," Anti-Clock" );
 	safestrcpy( vect_comp_s.state_names[CLOCK].str ," Clock-Wise" );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_spin_component
 /*****************************************************************************/
 static void init_speed_component( // Initialise QEI Test data for speed test vector component
@@ -113,7 +113,7 @@ static void init_speed_component( // Initialise QEI Test data for speed test vec
 	safestrcpy( vect_comp_s.state_names[DECEL].str	," Decelerating" );
 	safestrcpy( vect_comp_s.state_names[SLOW].str		," Slow-steady " );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_speed_component
 /*****************************************************************************/
 static void init_control_component( // Initialise QEI Test data for Control/Communications test vector component
@@ -139,7 +139,7 @@ static void init_control_component( // Initialise QEI Test data for Control/Comm
 	safestrcpy( vect_comp_s.state_names[VALID].str	,"VALID" );
 	safestrcpy( vect_comp_s.state_names[SKIP].str		,"SKIP " );
 
-	// Add any new component states here 
+	// Add any new component states here
 } // init_speed_component
 /*****************************************************************************/
 void print_test_vector( // print test vector details

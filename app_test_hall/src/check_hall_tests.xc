@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/ 
+ **/
 
 #include "check_hall_tests.h"
 
@@ -53,8 +53,8 @@ static void init_motor_checks( // Initialise Hall parameter structure
 	// Clear error and test counters for current motor
 	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
-		chk_data_s.motor_errs[comp_cnt] = 0; 
-		chk_data_s.motor_tsts[comp_cnt] = 0; 
+		chk_data_s.motor_errs[comp_cnt] = 0;
+		chk_data_s.motor_tsts[comp_cnt] = 0;
 	} // for comp_cnt
 
 } // init_motor_checks
@@ -80,14 +80,14 @@ static void print_hall_parameters( // Print Hall parameters
 	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-	convert_unsigned_to_binary_string( chk_data_s.disp_str ,chk_data_s.curr_params.hall_val ,(HALL_BITS - 1) ); 
+	convert_unsigned_to_binary_string( chk_data_s.disp_str ,chk_data_s.curr_params.hall_val ,(HALL_BITS - 1) );
 
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
 	printstr( "E=" );
 	printint( chk_data_s.curr_params.err );
 	printstr( "  H=" );
-	printstr(chk_data_s.disp_str); 
+	printstr(chk_data_s.disp_str);
 	printcharln(' ');
 	release_lock(); // Release Display Mutex
 } // print_hall_parameters
@@ -125,11 +125,11 @@ static void check_hall_error_status( // Check for correct update of error status
 				case HALL_ERR_OFF:
 					printstrln("HALL_ERR_OFF FAILURE");
 				break; // case HALL_ERR_OFF:
-		
+
 				case HALL_ERR_ON: // Start error_status test
 					printstrln("HALL_ERR_ON FAILURE");
 				break; // case HALL_ERR_ON:
-		
+
 				default:
 					printstrln("ERROR: Unknown Hall Error-state");
 					assert(0 == 1);
@@ -151,7 +151,7 @@ static void check_hall_phase_change( // Check for valid phase change
 	unsigned curr_val = chk_data_s.curr_params.hall_val; // local copy of current Hall phase value
 	unsigned prev_val; // local copy of previous Hall phase value
 	unsigned curr_off; // array offset for current phase value
-	unsigned prev_off; // array offset for previous phase value 
+	unsigned prev_off; // array offset for previous phase value
 	int fail_cnt = 0; // Clear failure counter
 
 
@@ -190,29 +190,29 @@ static void check_hall_phase_change( // Check for valid phase change
 			// Calculate change in phase offset
 			chk_data_s.off_diff = HALL_PER_POLE + curr_off - prev_off; // Force +ve change
 			if (HALL_PER_POLE <= chk_data_s.off_diff) chk_data_s.off_diff -= HALL_PER_POLE; // Force into phase-offset range
-		
+
 			// Check for valid offset difference
 			switch( chk_data_s.off_diff )
 			{
 				case 0: // No Change
 					fail_cnt++; // Increment count of failures
-		
+
 					acquire_lock(); // Acquire Display Mutex
 					printcharln(' ');
 					printstr( chk_data_s.padstr1 );
 					printstrln("No-Change FAILURE");
 					release_lock(); // Release Display Mutex
 				break; // case 0:
-		
+
 				case 1: // Clock-wise
-				break; // case 1: 
-		
+				break; // case 1:
+
 				case (HALL_PER_POLE - 1): // Anti-clockwise
 				break; // case (HALL_PER_POLE - 1):
-		
+
 				default:
 					fail_cnt++; // Increment count of failures
-		
+
 					acquire_lock(); // Acquire Display Mutex
 					printcharln(' ');
 					printstr( chk_data_s.padstr1 );
@@ -228,7 +228,7 @@ static void check_hall_phase_change( // Check for valid phase change
 	{
 		chk_data_s.motor_errs[PHASE]++; // Increment failure count for current motor
 	} // if (0 < fail_cnt)
-	
+
 } // check_hall_phase_change
 /*****************************************************************************/
 static void check_hall_spin_direction( // Check correct update of Hall spin direction
@@ -318,7 +318,7 @@ static void get_new_hall_client_data( // Get next set of Hall parameters
 	foc_hall_get_parameters( chk_data_s.curr_params ,c_hall );
 
 	// Check for change in non-speed parameters
-	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
+	do_test = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params );
 
 	// Check for parameter change
 	if (do_test)
@@ -392,7 +392,7 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 )
 {
 	timer chronometer; // XMOS timer
-	int do_loop = 1;   // Flag set until loop-end condition found 
+	int do_loop = 1;   // Flag set until loop-end condition found
 
 
 	chronometer :> chk_data_s.time; // Get start time
@@ -400,7 +400,7 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
-	printstr("Start Checks For Motor_"); printintln( chk_data_s.common.options.flags[TST_MOTOR] ); 
+	printstr("Start Checks For Motor_"); printintln( chk_data_s.common.options.flags[TST_MOTOR] );
 	release_lock(); // Release Display Mutex
 
 	c_tst :> chk_data_s.curr_vect; // Initialise test-vector structure with 1st test
@@ -430,7 +430,7 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 
 					do_loop = 0; // Error flag signals end-of-loop
 				} // if (QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
-			break; // c_tst 
+			break; // c_tst
 
 			// Pace Hall Client requests, so as NOT to overload Hall server
 			case chronometer when timerafter(chk_data_s.time + HALL_PERIOD) :> chk_data_s.time :
@@ -476,13 +476,13 @@ static void display_test_results( // Display test results for one motor
 		if (0 < chk_data_s.motor_tsts[comp_cnt])
 		{
 			num_tests++; // Update macro-test counter
-			num_checks += chk_data_s.motor_tsts[comp_cnt]; 
+			num_checks += chk_data_s.motor_tsts[comp_cnt];
 
 			// Check if any micro-errors where detected for current test vector component
 			if (0 < chk_data_s.motor_errs[comp_cnt])
 			{
 				test_errs++; // Update macro-error counter
-				check_errs += chk_data_s.motor_errs[comp_cnt]; 
+				check_errs += chk_data_s.motor_errs[comp_cnt];
 			} // if (0 < chk_data_s.motor_errs[comp_cnt])
 		} // if (0 < chk_data_s.motor_tsts[comp_cnt])
 	} // for comp_cnt
@@ -518,7 +518,7 @@ static void display_test_results( // Display test results for one motor
 			{
 				printstr( chk_data_s.padstr1 );
 				printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
-	
+
 				if (chk_data_s.motor_errs[comp_cnt])
 				{
 					printstr(" Test FAILED");
