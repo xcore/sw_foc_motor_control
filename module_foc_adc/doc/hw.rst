@@ -1,4 +1,4 @@
-﻿Evaluation Platforms
+Evaluation Platforms
 ====================
 
 .. _sec_XcoreSimulator:

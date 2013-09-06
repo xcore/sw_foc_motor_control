@@ -1,4 +1,4 @@
-﻿.. _sec_module_foc_pwm_api:
+.. _sec_module_foc_pwm_api:
 
 API
 ===

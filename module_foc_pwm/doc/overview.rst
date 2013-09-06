@@ -1,4 +1,4 @@
-﻿Overview
+Overview
 ========
 
 This module contains a Pulse-Width-Modulation (PWM) interface component for Motor Control systems.

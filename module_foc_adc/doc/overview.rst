@@ -1,4 +1,4 @@
-﻿Overview
+Overview
 ========
 
 This module contains an Analogue-to-Digital Converter (ADC) component for Motor Control systems.
