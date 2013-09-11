@@ -365,9 +365,7 @@ static void do_qei_test( // Performs one QEI test
 	if (tst_data_s.print)
 	{
 		// NB There is no time to print the data here, so send it to another core.
-//MB~	acquire_lock(); printstrln("GQ1"); release_lock(); // MB~
-		c_disp <: DISP_CLASS_QEI; // Signal transmission of QEI value
-//MB~	acquire_lock(); printstrln("GQ2"); release_lock(); // MB~
+		c_disp <: DISP_CLASS_GENR8; // Signal transmission of QEI value
 		c_disp <: qei_val; // Send QEI data
 	} // if (tst_data_s.print)
 
@@ -410,9 +408,7 @@ static void do_qei_vector( // Do all tests for one QEI test vector
 		// Check if verbose printing required
 		if (tst_data_s.print)
 		{
-//MB~	acquire_lock(); printstrln("GV1"); release_lock(); // MB~
 			c_disp <: DISP_CLASS_VECT; // Signal transmission of test vector to print master
-//MB~	acquire_lock(); printstrln("GV2"); release_lock(); // MB~
 			c_disp <: tst_data_s.curr_vect; // Send test vector data
 		} // if (tst_data_s.print)
 

@@ -41,8 +41,8 @@ typedef enum DISP_CLASS_ENUM_TAG
 {
   DISP_CLASS_VECT = 0,	// Test Vectors
   DISP_CLASS_PROG,			// Progress Indicator
-  DISP_CLASS_PARAM,			// Client Parameters
-  DISP_CLASS_QEI,				// Raw QEI data
+  DISP_CLASS_CHECK,			// Client Parameters to Check
+  DISP_CLASS_GENR8,			// Generated Raw data values
 	NUM_DISP_CLASSES			// Handy value!-)
 } DISP_CLASS_ENUM_TYP;
 

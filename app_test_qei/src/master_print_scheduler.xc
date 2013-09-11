@@ -33,41 +33,35 @@ void master_print( // Collects and schedules display data
 	{
 		select
 		{
+			// Test for new data on one of display inputs
 			case (int inp_id=0; inp_id<MB_FIXME; inp_id++) c_inputs[inp_id] :> disp_class :
-//MB~	acquire_lock(); printstr("C"); printintln(inp_id); release_lock(); // MB~
+				// new data detected on channel inp_id
+
 				c_slave[chan_off] <: disp_class; // Signal print-class to slave_print core 						
 
+				// Determine print class
 				switch(disp_class)
 				{
-					case DISP_CLASS_VECT :
-//MB~	acquire_lock(); printstrln("V1"); release_lock(); // MB~
+					case DISP_CLASS_VECT : // Test vectore
 						c_inputs[inp_id] :> vect;
-//MB~	acquire_lock(); printstrln("V2"); release_lock(); // MB~
 						c_slave[chan_off] <: inp_id; // Signal print-source to slave_print core 						
-//MB~	acquire_lock(); printstrln("V3"); release_lock(); // MB~
 						c_slave[chan_off] <: vect; // Send test-vector data to slave_print core 						
 					break; // case DISP_CLASS_VECT
 
-					case DISP_CLASS_QEI :
-//MB~	acquire_lock(); printstrln("Q1"); release_lock(); // MB~
+					case DISP_CLASS_GENR8 : // Generated test data
 						c_inputs[inp_id] :> qei_val;
-//MB~	acquire_lock(); printstrln("Q2"); release_lock(); // MB~
 						c_slave[chan_off] <: inp_id; // Signal print-source to slave_print core 						
-//MB~	acquire_lock(); printstrln("Q3"); release_lock(); // MB~
 						c_slave[chan_off] <: qei_val; // Send test-vector data to slave_print core 						
-					break; // case DISP_CLASS_QEI
+					break; // case DISP_CLASS_GENR8
 
-					case DISP_CLASS_PARAM :
-//MB~	acquire_lock(); printstrln("P1"); release_lock(); // MB~
+					case DISP_CLASS_CHECK : // Parameters to Check
 						c_inputs[inp_id] :> params;
-//MB~	acquire_lock(); printstrln("P2"); release_lock(); // MB~
 						c_slave[chan_off] <: inp_id; // Signal print-source to slave_print core 						
-//MB~	acquire_lock(); printstrln("P3"); release_lock(); // MB~
 						c_slave[chan_off] <: params; // Send parameter data to slave_print core 						
-					break; // case DISP_CLASS_PARAM
+					break; // case DISP_CLASS_CHECK
 
-					case DISP_CLASS_PROG :
-//MB~	acquire_lock(); printstrln("."); release_lock(); // MB~
+					case DISP_CLASS_PROG : // Progress indicator
+						// Nothing to do
 					break; // case DISP_CLASS_PROG
 
 					default :

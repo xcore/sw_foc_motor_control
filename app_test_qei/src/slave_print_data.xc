@@ -15,55 +15,6 @@
 #include "slave_print_data.h"
 
 /*****************************************************************************/
-static void init_print( // Initialise data printing
-	DISP_DATA_TYP &disp_data_s // Reference to structure containing display data
-)
-{
-	disp_data_s.print_cnt = 1; // Initialise print counter
-
-	disp_data_s.qei_str[QEI_BITS] = 0; // Add string terminator
-
-} // init_print
-/*****************************************************************************/
-static void print_test_vector( // print test vector details
-	const COMMON_TST_TYP &comm_data_s, // Structure containing common test data
-	DISP_DATA_TYP &disp_data_s, // Reference to structure containing display data
-	TEST_VECT_TYP vect // Structure containing test vector data to be printed
-)
-{
-	int comp_cnt; // Counter for Test Vector components
-	int comp_state; // state of current component of input test vector
-
-	acquire_lock(); // Acquire Display Mutex
-	printstr( comm_data_s.prefix[disp_data_s.inp_id].str ); // Print prefix string
-
-	// Loop through NON-control test vector components
-	for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
-	{
-		comp_state = vect.comp_state[comp_cnt];  // Get state of current component
-
-		if (comp_state < comm_data_s.comp_data[comp_cnt].num_states)
-		{
-			printstr( comm_data_s.comp_data[comp_cnt].state_names[comp_state].str ); // Print component status
-		} //if (comp_state < comm_data_s.comp_data[comp_cnt].num_states)
-		else
-		{
-			printcharln(' ');
-			printstr( "ERROR: Invalid state. Found ");
-			printint( comp_state );
-			printstr( " for component ");
-			printstrln( comm_data_s.comp_data[comp_cnt].comp_name.str );
-			assert(0 == 1); // Force abort
-		} //if (comp_state < comm_data_s.comp_data[comp_cnt].num_states)
-	} // for comp_cnt
-
-	printchar( ':' );
-	comp_state = vect.comp_state[CNTRL];  // Get state of Control/Comms. status
-	printstrln( comm_data_s.comp_data[CNTRL].state_names[comp_state].str ); // Print Control/Comms. status
-
-	release_lock(); // Release Display Mutex
-} // print_test_vector
-/*****************************************************************************/
 static void print_qei_parameters( // Print QEI parameters
 	const COMMON_TST_TYP &comm_data_s, // Structure containing common test data
 	DISP_DATA_TYP &disp_data_s, // Reference to structure containing display data
@@ -117,6 +68,55 @@ static void print_qei_value( // Prints QEI value in binary format
 
 } // print_qei_value
 /*****************************************************************************/
+static void init_print( // Initialise data printing
+	DISP_DATA_TYP &disp_data_s // Reference to structure containing display data
+)
+{
+	disp_data_s.print_cnt = 1; // Initialise print counter
+
+	disp_data_s.qei_str[QEI_BITS] = 0; // Add string terminator
+
+} // init_print
+/*****************************************************************************/
+static void print_test_vector( // print test vector details
+	const COMMON_TST_TYP &comm_data_s, // Structure containing common test data
+	DISP_DATA_TYP &disp_data_s, // Reference to structure containing display data
+	TEST_VECT_TYP vect // Structure containing test vector data to be printed
+)
+{
+	int comp_cnt; // Counter for Test Vector components
+	int comp_state; // state of current component of input test vector
+
+	acquire_lock(); // Acquire Display Mutex
+	printstr( comm_data_s.prefix[disp_data_s.inp_id].str ); // Print prefix string
+
+	// Loop through NON-control test vector components
+	for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
+	{
+		comp_state = vect.comp_state[comp_cnt];  // Get state of current component
+
+		if (comp_state < comm_data_s.comp_data[comp_cnt].num_states)
+		{
+			printstr( comm_data_s.comp_data[comp_cnt].state_names[comp_state].str ); // Print component status
+		} //if (comp_state < comm_data_s.comp_data[comp_cnt].num_states)
+		else
+		{
+			printcharln(' ');
+			printstr( "ERROR: Invalid state. Found ");
+			printint( comp_state );
+			printstr( " for component ");
+			printstrln( comm_data_s.comp_data[comp_cnt].comp_name.str );
+			assert(0 == 1); // Force abort
+		} //if (comp_state < comm_data_s.comp_data[comp_cnt].num_states)
+	} // for comp_cnt
+
+	printchar( ':' );
+	comp_state = vect.comp_state[CNTRL];  // Get state of Control/Comms. status
+	printstrln( comm_data_s.comp_data[CNTRL].state_names[comp_state].str ); // Print Control/Comms. status
+
+	release_lock(); // Release Display Mutex
+} // print_test_vector
+/*****************************************************************************/
 static void print_progress( // Print progress indicator
 	DISP_DATA_TYP &disp_data_s // Reference to structure containing display data
 )
@@ -153,40 +153,32 @@ void slave_print( // Displays generated QEI test data
 	// loop forever
 	while(do_loop)
 	{
-//MB~	acquire_lock(); printstrln("SC"); release_lock(); // MB~
 		c_master :> disp_class; // Get print class
 
 		switch(disp_class)
 		{
-			case DISP_CLASS_QEI :
-//MB~	acquire_lock(); printstrln("SQ1"); release_lock(); // MB~
+			case DISP_CLASS_GENR8 : // Generated test data
 				c_master :> disp_data_s.inp_id; // Get display input identifier
-//MB~	acquire_lock(); printstrln("SQ2"); release_lock(); // MB~
 				c_master :> qei_val;
 
 				print_qei_value( disp_data_s ,qei_val );
-			break; // case DISP_CLASS_QEI
+			break; // case DISP_CLASS_GENR8
 
-			case DISP_CLASS_PARAM :
-//MB~	acquire_lock(); printstrln("SP1"); release_lock(); // MB~
+			case DISP_CLASS_CHECK : // Parameters to Check
 				c_master :> disp_data_s.inp_id; // Get display input identifier
-//MB~	acquire_lock(); printstrln("SP2"); release_lock(); // MB~
 				c_master :> params;
 
 				print_qei_parameters( comm_data_s ,disp_data_s ,params );
-			break; // case DISP_CLASS_PARAM
+			break; // case DISP_CLASS_CHECK
 
-			case DISP_CLASS_VECT :
-//MB~	acquire_lock(); printstrln("SV1"); release_lock(); // MB~
+			case DISP_CLASS_VECT : // Test vectore
 				c_master :> disp_data_s.inp_id; // Get display input identifier
-//MB~	acquire_lock(); printstrln("SV2"); release_lock(); // MB~
 				c_master :> vect; // Get vector data
 
 				print_test_vector( comm_data_s ,disp_data_s ,vect );
 			break; // case DISP_CLASS_VECT
 
-			case DISP_CLASS_PROG :
-//MB~	acquire_lock(); printstrln("S."); release_lock(); // MB~
+			case DISP_CLASS_PROG : // Progress indicator
 				print_progress( disp_data_s );
 			break; // case DISP_CLASS_VECT
 

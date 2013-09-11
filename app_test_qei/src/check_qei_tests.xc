@@ -13,7 +13,7 @@
  **/ 
 
 #include "check_qei_tests.h"
-
+#ifdef DEPRECIATED
 /*****************************************************************************/
 static unsigned eval_speed_bound( // Evaluate error bounds for given speed 
 	int veloc_val // input velocity
@@ -59,7 +59,21 @@ static unsigned eval_speed_bound( // Evaluate error bounds for given speed
 	 * This introduces another source of error, which has yet to be quantfied, 
 	 * so an empirically found fudge factor is used!-(
 	 */
-	return (2 * bound); // Multiply by fudge factor
+	return (4 * bound); // Multiply by fudge factor
+}	// eval_speed_bound
+#endif // DEPRECIATED
+/*****************************************************************************/
+static unsigned eval_speed_bound( // Evaluate error bounds for given speed 
+	unsigned veloc_val // input velocity
+) // Returns error_bound
+// Requirements documents suggest +/- 10% error. We will do better than that and target 6.25%
+{
+	unsigned bound; // Output error_bound
+
+
+	bound = veloc_val >> SPEED_ERR_BITS; // Calculate speed bound
+
+	return bound;
 }	// eval_speed_bound
 /*****************************************************************************/
 static void init_check_data( // Initialise check data for QEI tests
@@ -521,9 +535,7 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 
 		if (chk_data_s.print_on)
 		{
-//MB~	acquire_lock(); printstrln("CP1"); release_lock(); // MB~
-			c_disp <: DISP_CLASS_PARAM; // Signal tranmission of parameter data 
-//MB~	acquire_lock(); printstrln("CP2"); release_lock(); // MB~
+			c_disp <: DISP_CLASS_CHECK; // Signal tranmission of parameter data 
 			c_disp <: chk_data_s.curr_params; // Send parameter data 
 		} // if (chk_data_s.print_on)
 
@@ -644,9 +656,7 @@ static void process_new_test_vector( // Process new test vector
 
 	if (chk_data_s.print_on)
 	{
-//MB~	acquire_lock(); printstrln("CV1"); release_lock(); // MB~
 		c_disp <: DISP_CLASS_VECT; // Signal transmission of test vector to print master
-//MB~	acquire_lock(); printstrln("CV1"); release_lock(); // MB~
 		c_disp <: chk_data_s.curr_vect; // Send test vector data
 	} // if (chk_data_s.print_on)
 
@@ -686,9 +696,7 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 
 	if (chk_data_s.print_on)
 	{
-//MB~	acquire_lock(); printstrln("CVI1"); release_lock(); // MB~
 		c_disp <: DISP_CLASS_VECT; // Signal transmission of test vector to print master
-//MB~	acquire_lock(); printstrln("CVI2"); release_lock(); // MB~
 		c_disp <: chk_data_s.curr_vect; // Send test vector data
 	} // if (chk_data_s.print_on)
 
@@ -711,7 +719,6 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 
 				if (0 == chk_data_s.print_on)
 				{
-//MB~	acquire_lock(); printstrln("C."); release_lock(); // MB~
 					c_disp <: DISP_CLASS_PROG; // Signal printing of progress indicator
 				} // if (0 == chk_data_s.print_on)
 			break; // case chronometer
