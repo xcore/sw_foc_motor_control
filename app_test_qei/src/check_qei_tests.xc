@@ -13,6 +13,7 @@
  **/ 
 
 #include "check_qei_tests.h"
+
 #ifdef DEPRECIATED
 /*****************************************************************************/
 static unsigned eval_speed_bound( // Evaluate error bounds for given speed 
@@ -81,13 +82,33 @@ static void init_check_data( // Initialise check data for QEI tests
 	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-	chk_data_s.prefix = comm_data_s.prefix[DISP_INP_CHK]; // local copy of display prefix
+	int tmp_val;	// temporary manipulation variable
 
-	chk_data_s.fail_cnt = 0; // Clear count of failed tests.
+
+	/* Calculate error bounds for angular position after reset: 
+		 In the worst case, the angular position may not be measured until 
+		 a whole QEI_PERIOD after the reset. The amount the position changes during this time
+     depends on the speed. We need to calculate the following
+
+		 ang_mar = (QEI_PERIOD / PLATFORM_REFERENCE_HZ) * (SPEED_IN_RPM / 60) * QEI_PER_REV
+
+		 The maximum error margin occurs when using the maximum speed
+
+		 This has to be done without overflow, and retaining as much precision as possible.
+     So it is done in the following order ...
+	*/ 
+	tmp_val = QEI_PERIOD * HIGH_SPEED; // ~24 bits
+	tmp_val = (tmp_val + (SECS_PER_MIN - 1)) / SECS_PER_MIN; // division with round-up // ~19 bits
+	tmp_val *= QEI_PER_REV; // ~29 bits
+	chk_data_s.ang_bound = (tmp_val + (PLATFORM_REFERENCE_HZ - 1)) / PLATFORM_REFERENCE_HZ; // division with round-up ~2 bits
 
 	// Evaluate error bounds for speed checks
 	chk_data_s.hi_bound = eval_speed_bound( HIGH_SPEED ); 
 	chk_data_s.lo_bound = eval_speed_bound( LOW_SPEED ); 
+
+	chk_data_s.prefix = comm_data_s.prefix[DISP_INP_CHK]; // local copy of display prefix
+
+	chk_data_s.fail_cnt = 0; // Clear count of failed tests.
 
 	chk_data_s.print_on = VERBOSE_PRINT; // Set print mode
 	chk_data_s.dbg = 0; // Set debug mode
@@ -127,38 +148,8 @@ static void check_qei_position_reset( // Check for correct position reset after 
 	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
 )
 {
-	int tmp_val;	// temporary manipulation variable
 	int ang_err;	// angular_position error
-	int ang_bound;	// angular_position margin of error
 
-
-	// Check for steady speed
-	if ((FAST != chk_data_s.curr_vect.comp_state[SPEED]) && (SLOW != chk_data_s.curr_vect.comp_state[SPEED]))
-	{ // NOT Steady Speed
-		acquire_lock(); // Acquire Display Mutex
-		printcharln(' ');
-		printstr( chk_data_s.prefix.str );
-		printstrln("INVALID POSITION RESET TEST. ABORTIMNG");
-		release_lock(); // Release Display Mutex
-		assert(0 == 1);
-	} // if ((FAST != chk_data_s.curr_vect.comp_state[SPEED]) && (SLOW != chk_data_s.curr_vect.comp_state[SPEED]))
-
-	// Steady Speed
-
-	/* Calculate error bounds for angular position after reset: 
-		 In the worst case, the angular position may not be measured until 
-		 a whole QEI_PERIOD after the reset. The amount the position changes during this time
-     depends on the STEADY speed used for the test. We need to calculate the following
-
-		 ang_mar = (QEI_PERIOD / PLATFORM_REFERENCE_HZ) * (RPM / 60) * QEI_PER_REV
-
-		 This has to be done without overflow, and retaining as much precision as possible.
-     So it is done in the following order ...
-	*/ 
-	tmp_val = QEI_PERIOD * abs(chk_data_s.curr_params.veloc); // ~24 bits
-	tmp_val = (tmp_val + (SECS_PER_MIN - 1)) / SECS_PER_MIN; // division with round-up // ~19 bits
-	tmp_val *= QEI_PER_REV; // ~29 bits
-	ang_bound = (tmp_val + (PLATFORM_REFERENCE_HZ - 1)) / PLATFORM_REFERENCE_HZ; // division with round-up // ~2 bits
 
 	chk_data_s.motor_tsts[ORIGIN]++;
 
@@ -173,7 +164,7 @@ static void check_qei_position_reset( // Check for correct position reset after 
 	} // if (HALF_QEI_POS < ang_err)
 
 	// Check for out-of-bounds angular position
-	if (ang_bound < ang_err)
+	if (chk_data_s.ang_bound < ang_err)
 	{
 		chk_data_s.motor_errs[ORIGIN]++;
 
@@ -182,7 +173,7 @@ static void check_qei_position_reset( // Check for correct position reset after 
 		printstr( chk_data_s.prefix.str );
 		printstrln("ORIG_ANG_POS FAILURE");
 		release_lock(); // Release Display Mutex
-	} // if (ang_bound < ang_err)
+	} // if (chk_data_s.ang_bound < ang_err)
 
 } // check_qei_position_reset
 /*****************************************************************************/

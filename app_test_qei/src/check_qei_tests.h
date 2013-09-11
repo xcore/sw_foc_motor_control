@@ -69,6 +69,7 @@ typedef struct CHECK_QEI_TAG // Structure containing QEI check data
 	int speed_num; // No of accumulations for speed tests
 	int hi_bound; // error bound for high speed test
 	int lo_bound; // error bound for low speed test
+	int ang_bound;	// angular_position margin of error
 	unsigned time; // time value when new QEI parameters received
 	int print_on;  // Print flag
 	int dbg;  // Debug flag
