@@ -383,6 +383,7 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 		} // else !(curr_state & 0x2)
 	} // else !(prev_state & 0x2)
 #endif //MB~
+
 	// Check spin-direction confidence
 	if (0 > inp_qei_s.confid)
 	{ // NON Clock-wise
@@ -502,7 +503,11 @@ static void update_phase_state( // Update phase state
 		// Check for end of start-up phase
 		if (START_UP_CHANGES <= inp_qei_s.pin_changes)
 		{
-			update_speed( inp_qei_s ); // Update speed value with new time difference
+			// Check if we have good data
+			if (QEI_HI_CLOCK <= abs(inp_qei_s.prev_state))
+			{
+				update_speed( inp_qei_s ); // Update speed value with new time difference
+			} // if (QEI_HI_CLOCK <= abs(inp_qei_s.prev_state))
 		} // if (START_UP_CHANGES <= inp_qei_s.pin_changes)
 		else
 		{

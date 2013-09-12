@@ -126,13 +126,11 @@ typedef unsigned long long U64_T; //MB~ Put this in app_global.h
 /** Different QEI decode states */
 typedef enum QEI_STATE_ETAG
 {
-  QEI_LO_ANTI = -3,	// Low probability Anti-Clockwise Phase change
   QEI_HI_ANTI = -2,	// High probability Anti-Clockwise Phase change
-  QEI_STALL,  // Same Phase
-  QEI_BIT_ERR,		// Detected one or more bit errors 
-  QEI_JUMP,		// Detected 2 or more phase increments
-  QEI_HI_CLOCK = 2, // High probability Clockwise Phase change
-  QEI_LO_CLOCK = 3 // Low probability Clockwise Phase change
+  QEI_LO_ANTI = -1,	// Low probability Anti-Clockwise Phase change
+  QEI_BIT_ERR = 0,		// Detected one or more bit errors 
+  QEI_LO_CLOCK = 1, // Low probability Clockwise Phase change
+  QEI_HI_CLOCK = 2 // High probability Clockwise Phase change
 } QEI_STATE_ETYP;
 
 typedef signed char ANG_INC_TYP; // Angular Increment type
