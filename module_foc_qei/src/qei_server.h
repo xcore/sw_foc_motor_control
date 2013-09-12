@@ -131,7 +131,7 @@ typedef enum QEI_STATE_ETAG
   QEI_STALL,  // Same Phase
   QEI_BIT_ERR,		// Detected one or more bit errors 
   QEI_JUMP,		// Detected 2 or more phase increments
-  QEI_HI_CLOCK = 2 // High probability Clockwise Phase change
+  QEI_HI_CLOCK = 2, // High probability Clockwise Phase change
   QEI_LO_CLOCK = 3 // Low probability Clockwise Phase change
 } QEI_STATE_ETYP;
 
@@ -152,7 +152,7 @@ typedef struct DBG_SMP_TAG // MB~ Dbg
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
 	ANG_INC_TYP phase_inc; // angular increment value
 	ANG_INC_TYP new_ang_inc; // new angular increment value
-	QEI_ENUM_TYP curr_state; // Curremt QEI state
+	QEI_STATE_ETYP curr_state; // Curremt QEI state
 	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
 	int veloc; // measured angular velocity
 } DBG_SMP_TYP;
@@ -186,7 +186,7 @@ typedef struct QEI_DATA_TAG //
 	int scale_bits; // Bit-shift used when down-scaling
 	unsigned half_scale; // Used to round when down-scaling
 	U64_T max_thr; // down-scaling threshold
-	QEI_ENUM_TYP prev_state; // Previous QEI state
+	QEI_STATE_ETYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
 	int status_errs; // counter for invalid QEI status errors
 	int ang_cnt; // Counts angular position of motor (from origin)
