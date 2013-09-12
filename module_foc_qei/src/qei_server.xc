@@ -43,7 +43,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
 	inp_qei_s.prev_inc = 0;
 	inp_qei_s.prev_ang = 0; // MB~
-	inp_qei_s.prev_state = QEI_STALL; // Initialise previous QEI state
+	inp_qei_s.prev_state = QEI_BIT_ERR; // Initialise previous QEI state
 	inp_qei_s.state_errs = 0; // Initialise counter for invalid QEI state transitions
 	inp_qei_s.status_errs = 0; // Initialise counter for QEI status errors
 	inp_qei_s.confid = 1; // Initialise spin-direction confidence value (1: Marginal Clockwise probability)
@@ -185,7 +185,7 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 						break; // case 2
 		
 						case 1 :
-							curr_state = QEI_JUMP; // Un-determined state [1 .. QEI_PHASE_MASK]
+							curr_state = QEI_BIT_ERR; // Un-determined state [1 .. QEI_PHASE_MASK]
 							new_ang_inc = 2; // Use average time estimate
 						break; // case 3
 		
@@ -208,8 +208,8 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 			{
 				if (inp_qei_s.lo_inc < QEI_PHASE_MASK)
 				{
-					curr_state = QEI_JUMP;
-					new_ang_inc = 2; // double increment
+					curr_state = QEI_BIT_ERR;
+					new_ang_inc = 2; // Missed QEI change due to previous bit-error
 				} // if (inp_qei_s.lo_inc < QEI_PHASE_MASK) 
 				else
 				{
@@ -252,7 +252,7 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 						break; // case 2
 		
 						case 1 :
-							curr_state = QEI_JUMP; // Un-determined state [1 .. QEI_PHASE_MASK]
+							curr_state = QEI_BIT_ERR; // Un-determined state [1 .. QEI_PHASE_MASK]
 							new_ang_inc = 2; // Use average time estimate
 						break; // case 3
 		
@@ -312,11 +312,11 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 	// Update spin Finite-State-Machine ...
 
 	// Check current state
-	if (QEI_HI_CLOCK <= abs(curr_state))
+	if (QEI_BIT_ERR != curr_state)
 	{ // Valid current spin state (CLOCK or ANTI)
 
 		// Check previous state
-		if (QEI_HI_CLOCK <= abs(prev_state))
+		if (QEI_BIT_ERR != prev_state)
 		{ // Valid previous spin state (CLOCK or ANTI)
 			// Check for change of spin-direction (CLOCK <--> ANTI)
 			if (0 > (curr_state * inp_qei_s.confid))
@@ -325,64 +325,18 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 				new_confid = inp_qei_s.confid + curr_state; // new (unclamped) confidence level
 				if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
 			} // if (0 > (curr_state * inp_qei_s.confid))
-		} // if (QEI_HI_CLOCK <= abs(prev_state))
+		} // if (QEI_BIT_ERR != prev_state)
 
 		new_confid = inp_qei_s.confid + curr_state; // new (unclamped) confidence level
 		if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
 
 		if (0 < inp_qei_s.state_errs)  inp_qei_s.state_errs--; // Reduce error count
-	} // if (QEI_HI_CLOCK <= abs(curr_state))
+	} // if (QEI_BIT_ERR != curr_state)
 	else
 	{ // Invalid current spin state (BIT_ERROR, JUMP, or STALL)
 		inp_qei_s.state_errs++; // Increment error cnt
 		assert(MAX_QEI_STATE_ERR > inp_qei_s.state_errs); // Too Many QEI errors
-	} // else !(QEI_HI_CLOCK <= abs(curr_state))
-
-#ifdef MB
-	// Check previous state
-	if (QEI_HI_CLOCK <= abs(prev_state))
-	{ // Valid previous spin state (CLOCK or ANTI)
-
-		// Check current state
-		if (QEI_HI_CLOCK <= abs(curr_state))
-		{ // Valid current spin state (CLOCK or ANTI)
-			// Check for change of spin-direction (CLOCK <--> ANTI)
-			if (0 > (curr_state * inp_qei_s.confid))
-			{
-				// NB This could be a genuine change of direction, so do confidence again to speed-up change-over
-				new_confid = inp_qei_s.confid + curr_state; // new (unclamped) confidence level
-				if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
-			} // if (0 > (curr_state * inp_qei_s.confid))
-
-			new_confid = inp_qei_s.confid + curr_state; // new (unclamped) confidence level
-			if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
-
-			if (0 < inp_qei_s.state_errs)  inp_qei_s.state_errs--; // Reduce error count
-		} // if (curr_state & 0x2)
-		else
-		{ // Invalid current spin state (BIT_ERROR, JUMP, or STALL)
-			inp_qei_s.state_errs++; // Increment error cnt
-			assert(MAX_QEI_STATE_ERR > inp_qei_s.state_errs); // Too Many QEI errors
-		} // else !(curr_state & 0x2)
-	} // if (prev_state & 0x2)
-	else
-	{ // Invalid previous spin state
-
-		// Check current state
-		if (QEI_HI_CLOCK <= abs(curr_state))
-		{ // Valid current spin state (CLOCK or ANTI)
-			new_confid = inp_qei_s.confid + curr_state; // new (unclamped) confidence level
-			if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
-
-			if (0 < inp_qei_s.state_errs)  inp_qei_s.state_errs--; // Reduce error count
-		} // if (curr_state & 0x2)
-		else
-		{ // Invalid current spin state (BIT_ERROR, JUMP, or STALL)
-			inp_qei_s.state_errs++; // Increment error cnt
-			assert(MAX_QEI_STATE_ERR > inp_qei_s.state_errs); // Too Many QEI errors
-		} // else !(curr_state & 0x2)
-	} // else !(prev_state & 0x2)
-#endif //MB~
+	} // else !(QEI_BIT_ERR != curr_state)
 
 	// Check spin-direction confidence
 	if (0 > inp_qei_s.confid)
@@ -504,10 +458,10 @@ static void update_phase_state( // Update phase state
 		if (START_UP_CHANGES <= inp_qei_s.pin_changes)
 		{
 			// Check if we have good data
-			if (QEI_HI_CLOCK <= abs(inp_qei_s.prev_state))
+			if (QEI_BIT_ERR != inp_qei_s.prev_state)
 			{
 				update_speed( inp_qei_s ); // Update speed value with new time difference
-			} // if (QEI_HI_CLOCK <= abs(inp_qei_s.prev_state))
+			} // if (QEI_BIT_ERR != inp_qei_s.prev_state)
 		} // if (START_UP_CHANGES <= inp_qei_s.pin_changes)
 		else
 		{
