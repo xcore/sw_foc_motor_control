@@ -154,127 +154,66 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 	// Force increment into range [0..QEI_PHASE_MASK]
 	phase_inc = (inp_qei_s.phase_index + NUM_QEI_PHASES - inp_qei_s.prev_index) & QEI_PHASE_MASK;
 
-	// Evaluate most probable spin direction
-	switch(phase_inc)
-	{
-		case 1 : // phase_inc
-			switch(inp_qei_s.hi_inc)
-			{
-				case 1 :
+/* The Decision table for estimating angle increments and spin directions looks like this ...
+ *
+ *	Numbers are angle increments (QEI steps)
+ *	H/L = High/Low probability,   A/C = Anti-clockwise/Clock-wise Spin,   be = Bit-Errors
+ *              
+ *	  Bounds	 |    1			2			3  <-- Phase_inc	
+ *	-----------+-------------------
+ *	Lo=1 Hi=1  |  HC_1  be_1  HA_1
+ *	Lo=1 Hi=2  |  be_2  be_2  be_2
+ *	Lo=2 Hi=2  |  be_2  be_2  be_2
+ *	Lo=1 Hi=3  |  be_2  be_2  be_2
+ *	Lo=2 Hi=3  |  be_2  be_2  be_2
+ *	Lo=3 Hi=3  |  LA_3  be_3  LC_3
+ */
+
+	// Check for be_2 states
+	if ((1 < inp_qei_s.hi_inc) && (inp_qei_s.lo_inc < QEI_PHASE_MASK))
+	{ // Most likely 1 or more bit errors occured
+		curr_state = QEI_BIT_ERR; // 1 or 2 Bit-Errors occured
+		new_ang_inc = 2; // Use 1-bit error time estimate
+	} // if ((1 < inp_qei_s.hi_inc) && (inp_qei_s.lo_inc < QEI_PHASE_MASK))
+	else
+	{ // lo_inc = hi_inc,  Non be_2 states
+		new_ang_inc = inp_qei_s.hi_inc; // Use more reliable time estimate
+
+		switch(phase_inc)
+		{
+			case 1 : // phase_inc
+				// Check for accurate data
+				if (1 == inp_qei_s.hi_inc)
+				{ // High accuracy (evaluated over 1 angle increment)
 					curr_state = QEI_HI_CLOCK;
-					new_ang_inc = 1; // All estimates agree
-				break; // case 1
-
-				case 2 :
-					// NB lo_inc must be 1 or 2
-					curr_state = QEI_BIT_ERR; // 1 or 2 Bit-Errors occured
-					new_ang_inc = 2; // Use 1-bit error time estimate
-				break; // case 2
-
-				case 3 :
-					switch(inp_qei_s.lo_inc)
-					{
-						case 3 :
-							curr_state = QEI_LO_ANTI; // Probably 2 bit errors occurred
-							new_ang_inc = 3; // Use more reliable time estimate
-						break; // case 1
-		
-						case 2 :
-							curr_state = QEI_BIT_ERR; // Indeterminate: 1 or 2 Bit-Errors occured
-							new_ang_inc = 2; // Use 1-bit error time estimate
-						break; // case 2
-		
-						case 1 :
-							curr_state = QEI_BIT_ERR; // Un-determined state [1 .. QEI_PHASE_MASK]
-							new_ang_inc = 2; // Use average time estimate
-						break; // case 3
-		
-						default :
-							// NB we can NOT detect a change of 4 or zero increments
-							assert(0 == 1); // ERROR: Should not happen
-						break; // default
-					} // switch(inp_qei_s.lo_inc)
-				break; // case 3
-		
-				default :
-					// NB we can NOT detect a change of 4 or zero increments
-					assert(0 == 1); // ERROR: Should not happen
-				break; // default
-			} // switch(inp_qei_s.hi_inc)
-		break; // case phase_inc = 1
-
-		case 2 : // phase_inc
-			if (inp_qei_s.hi_inc > 1)
-			{
-				if (inp_qei_s.lo_inc < QEI_PHASE_MASK)
-				{
-					curr_state = QEI_BIT_ERR;
-					new_ang_inc = 2; // Missed QEI change due to previous bit-error
-				} // if (inp_qei_s.lo_inc < QEI_PHASE_MASK) 
+				} // if (1 == inp_qei_s.hi_inc)
 				else
-				{
-					curr_state = QEI_BIT_ERR; // Bit-Error occured
-					new_ang_inc = 3; // Use more reliable time estimate
-				} // if (inp_qei_s..lo_inc < QEI_PHASE_MASK) 
-			} // if (inp_qei_s.hi_inc > 1)
-			else
-			{
-				curr_state = QEI_BIT_ERR; // Bit-Error occured
-				new_ang_inc = 1; // Switch to more reliable estimate
-			} // if (inp_qei_s.hi_inc > 1)
-		break; // case phase_inc = 2
+				{ // Low accuracy (evaluated over 3 angle increments - due to intermediate errors)
+					curr_state = QEI_LO_ANTI;
+				} // else !(1 == inp_qei_s.hi_inc)
+			break; // case phase_inc = 1
 
-		case 3 : // QEI_PHASE_MASK 
-			switch(inp_qei_s.hi_inc)
-			{
-				case 1 :
+			case 2 : // phase_inc
+				curr_state = QEI_BIT_ERR; // 1 or 2 Bit-Errors occured
+			break; // case phase_inc = 2
+
+			case 3 : // phase_inc
+				if (1 == inp_qei_s.hi_inc)
+				{ // High accuracy (evaulated over 1 angle increment)
 					curr_state = QEI_HI_ANTI;
-					new_ang_inc = 1; // All estimates agree
-				break; // case 3
+				} // if (1 == inp_qei_s.hi_inc)
+				else
+				{ // Low accuracy (evaluated over 3 angle increments - due to intermediate errors)
+					curr_state = QEI_LO_CLOCK;
+				} // else !(1 == inp_qei_s.hi_inc)
+			break; // case phase_inc = 3
 
-				case 2 :
-					// NB lo_inc must be 1 or 2
-					curr_state = QEI_BIT_ERR; // 1 or 2 Bit-Errors occured
-					new_ang_inc = 2; // Use 1-bit error time estimate
-				break; // case 2
-
-				case 3 :
-					switch(inp_qei_s.lo_inc)
-					{
-						case 3 :
-							curr_state = QEI_LO_CLOCK; // Probably 2 bit errors occurred
-							new_ang_inc = 3; // Use more reliable time estimate
-						break; // case 1
-		
-						case 2 :
-							curr_state = QEI_BIT_ERR; // Indeterminate: 1 or 2 Bit-Errors occured
-							new_ang_inc = 2; // Use 1-bit error time estimate
-						break; // case 2
-		
-						case 1 :
-							curr_state = QEI_BIT_ERR; // Un-determined state [1 .. QEI_PHASE_MASK]
-							new_ang_inc = 2; // Use average time estimate
-						break; // case 3
-		
-						default :
-							// NB we can NOT detect a change of 4 or zero increments
-							assert(0 == 1); // ERROR: Should not happen
-						break; // default
-					} // switch(inp_qei_s.lo_inc)
-				break; // case 1
-		
-				default :
-					// NB we can NOT detect a change of 4 or zero increments
-					assert(0 == 1); // ERROR: Should not happen
-				break; // default
-			} // switch(inp_qei_s.hi_inc)
-		break; // case phase_inc = QEI_PHASE_MASK
-
-		default :
-			// NB we can NOT detect a change of 4 or zero increments
-			assert(0 == 1); // ERROR: Should not happen
-		break; // default
-	} // switch(phase_inc)
+			default:
+				// NB we can NOT detect a change of 4 or zero increments
+				assert(0 == 1); // ERROR: Should not happen
+			break; // default
+		} // switch(phase_inc)
+	} // else !((1 < inp_qei_s.hi_inc) && (inp_qei_s.lo_inc < QEI_PHASE_MASK))
 
 	// Evaluate most probable spin direction
 	switch(new_ang_inc)
