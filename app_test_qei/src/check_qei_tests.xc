@@ -103,8 +103,8 @@ static void init_check_data( // Initialise check data for QEI tests
 	chk_data_s.ang_bound = (tmp_val + (PLATFORM_REFERENCE_HZ - 1)) / PLATFORM_REFERENCE_HZ; // division with round-up ~2 bits
 
 	// Evaluate error bounds for speed checks
-	chk_data_s.hi_bound = eval_speed_bound( HIGH_SPEED ); 
-	chk_data_s.lo_bound = eval_speed_bound( LOW_SPEED ); 
+	chk_data_s.hi_bound = 1 + eval_speed_bound( HIGH_SPEED ); 
+	chk_data_s.lo_bound = 1 + eval_speed_bound( LOW_SPEED ); 
 
 	chk_data_s.prefix = comm_data_s.prefix[DISP_INP_CHK]; // local copy of display prefix
 

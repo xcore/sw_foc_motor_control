@@ -87,93 +87,66 @@ static void init_qei_data( // Initialise  QEI data for one motor
 /*****************************************************************************/
 static ANG_INC_TYP estimate_increment_bound( // Estimate bound on angular increment given time-diff
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	int diff_est, // time difference estimate
 	int factor // time-diff scaling factor
 ) // Returns output angular increment value
 {
-	ANG_INC_TYP out_a_inc = 0; // Clear Output angular increment value
-	int tst_diff; // test-value time-difference
+	ANG_INC_TYP out_a_inc = 1; // Clear Output angular increment value
+	int diff_est; // time difference estimate
+	int tst_diff = (int)inp_qei_s.t_dif_new; // Initialise test-value time-difference
+	int prev_tst; // Previous test-value
 
 
-	tst_diff = (int)inp_qei_s.t_dif_new - diff_est;
-/*
-acquire_lock(); 
-printstr("TD="); printint(tst_diff); printstr(" DE="); printint(diff_est); printstr(" FT="); printintln(factor);
-release_lock(); // MB~
-*/
-	while (( 0 < tst_diff) && (out_a_inc < QEI_PHASE_MASK)) 
+	diff_est = (factor * (int)inp_qei_s.t_dif_cur + HALF_QEI_SCALE) >> SCALE_QEI_BITS;
+	prev_tst = tst_diff;
+	tst_diff = prev_tst - diff_est;
+
+	if (0 >= tst_diff) return out_a_inc; // Return if exit criterion already met
+
+	while (( 0 < tst_diff) && (out_a_inc < NUM_QEI_PHASES)) 
 	{
 		diff_est = (factor * diff_est + HALF_QEI_SCALE) >> SCALE_QEI_BITS; // Scale time-diff estimate 
-		tst_diff -= diff_est;
+		prev_tst = tst_diff;
+		tst_diff = prev_tst - diff_est;
 		out_a_inc++; // increment lower bound for angular increment
-/*
-acquire_lock(); 
-printstr("td="); printint(tst_diff); printstr(" li="); printintln(out_a_inc);
-release_lock(); // MB~
-*/
-	} // while ( 0 < tst_diff)
+	} // while (0 < tst_diff) etc
 
-	tst_diff <<= 1;
+	prev_tst <<= 1; // NB Double prev_tst for closest estimate check
 
-	// Increment angle, if new estimates is closest, or angle has NOT yet been incremented
-	if ((tst_diff > diff_est) || (0 == out_a_inc))
+	// Decrement angle, if older estimate is closest, AND angle has been incremented
+	if ((prev_tst <= diff_est) && (1 < out_a_inc))
 	{ // new estimate was closest.
-		out_a_inc++; // increment change in angular position
+		out_a_inc--; // decrement change in angular position
 	} // if ((tst_diff > diff_est) || (0 == out_a_inc))
 
 	// Clip into QEI Phase range
 	if (out_a_inc > QEI_PHASE_MASK) out_a_inc = QEI_PHASE_MASK;
-/*
-acquire_lock(); 
-printstr("TD="); printint(tst_diff); printstr(" LI="); printintln(out_a_inc);
-release_lock(); // MB~
-*/
+
 	return out_a_inc;
 } // estimate_increment_bound
 /*****************************************************************************/
-static void get_time_increment_range( // Estimate possible range of angular position increments from time differences
-	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
-)
-{
-	int lo_diff; // Higher bound on time difference estimate
-	int hi_diff; // Lower bound on time difference estimate
-
-
-	inp_qei_s.hi_inc = 0; // Clear higher bound for angular increment value
-	inp_qei_s.lo_inc = 0; // Clear lower bound for angular increment value
-
-	// Calculate upper and lower bounds for time-difference ...
-	lo_diff = (LO_QEI_SCALE * inp_qei_s.t_dif_cur + HALF_QEI_SCALE) >> SCALE_QEI_BITS;
-	hi_diff = (HI_QEI_SCALE * inp_qei_s.t_dif_cur + HALF_QEI_SCALE) >> SCALE_QEI_BITS;
-
-	// Find higher bound for angular increment, by using smallest time-diff, and rounding up
-	inp_qei_s.hi_inc = estimate_increment_bound( inp_qei_s ,lo_diff ,LO_QEI_SCALE );
-
-	// Find lower bound for angular increment, by using largest time-diff, and rounding down
-	inp_qei_s.lo_inc = estimate_increment_bound( inp_qei_s ,hi_diff ,HI_QEI_SCALE );
-
-//MB~	assert(lo_diff < inp_qei_s.t_dif_old); // ERROR: Should never happen
-//MB~		assert(hi_diff > inp_qei_s.t_dif_old); // ERROR: Should never happen
-
-	// NB We have now isolated the number of increments to the range [inp_qei_s.lo_inc .. inp_qei_s.hi_inc]
-} // get_time_increment_range
-/*****************************************************************************/
-static ANG_INC_TYP estimate_time_increment( // Estimate angular position increment from time increments
+static void update_qei_state( // Update QEI state	by estimating angular position increment from time increments
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	unsigned cur_phases // Current set of phase values
-) // Returns output angular increment value
+)
 {
 	QEI_ENUM_TYP curr_state; // Estimated new spin-state fom phase an time info.
 	QEI_ENUM_TYP prev_state = inp_qei_s.prev_state; // local copy of previous QEI-state
 	ANG_INC_TYP phase_inc; // Estimated No. of angular increments from phase values
 	ANG_INC_TYP tmp_inc; // Temporary angular increment
-	ANG_INC_TYP out_ang_inc; // Output angular increment value
+	ANG_INC_TYP new_ang_inc; // New estimated angular increment value
 	int new_confid; // new unclamped spin-direction confidence level
 	unsigned est_diff; // Estimated time-difference per angular increment
 
 
-	// Determine probable range of angular increment values from time-differences
-	get_time_increment_range( inp_qei_s );
+	// Determine probable range of angular increment values from time-differences ...
+
+	// Find lower bound for angular increment, by assuming maximum deceleration
+	inp_qei_s.lo_inc = estimate_increment_bound( inp_qei_s ,HI_QEI_SCALE );
+
+	// Find higher bound for angular increment, by assuming maximum acceleration
+	inp_qei_s.hi_inc = estimate_increment_bound( inp_qei_s ,LO_QEI_SCALE );
+
+	// NB We have now isolated the number of increments to the range [inp_qei_s.lo_inc .. inp_qei_s.hi_inc]
 
 	inp_qei_s.prev_index = inp_qei_s.phase_index;
 	inp_qei_s.phase_index = inp_qei_s.inv_phase.vals[cur_phases];	// Convert phase val into circ. index [0..QEI_PHASE_MASK]
@@ -189,19 +162,19 @@ static ANG_INC_TYP estimate_time_increment( // Estimate angular position increme
 			{
 				case 1 :
 					curr_state = QEI_CLOCK;
-					out_ang_inc = 1; // Use phase estimate
+					new_ang_inc = 1; // Use phase estimate
 				break; // case 1
 
 				case 2 :
 					if (inp_qei_s.lo_inc == 2)
 					{
 						curr_state = QEI_BIT_ERR; // 2 Bit-Errors occured
-						out_ang_inc = 2; // Switch to more reliable time estimate
+						new_ang_inc = 2; // Switch to more reliable time estimate
 					} // if (inp_qei_s.lo_inc
 					else
 					{ // inp_qei_s.lo_inc == 1
 						curr_state = QEI_BIT_ERR; // Indeterminate: Guess 2 Bit-Errors occured
-						out_ang_inc = 2; // Switch to more reliable time estimate
+						new_ang_inc = 2; // Switch to more reliable time estimate
 					} // else !(inp_qei_s.lo_inc
 				break; // case 2
 
@@ -210,17 +183,17 @@ static ANG_INC_TYP estimate_time_increment( // Estimate angular position increme
 					{
 						case 3 :
 							curr_state = QEI_ANTI;
-							out_ang_inc = 3; // Use phase estimate
+							new_ang_inc = 3; // Use phase estimate
 						break; // case 1
 		
 						case 2 :
 							curr_state = QEI_BIT_ERR; // Indeterminate: Guess 2 Bit-Errors occured
-							out_ang_inc = 2; // Switch to more reliable time estimate
+							new_ang_inc = 2; // Switch to more reliable time estimate
 						break; // case 2
 		
 						case 1 :
 							curr_state = QEI_JUMP; // Un-determined state [1 .. QEI_PHASE_MASK]
-							out_ang_inc = 2; // Use average double increment
+							new_ang_inc = 2; // Use average double increment
 						break; // case 3
 		
 						default :
@@ -243,18 +216,18 @@ static ANG_INC_TYP estimate_time_increment( // Estimate angular position increme
 				if (inp_qei_s.lo_inc < QEI_PHASE_MASK)
 				{
 					curr_state = QEI_JUMP;
-					out_ang_inc = 2; // double increment
+					new_ang_inc = 2; // double increment
 				} // if (inp_qei_s.lo_inc < QEI_PHASE_MASK) 
 				else
 				{
 					curr_state = QEI_BIT_ERR; // Bit-Error occured
-					out_ang_inc = 3; // Switch to more reliable estimate
+					new_ang_inc = 3; // Switch to more reliable estimate
 				} // if (inp_qei_s..lo_inc < QEI_PHASE_MASK) 
 			} // if (inp_qei_s.hi_inc > 1)
 			else
 			{
 				curr_state = QEI_BIT_ERR; // Bit-Error occured
-				out_ang_inc = 1; // Switch to more reliable estimate
+				new_ang_inc = 1; // Switch to more reliable estimate
 			} // if (inp_qei_s.hi_inc > 1)
 		break; // case 2
 
@@ -263,19 +236,19 @@ static ANG_INC_TYP estimate_time_increment( // Estimate angular position increme
 			{
 				case 1 :
 					curr_state = QEI_ANTI;
-					out_ang_inc = 1; // Use phase estimate
+					new_ang_inc = 1; // Use phase estimate
 				break; // case 3
 
 				case 2 :
 					if (inp_qei_s.lo_inc == 2)
 					{
 						curr_state = QEI_BIT_ERR; // 2 Bit-Errors occured
-						out_ang_inc = 2; // Switch to more reliable time estimate
+						new_ang_inc = 2; // Switch to more reliable time estimate
 					} // if (inp_qei_s.lo_inc
 					else
 					{ // inp_qei_s.lo_inc == 1
 						curr_state = QEI_BIT_ERR; // Indeterminate: Guess 2 Bit-Errors occured
-						out_ang_inc = 2; // Switch to more reliable time estimate
+						new_ang_inc = 2; // Switch to more reliable time estimate
 					} // else !(inp_qei_s.lo_inc
 				break; // case 2
 
@@ -284,17 +257,17 @@ static ANG_INC_TYP estimate_time_increment( // Estimate angular position increme
 					{
 						case 3 :
 							curr_state = QEI_CLOCK;
-							out_ang_inc = 3; // Use phase estimate
+							new_ang_inc = 3; // Use phase estimate
 						break; // case 1
 		
 						case 2 :
 							curr_state = QEI_BIT_ERR; // Indeterminate: Guess 2 Bit-Errors occured
-							out_ang_inc = 2; // Switch to more reliable time estimate
+							new_ang_inc = 2; // Switch to more reliable time estimate
 						break; // case 2
 		
 						case 1 :
 							curr_state = QEI_JUMP; // Un-determined state [1 .. QEI_PHASE_MASK]
-							out_ang_inc = 2; // Use average double increment
+							new_ang_inc = 2; // Use average double increment
 						break; // case 3
 		
 						default :
@@ -318,7 +291,7 @@ static ANG_INC_TYP estimate_time_increment( // Estimate angular position increme
 	} // switch(phase_inc)
 
 	// Evaluate most probable spin direction
-	switch(out_ang_inc)
+	switch(new_ang_inc)
 	{
 		case 1 :
 			est_diff = inp_qei_s.t_dif_new;
@@ -336,28 +309,17 @@ static ANG_INC_TYP estimate_time_increment( // Estimate angular position increme
 			// NB we can NOT detect a change of 4 or zero increments
 			assert(0 == 1); // ERROR: Should not happen
 		break; // case 1
-	} // switch(out_ang_inc)
+	} // switch(new_ang_inc)
 
-/*
-acquire_lock(); 
-printstrln("");
-printstr("TD[OCN]="); printuint(inp_qei_s.t_dif_old); printchar(':'); printuint(inp_qei_s.t_dif_cur); printchar(':'); printuint(inp_qei_s.t_dif_new);
-printstr(" AI="); printintln(out_ang_inc); 
-release_lock(); // MB~
-*/
 	// If necessary, update time-diffs 
-	tmp_inc = out_ang_inc;
+	tmp_inc = new_ang_inc;
 
 	while (1 < tmp_inc)
 	{
 		inp_qei_s.t_dif_old = inp_qei_s.t_dif_cur;
 		inp_qei_s.t_dif_cur = est_diff;
 		inp_qei_s.t_dif_new -= est_diff;
-/*
-acquire_lock(); 
-printstr(" ED="); printintln(est_diff);
-release_lock(); // MB~
-*/
+
 		tmp_inc--; // Decrement 'angular increment'
 	} // while (1 < tmp_inc)
 
@@ -420,7 +382,7 @@ release_lock(); // MB~
 	// Check spin-direction confidence
 	if (0 > inp_qei_s.confid)
 	{ // NON Clock-wise
-		out_ang_inc = -out_ang_inc; // Decrement for Anti-clockwise spin
+		new_ang_inc = -new_ang_inc; // Decrement for Anti-clockwise spin
 	} // if (0 >  inp_qei_s.confid)
 
 	inp_qei_s.prev_state = curr_state; // Store old QEI state value
@@ -433,15 +395,17 @@ release_lock(); // MB~
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].lo_inc = inp_qei_s.lo_inc;
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].hi_inc = inp_qei_s.hi_inc;
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].phase_inc = phase_inc;
-	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].out_ang_inc = out_ang_inc; 
+	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].new_ang_inc = new_ang_inc; 
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].curr_state = curr_state; 
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].confid = inp_qei_s.confid; 
+	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].veloc = inp_qei_s.params.veloc; 
 
 	inp_qei_s.dd.cnt++;
 }
 
-	return out_ang_inc;
-} // estimate_time_increment
+	inp_qei_s.ang_inc = new_ang_inc; // Update angular increment value
+	inp_qei_s.ang_cnt += inp_qei_s.ang_inc; // Increment/Decrement angular position
+} // update_qei_state
 /*****************************************************************************/
 static ANG_INC_TYP estimate_angular_increment( // Estimate angular position increment from QEI states
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
@@ -563,6 +527,136 @@ static const QEI_ENUM_TYP get_spin_state[NUM_QEI_PHASES][NUM_QEI_PHASES] = {
 	return out_ang_inc; // Return output increment value
 } // estimate_angular_increment
 /*****************************************************************************/
+static void update_speed( // Update speed estimate from time period. (Angular_speed in RPM) 
+	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
+)
+{
+	unsigned abs_inc = abs(inp_qei_s.ang_inc); // Absolute angle increment
+	unsigned ticks = inp_qei_s.diff_time; // ticks per QEI position (in Reference Frequency Cycles)
+	int const_val;
+	const_val = (TICKS_PER_MIN_PER_QEI * abs_inc) + inp_qei_s.speed_err; // Add diffusion error to constant;
+
+
+	inp_qei_s.ang_speed = (const_val + (ticks >> 1)) / ticks;  // Evaluate speed
+	inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
+
+	// Update previous values
+	inp_qei_s.prev_inc =  abs_inc;
+	inp_qei_s.prev_diff = inp_qei_s.diff_time; 
+
+}	// update_speed
+/*****************************************************************************/
+static void check_for_missed_origin( // Check for missed origin, and update angular position info. if necessary
+	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
+)
+/*
+ *	This function checks for a 'missed origin' and ensures theta is in the correct range ...
+ *	The local angular position (inp_qei_s.ang_cnt) should be in the range  
+ *	-540 Degrees <= ang_cnt <= 540 degrees
+ *  If inp_qei_s.ang_cnt is outside the above range, an Origin signal has been missed.
+ *
+ * The if-then-else statements are arranged with the most likely first to reduce computation
+ */
+{
+	if (0 > inp_qei_s.ang_cnt)
+	{ // Negative angles
+		if (inp_qei_s.ang_cnt < (-QEI_PER_REV))
+		{ // A few mis-interpreted values
+			if (inp_qei_s.ang_cnt < (-QEI_CNT_LIMIT))
+			{ // Too many mis-interpreted values: Origin Missed --> Correct counters
+				inp_qei_s.params.rev_cnt--; // Decrement origin counter
+				inp_qei_s.ang_cnt += QEI_PER_REV; // 'Unwind' a whole (anti-clockwise) rotation
+			} // (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
+		} // if (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
+	} // if (0 > inp_qei_s.ang_cnt)
+	else
+	{ // Positive angles
+		if (inp_qei_s.ang_cnt > QEI_PER_REV)
+		{ // A few mis-interpreted values
+			if (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
+			{ // Too many mis-interpreted values: Origin Missed --> Correct counters
+				inp_qei_s.params.rev_cnt++; // Increment origin counter
+				inp_qei_s.ang_cnt -= QEI_PER_REV; // 'Unwind' a whole (clock-wise) rotation
+			} // (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
+		} // if (inp_qei_s.ang_cnt > QEI_PER_REV)
+	} // else !(0 > inp_qei_s.ang_cnt)
+
+} // check_for_missed_origin
+/*****************************************************************************/
+static void update_phase_state( // Update phase state
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	unsigned cur_phases // Current set of phase values
+)
+{
+	// Get new time stamp
+	inp_qei_s.diff_time = (int)((unsigned)(inp_qei_s.curr_time - inp_qei_s.prev_time));
+
+	// Check for sensible time
+	if (THR_TICKS_PER_QEI < inp_qei_s.diff_time)
+	{ // Sensible time!
+		// Update previous down-scaled time differences ...
+
+		// Check for first pass
+		if (0 < inp_qei_s.t_dif_cur)
+		{
+			inp_qei_s.t_dif_old = inp_qei_s.t_dif_cur;
+			inp_qei_s.t_dif_cur = inp_qei_s.t_dif_new;
+		} // if (0 < inp_qei_s.t_dif_cur)
+		else
+		{ // 1st pass
+			inp_qei_s.prev_inc = 1;
+			inp_qei_s.prev_diff = inp_qei_s.diff_time;
+			inp_qei_s.t_dif_cur = inp_qei_s.diff_time;
+			inp_qei_s.t_dif_old = inp_qei_s.diff_time;
+		} // if (0 < inp_qei_s.t_dif_cur)
+
+		inp_qei_s.t_dif_new = inp_qei_s.diff_time; // Store new down-scaled time difference
+
+		// Determine new QEI state from new pin data
+		update_qei_state( inp_qei_s ,cur_phases );
+
+		// Check for end of start-up phase
+		if (START_UP_CHANGES <= inp_qei_s.pin_changes)
+		{
+			update_speed( inp_qei_s ); // Update speed value with new time difference
+		} // if (START_UP_CHANGES <= inp_qei_s.pin_changes)
+		else
+		{
+			inp_qei_s.pin_changes++; // Update number of input pin changes
+			inp_qei_s.ang_speed = 1;	// Default speed value
+		} // if (START_UP_CHANGES <= inp_qei_s.pin_changes)
+	
+		inp_qei_s.prev_time = inp_qei_s.curr_time; // Store time stamp
+		inp_qei_s.prev_phases = cur_phases; // Store phase value
+	} // if (THR_TICKS_PER_QEI < inp_qei_s.diff_time)
+
+	return;
+} // update_phase_state
+/*****************************************************************************/
+static void update_origin_state( // Update origin state
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	unsigned orig_flg // Flag set when motor at origin position 
+)
+{
+	if (orig_flg)
+	{ // Reset position ( 'orig_flg' transition  0 --> 1 )
+
+		// Update origin counter
+		if (0 < inp_qei_s.ang_inc)
+		{
+			inp_qei_s.params.rev_cnt++; // Increment
+		} // if (0 < inp_qei_s.ang_inc)
+		else
+		{
+			inp_qei_s.params.rev_cnt--; // Decrement
+		} // else !(0 < inp_qei_s.ang_inc)
+
+		inp_qei_s.ang_cnt = 0; // Reset position value
+	} // if (orig_flg)
+
+	return;
+} // update_origin_state
+/*****************************************************************************/
 static void estimate_error_status( // Update estimate of error status based on new data
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	ERROR_QEI_ENUM new_err // Newly acquired error flag
@@ -603,136 +697,6 @@ static void estimate_error_status( // Update estimate of error status based on n
 
 } // estimate_error_status
 /*****************************************************************************/
-static void check_for_missed_origin( // Check for missed origin, and update angular position info. if necessary
-	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
-)
-/*
- *	This function checks for a 'missed origin' and ensures theta is in the correct range ...
- *	The local angular position (inp_qei_s.ang_cnt) should be in the range  
- *	-540 Degrees <= ang_cnt <= 540 degrees
- *  If inp_qei_s.ang_cnt is outside the above range, an Origin signal has been missed.
- *
- * The if-then-else statements are arranged with the most likely first to reduce computation
- */
-{
-	if (0 > inp_qei_s.ang_cnt)
-	{ // Negative angles
-		if (inp_qei_s.ang_cnt < (-QEI_PER_REV))
-		{ // A few mis-interpreted values
-			if (inp_qei_s.ang_cnt < (-QEI_CNT_LIMIT))
-			{ // Too many mis-interpreted values: Origin Missed --> Correct counters
-				inp_qei_s.params.rev_cnt--; // Decrement origin counter
-				inp_qei_s.ang_cnt += QEI_PER_REV; // 'Unwind' a whole (anti-clockwise) rotation
-			} // (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
-		} // if (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
-	} // if (0 > inp_qei_s.ang_cnt)
-	else
-	{ // Positive angles
-		if (inp_qei_s.ang_cnt > QEI_PER_REV)
-		{ // A few mis-interpreted values
-			if (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
-			{ // Too many mis-interpreted values: Origin Missed --> Correct counters
-				inp_qei_s.params.rev_cnt++; // Increment origin counter
-				inp_qei_s.ang_cnt -= QEI_PER_REV; // 'Unwind' a whole (clock-wise) rotation
-			} // (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
-		} // if (inp_qei_s.ang_cnt > QEI_PER_REV)
-	} // else !(0 > inp_qei_s.ang_cnt)
-
-} // check_for_missed_origin
-/*****************************************************************************/
-static void update_qei_state( // Update QEI state
-	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	unsigned cur_phases, // Current set of phase values
-	unsigned orig_flg, // Flag set when motor at origin position 
-	ERROR_QEI_ENUM err_flg // Flag set when Error condition detected
-)
-{
-	// Update estimate of error status using new error flag
-	estimate_error_status( inp_qei_s ,err_flg ); // NB Updates inp_qei_s.params.err
-
-	inp_qei_s.ang_inc = estimate_time_increment( inp_qei_s ,cur_phases ); // Output angular increment value
-/*
-acquire_lock(); 
-printstr("AI="); printintln(inp_qei_s.ang_inc); 
-release_lock(); // MB~
-*/
-
-{//MB~
-//	ANG_INC_TYP tmp = estimate_angular_increment( inp_qei_s ,cur_phases ); 
-/*
-acquire_lock(); 
-printstr("L="); printint(inp_qei_s.lo_inc); 
-printstr(" H="); printint(inp_qei_s.hi_inc); 
-printstr(" N="); printint(tmp); 
-printstr(" O="); printint(inp_qei_s.ang_inc); 
-printstr(" ND="); printintln(inp_qei_s.t_dif_new); 
-release_lock(); // MB~
-*/
-}
-	inp_qei_s.ang_cnt += inp_qei_s.ang_inc; // Increment/Decrement angular position
-
-	// Check if motor at origin
-	if (orig_flg != inp_qei_s.prev_orig)
-	{
-		if (orig_flg)
-		{ // Reset position ( 'orig_flg' transition  0 --> 1 )
-
-			// Update origin counter
-			if (0 < inp_qei_s.ang_inc)
-			{
-				inp_qei_s.params.rev_cnt++; // Increment
-			} // if (0 < inp_qei_s.ang_inc)
-			else
-			{
-				inp_qei_s.params.rev_cnt--; // Decrement
-			} // else !(0 < inp_qei_s.ang_inc)
-
-			inp_qei_s.ang_cnt = 0; // Reset position value
-		} // if (orig_flg)
-	
-		inp_qei_s.prev_orig = orig_flg; // Store new orign flag value
-	} // if (orig_flg != inp_qei_s.prev_orig)
-	
-	check_for_missed_origin( inp_qei_s ); // NB May update inp_qei_s.ang_cnt & inp_qei_s.params.rev_cnt
-
- 	// The theta value returned to the client should be in the range:  0 <= ang_cnt < 360 degrees
-	inp_qei_s.params.theta = (inp_qei_s.ang_cnt & QEI_REV_MASK); // force into range [0..QEI_REV_MASK]
-
-	return;
-} // update_qei_state
-/*****************************************************************************/
-static void update_speed( // Update speed estimate from time period. (Angular_speed in RPM) 
-	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
-)
-{
-	unsigned abs_inc = abs(inp_qei_s.ang_inc); // Absolute angle increment
-	unsigned ticks = inp_qei_s.diff_time; // ticks per QEI position (in Reference Frequency Cycles)
-	unsigned old_ang_new_time; // Angular_inc * time_diff product
-	unsigned new_ang_old_time; // Angular_inc * time_diff product
-	int const_val;
-
-	// Check for sensible values ...
-	old_ang_new_time = inp_qei_s.prev_inc * inp_qei_s.diff_time; 
-	new_ang_old_time = abs_inc * inp_qei_s.prev_diff;
-
-	// Max acceleration check
-	if ((old_ang_new_time << 1) < (3 * new_ang_old_time))
-	{
-		// Max deceleration check
-		if ((new_ang_old_time << 1) < (3 * old_ang_new_time))
-		{ 
-			const_val = (TICKS_PER_MIN_PER_QEI * abs_inc) + inp_qei_s.speed_err; // Add diffusion error to constant;
-			inp_qei_s.ang_speed = (const_val + (ticks >> 1)) / ticks;  // Evaluate speed
-			inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
-
-			// Update previous values
-			inp_qei_s.prev_inc =  abs_inc;
-			inp_qei_s.prev_diff = inp_qei_s.diff_time; 
-		} // if ((new_ang_old_time << 1) < (3 * new_ang_old_time))
-	} // if ((old_ang_new_time << 1) < (3 * new_ang_old_time))
-
-}	// update_speed
-/*****************************************************************************/
 static void service_input_pins( // Service detected change on input pins
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	QEI_RAW_TYP inp_pins // Set of raw data values on input port pins
@@ -743,7 +707,12 @@ static void service_input_pins( // Service detected change on input pins
 	unsigned err_flg; // Flag set when Error condition detected
 
 
+	// MB~ ToDo Insert noise filter here for each pin.
+ 
+	// NB Due to noise corrupting bit-values, flags may change, even though phase does NOT appear to have changed
 	cur_phases = inp_pins & QEI_PHASE_MASK; // Extract Phase bits from input pins
+	orig_flg = inp_pins & QEI_ORIG_MASK; 		// Extract origin flag 
+	err_flg = !(inp_pins & QEI_NERR_MASK); 	// NB Bit_3=0, and err_flg=1, if error detected, 
 
 { // For Debug
 	// Check for active B-bit (Printed 1st)
@@ -770,55 +739,30 @@ static void service_input_pins( // Service detected change on input pins
 	// Check if phases have changed
 	if (cur_phases != inp_qei_s.prev_phases) 
 	{
-		// Get new time stamp
-		inp_qei_s.diff_time = (int)((unsigned)(inp_qei_s.curr_time - inp_qei_s.prev_time));
+		update_phase_state( inp_qei_s ,cur_phases ); // update phase state
 
-		// Check for sensible time
-		if (THR_TICKS_PER_QEI < inp_qei_s.diff_time)
-		{ // Sensible time!
-			orig_flg = inp_pins & QEI_ORIG_MASK; 		// Extract origin flag 
-			err_flg = !(inp_pins & QEI_NERR_MASK); 	// NB Bit_3=0, and err_flg=1, if error detected, 
-
-			// Update previous down-scaled time differences ...
-
-			// Check for first pass
-			if (0 < inp_qei_s.t_dif_cur)
-			{
-				inp_qei_s.t_dif_old = inp_qei_s.t_dif_cur;
-				inp_qei_s.t_dif_cur = inp_qei_s.t_dif_new;
-			} // if (0 < inp_qei_s.t_dif_cur)
-			else
-			{ // 1st pass
-				inp_qei_s.prev_inc = 1;
-				inp_qei_s.prev_diff = inp_qei_s.diff_time;
-				inp_qei_s.t_dif_cur = inp_qei_s.diff_time;
-				inp_qei_s.t_dif_old = inp_qei_s.diff_time;
-			} // if (0 < inp_qei_s.t_dif_cur)
-
-			inp_qei_s.t_dif_new = inp_qei_s.diff_time; // Store new down-scaled time difference
-/*
-acquire_lock();
-printstr(" TD="); printintln(inp_qei_s.diff_time); 
-release_lock(); // MB~
-*/
-			// Determine new QEI state from new pin data
-			update_qei_state( inp_qei_s ,cur_phases ,orig_flg ,err_flg );
-
-			// Check for end of start-up phase
-			if (START_UP_CHANGES <= inp_qei_s.pin_changes)
-			{
-				update_speed( inp_qei_s ); // Update speed value with new time difference
-			} // if (START_UP_CHANGES <= inp_qei_s.pin_changes)
-			else
-			{
-				inp_qei_s.pin_changes++; // Update number of input pin changes
-				inp_qei_s.ang_speed = 1;	// Default speed value
-			} // if (START_UP_CHANGES <= inp_qei_s.pin_changes)
-		
-			inp_qei_s.prev_time = inp_qei_s.curr_time; // Store time stamp
-			inp_qei_s.prev_phases = cur_phases; // Store phase value
-		} // if (THR_TICKS_PER_QEI < inp_qei_s.diff_time)
+		inp_qei_s.prev_phases = cur_phases; // Store phase value
 	}	// if (cur_phases != inp_qei_s.prev_phases)
+
+	// Check for change in origin state
+	if (orig_flg != inp_qei_s.prev_orig)
+	{
+		update_origin_state( inp_qei_s ,orig_flg ); // update origin state
+	
+		check_for_missed_origin( inp_qei_s ); // NB May update inp_qei_s.ang_cnt & inp_qei_s.params.rev_cnt
+
+		inp_qei_s.prev_orig = orig_flg; // Store origin flag value
+	} // if (orig_flg != inp_qei_s.prev_orig)
+
+	// Check for change in error state
+	if (err_flg != inp_qei_s.params.err)
+	{
+		// Update estimate of error status using new error flag
+		estimate_error_status( inp_qei_s ,err_flg ); // NB Updates inp_qei_s.params.err
+	} // if (err_flg != inp_qei_s.params.err)
+
+ 	// The theta value returned to the client should be in the range:  0 <= ang_cnt < 360 degrees
+	inp_qei_s.params.theta = (inp_qei_s.ang_cnt & QEI_REV_MASK); // force into range [0..QEI_REV_MASK]
 
 	return;
 } // service_input_pins
@@ -920,9 +864,10 @@ static void print_smp_dbg( // MB~ Print debug sample
 	printstr(" LI="); printint( dbg_smp_s.lo_inc ); 
 	printstr(" HI="); printint( dbg_smp_s.hi_inc ); 
 	printstr(" PI="); printint( dbg_smp_s.phase_inc ); 
-	printstr(" AI="); printint( dbg_smp_s.out_ang_inc ); 
+	printstr(" AI="); printint( dbg_smp_s.new_ang_inc ); 
 	printstr(" CS="); printint( dbg_smp_s.curr_state ); 
 	printstr(" CFD="); printint( dbg_smp_s.confid ); 
+	printstr(" VEL="); printint( dbg_smp_s.veloc ); 
 	printstrln("");
 } // print_smp_dbg
 /*****************************************************************************/
@@ -937,6 +882,7 @@ static void print_all_dbg( // MB~ Print all debug info.
 
 	for(dbg_cnt=0; dbg_cnt<inp_qei_s.dd.cnt; dbg_cnt++)
 	{ 
+		printint(dbg_cnt); printstr(": "); 
 		print_smp_dbg( inp_qei_s ,inp_qei_s.dd.ss[dbg_cnt] );  
 	} // for dbg_cnt
 

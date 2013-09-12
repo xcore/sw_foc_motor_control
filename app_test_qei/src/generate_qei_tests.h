@@ -41,10 +41,10 @@
 #define DEC_TESTS 18 // No. of tests used for Deceleration check
 
 /** Define Scaling factor Used for Acceleration */
-#define ACC_SCALE 935 // 807 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
+#define ACC_SCALE 970 // 935 807 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
 
 /** Define Scaling factor Used for Deceleration */
-#define DEC_SCALE 1104 // 1300 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+#define DEC_SCALE 1113 // 1104 1300 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
 
 #define FILE_SIZE (STR_LEN * NUM_TEST_OPTS) // Size of PWM control file (in Bytes)
 

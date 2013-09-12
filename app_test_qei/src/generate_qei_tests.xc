@@ -29,7 +29,6 @@ static unsigned crc_rand(
 
 //MB~ acquire_lock(); printstr("R="); printintln( out_bit ); release_lock();
 return (tst_data_s.rnd < (1 << 29)); // NB 12% 1's
-//MB~ 		return 0;
 }
 /*****************************************************************************/
  static void parse_control_file( // Parse QEI control file and set up test options
@@ -322,8 +321,8 @@ static void do_qei_test( // Performs one QEI test
 	qei_val |= tst_data_s.orig; // OR with origin flag (Bit_2)
 	qei_val |= tst_data_s.nerr; // OR with error flag (Bit_3)
 
-//MB~	if (crc_rand(tst_data_s)) qei_val ^= 1; // Flip bit_0 with low probability
-//MB~		if (crc_rand(tst_data_s)) qei_val ^= 2; // Flip bit-1 with low probability 
+	if (crc_rand(tst_data_s)) qei_val ^= 1; // Flip bit_0 with low probability
+	if (crc_rand(tst_data_s)) qei_val ^= 2; // Flip bit-1 with low probability 
 
 	// Wait till test period elapsed ...
 
@@ -402,6 +401,8 @@ static void do_qei_vector( // Do all tests for one QEI test vector
 	// Loop through tests for current test vector
 	while(test_cnt)
 	{
+		test_cnt--; // Decrement test counter
+
 		// Check if origin expected to fire
 		if (0 == tst_data_s.cnt)
 		{ // Origin expected: Switch on Origin test
@@ -436,8 +437,6 @@ static void do_qei_vector( // Do all tests for one QEI test vector
 	
 			tst_data_s.prev_vect = tst_data_s.curr_vect; // update previous vector
 		} // if (new_vect)
-
-		test_cnt--; // Decrement test counter
 
 		do_qei_test( tst_data_s ,c_disp ,pb4_tst ); // Performs one QEI test
 
@@ -503,6 +502,7 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
 	assign_test_vector_speed( tst_data_s ,ACCEL ); // Set test vector to Accelerate
 
+// #ifdef MB
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing
 	do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,(START_UP_CHANGES - 1) ); // Start-up phase
 
@@ -546,13 +546,15 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Braking started, Switch on testing
 	do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,-1 ); // Deccelerate down to min. speed
+// #endif //MB~
+//MB~ assign_test_vector_spin( tst_data_s ,ANTI); // Set test vector to Clock-wise spin
 
 	assign_test_vector_speed( tst_data_s ,SLOW ); // Set test vector to constant Slow speed
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing while motor settles
-	do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,1 );
+	do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,3 );
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
-	do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,(MIN_TESTS - 1) );
+	do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,MIN_TESTS );
 
 	// Check if Anti-clockwise tests activated
 	if (tst_data_s.options.flags[TST_ANTI])

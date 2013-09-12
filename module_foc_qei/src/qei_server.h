@@ -75,8 +75,13 @@
 #define MIN_TICKS_PER_QEI (TICKS_PER_MIN_PER_QEI / MAX_SPEC_RPM) // Min. expected Ticks/QEI // 12 bits
 #define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
 
-#define MAX_CONFID 7 // Maximum confidence value
-#define MAX_QEI_STATE_ERR 8 // Maximum number of consecutive QEI state-transition errors allowed
+/* NB Confidence-level changes by 4, if a change of direction is detected. 
+ * e.g. For MAX_CONFID = 11  3 consecutive estimates in the reverse direction are required to change spin 
+ * 11 -> 7 -> 3 -> -1
+ */
+#define MAX_CONFID 11 // Maximum confidence value NB Choose odd positive number
+
+#define MAX_QEI_STATE_ERR 999 // MB~ 8 Maximum number of consecutive QEI state-transition errors allowed
 
 #define QEI_CNT_LIMIT (QEI_PER_REV + HALF_QEI_CNT) // 540 degrees of rotation
 
@@ -96,8 +101,8 @@
 #define MAX_TIME_DIFF (((MIN_RPM * TICKS_PER_SEC_PER_QEI) + (SECS_PER_MIN - 1)) / SECS_PER_MIN) // Round-up maximum expected time-diff (17-bits)
 
 // WARNING: Values used in test harness need to be less severe than these. e.g. 807 and 1300
-#define LO_QEI_SCALE 700 // Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
-#define HI_QEI_SCALE 1500 // Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+#define LO_QEI_SCALE 969 // 700 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
+#define HI_QEI_SCALE 1114 // 1500 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
 #define THIRD 341 // Scaling factor Used for calculating one third
 
 /** Define No. of Bits for Scaling Factor Divisor */
@@ -115,17 +120,20 @@ typedef unsigned long long U64_T; //MB~ Put this in app_global.h
 #define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
 #define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
 
-#define DBG_SIZ 512
+#define DBG_SIZ 384
 
-/** Different Motor Phases */
-typedef enum QEI_ENUM_TAG
+// WARNING. Clock-wise and Anti-Clockwise states must have same magnitude
+/** Different QEI decode states */
+typedef enum QEI_STATE_ETAG
 {
-  QEI_ANTI = -2,		// Anti-Clockwise Phase change
+  QEI_LO_ANTI = -3,	// Low probability Anti-Clockwise Phase change
+  QEI_HI_ANTI = -2,	// High probability Anti-Clockwise Phase change
   QEI_STALL,  // Same Phase
-  QEI_BIT_ERR,		// Jumped 2 Phases
-  QEI_JUMP,		// Jumped 2 Phases
-  QEI_CLOCK = 2 // Clockwise Phase change
-} QEI_ENUM_TYP;
+  QEI_BIT_ERR,		// Detected one or more bit errors 
+  QEI_JUMP,		// Detected 2 or more phase increments
+  QEI_HI_CLOCK = 2 // High probability Clockwise Phase change
+  QEI_LO_CLOCK = 3 // Low probability Clockwise Phase change
+} QEI_STATE_ETYP;
 
 typedef signed char ANG_INC_TYP; // Angular Increment type
 
@@ -143,9 +151,10 @@ typedef struct DBG_SMP_TAG // MB~ Dbg
 	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
 	ANG_INC_TYP phase_inc; // angular increment value
-	ANG_INC_TYP out_ang_inc; // angular increment value
+	ANG_INC_TYP new_ang_inc; // new angular increment value
 	QEI_ENUM_TYP curr_state; // Curremt QEI state
 	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
+	int veloc; // measured angular velocity
 } DBG_SMP_TYP;
 
 typedef struct ALL_DBG_TAG // MB~ Dbg
