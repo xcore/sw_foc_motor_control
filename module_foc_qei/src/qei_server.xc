@@ -169,6 +169,8 @@ static void update_qei_state( // Update QEI state	by estimating angular position
  *	Lo=3 Hi=3  |  LA_3  be_3  LC_3
  */
 
+	// Estimate angle increment ans spin direction ...
+
 	// Check for be_2 states
 	if ((1 < inp_qei_s.hi_inc) && (inp_qei_s.lo_inc < QEI_PHASE_MASK))
 	{ // Most likely 1 or more bit errors occured
@@ -215,7 +217,8 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 		} // switch(phase_inc)
 	} // else !((1 < inp_qei_s.hi_inc) && (inp_qei_s.lo_inc < QEI_PHASE_MASK))
 
-	// Evaluate most probable spin direction
+	// Estimate time difference between each QEI position traversed ...
+
 	switch(new_ang_inc)
 	{
 		case 1 :
@@ -236,7 +239,8 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 		break; // case 1
 	} // switch(new_ang_inc)
 
-	// If necessary, update time-diffs 
+	// If necessary, update time-diffs ...
+
 	tmp_inc = new_ang_inc;
 
 	while (1 < tmp_inc)
@@ -277,13 +281,16 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 		assert(MAX_QEI_STATE_ERR > inp_qei_s.state_errs); // Too Many QEI errors
 	} // else !(QEI_BIT_ERR != curr_state)
 
-	// Check spin-direction confidence
+	// Assign spin-direction based on sign of 'confidence'
 	if (0 > inp_qei_s.confid)
 	{ // NON Clock-wise
 		new_ang_inc = -new_ang_inc; // Decrement for Anti-clockwise spin
 	} // if (0 >  inp_qei_s.confid)
 
 	inp_qei_s.prev_state = curr_state; // Store old QEI state value
+
+	inp_qei_s.ang_inc = new_ang_inc; // Update angular increment value
+	inp_qei_s.ang_cnt += inp_qei_s.ang_inc; // Increment/Decrement angular position
 
 { // MB~ Dbg
 	assert(DBG_SIZ > inp_qei_s.dd.cnt); // ERROR: Debug array too small
@@ -300,9 +307,6 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 
 	inp_qei_s.dd.cnt++;
 }
-
-	inp_qei_s.ang_inc = new_ang_inc; // Update angular increment value
-	inp_qei_s.ang_cnt += inp_qei_s.ang_inc; // Increment/Decrement angular position
 } // update_qei_state
 /*****************************************************************************/
 static void update_speed( // Update speed estimate from time period. (Angular_speed in RPM) 
@@ -397,7 +401,7 @@ static void update_phase_state( // Update phase state
 		if (START_UP_CHANGES <= inp_qei_s.pin_changes)
 		{
 			// Check if we have good data
-			if (QEI_BIT_ERR != inp_qei_s.prev_state)
+			if (QEI_HI_CLOCK == abs(inp_qei_s.prev_state))
 			{
 				update_speed( inp_qei_s ); // Update speed value with new time difference
 			} // if (QEI_BIT_ERR != inp_qei_s.prev_state)
