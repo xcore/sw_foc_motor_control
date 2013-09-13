@@ -142,11 +142,11 @@
 #define VELOC_CLOSED 1 // Selects fully closed loop (both velocity, Iq and Id)
 #define IQ_ID_CLOSED 1 // Selcects Iq/Id closed-loop, velocity open-loop
 
-#ifdef USE_XSCOPE
+#if (USE_XSCOPE)
 	#define DEMO_LIMIT 100000 // XSCOPE
-#else // ifdef USE_XSCOPE
+#else // if (USE_XSCOPE)
 	#define DEMO_LIMIT 4000000
-#endif // else !USE_XSCOPE
+#endif // else !(USE_XSCOPE)
 
 #define STR_LEN 80 // String Length
 

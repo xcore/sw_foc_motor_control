@@ -66,11 +66,13 @@
 	#error Define. QEI_FILTER in app_global.h
 #endif
 
-#define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
-
 #ifndef MAX_SPEC_RPM 
 	#error Define. MAX_SPEC_RPM in app_global.h
 #endif // MAX_SPEC_RPM
+
+#define QEI_DBG 0 // Set flag for printout of debug info.
+
+#define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
 
 #define MIN_TICKS_PER_QEI (TICKS_PER_MIN_PER_QEI / MAX_SPEC_RPM) // Min. expected Ticks/QEI // 12 bits
 #define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
@@ -110,9 +112,6 @@
 #define SCALE_QEI_BITS 10 // No. of Bits for Scaling Factor Divisor
 #define HALF_QEI_SCALE (1 << (SCALE_QEI_BITS - 1)) // Half Scaling factor Used for Rounding
 
-typedef signed long long S64_T; //MB~ Put this in app_global.h
-typedef unsigned long long U64_T; //MB~ Put this in app_global.h
-
 #define INT16_BITS (sizeof(short) * BITS_IN_BYTE) // No. of bits in 16-bit integer
 #define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer
 #define INT64_BITS (sizeof(S64_T) * BITS_IN_BYTE) // No. of bits in signed 64-bit type!
@@ -143,14 +142,15 @@ typedef struct QEI_BUF_TAG //
 	unsigned time; // Time when port-pins read
 } QEI_BUF_TYP;
 
+#if (QEI_DBG)
 typedef struct DBG_SMP_TAG // MB~ Dbg
 {
 	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
 	int diff_time; // Difference between 2 adjacent time-stamps.
+	ANG_INC_TYP phase_inc; // angular increment value
 	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
-	ANG_INC_TYP phase_inc; // angular increment value
-	ANG_INC_TYP new_ang_inc; // new angular increment value
+	ANG_INC_TYP ang_inc; // new angular increment value
 	QEI_STATE_ETYP curr_state; // Curremt QEI state
 	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
 	int veloc; // measured angular velocity
@@ -161,11 +161,14 @@ typedef struct ALL_DBG_TAG // MB~ Dbg
 	DBG_SMP_TYP ss[DBG_SIZ]; // Array of all Debug data
 	int cnt; // Counts No of dbg array entries
 } ALL_DBG_TYP;
+#endif // QEI_DBG
 
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_DATA_TAG // 
 {
-	ALL_DBG_TYP dd; // All Debug data MB~
+#if (QEI_DBG)
+	ALL_DBG_TYP dd; // All Debug data
+#endif // QEI_DBG
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
 	QEI_PHASE_TYP inv_phase;	// Structure containing all inverse QEI phase values;
 	unsigned prev_phases; // Previous phase values
@@ -178,6 +181,7 @@ typedef struct QEI_DATA_TAG //
 	int prev_diff; // Previous Difference between 2 adjacent time-stamps.
 	int phase_index; // Converts [BA] phase value into circular index [0, 1, 2, 3]
 	int prev_index; // previous circular phase index
+	ANG_INC_TYP phase_inc; // Raw No. of angular increments from phase values
 	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
 	ANG_INC_TYP ang_inc; // angular increment value

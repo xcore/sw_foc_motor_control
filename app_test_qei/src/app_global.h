@@ -75,4 +75,7 @@
 #define MILLI_SEC (PLATFORM_REFERENCE_KHZ) // One milli-second in clock ticks
 #define MICRO_SEC (PLATFORM_REFERENCE_MHZ) // One micro-second in clock ticks
 
+typedef signed long long S64_T;
+typedef unsigned long long U64_T;
+
 #endif /* _APP_GLOBAL_H_ */

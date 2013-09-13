@@ -26,7 +26,9 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	unsigned tmp_diff; // temporary time difference
 
 
+#if (QEI_DBG)
 	inp_qei_s.dd.cnt = 0; // MB~ Dbg
+#endif //(QEI_DBG)
 
 	inp_qei_s.inv_phase = clkwise; // Assign table converting QEI Phase value to circular index
 
@@ -123,7 +125,6 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 	unsigned cur_phases // Current set of phase values
 ) // Return estimate of angle increment
 {
-	ANG_INC_TYP phase_inc; // Raw No. of angular increments from phase values
 	ANG_INC_TYP new_ang_inc; // New estimated angular increment value
 
 
@@ -142,7 +143,7 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 	inp_qei_s.phase_index = inp_qei_s.inv_phase.vals[cur_phases];	// Convert phase val into circ. index [0..QEI_PHASE_MASK]
 
 	// Force phase increment into range [0..QEI_PHASE_MASK]
-	phase_inc = (inp_qei_s.phase_index + NUM_QEI_PHASES - inp_qei_s.prev_index) & QEI_PHASE_MASK;
+	inp_qei_s.phase_inc = (inp_qei_s.phase_index + NUM_QEI_PHASES - inp_qei_s.prev_index) & QEI_PHASE_MASK;
 
 /* The Decision table for estimating angle increments and QEI-states looks like this ...
  *
@@ -171,9 +172,9 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 	{ // lo_inc = hi_inc,  NOT be_2 state
 		new_ang_inc = inp_qei_s.hi_inc; // Use more reliable time estimate
 
-		switch(phase_inc)
+		switch(inp_qei_s.phase_inc)
 		{
-			case 1 : // phase_inc
+			case 1 : // inp_qei_s.phase_inc
 				// Check for accurate data
 				if (1 == inp_qei_s.hi_inc)
 				{ // High accuracy (evaluated over 1 angle increment)
@@ -183,13 +184,13 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 				{ // Low accuracy (evaluated over 3 angle increments - due to intermediate errors)
 					inp_qei_s.curr_state = QEI_LO_ANTI; // Low accuracy Clock-wise increment
 				} // else !(1 == inp_qei_s.hi_inc)
-			break; // case phase_inc = 1
+			break; // case inp_qei_s.phase_inc = 1
 
-			case 2 : // phase_inc
+			case 2 : // inp_qei_s.phase_inc
 				inp_qei_s.curr_state = QEI_BIT_ERR; // 1 or 2 Bit-Errors occured
-			break; // case phase_inc = 2
+			break; // case inp_qei_s.phase_inc = 2
 
-			case 3 : // phase_inc
+			case 3 : // inp_qei_s.phase_inc
 				if (1 == inp_qei_s.hi_inc)
 				{ // High accuracy (evaulated over 1 angle increment)
 					inp_qei_s.curr_state = QEI_HI_ANTI; // High accuracy Anti-clockwise increment
@@ -198,19 +199,14 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 				{ // Low accuracy (evaluated over 3 angle increments - due to intermediate errors)
 					inp_qei_s.curr_state = QEI_LO_CLOCK; // Low accuracy Anti-clockwise increment
 				} // else !(1 == inp_qei_s.hi_inc)
-			break; // case phase_inc = 3
+			break; // case inp_qei_s.phase_inc = 3
 
 			default:
 				// NB we can NOT detect a change of 4 or zero increments
 				assert(0 == 1); // ERROR: Should not happen
 			break; // default
-		} // switch(phase_inc)
+		} // switch(inp_qei_s.phase_inc)
 	} // else !((1 < inp_qei_s.hi_inc) && (inp_qei_s.lo_inc < QEI_PHASE_MASK))
-
-{ // MB~ Dbg
-	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].phase_inc = phase_inc;
-	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].new_ang_inc = new_ang_inc; 
-}
 
 	return new_ang_inc; // Return estimate of angle increment
 } // estimate_angle_increment
@@ -313,19 +309,21 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 
 	inp_qei_s.ang_cnt += inp_qei_s.ang_inc; // Increment/Decrement angular position
 
-{ // MB~ Dbg
+#if (QEI_DBG)
 	assert(DBG_SIZ > inp_qei_s.dd.cnt); // ERROR: Debug array too small
 
 	safestrcpy( inp_qei_s.dd.ss[inp_qei_s.dd.cnt].dbg_str ,inp_qei_s.dbg_str );
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].diff_time =  inp_qei_s.diff_time;
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].lo_inc = inp_qei_s.lo_inc;
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].hi_inc = inp_qei_s.hi_inc;
+	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].phase_inc = inp_qei_s.phase_inc;
+	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].ang_inc = inp_qei_s.ang_inc; 
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].curr_state = inp_qei_s.curr_state; 
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].confid = inp_qei_s.confid; 
 	inp_qei_s.dd.ss[inp_qei_s.dd.cnt].veloc = inp_qei_s.params.veloc; 
 
 	inp_qei_s.dd.cnt++;
-}
+#endif //(QEI_DBG)
 } // update_qei_state
 /*****************************************************************************/
 static void update_speed( // Update speed estimate from time period. (Angular_speed in RPM) 
@@ -657,6 +655,7 @@ static void service_client_stop_request( // Acknowledge termination request from
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
 } // service_client_stop_request
+#if (QEI_DBG)
 /*****************************************************************************/
 static void print_smp_dbg( // MB~ Print debug sample
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
@@ -669,7 +668,7 @@ static void print_smp_dbg( // MB~ Print debug sample
 	printstr(" LI="); printint( dbg_smp_s.lo_inc ); 
 	printstr(" HI="); printint( dbg_smp_s.hi_inc );
 	printstr(" PI="); printint( dbg_smp_s.phase_inc ); 
-	printstr(" AI="); printint( dbg_smp_s.new_ang_inc ); 
+	printstr(" AI="); printint( dbg_smp_s.ang_inc ); 
 	printstr(" CS="); printint( dbg_smp_s.curr_state ); 
 	printstr(" CFD="); printint( dbg_smp_s.confid ); 
 	printstr(" VEL="); printint( dbg_smp_s.veloc ); 
@@ -693,6 +692,7 @@ static void print_all_dbg( // MB~ Print all debug info.
 
 	release_lock();
 } // print_all_dbg
+#endif //(QEI_DBG)
 /*****************************************************************************/
 #pragma unsafe arrays
 void foc_qei_do_multiple( // Get QEI data from motor and send to client
@@ -784,7 +784,9 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 		} // select
 	}	// while (do_loop)
 
+#if (QEI_DBG)
 	print_all_dbg( all_qei_s[0] ); // MB~ Dbg
+#endif //(QEI_DBG)
 
 	acquire_lock(); 
 	printstrln("");

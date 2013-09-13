@@ -112,4 +112,7 @@
 
 #define QUART_PWM_MAX (PWM_MAX_VALUE >> 2)  // Quarter of maximum PWM width value
 
+typedef signed long long S64_T;
+typedef unsigned long long U64_T;
+
 #endif /* _APP_GLOBAL_H_ */

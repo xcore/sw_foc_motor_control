@@ -51,8 +51,6 @@ typedef enum PID_ETAG
   NUM_PIDS    // Handy Value!-)
 } PID_ENUM;
 
-typedef signed long long S64_T;
-
 // Structure of Constant definitions for PID regulator
 typedef struct PID_CONST_TAG
 {
