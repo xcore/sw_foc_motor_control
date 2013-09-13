@@ -27,7 +27,6 @@ static unsigned crc_rand(
 {
   crc32( tst_data_s.rnd ,~0 ,0xEDB88320 );
 
-//MB~ acquire_lock(); printstr("R="); printintln( out_bit ); release_lock();
 return (tst_data_s.rnd < (1 << 29)); // NB 12% 1's
 }
 /*****************************************************************************/
@@ -502,7 +501,6 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
 	assign_test_vector_speed( tst_data_s ,ACCEL ); // Set test vector to Accelerate
 
-// #ifdef MB
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing
 	do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,(START_UP_CHANGES - 1) ); // Start-up phase
 
@@ -546,8 +544,6 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Braking started, Switch on testing
 	do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,-1 ); // Deccelerate down to min. speed
-// #endif //MB~
-//MB~ assign_test_vector_spin( tst_data_s ,ANTI); // Set test vector to Clock-wise spin
 
 	assign_test_vector_speed( tst_data_s ,SLOW ); // Set test vector to constant Slow speed
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing while motor settles

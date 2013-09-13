@@ -47,7 +47,6 @@
 // No. of bits used to represent down-scaling factor used to generate speed-err bound
 // #define SPEED_ERR_BITS 4 // NB 4 gives 6.25% error
 #define SPEED_ERR_BITS 6 // NB 6 gives 1.56% error
-// #define SPEED_ERR_BITS 7 // NB 7 gives 0.78% error
 
 /** Type containing all check data */
 typedef struct CHECK_QEI_TAG // Structure containing QEI check data

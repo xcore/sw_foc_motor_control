@@ -42,7 +42,6 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.ang_cnt = 0; // Reset counter indicating angular position of motor (from origin)
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
 	inp_qei_s.prev_inc = 0;
-	inp_qei_s.prev_ang = 0; // MB~
 	inp_qei_s.curr_state = QEI_BIT_ERR; // Initialise current QEI state
 	inp_qei_s.state_errs = 0; // Initialise counter for invalid QEI state transitions
 	inp_qei_s.status_errs = 0; // Initialise counter for QEI status errors
@@ -76,11 +75,6 @@ static void init_qei_data( // Initialise  QEI data for one motor
 		tmp_diff >>= 1;
 		diff_bits++;
 	} // while(0 < tmp_diff)
-
-	inp_qei_s.scale_bits = BITS_IN_BYTE;
-	inp_qei_s.half_scale = (unsigned)(1 << (inp_qei_s.scale_bits - 1)); // Used in  rounding
-
-	inp_qei_s.max_thr = ((U64_T)1 << (U64_T)(INT32_BITS - 1)); // 2^31
 
 	return;
 } // init_qei_data
@@ -124,12 +118,12 @@ static ANG_INC_TYP estimate_increment_bound( // Estimate bound on angular increm
 	return out_a_inc;
 } // estimate_increment_bound
 /*****************************************************************************/
-static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and spin direction
-	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei-state
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI data for one motor
 	unsigned cur_phases // Current set of phase values
 ) // Return estimate of angle increment
 {
-	ANG_INC_TYP phase_inc; // Estimated No. of angular increments from phase values
+	ANG_INC_TYP phase_inc; // Raw No. of angular increments from phase values
 	ANG_INC_TYP new_ang_inc; // New estimated angular increment value
 
 
@@ -141,19 +135,19 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and spi
 	// Find higher bound for angular increment, by assuming maximum acceleration
 	inp_qei_s.hi_inc = estimate_increment_bound( inp_qei_s ,LO_QEI_SCALE );
 
-	// NB We have now isolated the number of increments to the range [inp_qei_s.lo_inc .. inp_qei_s.hi_inc]
+	// NB We have now isolated the increment estimate to the range [inp_qei_s.lo_inc .. inp_qei_s.hi_inc]
 
 	inp_qei_s.prev_state = inp_qei_s.curr_state; // Store old QEI state value
 	inp_qei_s.prev_index = inp_qei_s.phase_index; // Store old circular phase index
 	inp_qei_s.phase_index = inp_qei_s.inv_phase.vals[cur_phases];	// Convert phase val into circ. index [0..QEI_PHASE_MASK]
 
-	// Force increment into range [0..QEI_PHASE_MASK]
+	// Force phase increment into range [0..QEI_PHASE_MASK]
 	phase_inc = (inp_qei_s.phase_index + NUM_QEI_PHASES - inp_qei_s.prev_index) & QEI_PHASE_MASK;
 
-/* The Decision table for estimating angle increments and spin directions looks like this ...
+/* The Decision table for estimating angle increments and QEI-states looks like this ...
  *
  *	Numbers are angle increments (QEI steps)
- *	H/L = High/Low probability,   A/C = Anti-clockwise/Clock-wise Spin,   be = Bit-Errors
+ *	H/L = High/Low probability,   A/C = Anti-clockwise/Clock-wise spin,   be = Bit-Errors
  *              
  *	  Bounds	 |    1			2			3  <-- Phase_inc	
  *	-----------+-------------------
@@ -165,16 +159,16 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and spi
  *	Lo=3 Hi=3  |  LA_3  be_3  LC_3
  */
 
-	// Estimate angle increment ans spin direction ...
+	// Estimate angle increment and QEI-state ...
 
 	// Check for be_2 states
 	if ((1 < inp_qei_s.hi_inc) && (inp_qei_s.lo_inc < QEI_PHASE_MASK))
 	{ // Most likely 1 or more bit errors occured
 		inp_qei_s.curr_state = QEI_BIT_ERR; // 1 or 2 Bit-Errors occured
-		new_ang_inc = 2; // Use 1-bit error time estimate
+		new_ang_inc = 2; // Use '1-bit error' time estimate
 	} // if ((1 < inp_qei_s.hi_inc) && (inp_qei_s.lo_inc < QEI_PHASE_MASK))
 	else
-	{ // lo_inc = hi_inc,  Non be_2 states
+	{ // lo_inc = hi_inc,  NOT be_2 state
 		new_ang_inc = inp_qei_s.hi_inc; // Use more reliable time estimate
 
 		switch(phase_inc)
@@ -183,11 +177,11 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and spi
 				// Check for accurate data
 				if (1 == inp_qei_s.hi_inc)
 				{ // High accuracy (evaluated over 1 angle increment)
-					inp_qei_s.curr_state = QEI_HI_CLOCK;
+					inp_qei_s.curr_state = QEI_HI_CLOCK; // High accuracy Clock-wise increment
 				} // if (1 == inp_qei_s.hi_inc)
 				else
 				{ // Low accuracy (evaluated over 3 angle increments - due to intermediate errors)
-					inp_qei_s.curr_state = QEI_LO_ANTI;
+					inp_qei_s.curr_state = QEI_LO_ANTI; // Low accuracy Clock-wise increment
 				} // else !(1 == inp_qei_s.hi_inc)
 			break; // case phase_inc = 1
 
@@ -198,11 +192,11 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and spi
 			case 3 : // phase_inc
 				if (1 == inp_qei_s.hi_inc)
 				{ // High accuracy (evaulated over 1 angle increment)
-					inp_qei_s.curr_state = QEI_HI_ANTI;
+					inp_qei_s.curr_state = QEI_HI_ANTI; // High accuracy Anti-clockwise increment
 				} // if (1 == inp_qei_s.hi_inc)
 				else
 				{ // Low accuracy (evaluated over 3 angle increments - due to intermediate errors)
-					inp_qei_s.curr_state = QEI_LO_CLOCK;
+					inp_qei_s.curr_state = QEI_LO_CLOCK; // Low accuracy Anti-clockwise increment
 				} // else !(1 == inp_qei_s.hi_inc)
 			break; // case phase_inc = 3
 
@@ -221,7 +215,7 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and spi
 	return new_ang_inc; // Return estimate of angle increment
 } // estimate_angle_increment
 /*****************************************************************************/
-static void estimate_time_difference( // Estimate time difference between each QEI positions traversed
+static void update_time_differences( // Update time differences between each QEI position traversed
 	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
 )
 {
@@ -231,12 +225,12 @@ static void estimate_time_difference( // Estimate time difference between each Q
 
 	switch(tmp_ang)
 	{
-		case 1 :
-			est_diff = inp_qei_s.t_dif_new;
+		case 1 : 
+			est_diff = inp_qei_s.t_dif_new; // As is (Divide by 1)
 		break; // case 1
 
 		case 2 :
-			est_diff = inp_qei_s.t_dif_new >> 1;
+			est_diff = inp_qei_s.t_dif_new >> 1; // Divide by 2
 		break; // case 2
 
 		case 3 : // QEI_PHASE_MASK 
@@ -251,6 +245,7 @@ static void estimate_time_difference( // Estimate time difference between each Q
 
 	// If necessary, update time-diffs ...
 
+	// Loop until angular increment is one
 	while (1 < tmp_ang)
 	{
 		inp_qei_s.t_dif_old = inp_qei_s.t_dif_cur;
@@ -260,7 +255,7 @@ static void estimate_time_difference( // Estimate time difference between each Q
 		tmp_ang--; // Decrement 'angular increment'
 	} // while (1 < tmp_ang)
 
-} // estimate_time_difference
+} // update_time_differences
 /*****************************************************************************/
 static void update_spin_state( // Update spin-state from QEI-state and 'confidence' value
 	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
@@ -288,7 +283,7 @@ static void update_spin_state( // Update spin-state from QEI-state and 'confiden
 		new_confid = inp_qei_s.confid + inp_qei_s.curr_state; // new (unclamped) confidence level
 		if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
 
-		if (0 < inp_qei_s.state_errs)  inp_qei_s.state_errs--; // Reduce error count
+		inp_qei_s.state_errs >>= 1; // Halve error count
 	} // if (QEI_BIT_ERR != inp_qei_s.curr_state)
 	else
 	{ // Invalid current spin state (BIT_ERROR, JUMP, or STALL)
@@ -311,8 +306,8 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 {
 	inp_qei_s.ang_inc = estimate_angle_increment( inp_qei_s ,cur_phases ); // Estimate angle increment and spin direction
 
-	// Estimate time difference between each QEI position traversed ...
-	estimate_time_difference( inp_qei_s ); 
+	// Update time differences for each QEI position traversed ...
+	update_time_differences( inp_qei_s ); 
 
 	update_spin_state( inp_qei_s ); // Update spin direction
 

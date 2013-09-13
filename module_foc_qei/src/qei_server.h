@@ -81,7 +81,8 @@
  */
 #define MAX_CONFID 11 // Maximum confidence value NB Choose odd positive number
 
-#define MAX_QEI_STATE_ERR 999 // MB~ 8 Maximum number of consecutive QEI state-transition errors allowed
+// WARNING: The noisier the input data the higher MAX_QEI_STATE_ERR has to be.
+#define MAX_QEI_STATE_ERR 128 // 128 for 1 in 8 bit errors. Max. consecutive errors allowed.
 
 #define QEI_CNT_LIMIT (QEI_PER_REV + HALF_QEI_CNT) // 540 degrees of rotation
 
@@ -167,43 +168,38 @@ typedef struct QEI_DATA_TAG //
 	ALL_DBG_TYP dd; // All Debug data MB~
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
 	QEI_PHASE_TYP inv_phase;	// Structure containing all inverse QEI phase values;
-	unsigned inp_pins; // Raw data values on input port pins
 	unsigned prev_phases; // Previous phase values
-	int phase_index; // Converts [BA] phase value into circular index [0, 1, 2, 3]
-	int prev_index; // previous circular phase index
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
+	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
+	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
+	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 
 	int diff_time; // Difference between 2 adjacent time-stamps.
 	int prev_diff; // Previous Difference between 2 adjacent time-stamps.
-	int pin_changes; // Counts pin changes during start-up phase
-	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 
-	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
-	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
+	int phase_index; // Converts [BA] phase value into circular index [0, 1, 2, 3]
+	int prev_index; // previous circular phase index
 	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
-	int scale_bits; // Bit-shift used when down-scaling
-	unsigned half_scale; // Used to round when down-scaling
-	U64_T max_thr; // down-scaling threshold
+	ANG_INC_TYP ang_inc; // angular increment value
+	unsigned prev_inc; // previous absolute angular increment value
 	QEI_STATE_ETYP curr_state; // Current QEI state
 	QEI_STATE_ETYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
 	int status_errs; // counter for invalid QEI status errors
+	int pin_changes; // Counts pin changes during start-up phase
 	int ang_cnt; // Counts angular position of motor (from origin)
-	int prev_ang; // MB~
-	ANG_INC_TYP ang_inc; // angular increment value
-	unsigned prev_inc; // previous absolute angular increment value
-	int theta; // angular position returned to client
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
-	int prev_orig; // Previous origin flag
 	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
+	int prev_orig; // Previous origin flag
 	int id; // Unique motor identifier
 	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
-	int dbg; // Debug
 
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error
 	int scale_err; // Scaling diffusion error 
 	int speed_err; // Speed diffusion error 
+
+	int dbg; // Debug
 } QEI_DATA_TYP;
 
 /*****************************************************************************/

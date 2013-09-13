@@ -4,5 +4,5 @@
 # NB Text after a hash is a comment
 #
 0 # Motor_ID: Select which motor to test [0 or 1]
-1 # Anti-clockwise tests
+0 # Anti-clockwise tests
 1 # Error-status tests
