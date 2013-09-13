@@ -184,6 +184,7 @@ typedef struct QEI_DATA_TAG //
 	int scale_bits; // Bit-shift used when down-scaling
 	unsigned half_scale; // Used to round when down-scaling
 	U64_T max_thr; // down-scaling threshold
+	QEI_STATE_ETYP curr_state; // Current QEI state
 	QEI_STATE_ETYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
 	int status_errs; // counter for invalid QEI status errors
