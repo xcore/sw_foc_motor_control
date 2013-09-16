@@ -77,23 +77,6 @@
 /** Define if Shared Memory is used to transfer PWM data from Client to Server */
 #define PWM_SHARED_MEM 0 // 0: Use c_pwm channel for pwm data transfer
 
-
-// Communications specific definitions ...
-
-/** Define the port for the control app to connect to */
-#define TCP_CONTROL_PORT 9595
-
-/** Define this to enable the Ethernet interface */
-#define USE_ETH 1
-
-/** Define this to enable the CAN interface */
-#define USE_CAN 0
-
-// Check that both interfaces are not defined
-#if (USE_CAN && USE_ETH)
-	#error Both CAN and Ethernet are enabled.
-#endif
-
 /* This is a bit of a cludge, we are using a non-standard configuration
  * where the timer on the tile for inner_loop() is running at 250 MHz,
  * but other timers are running at the default of 100 MHz.

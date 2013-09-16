@@ -19,9 +19,6 @@ on tile[INTERFACE_TILE]: LCD_INTERFACE_TYP lcd_ports = { PORT_SPI_CLK, PORT_SPI_
 on tile[INTERFACE_TILE]: in port p_btns = PORT_BUTTONS;
 on tile[INTERFACE_TILE]: out port p_leds = PORT_LEDS;
 
-//CAN and ETH reset port
-on tile[INTERFACE_TILE] : out port p_shared_rs = PORT_SHARED_RS;
-
 // PWM ports
 on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
 	= {	{PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
@@ -45,31 +42,6 @@ on tile[MOTOR_TILE]: buffered in port:4 pb4_qei[NUMBER_OF_MOTORS] = { PORT_M1_EN
 
 // Watchdog port
 on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used to control WatchDog chip
-
-#if (USE_ETH)
-	// These intializers are taken from the ethernet_board_support.h header for
-	// XMOS dev boards. If you are using a different board you will need to
-	// supply explicit port structure intializers for these values
-	ethernet_xtcp_ports_t xtcp_ports =
-  {	on ETHERNET_DEFAULT_TILE: OTP_PORTS_INITIALIZER,
-   														ETHERNET_DEFAULT_SMI_INIT,
-   														ETHERNET_DEFAULT_MII_INIT_lite,
-   														ETHERNET_DEFAULT_RESET_INTERFACE_INIT
-	};
-
-	// IP Config - change this to suit your network.  Leave with all 0 values to use DHCP/AutoIP
-	xtcp_ipconfig_t ipconfig = 
-	{	{ 0, 0, 0, 0 }, // ip address (eg 192,168,0,2)
-		{ 0, 0, 0, 0 }, // netmask (eg 255,255,255,0)
-		{ 0, 0, 0, 0 } // gateway (eg 192,168,0,1)
-	};
-#endif // (USE_ETH)
-
-#if (USE_CAN)
-	on tile[INTERFACE_TILE] : clock p_can_clk = XS1_CLKBLK_4;
-	on tile[INTERFACE_TILE] : buffered in port:32 pb32_can_rx = PORT_CAN_RX;
-	on tile[INTERFACE_TILE] : port p_can_tx = PORT_CAN_TX;
-#endif // (USE_CAN)
 
 #if (USE_XSCOPE)
 /*****************************************************************************/
@@ -97,7 +69,7 @@ void xscope_user_init()
 */
 	); // xscope_register 
 
-	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
+//	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
 } // xscope_user_init
 /*****************************************************************************/
 #endif // (USE_XSCOPE)
@@ -105,41 +77,20 @@ void xscope_user_init()
 /*****************************************************************************/
 int main ( void ) // Program Entry Point
 {
-	chan c_wd; // WatchDog Channel connecting Client & Server 
 	chan c_speed[NUMBER_OF_MOTORS];
-	chan c_commands[NUMBER_OF_MOTORS];
+	chan c_commands; // chan c_commands[NUMBER_OF_MOTORS]; //MB~ Hack till 'XTAG commands' implemented
+	chan c_wd[NUMBER_OF_MOTORS]; // WatchDog channels
 	chan c_pwm2adc_trig[NUMBER_OF_MOTORS];
 	chan c_pwm[NUMBER_OF_MOTORS];
 	streaming chan c_hall[NUMBER_OF_MOTORS];
 	streaming chan c_qei[NUMBER_OF_MOTORS];
 	streaming chan c_adc_cntrl[NUMBER_OF_MOTORS];
 
-#if (USE_ETH)
-	chan c_ethernet[1]; // NB Need to declare an array of 1 element, because ethernet_xtcp_server() expects array reference 
-#endif // (USE_ETH)
-
-#if (USE_CAN)
-	chan c_rxChan, c_txChan;
-#endif // (USE_CAN)
 
 	par
 	{
 		on tile[INTERFACE_TILE] :
 		par {
-#if (USE_ETH)
-			// MB~ WARNING: Ethernet not yet tested
-			foc_comms_init_eth( xtcp_ports ,ipconfig ,c_ethernet ); // Ethernet & TCP/IP server core
-	
-			foc_comms_do_eth( c_commands, c_ethernet[0] ); // Core to extract Motor commands from ethernet commands
-#endif // (USE_ETH)
-	
-#if (USE_CAN)
-			// MB~ WARNING: CAN not yet tested
-			foc_comms_init_can( c_rxChan, c_txChan, p_can_clk, pb32_can_rx, p_can_tx, p_shared_rs ); // Can server core
-	
-			foc_comms_do_can( c_commands, c_rxChan, c_txChan ); // Core to extract Motor commands from CAN commands
-#endif // (USE_CAN)
-	
 			foc_display_shared_io_manager( c_speed ,lcd_ports ,p_btns, p_leds );
 	
 			/* NB Ideally WatchDog Server Core should be on Tile most likely to Hang,
@@ -149,28 +100,29 @@ int main ( void ) // Program Entry Point
 		} // on tile[INTERFACE_TILE]
 
 		on tile[MOTOR_TILE] : 
-		par {
-			run_motor( 0 ,null ,c_pwm[0] ,c_hall[0] ,c_qei[0] ,c_adc_cntrl[0] ,c_speed[0] ,c_commands[0] ); // Special case of 1st Motor
+		{
+		  init_locks(); // Initialise Mutex for display
 
-			// Loop through remaining motors
-			par (int motor_cnt=1; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-			{
-				run_motor( motor_cnt ,c_wd ,c_pwm[motor_cnt] ,c_hall[motor_cnt] ,c_qei[motor_cnt] 
-					,c_adc_cntrl[motor_cnt] ,c_speed[motor_cnt] ,c_commands[motor_cnt] );
-			} // par motor_cnt
+			par {
+				// Loop through all motors
+				par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+				{
+					run_motor( motor_cnt ,c_wd[motor_cnt]  ,c_pwm[motor_cnt] ,c_hall[motor_cnt] ,c_qei[motor_cnt] 
+						,c_adc_cntrl[motor_cnt] ,c_speed[motor_cnt] ,c_commands ); //MB~ Was ,c_commands[motor_cnt] );
+		
+					foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] 
+						,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
+				} // par motor_cnt
 	
-			// Loop through all motors
-			par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-			{
-				foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
-			} // par motor_cnt
+		
+				foc_qei_do_multiple( c_qei, pb4_qei );
+		
+				foc_hall_do_multiple( c_hall ,p4_hall );
+		
+				foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
+			} // par
 
-	
-			foc_qei_do_multiple( c_qei, pb4_qei );
-	
-			foc_hall_do_multiple( c_hall ,p4_hall );
-	
-			foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
+		  free_locks(); // Free Mutex for display
 		} // on tile[MOTOR_TILE]
 	} // par
 

@@ -260,7 +260,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 /*****************************************************************************/
 void run_motor ( // run the motor inner loop
 	unsigned motor_id,
-	chanend? c_wd,
+	chanend c_wd,
 	chanend c_pwm,
 	streaming chanend c_hall,
 	streaming chanend c_qei,

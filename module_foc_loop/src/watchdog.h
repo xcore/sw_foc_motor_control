@@ -67,11 +67,11 @@ typedef struct WD_DATA_TAG //
  * NB The only way to disable the WatchDog Circuit, is to Stop toggling WD_TICK
  * If the WatchDog becomes disabled, it can only be re-enabled by restarting the program main()
  *
- * \param c_wd the control channel for controlling the watchdog
- * \param wd the control port for the watchdog device
+ * \param c_wd  // Array of control channels for controlling the watchdog
+ * \param wd  // control port for the watchdog device
  */
 void foc_loop_do_wd( // Controls the WatchDog circuit (2 chips)
-	chanend c_wd, // WatchDog control Channel connecting Client & Server 
+	chanend c_wd[NUMBER_OF_MOTORS], // Array of WatchDog channels
 	out port p2_wd // 2-bit port used to control WatchDog circuit (2 chips)
 );
 /*****************************************************************************/

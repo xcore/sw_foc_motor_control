@@ -115,6 +115,7 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 
 				if (speed_change) 
 				{
+#ifdef DEPRECIATED
 					if (1 == USE_CAN)
 					{
 						lcd_draw_text_row( "  XMOS Demo 2013: CAN\n" ,0 ,lcd_interface_s );
@@ -124,6 +125,7 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 					{
 						lcd_draw_text_row( "  XMOS Demo 2013: ETH\n" ,0 ,lcd_interface_s );
 					} // if (1 == USE_ETH)
+#endif // DEPRECIATED
 
 					// update old speed parameters ...
 

@@ -17,7 +17,7 @@
 /*****************************************************************************/
 static void init_wd( // Initialise WatchDog circuit (2 chips)
 	WD_DATA_TYP &wd_data_s, // Reference to structure containing data for WatchDog circuit
-	chanend c_wd, // WatchDog Channel connecting Client & Server 
+	chanend c_wd[NUMBER_OF_MOTORS], // Array of WatchDog channels
 	out port p2_wd // 2-bit port used to control WatchDog circuit (2 chips)
 )
 {
@@ -30,7 +30,7 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 	wd_data_s.shared_out = 0; // Clear (Bit_0 and Bit_1 of) data for shared output port 
 
 	// Wait for Initialisation command from Client
-	c_wd :> cmd;
+	c_wd[1] :> cmd;
 	assert (WD_CMD_INIT == cmd); // Un-expected command Received
 
 	// Initialise	WatchDog ...
@@ -52,7 +52,7 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 /*****************************************************************************/
 static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have warmed-up
 	WD_DATA_TYP &wd_data_s, // Reference to structure containing data for WatchDog circuit
-	chanend c_wd, // WatchDog Channel connecting Client & Server 
+	chanend c_wd[NUMBER_OF_MOTORS], // Array of WatchDog channels
 	out port p2_wd // 2-bit port used to control WatchDog circuit (2 chips)
 )
 {
@@ -67,7 +67,7 @@ static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have war
 		select
 		{
 			// Check for a command from the Client
-			case c_wd :> cmd:
+			case c_wd[1] :> cmd:
 				switch(cmd)
 				{
 					case WD_CMD_DISABLE : // Actively disable the WatchDog circuit
@@ -83,7 +83,7 @@ static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have war
 						assert( 0 == 1 ); // Unexpected Command Received
 					break; // default
 				} // switch(cmd)
-			break; // case c_wd :> cmd:
+			break; // case c_wd[1] :> cmd:
 
 			// Check if periodic tick required
 			case chronometer when timerafter(wd_data_s.time + HALF_TICK_PERIOD) :> wd_data_s.time:
@@ -99,7 +99,7 @@ static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have war
 /*****************************************************************************/
 static void run_wd_armed( // Run WatchDog fully armed until STOP request received
 	WD_DATA_TYP &wd_data_s, // Reference to structure containing data for WatchDog circuit
-	chanend c_wd, // WatchDog Channel connecting Client & Server 
+	chanend c_wd[NUMBER_OF_MOTORS], // Array of WatchDog channels
 	out port p2_wd // 2-bit port used to control WatchDog circuit (2 chips)
 )
 {
@@ -112,7 +112,7 @@ static void run_wd_armed( // Run WatchDog fully armed until STOP request receive
 	while (WD_STOP != wd_data_s.state)
 	{
 		// Wait for a command from the Client
-		c_wd :> cmd;
+		c_wd[1] :> cmd;
 
 		switch(cmd)
 		{
@@ -135,12 +135,13 @@ static void run_wd_armed( // Run WatchDog fully armed until STOP request receive
 } // run_wd_armed 
 /*****************************************************************************/
 void foc_loop_do_wd( // Controls WatchDog circuit (2 chips)
-	chanend c_wd, // WatchDog Channel connecting Client & Server 
+	chanend c_wd[NUMBER_OF_MOTORS], // Array of WatchDog channels
 	out port p2_wd // 2-bit port used to control WatchDog circuit (2 chips)
 )
 {
 	WD_DATA_TYP wd_data_s; // Structure containing data for WatchDog circuit
 
+//MB~ Once both motors are running, need to update watchdog to monitor both motors. 
 
 	// Initialise WatchDog circuit
 	init_wd( wd_data_s ,c_wd ,p2_wd );

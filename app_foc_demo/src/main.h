@@ -27,15 +27,6 @@
 #include "qei_server.h"
 #include "pwm_server.h"
 
-#if (USE_ETH)
-#include "control_comms_eth.h"
-#include "ethernet_board_support.h"
-#endif // (USE_ETH)
-
-#if (USE_CAN)
-#include "control_comms_can.h"
-#endif // (USE_CAN)
-
 // Define where everything is
 #define INTERFACE_TILE 0
 #define MOTOR_TILE 1

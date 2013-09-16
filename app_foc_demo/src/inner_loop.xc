@@ -870,8 +870,8 @@ static void use_motor ( // Start motor, and run step through different motor sta
 	streaming chanend c_qei, 
 	streaming chanend c_adc_cntrl, 
 	chanend c_speed, 
-	chanend c_can_eth_shared,
-	chanend? c_wd
+	chanend c_commands,
+	chanend c_wd
 )
 {
 	unsigned command;	// Command received from the control interface
@@ -908,32 +908,32 @@ static void use_motor ( // Start motor, and run step through different motor sta
 
 		break; // case c_speed :> command:
 
-		case c_can_eth_shared :> command:		//This case responds to CAN or ETHERNET commands
+		case c_commands :> command:		//This case responds to CAN or ETHERNET commands
 #pragma xta label "foc_loop_shared_comms"
 			if(command == IO_CMD_GET_VALS)
 			{
-				c_can_eth_shared <: motor_s.qei_params.veloc;
-				c_can_eth_shared <: motor_s.adc_params.vals[ADC_PHASE_A];
-				c_can_eth_shared <: motor_s.adc_params.vals[ADC_PHASE_B];
+				c_commands <: motor_s.qei_params.veloc;
+				c_commands <: motor_s.adc_params.vals[ADC_PHASE_A];
+				c_commands <: motor_s.adc_params.vals[ADC_PHASE_B];
 			}
 			else if(command == IO_CMD_GET_VALS2)
 			{
-				c_can_eth_shared <: motor_s.adc_params.vals[ADC_PHASE_C];
-				c_can_eth_shared <: motor_s.pid_veloc;
-				c_can_eth_shared <: motor_s.pid_Id;
-				c_can_eth_shared <: motor_s.pid_Iq;
+				c_commands <: motor_s.adc_params.vals[ADC_PHASE_C];
+				c_commands <: motor_s.pid_veloc;
+				c_commands <: motor_s.pid_Id;
+				c_commands <: motor_s.pid_Iq;
 			}
 			else if (command == IO_CMD_SET_SPEED)
 			{
-				c_can_eth_shared :> motor_s.req_veloc;
+				c_commands :> motor_s.req_veloc;
 				motor_s.half_veloc = (motor_s.req_veloc >> 1);
 			}
 			else if (command == IO_CMD_GET_FAULT)
 			{
-				c_can_eth_shared <: motor_s.err_data.err_flgs;
+				c_commands <: motor_s.err_data.err_flgs;
 			}
 
-		break; // case c_can_eth_shared :> command:
+		break; // case c_commands :> command:
 
 		default:	// This case updates the motor state
 			motor_s.iters++; // Increment No. of iterations 
@@ -1035,11 +1035,7 @@ if (motor_s.xscope) xscope_int( 2 ,motor_s.qei_params.veloc );
 
 		}	// select
 
-		// Check which core has WatchDog channel
-		if (!isnull(c_wd)) 
-		{
-			c_wd <: WD_CMD_TICK; // Keep WatchDog alive
-		} // if (!isnull(c_wd)) 
+		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
 
 	}	// while (STOP != motor_s.state)
 } // use_motor
@@ -1072,19 +1068,25 @@ static void error_handling( // Prints out error messages
 #pragma unsafe arrays
 void run_motor ( 
 	unsigned motor_id,
-	chanend? c_wd,
+	chanend c_wd,
 	chanend c_pwm,
 	streaming chanend c_hall, 
 	streaming chanend c_qei, 
 	streaming chanend c_adc_cntrl, 
 	chanend c_speed, 
-	chanend c_can_eth_shared 
+	chanend c_commands 
 )
 {
 	MOTOR_DATA_TYP motor_s; // Structure containing motor data
 	timer chronometer;	/* Timer */
 	unsigned ts1;	/* timestamp */
 
+
+	acquire_lock(); 
+	printstr("                      Motor_");
+	printint(motor_id);
+	printstrln(" Starts");
+	release_lock();
 
 	// Pause to allow the rest of the system to settle
 	{
@@ -1093,11 +1095,7 @@ void run_motor (
 		chronometer when timerafter(ts1 + (MILLI_400_SECS << 1) + (256 * thread_id)) :> void;
 	}
 
-	// Check which core has WatchDog channel
-	if (!isnull(c_wd))
-	{
-		c_wd <: WD_CMD_INIT;	// Signal WatchDog to Initialise ...
-	}	// if (!isnull(c_wd))
+	c_wd <: WD_CMD_INIT;	// Signal WatchDog to Initialise ...
 
 	// Pause to allow the rest of the system to settle
 	{
@@ -1110,13 +1108,8 @@ void run_motor (
 
 	init_pwm( motor_s.pwm_comms ,c_pwm ,motor_id );	// Initialise PWM communication data
 
-	if (motor_id) 
-	{
-		printstrln( "Demo Starts" ); // NB Prevent duplicate display lines
-	}	if (motor_id)
-
 	// start-and-run motor
-	use_motor( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl ,c_speed ,c_can_eth_shared ,c_wd );
+	use_motor( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl ,c_speed ,c_commands ,c_wd );
 
 	// NB At present only Motor_1 works
 	if (motor_id)

@@ -77,7 +77,9 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 
 
 	acquire_lock(); 
-	printstrln("PWM Server Starts");
+	printstr("PWM Server_");
+	printint(motor_id);
+	printstrln(" Starts");
 	release_lock();
 
 	pwm_serv_s.id = motor_id; // Assign motor identifier
