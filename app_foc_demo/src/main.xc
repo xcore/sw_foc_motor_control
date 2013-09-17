@@ -47,17 +47,17 @@ on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used 
 /*****************************************************************************/
 void xscope_user_init()
 {
-	xscope_register( 9
-		,XSCOPE_CONTINUOUS, "SERVER", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "CLIENT", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "adc_c", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "set_Vq", XSCOPE_INT , "n"
+	xscope_register( 4
+		,XSCOPE_CONTINUOUS, "pinsHall", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "velQEI", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "pinsQEI", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "State", XSCOPE_INT , "n"
+/*
 		,XSCOPE_CONTINUOUS, "pid_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "req_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "est_Iq", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "pid_Iq", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "targ_Iq", XSCOPE_INT , "n"
-/*
 		,XSCOPE_CONTINUOUS, "hall_0", XSCOPE_INT , "n"
 
 		,XSCOPE_CONTINUOUS, "rev_cnt", XSCOPE_INT , "n"
@@ -69,7 +69,7 @@ void xscope_user_init()
 */
 	); // xscope_register 
 
-//	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
+	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
 } // xscope_user_init
 /*****************************************************************************/
 #endif // (USE_XSCOPE)

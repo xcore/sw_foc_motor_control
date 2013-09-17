@@ -126,15 +126,18 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 ) // Return estimate of angle increment
 {
 	ANG_INC_TYP new_ang_inc; // New estimated angular increment value
+	ANG_INC_TYP tmp_inc; // Used to circumvents 'ambiguous evaluation' error
 
 
 	// Determine probable range of angular increment values from time-differences ...
 
 	// Find lower bound for angular increment, by assuming maximum deceleration
-	inp_qei_s.lo_inc = estimate_increment_bound( inp_qei_s ,HI_QEI_SCALE );
+	tmp_inc = estimate_increment_bound( inp_qei_s ,HI_QEI_SCALE );
+	inp_qei_s.lo_inc = tmp_inc;
 
 	// Find higher bound for angular increment, by assuming maximum acceleration
-	inp_qei_s.hi_inc = estimate_increment_bound( inp_qei_s ,LO_QEI_SCALE );
+	tmp_inc = estimate_increment_bound( inp_qei_s ,LO_QEI_SCALE );
+	inp_qei_s.hi_inc = tmp_inc;
 
 	// NB We have now isolated the increment estimate to the range [inp_qei_s.lo_inc .. inp_qei_s.hi_inc]
 
@@ -300,7 +303,11 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 	unsigned cur_phases // Current set of phase values
 )
 {
-	inp_qei_s.ang_inc = estimate_angle_increment( inp_qei_s ,cur_phases ); // Estimate angle increment and spin direction
+	ANG_INC_TYP tmp_inc; // Used to circumvents 'ambiguous evaluation' error
+
+
+	tmp_inc = estimate_angle_increment( inp_qei_s ,cur_phases ); // Estimate angle increment and spin direction
+	inp_qei_s.ang_inc = tmp_inc;
 
 	// Update time differences for each QEI position traversed ...
 	update_time_differences( inp_qei_s ); 
@@ -736,6 +743,8 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 				chronometer :> buffer[write_off].time;	// Get new time stamp as soon as possible
 				buffer[write_off].inp_pins = inp_pins[motor_id];
 				buffer[write_off].id = motor_id;	
+
+if (motor_id) xscope_probe_data( 2 ,inp_pins[motor_id] );
 
 				// new QEI data written to buffer
 				write_cnt++; // Increment write counter.  WARNING No overflow check

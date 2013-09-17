@@ -147,12 +147,12 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 			{
 				service_hall_input_pins( all_hall_data[motor_id] ,hall_bufs[motor_id] );
 
-#if (USE_XSCOPE)
+#if (HALL_XSCOPE)
 				// NB These signals have to be registered in the file main.xc for the target application
-				xscope_int( 0 ,hall_bufs[motor_id] );
-				xscope_int( 1 ,all_hall_data[motor_id].params.hall_val );
-				xscope_int( 2 ,all_hall_data[motor_id].params.err );
-#endif // (USE_XSCOPE)
+				xscope_probe_data( 0 ,hall_bufs[motor_id] );
+				xscope_probe_data( 1 ,all_hall_data[motor_id].params.hall_val );
+				xscope_probe_data( 2 ,all_hall_data[motor_id].params.err );
+#endif // (HALL_XSCOPE)
 			} // case
 			break;
 

@@ -97,7 +97,7 @@
 #define QEI_COEF_DIV (1 << QEI_COEF_BITS) // Coef divisor
 #define QEI_HALF_COEF (QEI_COEF_DIV >> 1) // Half of Coef divisor
 
-#define MAX_QEI_STATUS_ERR 3  // Maximum number of consecutive QEI status errors allowed
+#define MAX_QEI_STATUS_ERR 30000  // 3 Maximum number of consecutive QEI status errors allowed
 
 #define MIN_RPM 50 // In order to estimate the angular position, a minimum expected RPM has to be specified
 // Now we can calculate the maximum expected time difference (in ticks) between QEI phase changes
@@ -116,7 +116,7 @@
 #define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer
 #define INT64_BITS (sizeof(S64_T) * BITS_IN_BYTE) // No. of bits in signed 64-bit type!
 
-#define QEI_BUF_BITS 5 // Use power-of-2 size to get all 1's mask
+#define QEI_BUF_BITS 11 // Use power-of-2 size to get all 1's mask
 #define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
 #define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
 
