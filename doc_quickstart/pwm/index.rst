@@ -101,7 +101,7 @@ An example of working test output from a working PWM component can be found in a
 Using The ``Value Change Dump`` (VCD) File
 ------------------------------------------
 
-Having run the testbench once, now re-run it to dump a VCD trace so that the waveform output of the PWM can be visualised. This can require a lot of memory and may slow down the simulator so first ensure enough memory has been requested in the xTIMEcomposer init file. Go to the root directory where the XMOS tools are installed. Then edit file ``xtimecomposer_bin/xtimecomposer.exe.ini`` and ensure the requested memory is at least 2 GBytes (``-Xmx2048m``)
+Having run the testbench once, now re-run it to dump a VCD trace so that the waveform output of the PWM can be visualised. 
 
 Now launch xTIMEcomposer and switch on VCD tracing as follows
 
