@@ -44,7 +44,7 @@ typedef enum DISP_INP_ENUM_TAG
 typedef enum PWM_TEST_ETAG
 {
   TST_MOTOR = 0,	// Select which motor to test
-  TST_ANTI,				// Test Anti-Clockwise spin
+  TST_NEGA,				// Test Negative-spin
   TST_ERROR,			// Test Error-Status
   NUM_TEST_OPTS	// Handy Value!-)
 } PWM_TEST_ENUM;
@@ -73,8 +73,8 @@ typedef enum ORIG_QEI_ETAG
 /** Enumeration of QEI Spin states */
 typedef enum SPIN_QEI_ETAG
 {
-  ANTI = 0,				// Anti-clockwise
-  CLOCK = 1,				// Clock-wise
+  NEGATIVE = 0,				// Negative-spin
+  POSITIVE = 1,				// Positive-spin
   NUM_QEI_SPINS = 2	// Handy Value!-)
 } SPIN_QEI_ENUM;
 

@@ -36,6 +36,8 @@
 
 // Motor specific definitions ... (Currently Set for LDO Motors)
 
+#define LDO_MOTOR_SPIN 1 // Motor spins like an LDO Motor
+
 /** Define the number of pole-pairs in motor */
 #define NUM_POLE_PAIRS 4
 
@@ -66,6 +68,7 @@
 // PWM specific definitions ...
 
 /** Define the resolution of PWM (WARNING: effects update rate as tied to ref clock) */
+//MB~ #define PWM_RES_BITS 12 // Number of bits used to define number of different PWM pulse-widths
 #define PWM_RES_BITS 12 // Number of bits used to define number of different PWM pulse-widths
 #define PWM_MAX_VALUE (1 << PWM_RES_BITS) // No.of different PWM pulse-widths
 

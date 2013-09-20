@@ -14,12 +14,19 @@
 
 #include "generate_qei_tests.h"
 
-/*	[BA] order is 00 -> 01 -> 11 -> 10  Clockwise direction
- *	[BA] order is 00 -> 10 -> 11 -> 01  Anti-Clockwise direction
+/* This code adopts the Traditional convention that 
+ * the positive spin direction is the one where Phase_A leads Phase_B.
+ * E.g. Phase_A goes high one bit-change earlier than Phase_B goes high.
+ * This definition is based on time, and is NOT dependent on spatial orientation of the motor!-)
+ *
+ * WARNING: Traditionally Phase_A is the Most Significant Bit (MSB). 
+ * However, the QEI server S/W is designed to work with the XMOS motor board.
+ * This board has Phase_A as the Least Significant Bit (LSB).
+ * So the generated bit changes are as follows:-
+ *
+ *	[BA] order is  00 -> 01 -> 11 -> 10  Positive-spin
+ *	[BA] order is  00 -> 10 -> 11 -> 01  Negative-spin
  */
-
-
-
 /*****************************************************************************/
 static unsigned crc_rand(
 	GENERATE_TST_TYP &tst_data_s // Reference to structure of QEI test data
@@ -161,10 +168,10 @@ static void init_test_data( // Initialise QEI Test data
 	streaming chanend c_tst // Channel for sending test vecotrs to test checker
 )
 {
-	QEI_PHASE_TYP clkwise = {{ 0 ,1 ,3 ,2 }};	// Array of QEI Phase values [BA} (NB Increment for clock-wise rotation)
+	QEI_PHASE_TYP bit_patterns = {{ 0 ,1 ,3 ,2 }}; // Array of BA Bit-patterns for QEI phases (NB Increment for +ve spin)
 
 
-	tst_data_s.phases = clkwise; // Assign QEI Phase values (NB Increment for clock-wise rotation)
+	tst_data_s.phases = bit_patterns; // Assign QEI Phase values (NB Increment for Positive rotation)
 
 	// Convert Speed values to Ticks/QEI_position values
 	tst_data_s.hi_ticks = speed_to_ticks( HIGH_SPEED ); // Convert HIGH_SPEED to ticks
@@ -234,13 +241,13 @@ static void assign_test_vector_spin( // Assign Spin-state of test vector
 {
 	switch( inp_spin )
 	{
-		case CLOCK: // Clock-wise
-			tst_data_s.inc = 1; // Increment for Clock-Wise direction
-		break; // case CLOCK:
+		case POSITIVE: // Positive-spin
+			tst_data_s.inc = 1; // Increment for Positive-spindirection
+		break; // case POSITIVE:
 
-		case ANTI: // Anti-clockwise
-			tst_data_s.inc = -1; // Decrement for Anti-Clockwise direction
-		break; // case ANTI:
+		case NEGATIVE: // Negative-spin
+			tst_data_s.inc = -1; // Decrement for Negative-spindirection
+		break; // case NEGATIVE:
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
@@ -498,7 +505,7 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 	// NB These tests assume QEI_FILTER = 0
 	assign_test_vector_origin( tst_data_s ,ORIG_OFF ); // Set test vector to No Origin
 	assign_test_vector_error( tst_data_s ,QEI_ERR_OFF ); // Set test vector to NO errors
-	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
+	assign_test_vector_spin( tst_data_s ,POSITIVE ); // Set test vector to Positive spin
 	assign_test_vector_speed( tst_data_s ,ACCEL ); // Set test vector to Accelerate
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing
@@ -552,10 +559,10 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
 	do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,MIN_TESTS );
 
-	// Check if Anti-clockwise tests activated
-	if (tst_data_s.options.flags[TST_ANTI])
-	{ // Do Anti-Clockwise test
-		assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
+	// Check if negative-spin tests activated
+	if (tst_data_s.options.flags[TST_NEGA])
+	{ // Do Negative-spin test
+		assign_test_vector_spin( tst_data_s ,NEGATIVE ); // Set test vector to Negative-spin spin
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, until server is confident of new spin direction
 		do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,(MAX_CONFID + 2) );
 	
@@ -582,7 +589,7 @@ static void gen_motor_qei_test_data( // Generate QEI Test data for one motor
 	
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Braking started, Switch on testing
 		do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,-1 ); // Deccelerate down to min. speed
-	} // if (tst_data_s.options.flags[TST_ANTI])
+	} // if (tst_data_s.options.flags[TST_NEGA])
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
 	do_qei_vector( tst_data_s ,c_tst ,c_disp ,pb4_tst ,1 );

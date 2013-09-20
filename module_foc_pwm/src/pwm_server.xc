@@ -127,7 +127,6 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 		 */
     // Rising edges - these have negative time offsets - 44 Cycles
 		p32_pwm_hi[PWM_PHASE_A] @ (PORT_TIME_TYP)(pwm_serv_s.ref_time + pwm_ctrl_s.buf_data[pwm_comms_s.buf].rise_edg.phase_data[PWM_PHASE_A].hi.time_off) <: pwm_ctrl_s.buf_data[pwm_comms_s.buf].rise_edg.phase_data[PWM_PHASE_A].hi.pattern;
-
 		p32_pwm_lo[PWM_PHASE_A] @ (PORT_TIME_TYP)(pwm_serv_s.ref_time + pwm_ctrl_s.buf_data[pwm_comms_s.buf].rise_edg.phase_data[PWM_PHASE_A].lo.time_off) <: pwm_ctrl_s.buf_data[pwm_comms_s.buf].rise_edg.phase_data[PWM_PHASE_A].lo.pattern;
 	
 		p32_pwm_hi[PWM_PHASE_B] @ (PORT_TIME_TYP)(pwm_serv_s.ref_time + pwm_ctrl_s.buf_data[pwm_comms_s.buf].rise_edg.phase_data[PWM_PHASE_B].hi.time_off) <: pwm_ctrl_s.buf_data[pwm_comms_s.buf].rise_edg.phase_data[PWM_PHASE_B].hi.pattern;

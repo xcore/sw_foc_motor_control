@@ -20,15 +20,15 @@ on tile[INTERFACE_TILE]: in port p_btns = PORT_BUTTONS;
 on tile[INTERFACE_TILE]: out port p_leds = PORT_LEDS;
 
 // PWM ports
+on tile[MOTOR_TILE]: clock pwm_clk[NUMBER_OF_MOTORS] = { XS1_CLKBLK_5 ,XS1_CLKBLK_4 };
+on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
 on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
 	= {	{PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
 on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
 	= {	{PORT_M1_LO_A, PORT_M1_LO_B, PORT_M1_LO_C} ,{PORT_M2_LO_A, PORT_M2_LO_B, PORT_M2_LO_C} };
-on tile[MOTOR_TILE]: clock pwm_clk[NUMBER_OF_MOTORS] = { XS1_CLKBLK_5 ,XS1_CLKBLK_4 };
-on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
 
 // ADC ports
-on tile[MOTOR_TILE]: buffered in port:32 pb32_adc_data[NUM_ADC_DATA_PORTS] = { PORT_ADC_MISOA ,PORT_ADC_MISOB }; 
+	on tile[MOTOR_TILE]: buffered in port:32 pb32_adc_data[NUM_ADC_DATA_PORTS] = { PORT_ADC_MISOA ,PORT_ADC_MISOB };
 on tile[MOTOR_TILE]: out port p1_adc_sclk = PORT_ADC_CLK; // 1-bit port connecting to external ADC serial clock
 on tile[MOTOR_TILE]: port p1_ready = PORT_ADC_CONV; // 1-bit port used to as ready signal for pb32_adc_data ports and ADC chip
 on tile[MOTOR_TILE]: out port p4_adc_mux = PORT_ADC_MUX; // 4-bit port used to control multiplexor on ADC chip
@@ -47,11 +47,14 @@ on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used 
 /*****************************************************************************/
 void xscope_user_init()
 {
-	xscope_register( 4
-		,XSCOPE_CONTINUOUS, "pinsHall", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "velQEI", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "pinsQEI", XSCOPE_INT , "n"
+	xscope_register( 7
+		,XSCOPE_CONTINUOUS, "qei_A", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "qei_B", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "thetaQ", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "thetaP", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "State", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "adc_A", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "adc_B", XSCOPE_INT , "n"
 /*
 		,XSCOPE_CONTINUOUS, "pid_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "req_vel", XSCOPE_INT , "n"
@@ -71,7 +74,6 @@ void xscope_user_init()
 
 	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
 } // xscope_user_init
-/*****************************************************************************/
 #endif // (USE_XSCOPE)
 
 /*****************************************************************************/
@@ -105,7 +107,8 @@ int main ( void ) // Program Entry Point
 
 			par {
 				// Loop through all motors
-				par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+//MB~				par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+				par (int motor_cnt=1; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 				{
 					run_motor( motor_cnt ,c_wd[motor_cnt]  ,c_pwm[motor_cnt] ,c_hall[motor_cnt] ,c_qei[motor_cnt] 
 						,c_adc_cntrl[motor_cnt] ,c_speed[motor_cnt] ,c_commands ); //MB~ Was ,c_commands[motor_cnt] );

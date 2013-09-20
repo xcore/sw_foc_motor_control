@@ -83,8 +83,8 @@ static void init_spin_component( // Initialise QEI Test data for spin-direction 
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[ANTI].str ," Anti-Clock" );
-	safestrcpy( vect_comp_s.state_names[CLOCK].str ," Clock-Wise" );
+	safestrcpy( vect_comp_s.state_names[NEGATIVE].str ," Negative" );
+	safestrcpy( vect_comp_s.state_names[POSITIVE].str ," Positive" );
 
 	// Add any new component states here 
 } // init_spin_component

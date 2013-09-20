@@ -14,10 +14,19 @@
 
 #include "generate_hall_tests.h"
 
-/*	[CBA] order is 001 -> 011 -> 010 -> 110 -> 100 -> 101  Clockwise direction
- *	[CBA] order is 001 -> 101 -> 100 -> 110 -> 010 -> 011  Anti-Clockwise direction
+/* This code adopts the Traditional convention that 
+ * the positive spin direction is the one where Phase_A leads Phase_B.
+ * E.g. Phase_A goes high one bit-change earlier than Phase_B goes high.
+ * This definition is based on time, and is NOT dependent on spatial orientation of the motor!-)
+ *
+ * WARNING: Traditionally Phase_A is the Most Significant Bit (MSB). 
+ * However, the QEI server S/W is designed to work with the XMOS motor board.
+ * This board has Phase_A as the Least Significant Bit (LSB).
+ * So the generated bit changes are as follows:-
+ *
+ *	[CBA] order is 001 -> 011 -> 010 -> 110 -> 100 -> 101  Positive-spin
+ *	[CBA] order is 001 -> 101 -> 100 -> 110 -> 010 -> 011  Negative-spin
  */
-
 /*****************************************************************************/
 static void parse_control_file( // Parse Hall control file and set up test options
 	GENERATE_TST_TYP &tst_data_s // Reference to structure of Hall test data
@@ -230,11 +239,11 @@ static void assign_test_vector_spin( // Assign Spin-state of test vector
 {
 	switch( inp_spin )
 	{
-		case CLOCK: // Clock-wise
-		break; // case CLOCK:
+		case POSITIVE: // Positive-spin
+		break; // case POSITIVE:
 
-		case ANTI: // Anti-clockwise
-		break; // case ANTI:
+		case NEGATIVE: // Negative-spin
+		break; // case NEGATIVE:
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
@@ -294,7 +303,7 @@ static void do_hall_test( // Performs one Hall test
 
 	switch( tst_data_s.curr_vect.comp_state[SPIN] )
 	{
-		case CLOCK: // Clock-wise
+		case POSITIVE: // Positive-spin
 			if ((HALL_PER_POLE - 1) > tst_data_s.off)
 			{
 				tst_data_s.off++;	// Increment Hall position
@@ -303,9 +312,9 @@ static void do_hall_test( // Performs one Hall test
 			{
 				tst_data_s.off = 0;	// Wrap Hall position
 			} // else !((HALL_PER_POLE - 1) > tst_data_s.off)
-		break; // case CLOCK:
+		break; // case POSITIVE:
 
-		case ANTI: // Anti-clockwise
+		case NEGATIVE: // Negative-spin
 			if (0 < tst_data_s.off)
 			{
 				tst_data_s.off--;	// Decrement Hall position
@@ -314,7 +323,7 @@ static void do_hall_test( // Performs one Hall test
 			{
 				tst_data_s.off = (HALL_PER_POLE - 1);	// Wrap Hall position
 			} // else !(0 < tst_data_s.off)
-		break; // case ANTI:
+		break; // case NEGATIVE:
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
@@ -447,7 +456,7 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 
 	assign_test_vector_error( tst_data_s ,HALL_ERR_OFF ); // Set test vector to NO errors
 	assign_test_vector_phase( tst_data_s ,CHANGE ); // Set test vector to Change Phase
-	assign_test_vector_spin( tst_data_s ,CLOCK ); // Set test vector to Clock-wise spin
+	assign_test_vector_spin( tst_data_s ,POSITIVE ); // Set test vector to Positive-spin
 	assign_test_vector_speed( tst_data_s ,FAST ); // Set test vector to constant Fast speed
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Settling complete, Switch on testing
@@ -475,16 +484,16 @@ static void gen_motor_hall_test_data( // Generate Hall Test data for one motor
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
 	} // else !(tst_data_s.common.options.flags[TST_ERROR])
 
-	// Check if Anti-clockwise spin direction test activated
-	if (tst_data_s.common.options.flags[TST_ANTI])
-	{ // Do Anti-clockwise spin direction test
-		assign_test_vector_spin( tst_data_s ,ANTI ); // Set test vector to Anti-clockwise spin
+	// Check if Negative-spin direction test activated
+	if (tst_data_s.common.options.flags[TST_NEGA])
+	{ // Do Negative-spin direction test
+		assign_test_vector_spin( tst_data_s ,NEGATIVE ); // Set test vector to Negative-spin
 		tst_data_s.curr_vect.comp_state[CNTRL] = SKIP; // Switch off testing, while changing direction
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,2 );
 
 		tst_data_s.curr_vect.comp_state[CNTRL] = VALID; // Direction changed, Switch on testing
 		do_hall_vector( tst_data_s ,c_tst ,p4_tst ,(MAX_TESTS >> 1) );
-	} // if (tst_data_s.common.options.flags[TST_ANTI])
+	} // if (tst_data_s.common.options.flags[TST_NEGA])
 
 	tst_data_s.curr_vect.comp_state[CNTRL] = QUIT; // Signal that testing has ended for current motor
 	do_hall_vector( tst_data_s ,c_tst ,p4_tst ,0 );

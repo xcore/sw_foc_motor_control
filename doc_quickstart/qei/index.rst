@@ -69,7 +69,7 @@ An example of working test output from a working QEI component can be found in a
 Using The ``Value Change Dump`` (VCD) File
 ------------------------------------------
 
-The waveforms on the output pins can be inspected by using a VCD file. This can require a lot of memory and considerably slows down the simulator. First ensure enough memory has been requested in the xTIMEcomposer init file. Go to the root directory where the XMOS tools are installed. Then edit file ``xtimecomposer_bin/xtimecomposer.exe.ini`` and ensure the requested memory is at least 2 GBytes (``-Xmx2048m``)
+The waveforms on the output pins can be inspected by using a VCD file.
 
 Now launch xTIMEcomposer and switch on VCD tracing as follows ...
    #. Repeat the actions described above up to but NOT including ...

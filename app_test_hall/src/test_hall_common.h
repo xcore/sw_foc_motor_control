@@ -36,7 +36,7 @@
 typedef enum PWM_TEST_ETAG
 {
   TST_MOTOR = 0,	// Select which motor to test
-  TST_ANTI,				// Test Anti-Clockwise spin
+  TST_NEGA,				// Test Negative spin
   TST_ERROR,	// Test Error-Status
   NUM_TEST_OPTS	// Handy Value!-)
 } PWM_TEST_ENUM;
@@ -64,8 +64,8 @@ typedef enum PHASE_HALL_ETAG
 /** Enumeration of Hall Spin states */
 typedef enum SPIN_HALL_ETAG
 {
-  ANTI = 0,				// Anti-clockwise
-  CLOCK = 1,			// Clock-wise
+  NEGATIVE = 0,		// Negative-spin
+  POSITIVE = 1,		// Positive-spin
   NUM_HALL_SPINS	// Handy Value!-)
 } SPIN_HALL_ENUM;
 

@@ -204,10 +204,10 @@ static void check_hall_phase_change( // Check for valid phase change
 					release_lock(); // Release Display Mutex
 				break; // case 0:
 		
-				case 1: // Clock-wise
+				case 1: // Positive-spin
 				break; // case 1: 
 		
-				case (HALL_PER_POLE - 1): // Anti-clockwise
+				case (HALL_PER_POLE - 1): // Negative-spin
 				break; // case (HALL_PER_POLE - 1):
 		
 				default:
@@ -239,7 +239,7 @@ static void check_hall_spin_direction( // Check correct update of Hall spin dire
 
 	switch( chk_data_s.curr_vect.comp_state[SPIN] )
 	{
-		case CLOCK: // Clock-wise
+		case POSITIVE: // Positive-spin
 			if (1 != chk_data_s.off_diff)
 			{
 				chk_data_s.motor_errs[SPIN]++;
@@ -247,12 +247,12 @@ static void check_hall_spin_direction( // Check correct update of Hall spin dire
 				acquire_lock(); // Acquire Display Mutex
 				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
-				printstrln("Clock-Wise FAILURE");
+				printstrln("Positive-spin FAILURE");
 				release_lock(); // Release Display Mutex
 			} // if (1 != chk_data_s.off_diff)
-		break; // case CLOCK:
+		break; // case POSITIVE:
 
-		case ANTI: // Anti-clockwise
+		case NEGATIVE: // Negative-spin
 			if ((HALL_PER_POLE - 1) != chk_data_s.off_diff)
 			{
 				chk_data_s.motor_errs[SPIN]++;
@@ -260,10 +260,10 @@ static void check_hall_spin_direction( // Check correct update of Hall spin dire
 				acquire_lock(); // Acquire Display Mutex
 				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
-				printstrln("Anti-Clock FAILURE");
+				printstrln("Negative-spin FAILURE");
 				release_lock(); // Release Display Mutex
 			} // if ((HALL_PER_POLE - 1) != chk_data_s.off_diff)
-		break; // case ANTI:
+		break; // case NEGATIVE:
 
 		default:
 			acquire_lock(); // Acquire Display Mutex

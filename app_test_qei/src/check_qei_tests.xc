@@ -14,55 +14,6 @@
 
 #include "check_qei_tests.h"
 
-#ifdef DEPRECIATED
-/*****************************************************************************/
-static unsigned eval_speed_bound( // Evaluate error bounds for given speed 
-	int veloc_val // input velocity
-) // Returns error_bound
-/* The Maths for this is a bit complicated as it used non-linear arithmetic.
- * However, here goes ...
- * 
- * The Speed (S) and time-period between QEI phase changes (T) are related by the following equation: 
- *		Cf = S * T   (where Cf is a floating-point constant, but in this code
- * is represented as an integer with rounding errors (Ci + dC), 
- * Ci is TICKS_PER_MIN_PER_QEI , and  dC = SECS_PER_MIN/2 (currently 5859360 +/- 30 in qei_common.h)
- * 
- * The test-generator chooses a test Speed (Sg), this is converted to a time-period (T + dT) with rounding errors
- * which is used to generate raw QEI phase changes at the appropriate time.
- * 
- * The QEI Server, converts the time-period between QEI phase changes into a angular_velocity estimate,
- * this too has a rounding error.
- * 
- * The test-checker reads the QEI velocity parameter and converts it into a speed with rounding errors (Sc + dS).
- * The checker needs to calculate dS, in order to know the required error-bounds for Sc.
- * 
- *		T = C / Sg  ,  Therefore dT = dC/Sg. 			(NB Sg has no error)     --- (1)
- * Using integer division, and rounding-up:   dT = (dC + Sg - 1)/(int)Sg  or  dT ~= 1 + dC/(int)Sg    --- (2)
- * 
- *		Sc = C / T  ,  Therefore  dS ~= (T.dC + C.dT)/(T.T)  (differentiation of product rule)
- * Substituting for T for (1) gives:  dS = Sg(dC + Sg.dT)/Ci
- * Substituting for dT for (2) gives:  dS = Sg(2.dC + Sg)/Ci
- * Using integer division, and rounding-up:   dS = (Sg(2.dC + Sg) + Ci - 1)/(int)Ci  or  ...
- * 
- *		dS ~= 1 + (Sg(2.dC + Sg))/(int)Ci  --- (3)
- * 		----------------------------
- * 
- *  NB Currently, for all values of Sg <= 2390, dS is always 1
- */
-{
-	unsigned bound; // Output error_bound
-
-
-	bound = veloc_val * (SECS_PER_MIN + veloc_val); // Compute numerator for integer division
-	bound = 1 + (bound / TICKS_PER_MIN_PER_QEI);		// NB we already rounded-up in (3)
-
-	/* When using the simulator, Occasionally QEI phases changes are not generated at the appropriate time
-	 * This introduces another source of error, which has yet to be quantfied, 
-	 * so an empirically found fudge factor is used!-(
-	 */
-	return (4 * bound); // Multiply by fudge factor
-}	// eval_speed_bound
-#endif // DEPRECIATED
 /*****************************************************************************/
 static unsigned eval_speed_bound( // Evaluate error bounds for given speed 
 	unsigned veloc_val // input velocity
@@ -302,7 +253,7 @@ static void check_qei_spin_direction( // Check correct update of QEI spin direct
 
 	switch( chk_data_s.curr_vect.comp_state[SPIN] )
 	{
-		case CLOCK: // Clock-wise
+		case POSITIVE: // Positive-spin
 			chk_data_s.motor_tsts[SPIN]++;
 			if (0 > inp_vel)
 			{
@@ -311,12 +262,12 @@ static void check_qei_spin_direction( // Check correct update of QEI spin direct
 				acquire_lock(); // Acquire Display Mutex
 				printcharln(' ');
 				printstr( chk_data_s.prefix.str );
-				printstrln("Clock-Wise FAILURE");
+				printstrln("Positive-spin FAILURE");
 				release_lock(); // Release Display Mutex
 			} // if (0 > inp_vel)
-		break; // case CLOCK:
+		break; // case POSITIVE:
 
-		case ANTI: // Anti-clockwise
+		case NEGATIVE: // Negative-spin
 			chk_data_s.motor_tsts[SPIN]++;
 			if (0 < inp_vel)
 			{
@@ -325,10 +276,10 @@ static void check_qei_spin_direction( // Check correct update of QEI spin direct
 				acquire_lock(); // Acquire Display Mutex
 				printcharln(' ');
 				printstr( chk_data_s.prefix.str );
-				printstrln("Anti-Clock FAILURE");
+				printstrln("Negative-spin FAILURE");
 				release_lock(); // Release Display Mutex
 			} // if (0 < inp_vel)
-		break; // case ANTI:
+		break; // case NEGATIVE:
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
@@ -604,13 +555,13 @@ static void process_new_test_vector( // Process new test vector
 		{ // Start new test
 			switch( chk_data_s.curr_vect.comp_state[SPIN] )
 			{
-				case CLOCK: // Clock-wise
+				case POSITIVE: // Positive-spin
 					chk_data_s.orig_chk = 1; // Expected increment in rev. counter
-				break; // case CLOCK:
+				break; // case POSITIVE:
 		
-				case ANTI: // Anti-clockwise
+				case NEGATIVE: // Negative-spin
 					chk_data_s.orig_chk = -1; // Expected decrement in rev. counter
-				break; // case ANTI:
+				break; // case NEGATIVE:
 		
 				default:
 					acquire_lock(); // Acquire Display Mutex

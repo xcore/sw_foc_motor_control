@@ -75,7 +75,7 @@ typedef unsigned long QEI_RAW_TYP;
 /** Type containing array of QEI Phase values */
 typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
 {
-	int vals[NUM_QEI_PHASES];	// Array of QEI Phase values (NB Increment for clockwise rotation)
+	int vals[NUM_QEI_PHASES];	// Array of QEI Phase values (NB Increment for positive rotation)
 } QEI_PHASE_TYP;
 
 /** Structure containing QEI parameters for one motor */

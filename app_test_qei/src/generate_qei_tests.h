@@ -66,7 +66,7 @@ typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 	TEST_VECT_TYP curr_vect; // Structure of containing current QEI test vector (QEI conditions to be tested)
 	TEST_VECT_TYP prev_vect; // Structure of containing previous QEI test vector (QEI conditions to be tested)
 	QEI_PHASE_TYP phases;	// Structure containing all possible QEI phase values;
-	int inc;			// QEI rotation increment (+1 for clock-wise, -1 for anti-clockwise)
+	int inc;			// QEI rotation increment (+1 for Positive-spin, -1 for Negative-spin)
 	int hi_ticks;			// No. of ticks/QEI at high speed
 	int lo_ticks;			// No. of ticks/QEI at low speed
 	unsigned cnt;			// QEI position counter

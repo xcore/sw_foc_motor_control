@@ -84,7 +84,8 @@ static void init_motor( // initialise data structure for one motor
 	#define LAST_HALL_STATE 0b101
 #endif
 
-	motor_s.req_veloc = REQ_VELOCITY;
+//MB~	motor_s.req_veloc = REQ_VELOCITY;
+	motor_s.req_veloc = -REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 
 	motor_s.Iq_alg = TRANSFORM; // [TRANSFORM VELOCITY EXTREMA] Assign algorithm used to estimate coil current Iq (and Id)
@@ -110,6 +111,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.gamma_off = 0;	// Gamma value offset
 	motor_s.gamma_err = 0;	// Error diffusion value for Gamma value
 	motor_s.gamma_ramp = 0;	// Initialise Gamma ramp value to zero
+	motor_s.gamma_inc = 0;	// MB~ Used in tuning
 	motor_s.phi_ramp = 0;	// Initialise Phi (phase lag) ramp value to zero
 
 	// NB Display will require following variables, before we have measured them! ...
@@ -127,11 +129,11 @@ static void init_motor( // initialise data structure for one motor
 		// Choose last Hall state of 6-state cycle NB depends on motor-type
 		if (LDO_MOTOR_SPIN)
 		{
-			motor_s.end_hall = 0b011;
+			motor_s.end_hall = 0b101;
 		} // if (LDO_MOTOR_SPIN
 		else
 		{
-			motor_s.end_hall = 0b101;
+			motor_s.end_hall = 0b011;
 		} // else !(LDO_MOTOR_SPIN
 	} // if (0 > motor_s.req_veloc)
 	else
@@ -144,11 +146,11 @@ static void init_motor( // initialise data structure for one motor
 		// Choose last Hall state of 6-state cycle NB depends on motor-type
 		if (LDO_MOTOR_SPIN)
 		{
-			motor_s.end_hall = 0b101;
+			motor_s.end_hall = 0b011;
 		} // if (LDO_MOTOR_SPIN
 		else
 		{
-			motor_s.end_hall = 0b011;
+			motor_s.end_hall = 0b101;
 		} // else !(LDO_MOTOR_SPIN
 	} // else !(0 > motor_s.req_veloc)
 
@@ -329,11 +331,7 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 #pragma xta label "foc_loop_clarke"
 
 	// To calculate alpha and beta currents from measured data
-//MB~ clarke_transform( motor_s.adc_params.vals[ADC_PHASE_A], motor_s.adc_params.vals[ADC_PHASE_B], motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
-/* MB~ FIXME There is problem with an inverse sign here. Need to work out why this bodge is required */
-
-	clarke_transform( -motor_s.adc_params.vals[ADC_PHASE_A], -motor_s.adc_params.vals[ADC_PHASE_B], -motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
-// if (motor_s.xscope) xscope_probe_data( 6 ,beta_meas );
+	clarke_transform( motor_s.adc_params.vals[ADC_PHASE_A], motor_s.adc_params.vals[ADC_PHASE_B], motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
 
 	// Update Phi estimate ...
 	scaled_phi = motor_s.qei_params.veloc * PHI_GRAD + motor_s.phi_off + motor_s.phi_err;
@@ -413,6 +411,8 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	int phase_cnt; // phase counter
 
 
+if (motor_s.xscope) xscope_probe_data( 3 ,inp_theta );
+
 	// Smooth Vq values
 	if (set_Vq > motor_s.prev_Vq)
 	{
@@ -428,14 +428,8 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 
 	motor_s.prev_Vq = set_Vq; // Store smoothed Vq value
 
-// if (motor_s.xscope) xscope_probe_data( 3 ,set_Vq );
-
 	// Inverse park  [d, q, theta] --> [alpha, beta]
 	inverse_park_transform( alpha_set, beta_set, set_Vd, set_Vq, inp_theta  );
-
-// if (motor_s.xscope) xscope_probe_data( 3 ,smooth_Vq );
-// if (motor_s.xscope) xscope_probe_data( 4 ,alpha_set );
-// if (motor_s.xscope) xscope_probe_data( 11 ,beta_set );
 
 	// Final voltages applied: 
 	inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
@@ -445,6 +439,9 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	{ 
 		motor_s.pwm_comms.params.widths[phase_cnt] = convert_volts_to_pwm_width( volts[phase_cnt] );
 	} // for phase_cnt
+
+// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.pwm_comms.params.widths[PWM_PHASE_A] );
+// if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.pwm_comms.params.widths[PWM_PHASE_B] );
 
 // if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.pwm_comms.params.widths[PWM_PHASE_A] );
 // if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.pwm_comms.params.widths[PWM_PHASE_B] );
@@ -469,7 +466,14 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 	// Check if theta needs incrementing
 	if (OPEN_LOOP_PERIOD < diff_time)
 	{
-		motor_s.set_theta++; // Increment demand theta value
+		if (motor_s.req_veloc < 0)
+		{
+			motor_s.set_theta--; // Decrement demand theta value
+		} // if (motor_s.req_veloc < 0)
+		else
+		{
+			motor_s.set_theta++; // Increment demand theta value
+		} // else !(motor_s.req_veloc < 0)
 
 		motor_s.prev_time = cur_time; // Update previous time
 	} // if (OPEN_LOOP_PERIOD < diff_time)
@@ -480,7 +484,7 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 #else
 	motor_s.set_theta = motor_s.start_theta >> 4;
 #endif
-#endif //MB~
+#endif //MB~ DEPRECIATED
 
 	// NB QEI_REV_MASK correctly maps -ve values into +ve range 0 <= theta < QEI_PER_REV;
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
@@ -613,16 +617,16 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	} // if (IQ_ID_CLOSED)
 	else
 	{ // Open-loop
-		// If necessary, smoothly change open-loop Vq to requested value
+		// If necessary, smoothly change open-loop Vq to requested value. NB REQ_VQ_OPENLOOP always +ve 
 		if (motor_s.Vq_openloop > REQ_VQ_OPENLOOP )
 		{
-			motor_s.Vq_openloop = REQ_VQ_OPENLOOP - 1; // Decrease slightly
+			motor_s.Vq_openloop -= 1; // Decrease slightly
 		} // if (motor_s.Vq_openloop > REQ_VQ_OPENLOOP )
 		else
 		{
 			if (motor_s.Vq_openloop < REQ_VQ_OPENLOOP )
 			{
-				motor_s.Vq_openloop = REQ_VQ_OPENLOOP + 1; // Increase slightly
+				motor_s.Vq_openloop += 1; // Increase slightly
 			} // if (motor_s.Vq_openloop > REQ_VQ_OPENLOOP )
 		} // else !(motor_s.Vq_openloop > REQ_VQ_OPENLOOP )
 
@@ -661,6 +665,10 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 
 	// Update 'demand' theta value for next dq_to_pwm iteration
 	motor_s.set_theta = motor_s.qei_params.theta + motor_s.theta_offset + smooth_gamma;
+
+motor_s.set_theta += motor_s.gamma_inc; //MB~  Tuning
+//MB~ motor_s.gamma_inc += 2; //MB~ Tuning
+
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 
 	motor_s.first_foc = 0; // Clear 'first FOC' flag
@@ -695,10 +703,13 @@ static MOTOR_STATE_ENUM check_hall_state( // Inspect Hall-state and update motor
 
 	hall_inp &= HALL_PHASE_MASK; // Mask out 3 Hall Sensor Phase Bits
 
+// if (motor_s.xscope) xscope_probe_data( 0 ,(hall_inp & 1) );
+// if (motor_s.xscope) xscope_probe_data( 1 ,((hall_inp & 2) >> 1) );
+
 	// Check for change in Hall state
 	if (motor_s.prev_hall != hall_inp)
 	{
-if (motor_s.xscope) xscope_probe_data( 0 ,hall_inp );
+// if (motor_s.xscope) xscope_probe_data( 0 ,hall_inp );
 		// Check for 1st Hall state, as we only do this check once a revolution
 		if (hall_inp == FIRST_HALL_STATE) 
 		{
@@ -721,10 +732,12 @@ if (motor_s.xscope) xscope_probe_data( 0 ,hall_inp );
 			} // if (motor_s.prev_hall == motor_s.end_hall)
 			else
 			{ // We are probably spinning in the wrong direction!-(
+#ifdef MB
 				motor_s.err_data.err_flgs |= (1 << DIRECTION);
 				motor_s.err_data.line[DIRECTION] = __LINE__;
 				motor_state = STOP; // Switch to stop state
 				motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
+#endif //MB~
 			} // else !(motor_s.prev_hall == motor_s.end_hall)
 		} // if (hall_inp == FIRST_HALL_STATE)
 
@@ -791,6 +804,10 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 				} // if (motor_s.qei_params.veloc < -motor_s.half_veloc)
+if (motor_s.state == STOP)
+{
+acquire_lock(); printstr("BAD VEL="); printintln(motor_s.qei_params.veloc); release_lock(); //MB~
+}
       } // if (0 > motor_s.half_veloc)
 
 			if (motor_s.meas_speed < STALL_SPEED) 
@@ -830,7 +847,7 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 	} // switch( motor_s.state )
 
 	motor_s.cnts[motor_s.state]++; // Update counter for new motor state 
-if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.state );
+if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.state );
 
 	// Select correct method of calculating DQ values
 #pragma fallthrough
@@ -949,7 +966,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
-motor_s.xscope = 1; // MB~ Crude Switch
+//MB~ motor_s.xscope = 0; // MB~ Crude Switch
 
 			if (STOP != motor_s.state)
 			{
@@ -976,11 +993,8 @@ motor_s.xscope = 1; // MB~ Crude Switch
 					/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
 					foc_qei_get_parameters( motor_s.qei_params ,c_qei );
 
-//MB~ FIXME: There was a sign change in the QEI module, this needs working through control loop
-if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.veloc );
-motor_s.qei_params.veloc = -motor_s.qei_params.veloc; 
-motor_s.qei_params.theta = -motor_s.qei_params.theta;
-motor_s.qei_params.rev_cnt = -motor_s.qei_params.rev_cnt;
+if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.theta );
+// if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.qei_params.veloc );
 
 					motor_s.meas_speed = abs( motor_s.qei_params.veloc ); // NB Used to spot stalling behaviour
 
@@ -990,12 +1004,10 @@ motor_s.qei_params.rev_cnt = -motor_s.qei_params.rev_cnt;
 							motor_s.state= STOP;
 					} // if (4100 < motor_s.qei_params.veloc)
 
-// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.theta );
-
 					// Get ADC sensor data
 					foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
-// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.adc_params.vals[ADC_PHASE_A] );
-// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.adc_params.vals[ADC_PHASE_B] );
+if (motor_s.xscope) xscope_probe_data( 5 ,(motor_s.adc_params.vals[ADC_PHASE_A] >> 4) );
+if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.adc_params.vals[ADC_PHASE_B] );
 // if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.adc_params.vals[ADC_PHASE_C] );
 
 					update_motor_state( motor_s ,motor_s.hall_params.hall_val );

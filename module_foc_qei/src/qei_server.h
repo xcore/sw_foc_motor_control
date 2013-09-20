@@ -17,6 +17,7 @@
 	and a 1024 counts per revolution.
 
 	The QEI data is read in via a 4-bit port. With assignments as follows:-
+	WARNING: This in NON-standard. Traditionally Phase_A is the MS-bit.
 
 	 bit_3   bit_2   bit_1    bit_0
 	-------  -----  -------  -------
@@ -24,23 +25,23 @@
 
 	N_Error = 1 for No Errors
 
-	In normal operation the B and A bits change as a grey-code,
-	with the following convention
 
-			  ----------->  Counter-Clockwise
+	In normal operation the B and A bits change as a grey-code,
+	with the following convention.
+
+	The positive spin direction is the one where Phase_A leads Phase_B.
+	E.g. Phase_A goes high one bit-change earlier than Phase_B goes high.
+	This definition is based on time, and is NOT dependent on spatial orientation of the motor!-)
+ 
+
+			  <-----------  Negative Spin
 	BA:  00 01 11 10 00
-			  <-----------  Clockwise
+			  ----------->  Positive Spin
 
 	During one revolution, BA will change 1024 times,
 	Index will take the value of zero 1023 times, and the value one once only,
   at the position origin. 
 	NB When the motor starts, it is NOT normally at the origin
-
-	A look-up table is used to decode the 2 phase bits, into a spin direction
-	with the following meanings: 
-		 1: Anit-Clocwise, 
-		 0: Unknown    (The motor has either stopped, or jumped one or more phases)
-		-1: Clocwise, 
 
 	The timer is read every time the phase bits change. I.E. 1024 times per revolution
 
@@ -97,7 +98,7 @@
 #define QEI_COEF_DIV (1 << QEI_COEF_BITS) // Coef divisor
 #define QEI_HALF_COEF (QEI_COEF_DIV >> 1) // Half of Coef divisor
 
-#define MAX_QEI_STATUS_ERR 30000  // 3 Maximum number of consecutive QEI status errors allowed
+#define MAX_QEI_STATUS_ERR 3 // 3 Maximum number of consecutive QEI status errors allowed
 
 #define MIN_RPM 50 // In order to estimate the angular position, a minimum expected RPM has to be specified
 // Now we can calculate the maximum expected time difference (in ticks) between QEI phase changes
@@ -122,15 +123,15 @@
 
 #define DBG_SIZ 384
 
-// WARNING. Clock-wise and Anti-Clockwise states must have same magnitude
+// WARNING. Positive and Negative states must have same magnitude
 /** Different QEI decode states */
 typedef enum QEI_STATE_ETAG
 {
-  QEI_HI_ANTI = -2,	// High probability Anti-Clockwise Phase change
-  QEI_LO_ANTI = -1,	// Low probability Anti-Clockwise Phase change
+  QEI_HI_NEGA = -2,	// High probability Negative-spin Phase change
+  QEI_LO_NEGA = -1,	// Low probability Negative-spin Phase change
   QEI_BIT_ERR = 0,		// Detected one or more bit errors 
-  QEI_LO_CLOCK = 1, // Low probability Clockwise Phase change
-  QEI_HI_CLOCK = 2 // High probability Clockwise Phase change
+  QEI_LO_POSI = 1, // Low probability Positive-spin Phase change
+  QEI_HI_POSI = 2 // High probability Positive-spin Phase change
 } QEI_STATE_ETYP;
 
 typedef signed char ANG_INC_TYP; // Angular Increment type
@@ -152,7 +153,7 @@ typedef struct DBG_SMP_TAG // MB~ Dbg
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
 	ANG_INC_TYP ang_inc; // new angular increment value
 	QEI_STATE_ETYP curr_state; // Curremt QEI state
-	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
+	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident negative spin)
 	int veloc; // measured angular velocity
 } DBG_SMP_TYP;
 
@@ -193,7 +194,7 @@ typedef struct QEI_DATA_TAG //
 	int pin_changes; // Counts pin changes during start-up phase
 	int ang_cnt; // Counts angular position of motor (from origin)
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
-	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
+	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident Negative spin)
 	int prev_orig; // Previous origin flag
 	int id; // Unique motor identifier
 	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )

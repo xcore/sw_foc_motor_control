@@ -102,8 +102,6 @@
 #define STALL_SPEED 100
 #define STALL_TRIP_COUNT 5000
 
-#define LDO_MOTOR_SPIN 1 // Motor spins like an LDO Motor
-
 #define FIRST_HALL_STATE 0b001 // 1st Hall state of 6-state cycle
 
 #define INIT_THETA 0 // Initial start-up angle
@@ -139,13 +137,15 @@
 #define XTR_HALF_COEF (XTR_COEF_DIV >> 1) // Half of Coef divisor
 
 #define PROPORTIONAL 1 // Selects between 'proportional' and 'offset' error corrections
-#define VELOC_CLOSED 1 // Selects fully closed loop (both velocity, Iq and Id)
-#define IQ_ID_CLOSED 1 // Selcects Iq/Id closed-loop, velocity open-loop
+#define VELOC_CLOSED 0 // MB~ 1 Selects fully closed loop (both velocity, Iq and Id)
+#define IQ_ID_CLOSED 0 // MB~ 1 Selcects Iq/Id closed-loop, velocity open-loop
 
 #if (USE_XSCOPE)
+//MB~	#define DEMO_LIMIT 100000 // XSCOPE
 	#define DEMO_LIMIT 100000 // XSCOPE
 #else // if (USE_XSCOPE)
-	#define DEMO_LIMIT 4000000
+//MB~	#define DEMO_LIMIT 4000000
+	#define DEMO_LIMIT 4000
 #endif // else !(USE_XSCOPE)
 
 #define STR_LEN 80 // String Length
@@ -227,7 +227,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int set_Vq;	// Demand 'tangential' voltage set by control loop 
 	int prev_Vq;	// Previous Demand 'tangential' voltage
 	int set_theta;	// theta value
-	int start_theta; // Theta start position during warm-up (START and SEARCH states)
+	int start_theta; // MB~ DEPRECIATED Theta start position during warm-up (START and SEARCH states)
 	int first_foc; // Flag set until first FOC (closed-loop) iteration completed
 
 	int iters; // Iterations of inner_loop
@@ -242,6 +242,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int phi_off;	// Phi value offset
 	int gamma_est;	// Estimate of leading-angle, used to 'pull' pole towards coil.
 	int gamma_off;	// Gamma value offset
+	int gamma_inc;	// MB~ Used in Tuning
 	int gamma_err;	// Error diffusion value for Gamma value
 	int gamma_ramp;	// Gamma ramp value used to smoothly change between different Gamma values
 	int phi_ramp;	// Phi ramp value used to smoothly change between different Phi values (phase lag)

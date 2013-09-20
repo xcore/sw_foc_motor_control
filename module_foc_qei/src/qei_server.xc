@@ -1,4 +1,4 @@
-/**
+/** 
  * The copyrights, all other intellectual and industrial 
  * property rights are retained by XMOS and/or its licensors. 
  * Terms and conditions covering the use of this code can
@@ -21,7 +21,8 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	int inp_id  // Input unique motor identifier
 )
 {
-	QEI_PHASE_TYP clkwise = {{ 0 ,1 ,3 ,2 }};	// Table to convert QEI Phase value to circular index [BA] (NB Increment for clock-wise rotation)
+// Choose last Hall state of 6-state cycle, depending on spin direction
+	QEI_PHASE_TYP bit_patterns = {{ 0 ,1 ,3 ,2 }};	// Table to convert QEI Phase value to circular index [BA] (NB Increment for positive rotation)
 	unsigned diff_bits; // No. of bits required to represent max. time-difference between QEI changes
 	unsigned tmp_diff; // temporary time difference
 
@@ -30,7 +31,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.dd.cnt = 0; // MB~ Dbg
 #endif //(QEI_DBG)
 
-	inp_qei_s.inv_phase = clkwise; // Assign table converting QEI Phase value to circular index
+	inp_qei_s.inv_phase = bit_patterns; // Assign table converting QEI Phase value to circular index
 
 	inp_pins = 0xFF; // Set buffer for reading input pins to impossible value
 
@@ -47,7 +48,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.curr_state = QEI_BIT_ERR; // Initialise current QEI state
 	inp_qei_s.state_errs = 0; // Initialise counter for invalid QEI state transitions
 	inp_qei_s.status_errs = 0; // Initialise counter for QEI status errors
-	inp_qei_s.confid = 1; // Initialise spin-direction confidence value (1: Marginal Clockwise probability)
+	inp_qei_s.confid = 1; // Initialise spin-direction confidence value (1: Marginal Positive-spin probability)
 
 	inp_qei_s.prev_diff = 0;
 	inp_qei_s.prev_time = 0;
@@ -151,16 +152,16 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 /* The Decision table for estimating angle increments and QEI-states looks like this ...
  *
  *	Numbers are angle increments (QEI steps)
- *	H/L = High/Low probability,   A/C = Anti-clockwise/Clock-wise spin,   be = Bit-Errors
+ *	H/L = High/Low probability,   N/P = Negative/Positive spin,   be = Bit-Errors
  *              
  *	  Bounds	 |    1			2			3  <-- Phase_inc	
  *	-----------+-------------------
- *	Lo=1 Hi=1  |  HC_1  be_1  HA_1
+ *	Lo=1 Hi=1  |  HP_1  be_1  HN_1
  *	Lo=1 Hi=2  |  be_2  be_2  be_2
  *	Lo=2 Hi=2  |  be_2  be_2  be_2
  *	Lo=1 Hi=3  |  be_2  be_2  be_2
  *	Lo=2 Hi=3  |  be_2  be_2  be_2
- *	Lo=3 Hi=3  |  LA_3  be_3  LC_3
+ *	Lo=3 Hi=3  |  LN_3  be_3  LP_3
  */
 
 	// Estimate angle increment and QEI-state ...
@@ -181,11 +182,11 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 				// Check for accurate data
 				if (1 == inp_qei_s.hi_inc)
 				{ // High accuracy (evaluated over 1 angle increment)
-					inp_qei_s.curr_state = QEI_HI_CLOCK; // High accuracy Clock-wise increment
+					inp_qei_s.curr_state = QEI_HI_POSI; // High accuracy Positive-spin increment
 				} // if (1 == inp_qei_s.hi_inc)
 				else
 				{ // Low accuracy (evaluated over 3 angle increments - due to intermediate errors)
-					inp_qei_s.curr_state = QEI_LO_ANTI; // Low accuracy Clock-wise increment
+					inp_qei_s.curr_state = QEI_LO_NEGA; // Low accuracy Negative-spin increment
 				} // else !(1 == inp_qei_s.hi_inc)
 			break; // case inp_qei_s.phase_inc = 1
 
@@ -196,11 +197,11 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 			case 3 : // inp_qei_s.phase_inc
 				if (1 == inp_qei_s.hi_inc)
 				{ // High accuracy (evaulated over 1 angle increment)
-					inp_qei_s.curr_state = QEI_HI_ANTI; // High accuracy Anti-clockwise increment
+					inp_qei_s.curr_state = QEI_HI_NEGA; // High accuracy Negative-spin increment
 				} // if (1 == inp_qei_s.hi_inc)
 				else
 				{ // Low accuracy (evaluated over 3 angle increments - due to intermediate errors)
-					inp_qei_s.curr_state = QEI_LO_CLOCK; // Low accuracy Anti-clockwise increment
+					inp_qei_s.curr_state = QEI_LO_POSI; // Low accuracy Positive-spin increment
 				} // else !(1 == inp_qei_s.hi_inc)
 			break; // case inp_qei_s.phase_inc = 3
 
@@ -265,12 +266,12 @@ static void update_spin_state( // Update spin-state from QEI-state and 'confiden
 
 	// Check current state
 	if (QEI_BIT_ERR != inp_qei_s.curr_state)
-	{ // Valid current spin state (CLOCK or ANTI)
+	{ // Valid current spin state (Positive or Negative)
 
 		// Check previous state
 		if (QEI_BIT_ERR != inp_qei_s.prev_state)
-		{ // Valid previous spin state (CLOCK or ANTI)
-			// Check for change of spin-direction (CLOCK <--> ANTI)
+		{ // Valid previous spin state (Positive or Negative)
+			// Check for change of spin-direction (Positive <--> Negative)
 			if (0 > (inp_qei_s.curr_state * inp_qei_s.confid))
 			{
 				// NB This could be a genuine change of direction, so do confidence again to speed-up change-over
@@ -287,13 +288,13 @@ static void update_spin_state( // Update spin-state from QEI-state and 'confiden
 	else
 	{ // Invalid current spin state (BIT_ERROR, JUMP, or STALL)
 		inp_qei_s.state_errs++; // Increment error cnt
-		assert(MAX_QEI_STATE_ERR > inp_qei_s.state_errs); // Too Many QEI errors
+//MB~		assert(MAX_QEI_STATE_ERR > inp_qei_s.state_errs); // Too Many QEI errors
 	} // else !(QEI_BIT_ERR != inp_qei_s.curr_state)
 
 	// Assign spin-direction based on sign of 'confidence'
 	if (0 > inp_qei_s.confid)
-	{ // NON Clock-wise
-		inp_qei_s.ang_inc = -inp_qei_s.ang_inc; // Decrement for Anti-clockwise spin
+	{ // Assign Negative-spin
+		inp_qei_s.ang_inc = -inp_qei_s.ang_inc; // Decrement for Negative-spin
 	} // if (0 >  inp_qei_s.confid)
 
 } // update_spin_state
@@ -371,7 +372,7 @@ static void check_for_missed_origin( // Check for missed origin, and update angu
 			if (inp_qei_s.ang_cnt < (-QEI_CNT_LIMIT))
 			{ // Too many mis-interpreted values: Origin Missed --> Correct counters
 				inp_qei_s.params.rev_cnt--; // Decrement origin counter
-				inp_qei_s.ang_cnt += QEI_PER_REV; // 'Unwind' a whole (anti-clockwise) rotation
+				inp_qei_s.ang_cnt += QEI_PER_REV; // 'Unwind' a whole Negative rotation
 			} // (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
 		} // if (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
 	} // if (0 > inp_qei_s.ang_cnt)
@@ -382,7 +383,7 @@ static void check_for_missed_origin( // Check for missed origin, and update angu
 			if (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
 			{ // Too many mis-interpreted values: Origin Missed --> Correct counters
 				inp_qei_s.params.rev_cnt++; // Increment origin counter
-				inp_qei_s.ang_cnt -= QEI_PER_REV; // 'Unwind' a whole (clock-wise) rotation
+				inp_qei_s.ang_cnt -= QEI_PER_REV; // 'Unwind' a whole Positive rotation
 			} // (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
 		} // if (inp_qei_s.ang_cnt > QEI_PER_REV)
 	} // else !(0 > inp_qei_s.ang_cnt)
@@ -425,7 +426,7 @@ static void update_phase_state( // Update phase state
 		if (START_UP_CHANGES <= inp_qei_s.pin_changes)
 		{
 			// Check if we have good data
-			if (QEI_HI_CLOCK == abs(inp_qei_s.curr_state))
+			if (QEI_HI_POSI == abs(inp_qei_s.curr_state))
 			{
 				update_speed( inp_qei_s ); // Update speed value with new time difference
 			} // if (QEI_BIT_ERR != inp_qei_s.curr_state)
@@ -744,7 +745,8 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 				buffer[write_off].inp_pins = inp_pins[motor_id];
 				buffer[write_off].id = motor_id;	
 
-if (motor_id) xscope_probe_data( 2 ,inp_pins[motor_id] );
+if (motor_id) xscope_probe_data( 0 ,(inp_pins[motor_id] & 1) );
+if (motor_id) xscope_probe_data( 1 ,((inp_pins[motor_id] & 2) >> 1) );
 
 				// new QEI data written to buffer
 				write_cnt++; // Increment write counter.  WARNING No overflow check

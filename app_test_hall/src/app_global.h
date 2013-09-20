@@ -46,7 +46,7 @@
 #define MAX_SPEC_RPM 4000
 
 /** Define flag for verbose printing */
-#define VERBOSE_PRINT 0
+#define VERBOSE_PRINT 1
 
 /** Define flag for printing Micro-test info. */
 #define MICRO_TESTS 0
