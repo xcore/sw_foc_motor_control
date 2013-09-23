@@ -42,6 +42,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 
 	inp_qei_s.pin_changes = 0; // NB Initially this is used to count input-pin changes
 	inp_qei_s.id = inp_id; // Clear Previous phase values
+	inp_qei_s.first = 1; // Set flag to indicate still expecting first QEI data
 	inp_qei_s.ang_cnt = 0; // Reset counter indicating angular position of motor (from origin)
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
 	inp_qei_s.prev_inc = 0;
@@ -51,12 +52,8 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.confid = 1; // Initialise spin-direction confidence value (1: Marginal Positive-spin probability)
 
 	inp_qei_s.prev_diff = 0;
-	inp_qei_s.prev_time = 0;
 	inp_qei_s.prev_orig = 0;
 	inp_qei_s.prev_phases = 0;
-	inp_qei_s.phase_index = 0;
-	inp_qei_s.prev_index = 3;
-
 	inp_qei_s.filt_val = 0; // filtered value
 	inp_qei_s.coef_err = 0; // Coefficient diffusion error
 	inp_qei_s.scale_err = 0; // Scaling diffusion error 
@@ -132,6 +129,7 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 
 	// Determine probable range of angular increment values from time-differences ...
 
+
 	// Find lower bound for angular increment, by assuming maximum deceleration
 	tmp_inc = estimate_increment_bound( inp_qei_s ,HI_QEI_SCALE );
 	inp_qei_s.lo_inc = tmp_inc;
@@ -139,11 +137,19 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 	// Find higher bound for angular increment, by assuming maximum acceleration
 	tmp_inc = estimate_increment_bound( inp_qei_s ,LO_QEI_SCALE );
 	inp_qei_s.hi_inc = tmp_inc;
-
+/*
+	acquire_lock(); //MB~
+	printstr( " DT=" ); printuint( inp_qei_s.diff_time);
+	printstr( " OD=" ); printuint( inp_qei_s.t_dif_old );
+	printstr( " CD=" ); printuint( inp_qei_s.t_dif_cur );
+	printstr( " ND=" ); printuint( inp_qei_s.t_dif_new );
+	printstr( " Lo=" ); printuint( inp_qei_s.lo_inc );
+	printstr( " Hi=" ); printuintln( inp_qei_s.hi_inc );
+	release_lock(); //MB~
+*/
 	// NB We have now isolated the increment estimate to the range [inp_qei_s.lo_inc .. inp_qei_s.hi_inc]
 
 	inp_qei_s.prev_state = inp_qei_s.curr_state; // Store old QEI state value
-	inp_qei_s.prev_index = inp_qei_s.phase_index; // Store old circular phase index
 	inp_qei_s.phase_index = inp_qei_s.inv_phase.vals[cur_phases];	// Convert phase val into circ. index [0..QEI_PHASE_MASK]
 
 	// Force phase increment into range [0..QEI_PHASE_MASK]
@@ -276,11 +282,14 @@ static void update_spin_state( // Update spin-state from QEI-state and 'confiden
 			{
 				// NB This could be a genuine change of direction, so do confidence again to speed-up change-over
 				new_confid = inp_qei_s.confid + inp_qei_s.curr_state; // new (unclamped) confidence level
+
 				if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
+
 			} // if (0 > (inp_qei_s.curr_state * inp_qei_s.confid))
 		} // if (QEI_BIT_ERR != inp_qei_s.prev_state)
 
 		new_confid = inp_qei_s.confid + inp_qei_s.curr_state; // new (unclamped) confidence level
+
 		if (MAX_CONFID >= abs(new_confid)) inp_qei_s.confid = new_confid; // Clamp confidence level
 
 		inp_qei_s.state_errs >>= 1; // Halve error count
@@ -344,6 +353,7 @@ static void update_speed( // Update speed estimate from time period. (Angular_sp
 	const_val = (TICKS_PER_MIN_PER_QEI * abs_inc) + inp_qei_s.speed_err; // Add diffusion error to constant;
 
 
+// acquire_lock(); printstr("Ticks="); printint(ticks); printstr(" Inc="); printintln(abs_inc); release_lock(); //MB~
 	inp_qei_s.ang_speed = (const_val + (ticks >> 1)) / ticks;  // Evaluate speed
 	inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
 
@@ -401,6 +411,7 @@ static void update_phase_state( // Update phase state
 	// Check for sensible time
 	if (THR_TICKS_PER_QEI < inp_qei_s.diff_time)
 	{ // Sensible time!
+xscope_probe_data( 6 ,inp_qei_s.diff_time ); //MB~
 		// Update previous down-scaled time differences ...
 
 		// Check for first pass
@@ -417,7 +428,7 @@ static void update_phase_state( // Update phase state
 			inp_qei_s.t_dif_old = inp_qei_s.diff_time;
 		} // if (0 < inp_qei_s.t_dif_cur)
 
-		inp_qei_s.t_dif_new = inp_qei_s.diff_time; // Store new down-scaled time difference
+		inp_qei_s.t_dif_new = inp_qei_s.diff_time; // Store new time difference
 
 		// Determine new QEI state from new pin data
 		update_qei_state( inp_qei_s ,cur_phases );
@@ -518,6 +529,7 @@ static void service_input_pins( // Service detected change on input pins
 	unsigned err_flg; // Flag set when Error condition detected
 
 
+xscope_probe_data( 3 ,inp_qei_s.curr_time ); //MB~
 	// MB~ ToDo Insert noise filter here for each pin.
  
 	// NB Due to noise corrupting bit-values, flags may change, even though phase does NOT appear to have changed
@@ -547,33 +559,47 @@ static void service_input_pins( // Service detected change on input pins
 	} // if (cur_phases & bit_mask)
 } // For Debug
 
-	// Check if phases have changed
-	if (cur_phases != inp_qei_s.prev_phases) 
-	{
-		update_phase_state( inp_qei_s ,cur_phases ); // update phase state
-
+	// Check for first data
+	if (inp_qei_s.first)
+	{ // Initialise 'previous data'
 		inp_qei_s.prev_phases = cur_phases; // Store phase value
-	}	// if (cur_phases != inp_qei_s.prev_phases)
-
-	// Check for change in origin state
-	if (orig_flg != inp_qei_s.prev_orig)
-	{
-		update_origin_state( inp_qei_s ,orig_flg ); // update origin state
-	
-		check_for_missed_origin( inp_qei_s ); // NB May update inp_qei_s.ang_cnt & inp_qei_s.params.rev_cnt
-
+		inp_qei_s.prev_index = inp_qei_s.inv_phase.vals[cur_phases];	// Convert phase val into circ. index [0..QEI_PHASE_MASK]
 		inp_qei_s.prev_orig = orig_flg; // Store origin flag value
-	} // if (orig_flg != inp_qei_s.prev_orig)
+		inp_qei_s.params.err = err_flg;
 
-	// Check for change in error state
-	if (err_flg != inp_qei_s.params.err)
-	{
-		// Update estimate of error status using new error flag
-		estimate_error_status( inp_qei_s ,err_flg ); // NB Updates inp_qei_s.params.err
-	} // if (err_flg != inp_qei_s.params.err)
-
- 	// The theta value returned to the client should be in the range:  0 <= ang_cnt < 360 degrees
-	inp_qei_s.params.theta = (inp_qei_s.ang_cnt & QEI_REV_MASK); // force into range [0..QEI_REV_MASK]
+		inp_qei_s.first = 0; // Clear first data flag
+	} // if (inp_qei_s.first)
+	else
+	{ // NOT first data
+		// Check if phases have changed
+		if (cur_phases != inp_qei_s.prev_phases) 
+		{
+			update_phase_state( inp_qei_s ,cur_phases ); // update phase state
+	
+			inp_qei_s.prev_phases = cur_phases; // Store phase value
+			inp_qei_s.prev_index = inp_qei_s.phase_index; // Store old circular phase index
+		}	// if (cur_phases != inp_qei_s.prev_phases)
+	
+		// Check for change in origin state
+		if (orig_flg != inp_qei_s.prev_orig)
+		{
+			update_origin_state( inp_qei_s ,orig_flg ); // update origin state
+		
+			check_for_missed_origin( inp_qei_s ); // NB May update inp_qei_s.ang_cnt & inp_qei_s.params.rev_cnt
+	
+			inp_qei_s.prev_orig = orig_flg; // Store origin flag value
+		} // if (orig_flg != inp_qei_s.prev_orig)
+	
+		// Check for change in error state
+		if (err_flg != inp_qei_s.params.err)
+		{
+			// Update estimate of error status using new error flag
+			estimate_error_status( inp_qei_s ,err_flg ); // NB Updates inp_qei_s.params.err
+		} // if (err_flg != inp_qei_s.params.err)
+	
+	 	// The theta value returned to the client should be in the range:  0 <= ang_cnt < 360 degrees
+		inp_qei_s.params.theta = (inp_qei_s.ang_cnt & QEI_REV_MASK); // force into range [0..QEI_REV_MASK]
+	} // else !(inp_qei_s.first)
 
 	return;
 } // service_input_pins
@@ -731,6 +757,8 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 
 	for (int motor_id=0; motor_id<NUMBER_OF_MOTORS; ++motor_id) 
 	{
+		chronometer :> all_qei_s[motor_id].prev_time;	// Initialise previous time-stamp with sensible value
+
 		init_qei_data( all_qei_s[motor_id] ,inp_pins[motor_id] ,motor_id ); // Initialise QEI data for current motor
 	} // for motor_id
 
@@ -762,6 +790,7 @@ if (motor_id) xscope_probe_data( 1 ,((inp_pins[motor_id] & 2) >> 1) );
 				switch(inp_cmd)
 				{
 					case QEI_CMD_DATA_REQ : // Data Request
+// acquire_lock(); printstr(" VEL="); printintln(all_qei_s[motor_id].params.veloc );	release_lock(); //MB~
 						service_client_data_request( all_qei_s[motor_id] ,c_qei[motor_id] );
 					break; // case QEI_CMD_DATA_REQ
 
@@ -783,7 +812,6 @@ if (motor_id) xscope_probe_data( 1 ,((inp_pins[motor_id] & 2) >> 1) );
 				if (write_cnt > read_cnt)
 				{
 					int motor_id = buffer[read_off].id;	
-
 
 					all_qei_s[motor_id].curr_time = buffer[read_off].time;
 					service_input_pins( all_qei_s[motor_id] ,buffer[read_off].inp_pins );

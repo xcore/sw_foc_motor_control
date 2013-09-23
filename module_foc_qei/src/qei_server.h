@@ -117,7 +117,7 @@
 #define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer
 #define INT64_BITS (sizeof(S64_T) * BITS_IN_BYTE) // No. of bits in signed 64-bit type!
 
-#define QEI_BUF_BITS 11 // Use power-of-2 size to get all 1's mask
+#define QEI_BUF_BITS 10 // Use power-of-2 size to get all 1's mask
 #define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
 #define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
 
@@ -197,6 +197,7 @@ typedef struct QEI_DATA_TAG //
 	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident Negative spin)
 	int prev_orig; // Previous origin flag
 	int id; // Unique motor identifier
+	int first; // Flag set until first data received
 	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
 
 	int filt_val; // filtered value

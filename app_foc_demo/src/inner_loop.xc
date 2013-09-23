@@ -31,10 +31,11 @@ static void init_error_data( // Initialise Error-handling data
 		safestrcpy( err_data_s.err_strs[err_cnt].str ,"No Message! Please add in function init_motor()" );
 	} // for err_cnt
 
-	safestrcpy( err_data_s.err_strs[OVERCURRENT].str ,"Over-Current Detected" );
-	safestrcpy( err_data_s.err_strs[UNDERVOLTAGE].str ,"Under-Voltage Detected" );
-	safestrcpy( err_data_s.err_strs[STALLED].str ,"Motor Stalled Persistently" );
-	safestrcpy( err_data_s.err_strs[DIRECTION].str ,"Motor Spinning In Wrong Direction!" );
+	safestrcpy( err_data_s.err_strs[OVERCURRENT_ERR].str ,"Over-Current Detected" );
+	safestrcpy( err_data_s.err_strs[UNDERVOLTAGE_ERR].str ,"Under-Voltage Detected" );
+	safestrcpy( err_data_s.err_strs[STALLED_ERR].str ,"Motor Stalled Persistently" );
+	safestrcpy( err_data_s.err_strs[DIRECTION_ERR].str ,"Motor Spinning In Wrong Direction!" );
+	safestrcpy( err_data_s.err_strs[SPEED_ERR].str ,"Motor Exceeded Maximim Speed" );
 
 } // init_error_data 
 /*****************************************************************************/
@@ -85,7 +86,7 @@ static void init_motor( // initialise data structure for one motor
 #endif
 
 //MB~	motor_s.req_veloc = REQ_VELOCITY;
-	motor_s.req_veloc = -REQ_VELOCITY;
+	motor_s.req_veloc = REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 
 	motor_s.Iq_alg = TRANSFORM; // [TRANSFORM VELOCITY EXTREMA] Assign algorithm used to estimate coil current Iq (and Id)
@@ -411,7 +412,7 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	int phase_cnt; // phase counter
 
 
-if (motor_s.xscope) xscope_probe_data( 3 ,inp_theta );
+// if (motor_s.xscope) xscope_probe_data( 3 ,inp_theta );
 
 	// Smooth Vq values
 	if (set_Vq > motor_s.prev_Vq)
@@ -789,8 +790,8 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 			{
 				if (motor_s.qei_params.veloc > -motor_s.half_veloc)
 				{	// Spinning in wrong direction
-					motor_s.err_data.err_flgs |= (1 << DIRECTION);
-					motor_s.err_data.line[DIRECTION] = __LINE__;
+					motor_s.err_data.err_flgs |= (1 << DIRECTION_ERR);
+					motor_s.err_data.line[DIRECTION_ERR] = __LINE__;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 				} // if (motor_s.qei_params.veloc > -motor_s.half_veloc)
@@ -799,8 +800,8 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 			{
 				if (motor_s.qei_params.veloc < -motor_s.half_veloc)
 				{	// Spinning in wrong direction
-					motor_s.err_data.err_flgs |= (1 << DIRECTION);
-					motor_s.err_data.line[DIRECTION] = __LINE__;
+					motor_s.err_data.err_flgs |= (1 << DIRECTION_ERR);
+					motor_s.err_data.line[DIRECTION_ERR] = __LINE__;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 				} // if (motor_s.qei_params.veloc < -motor_s.half_veloc)
@@ -847,7 +848,7 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.qei_params.veloc); rele
 	} // switch( motor_s.state )
 
 	motor_s.cnts[motor_s.state]++; // Update counter for new motor state 
-if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.state );
+// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.state );
 
 	// Select correct method of calculating DQ values
 #pragma fallthrough
@@ -983,8 +984,8 @@ static void use_motor ( // Start motor, and run step through different motor sta
 				// Check error status
 				if (motor_s.hall_params.err)
 				{
-					motor_s.err_data.err_flgs |= (1 << OVERCURRENT);
-					motor_s.err_data.line[OVERCURRENT] = __LINE__;
+					motor_s.err_data.err_flgs |= (1 << OVERCURRENT_ERR);
+					motor_s.err_data.line[OVERCURRENT_ERR] = __LINE__;
 					motor_s.state = STOP; // Switch to stop state
 					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 				} // if (motor_s.hall_params.err)
@@ -1001,13 +1002,17 @@ if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.theta );
 					if (4400 < motor_s.meas_speed) // Safety
 					{
 						printstr("AngVel:"); printintln( motor_s.qei_params.veloc );
-							motor_s.state= STOP;
+
+						motor_s.err_data.err_flgs |= (1 << SPEED_ERR);
+						motor_s.err_data.line[SPEED_ERR] = __LINE__;
+						motor_s.state = STOP; // Switch to stop state
+						motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 					} // if (4100 < motor_s.qei_params.veloc)
 
 					// Get ADC sensor data
 					foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
 if (motor_s.xscope) xscope_probe_data( 5 ,(motor_s.adc_params.vals[ADC_PHASE_A] >> 4) );
-if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.adc_params.vals[ADC_PHASE_B] );
+// if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.adc_params.vals[ADC_PHASE_B] );
 // if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.adc_params.vals[ADC_PHASE_C] );
 
 					update_motor_state( motor_s ,motor_s.hall_params.hall_val );
@@ -1052,6 +1057,20 @@ if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.adc_params.vals[ADC_PHASE_B] )
 		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
 
 	}	// while (STOP != motor_s.state)
+
+	// Signal other processes to stop ...
+
+	c_qei <: QEI_CMD_LOOP_STOP; // Stop QEI server
+
+	// Wait for other processes to stop ...
+
+	// Wait for QEI server to stop
+	do // while (QEI_TERMINATED != motor_s.qei_params.err);
+	{
+		c_qei :> motor_s.qei_params;
+	}
+	while (QEI_TERMINATED != motor_s.qei_params.err);
+
 } // use_motor
 /*****************************************************************************/
 static void error_handling( // Prints out error messages
@@ -1128,6 +1147,7 @@ void run_motor (
 	// NB At present only Motor_1 works
 	if (motor_id)
 	{
+		acquire_lock(); 
 		if (motor_s.err_data.err_flgs)
 		{
 			printstr( "Demo Ended Due to Following Errors on Motor " );
@@ -1138,6 +1158,7 @@ void run_motor (
 		{
 			printstrln( "Demo Ended Normally" );
 		} // else !(motor_s.err_data.err_flgs)
+		release_lock();
 
 		_Exit(1); // Exit without flushing buffers
 	} // if (motor_id)

@@ -51,10 +51,10 @@ void xscope_user_init()
 		,XSCOPE_CONTINUOUS, "qei_A", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "qei_B", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "thetaQ", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "thetaP", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "State", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "cur_tim", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "prv_tim", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "adc_A", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "adc_B", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "dif_tim", XSCOPE_INT , "n"
 /*
 		,XSCOPE_CONTINUOUS, "pid_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "req_vel", XSCOPE_INT , "n"
@@ -107,8 +107,7 @@ int main ( void ) // Program Entry Point
 
 			par {
 				// Loop through all motors
-//MB~				par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-				par (int motor_cnt=1; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+				par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 				{
 					run_motor( motor_cnt ,c_wd[motor_cnt]  ,c_pwm[motor_cnt] ,c_hall[motor_cnt] ,c_qei[motor_cnt] 
 						,c_adc_cntrl[motor_cnt] ,c_speed[motor_cnt] ,c_commands ); //MB~ Was ,c_commands[motor_cnt] );
