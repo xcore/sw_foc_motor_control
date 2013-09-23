@@ -42,9 +42,9 @@ static void init_qei_data( // Initialise  QEI data for one motor
 
 	inp_qei_s.pin_changes = 0; // NB Initially this is used to count input-pin changes
 	inp_qei_s.id = inp_id; // Clear Previous phase values
-	inp_qei_s.first = 1; // Set flag to indicate still expecting first QEI data
 	inp_qei_s.ang_cnt = 0; // Reset counter indicating angular position of motor (from origin)
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
+	inp_qei_s.ang_speed = 1;	// Default initial speed value
 	inp_qei_s.prev_inc = 0;
 	inp_qei_s.curr_state = QEI_BIT_ERR; // Initialise current QEI state
 	inp_qei_s.state_errs = 0; // Initialise counter for invalid QEI state transitions
@@ -433,20 +433,11 @@ xscope_probe_data( 6 ,inp_qei_s.diff_time ); //MB~
 		// Determine new QEI state from new pin data
 		update_qei_state( inp_qei_s ,cur_phases );
 
-		// Check for end of start-up phase
-		if (START_UP_CHANGES <= inp_qei_s.pin_changes)
+		// Check if we have good data
+		if (QEI_HI_POSI == abs(inp_qei_s.curr_state))
 		{
-			// Check if we have good data
-			if (QEI_HI_POSI == abs(inp_qei_s.curr_state))
-			{
-				update_speed( inp_qei_s ); // Update speed value with new time difference
-			} // if (QEI_BIT_ERR != inp_qei_s.curr_state)
-		} // if (START_UP_CHANGES <= inp_qei_s.pin_changes)
-		else
-		{
-			inp_qei_s.pin_changes++; // Update number of input pin changes
-			inp_qei_s.ang_speed = 1;	// Default speed value
-		} // if (START_UP_CHANGES <= inp_qei_s.pin_changes)
+			update_speed( inp_qei_s ); // Update speed value with new time difference
+		} // if (QEI_BIT_ERR != inp_qei_s.curr_state)
 	
 		inp_qei_s.prev_time = inp_qei_s.curr_time; // Store time stamp
 		inp_qei_s.prev_phases = cur_phases; // Store phase value
@@ -560,15 +551,15 @@ xscope_probe_data( 3 ,inp_qei_s.curr_time ); //MB~
 } // For Debug
 
 	// Check for first data
-	if (inp_qei_s.first)
+	if (0 == inp_qei_s.pin_changes)
 	{ // Initialise 'previous data'
 		inp_qei_s.prev_phases = cur_phases; // Store phase value
 		inp_qei_s.prev_index = inp_qei_s.inv_phase.vals[cur_phases];	// Convert phase val into circ. index [0..QEI_PHASE_MASK]
 		inp_qei_s.prev_orig = orig_flg; // Store origin flag value
 		inp_qei_s.params.err = err_flg;
 
-		inp_qei_s.first = 0; // Clear first data flag
-	} // if (inp_qei_s.first)
+		inp_qei_s.pin_changes = 1; // Update number of pin-changes
+	} // if (0 == inp_qei_s.pin_changes)
 	else
 	{ // NOT first data
 		// Check if phases have changed
@@ -599,7 +590,7 @@ xscope_probe_data( 3 ,inp_qei_s.curr_time ); //MB~
 	
 	 	// The theta value returned to the client should be in the range:  0 <= ang_cnt < 360 degrees
 		inp_qei_s.params.theta = (inp_qei_s.ang_cnt & QEI_REV_MASK); // force into range [0..QEI_REV_MASK]
-	} // else !(inp_qei_s.first)
+	} // else !(0 == inp_qei_s.pin_changes)
 
 	return;
 } // service_input_pins

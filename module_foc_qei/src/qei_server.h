@@ -197,7 +197,6 @@ typedef struct QEI_DATA_TAG //
 	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident Negative spin)
 	int prev_orig; // Previous origin flag
 	int id; // Unique motor identifier
-	int first; // Flag set until first data received
 	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
 
 	int filt_val; // filtered value
