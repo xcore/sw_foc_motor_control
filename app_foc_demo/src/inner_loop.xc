@@ -78,15 +78,8 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.hall_params.hall_val = HALL_NERR_MASK; // Initialise to 'No Errors'
 	motor_s.prev_hall = (!HALL_NERR_MASK); // Arbitary value different to above
 
-// Choose last Hall state of 6-state cycle, depending on spin direction
-#if (LDO_MOTOR_SPIN == 1)
-	#define LAST_HALL_STATE 0b011
-#else
-	#define LAST_HALL_STATE 0b101
-#endif
-
 //MB~	motor_s.req_veloc = REQ_VELOCITY;
-	motor_s.req_veloc = REQ_VELOCITY;
+	motor_s.req_veloc = -REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 
 	motor_s.Iq_alg = TRANSFORM; // [TRANSFORM VELOCITY EXTREMA] Assign algorithm used to estimate coil current Iq (and Id)
@@ -127,15 +120,7 @@ static void init_motor( // initialise data structure for one motor
 		motor_s.Vd_openloop = -START_VD_OPENLOOP; // Requested Vd value open-loop start-up
 		motor_s.Vq_openloop = -START_VQ_OPENLOOP; // Requested Vq value open-loop start-up
 
-		// Choose last Hall state of 6-state cycle NB depends on motor-type
-		if (LDO_MOTOR_SPIN)
-		{
-			motor_s.end_hall = 0b101;
-		} // if (LDO_MOTOR_SPIN
-		else
-		{
-			motor_s.end_hall = 0b011;
-		} // else !(LDO_MOTOR_SPIN
+		motor_s.end_hall = NEGA_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
 	} // if (0 > motor_s.req_veloc)
 	else
 	{ // Positive spin direction
@@ -144,15 +129,7 @@ static void init_motor( // initialise data structure for one motor
 		motor_s.Vd_openloop = START_VD_OPENLOOP; // Requested Id value open-loop start-up
 		motor_s.Vq_openloop = START_VQ_OPENLOOP; // Requested Iq value open-loop start-up
 
-		// Choose last Hall state of 6-state cycle NB depends on motor-type
-		if (LDO_MOTOR_SPIN)
-		{
-			motor_s.end_hall = 0b011;
-		} // if (LDO_MOTOR_SPIN
-		else
-		{
-			motor_s.end_hall = 0b101;
-		} // else !(LDO_MOTOR_SPIN
+		motor_s.end_hall = POSI_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
 	} // else !(0 > motor_s.req_veloc)
 
 	motor_s.req_Vd = motor_s.Vd_openloop; // Requested 'radial' voltage 
@@ -681,18 +658,22 @@ static MOTOR_STATE_ENUM check_hall_state( // Inspect Hall-state and update motor
 ) // Returns new motor-state
 /* The input pins from the Hall port hold the following data
  * Bit_3: Over-current flag (NB Value zero is over-current)
- * Bit_2: Hall Sensor Phase_A
+ * Bit_2: Hall Sensor Phase_C
  * Bit_1: Hall Sensor Phase_B
- * Bit_0: Hall Sensor Phase_C
+ * Bit_0: Hall Sensor Phase_A
  *
  * The Sensor bits are toggled every 180 degrees. 
- * Each phase is separated by 120 degrees. This gives the following bit pattern for ABC
+ * Each phase is separated by 120 degrees.
+ * WARNING: By Convention Phase_A is the MS-bit. 
+ * However on the XMOS Motor boards, Phase_A is the LS-bit
+ * This gives the following valid bit patterns for [CBA]
  * 
- *          <---------- Anti-Clockwise <----------
- * (011) -> 001 -> 101 -> 100 -> 110 -> 010 -> 011 -> (001)
- *          ------------> Clock-Wise ------------>
+ *      <-------- Positive Spin <--------
+ * (011)  001  101  100  110  010  011  (001)   [CBA]
+ *      --------> Negative Spin -------->
  * 
- * WARNING: Each motor manufacturer uses their own definition for spin direction.
+ * WARNING: By Convention Phase_A leads Phase B for a positive spin.
+ * However, each motor manufacturer may use their own definition for spin direction.
  * So key Hall-states are implemented as defines e.g. FIRST_HALL and LAST_HALL
  *
  * For the purposes of this algorithm, the angular position origin is defined as
@@ -993,6 +974,13 @@ static void use_motor ( // Start motor, and run step through different motor sta
 				{
 					/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
 					foc_qei_get_parameters( motor_s.qei_params ,c_qei );
+
+#if (LDO_MOTOR_SPIN)
+	// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
+	motor_s.qei_params.theta = (QEI_PER_REV - motor_s.qei_params.theta) & QEI_REV_MASK; 
+	motor_s.qei_params.veloc = -motor_s.qei_params.veloc;
+	motor_s.qei_params.rev_cnt= -motor_s.qei_params.rev_cnt;
+#endif // (LDO_MOTOR_SPIN)
 
 if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.theta );
 // if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.qei_params.veloc );

@@ -102,7 +102,15 @@
 #define STALL_SPEED 100
 #define STALL_TRIP_COUNT 5000
 
-#define FIRST_HALL_STATE 0b001 // 1st Hall state of 6-state cycle
+#define FIRST_HALL_STATE 0b001 // [CBA] 1st Hall state of 6-state cycle
+#define POSI_LAST_HALL_STATE 0b101 // [CBA] last Hall state of 6-state cycle if spinning in Positive direction
+#define NEGA_LAST_HALL_STATE 0b011 // [CBA] last Hall state of 6-state cycle if spinning in Negative direction
+
+// Choose last Hall state of 6-state cycle, depending on spin direction
+#if (LDO_MOTOR_SPIN == 1)
+	#define LAST_HALL_STATE 0b011
+#else
+#endif
 
 #define INIT_THETA 0 // Initial start-up angle
 
