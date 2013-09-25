@@ -3,6 +3,12 @@ Overview
 
 This module contains a Pulse-Width-Modulation (PWM) interface component for Motor Control systems.
 
+PWM consists of 3 phases (Phase_A, Phase_B, Phase_C). Each phase contains a periodic sequence of varying pulse-widths. A large width is used to generate a large coil current, and a small width used to generate a small coil current. Each phase contains the same sequence of pulse widths, however there is a phase difference of 120 degrees between the 3 phases. That is, the maximum pulse width on each phase does NOT occur at the same time.
+
+By convention, the positive spin direction is defined as the one where Phase_A leads Phase_B. E.g. After Phase_A reaches it maximum, Phase_B is next to reach its maximum, followed by Phase_C. This definition is based on time, and is therefore NOT dependent on the spatial orientation of the motor.
+
+WARNING: Each motor manufacturer may use their own definition for spin direction.
+
 It currently has the following specification:-
 
   * Maximum loop frequency: 360 kHz if using a reference frequency of 100 MHz (inner PWM loop requires 276 cycles)
