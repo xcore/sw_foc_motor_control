@@ -79,7 +79,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.prev_hall = (!HALL_NERR_MASK); // Arbitary value different to above
 
 //MB~	motor_s.req_veloc = REQ_VELOCITY;
-	motor_s.req_veloc = -REQ_VELOCITY;
+	motor_s.req_veloc = REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 
 	motor_s.Iq_alg = TRANSFORM; // [TRANSFORM VELOCITY EXTREMA] Assign algorithm used to estimate coil current Iq (and Id)
@@ -982,7 +982,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 	motor_s.qei_params.rev_cnt= -motor_s.qei_params.rev_cnt;
 #endif // (LDO_MOTOR_SPIN)
 
-if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.theta );
+// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.theta );
 // if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.qei_params.veloc );
 
 					motor_s.meas_speed = abs( motor_s.qei_params.veloc ); // NB Used to spot stalling behaviour
@@ -1045,20 +1045,6 @@ if (motor_s.xscope) xscope_probe_data( 5 ,(motor_s.adc_params.vals[ADC_PHASE_A] 
 		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
 
 	}	// while (STOP != motor_s.state)
-
-	// Signal other processes to stop ...
-
-	c_qei <: QEI_CMD_LOOP_STOP; // Stop QEI server
-
-	// Wait for other processes to stop ...
-
-	// Wait for QEI server to stop
-	do // while (QEI_TERMINATED != motor_s.qei_params.err);
-	{
-		c_qei :> motor_s.qei_params;
-	}
-	while (QEI_TERMINATED != motor_s.qei_params.err);
-
 } // use_motor
 /*****************************************************************************/
 static void error_handling( // Prints out error messages
@@ -1085,6 +1071,95 @@ static void error_handling( // Prints out error messages
 	} // for err_cnt
 
 } // error_handling
+/*****************************************************************************/
+void wait_for_servers_to_start( // Wait for other servers to initialise
+	MOTOR_DATA_TYP motor_s, // Structure containing motor data
+	chanend c_wd, // Channel for communication with WatchDog server
+	chanend c_pwm, // Channel for communication with PWM server
+	streaming chanend c_hall, // Channel for communication with Hall server 
+	streaming chanend c_qei,  // Channel for communication with QEI server
+	streaming chanend c_adc_cntrl // Channel for communication with ADC server
+)
+{
+	unsigned cmd; // Command from Server
+
+
+	c_wd <: WD_CMD_INIT;	// Signal WatchDog to Initialise ...
+
+	// Wait for Hall server to start
+	c_hall :> cmd;
+	assert(HALL_CMD_ACK == cmd); // ERROR: Hall server did NOT send acknowledge signal
+
+	// Wait for ADC server to start
+	c_adc_cntrl :> cmd;
+	assert(ADC_CMD_ACK == cmd); // ERROR: ADC server did NOT send acknowledge signal
+
+	// Wait for QEI server to start
+	c_qei :> cmd;
+	assert(QEI_CMD_ACK == cmd); // ERROR: QEI server did NOT send acknowledge signal
+
+	// Wait for WatchDog server to start
+	c_wd :> cmd;
+	assert(WD_CMD_ACK == cmd); // ERROR: Hall server did NOT send acknowledge signal
+
+} // wait_for_servers_to_start
+/*****************************************************************************/
+void signal_servers_to_stop( // Wait for other servers to terminate
+	MOTOR_DATA_TYP motor_s, // Structure containing motor data
+	chanend c_wd, // Channel for communication with WatchDog server
+	chanend c_pwm, // Channel for communication with PWM server
+	streaming chanend c_hall, // Channel for communication with Hall server 
+	streaming chanend c_qei,  // Channel for communication with QEI server
+	streaming chanend c_adc_cntrl // Channel for communication with ADC server
+)
+#define NUM_SERVERS 3 // edit this line to indicate No of servers to close 
+{
+	unsigned cmd; // Command from Server
+	timer chronometer;	// Timer
+	unsigned ts1;	// timestamp
+	int run_cnt = NUM_SERVERS; // Initialise number of running servers
+
+
+	// Signal other processes to stop ...
+	c_adc_cntrl <: ADC_CMD_LOOP_STOP; // Stop ADC server
+	c_qei <: QEI_CMD_LOOP_STOP; // Stop QEI server
+	c_hall <: HALL_CMD_LOOP_STOP; // Stop Hall server
+
+	// Loop until no more servers still running
+	while(0 < run_cnt)
+	{
+		select {
+			case c_qei :> cmd : // QEI server
+			{
+				// If Shutdown acknowledged, decrement No. of running servers
+				if (QEI_CMD_ACK == cmd) run_cnt--;
+			} // case	c_qei
+			break;
+
+			case c_hall :> cmd : // Hall server
+			{
+				// If Shutdown acknowledged, decrement No. of running servers
+				if (HALL_CMD_ACK == cmd) run_cnt--;
+			} // case	c_hall
+			break;
+
+			case c_adc_cntrl :> cmd : // ADC server
+			{
+				// If Shutdown acknowledged, decrement No. of running servers
+				if (ADC_CMD_ACK == cmd) run_cnt--;
+			} // case	c_adc_cntrl
+			break;
+
+			default :
+				acquire_lock(); printchar('.');	release_lock();
+				chronometer :> ts1;
+				chronometer when timerafter(ts1 + MILLI_SEC) :> void;
+			break; // default
+		} // select
+	} // while(0 < run_cnt)
+
+	acquire_lock(); printstrln("");	release_lock();
+} // signal_servers_to_stop
 /*****************************************************************************/
 #pragma unsafe arrays
 void run_motor ( 
@@ -1116,21 +1191,24 @@ void run_motor (
 		chronometer when timerafter(ts1 + (MILLI_400_SECS << 1) + (256 * thread_id)) :> void;
 	}
 
-	c_wd <: WD_CMD_INIT;	// Signal WatchDog to Initialise ...
-
 	// Pause to allow the rest of the system to settle
 	{
 		unsigned thread_id = get_logical_core_id();
 		chronometer :> ts1;
-		chronometer when timerafter(ts1 + MILLI_400_SECS) :> void;
 	}
 
 	init_motor( motor_s ,motor_id );	// Initialise motor data
 
 	init_pwm( motor_s.pwm_comms ,c_pwm ,motor_id );	// Initialise PWM communication data
 
+	// Wait for other processes to start ...
+	wait_for_servers_to_start( motor_s ,c_wd ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
+
 	// start-and-run motor
 	use_motor( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl ,c_speed ,c_commands ,c_wd );
+
+	// Closedown other processes ...
+	signal_servers_to_stop( motor_s ,c_wd ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
 
 	// NB At present only Motor_1 works
 	if (motor_id)

@@ -34,7 +34,8 @@ typedef enum ADC_PHASE_ETAG
 typedef enum CMD_ADC_ETAG
 {
   ADC_CMD_DATA_REQ = 0,  // Request ADC data
-	ADC_CMD_LOOP_STOP, // Stop while-loop. NB Can't use non-negative integer, due to conflicts in test harness
+	ADC_CMD_LOOP_STOP, // Stop while-loop.
+	ADC_CMD_ACK,	// Acknowledge Command from control loop
   NUM_ADC_CMDS    // Handy Value!-)
 } CMD_ADC_ENUM;
 

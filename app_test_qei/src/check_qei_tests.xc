@@ -613,6 +613,7 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 {
 	TEST_VECT_TYP buffer[VECT_BUF_SIZ]; // Buffer for QEI test vectors (QEI conditions to be tested)
 	timer chronometer; // XMOS timer
+	unsigned cmd; // QEI Control Command
 	int read_cnt = 0; // No of QEI values read from buffer
 	int write_cnt = 0; // No of QEI values written to buffer
 	unsigned read_off = 0; // read offset into buffer
@@ -622,6 +623,10 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 
 	chronometer :> chk_data_s.time; // Get start time
 	chronometer when timerafter(chk_data_s.time + (MICRO_SEC << 1)) :> chk_data_s.time; // Wait for Test Generation to Start
+
+	// Wait for QEI server to start
+	c_qei :> cmd;
+	assert(QEI_CMD_ACK == cmd); // ERROR: QEI server did NOT send acknowledge signal
 
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
@@ -689,6 +694,18 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 		} // select
 	} // while( loop )
 
+	// Loop until QEI Server acknowledges termination request
+	do // while(QEI_CMD_ACK != cmd)
+	{
+		c_qei :> cmd;
+
+		if (0 == chk_data_s.print_on)
+		{
+			c_disp <: DISP_CLASS_PROG; // Signal printing of progress indicator
+		} // if (0 == chk_data_s.print_on)
+	} while(QEI_CMD_ACK != cmd);
+
+#ifdef MB
 	// Loop until QEI Server terminates
 	while(QEI_TERMINATED != chk_data_s.curr_params.err)
 	{
@@ -700,6 +717,7 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 			c_disp <: DISP_CLASS_PROG; // Signal printing of progress indicator
 		} // if (0 == chk_data_s.print_on)
 	} // while(QEI_TERMINATED != chk_data_s.curr_params.err)
+#endif //MB~
 
 	// special case: finalisation for last speed test
 	finalise_speed_test_vector( chk_data_s ,chk_data_s.curr_vect.comp_state[SPEED] ); 

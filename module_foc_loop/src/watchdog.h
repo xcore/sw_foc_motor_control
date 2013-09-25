@@ -32,6 +32,7 @@ typedef enum CMD_WD_ETAG
 	WD_CMD_INIT = 0, // Initialise WatchDog Circuit
 	WD_CMD_DISABLE, // Actively switch off power to motors
 	WD_CMD_TICK, // Keep motor running for another 3.4 ms
+	WD_CMD_ACK, // Acknowledge Command from Control loop
   NUM_WD_CMDS    // Handy Value!-)
 } CMD_WD_ENUM;
 

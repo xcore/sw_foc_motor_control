@@ -60,6 +60,7 @@
 #include <assert.h>
 #include <print.h>
 #include <safestring.h>
+#include <syscall.h>
 
 #include "qei_common.h"
 
@@ -117,7 +118,7 @@
 #define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer
 #define INT64_BITS (sizeof(S64_T) * BITS_IN_BYTE) // No. of bits in signed 64-bit type!
 
-#define QEI_BUF_BITS 10 // Use power-of-2 size to get all 1's mask
+#define QEI_BUF_BITS 5 // Use power-of-2 size to get all 1's mask
 #define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
 #define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
 
@@ -214,7 +215,7 @@ typedef struct QEI_DATA_TAG //
  */
 void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to client
 	streaming chanend c_qei[], // Array of channels connecting server & client
-	buffered port:4 in pb4_qei[] // Array of buffered QEI data ports for each motor
+	buffered port:4 in pb4_qei[NUMBER_OF_MOTORS] // Array of buffered QEI data ports for each motor
 );
 /*****************************************************************************/
 

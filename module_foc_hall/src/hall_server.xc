@@ -25,7 +25,7 @@ static void init_hall_data( // Initialise Hall data structure for one motor
 	hall_data_s.params.err = HALL_ERR_OFF; // Clear error status flag returned to client
 
 	hall_data_s.id = motor_id; // Set unique motor id
-	hall_data_s.status_errs = 0; // Initialise counter for QEI status errors
+	hall_data_s.status_errs = 0; // Initialise counter for Hall status errors
 	hall_buf = 0;
 
 	return;
@@ -104,15 +104,13 @@ static void service_client_data_request( // Send processed HALL data to client
 } // service_client_data_request
 /*****************************************************************************/
 #pragma unsafe arrays
-static void service_client_stop_request( // Acknowledge termination request from Hall client
-	HALL_DATA_TYP &hall_data_s, // Reference to structure containing HALL data for one motor
+static void acknowledge_hall_command( // Acknowledge Hall command
+	HALL_DATA_TYP &inp_hall_s, // Reference to structure containing HALL parameters for one motor
 	streaming chanend c_hall // Data channel to client (carries processed HALL data)
 )
 {
-	hall_data_s.params.err = HALL_TERMINATED; // Signal Hall Termination to Client
-
-	c_hall <: hall_data_s.params;
-} // service_client_stop_request
+	c_hall <: HALL_CMD_ACK; // Acknowledge control command
+} // acknowledge_hall_command
 /*****************************************************************************/
 void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	streaming chanend c_hall[], // Array of data channels to client (carries processed Hall data)
@@ -134,6 +132,9 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{ 
 		init_hall_data( motor_cnt ,all_hall_data[motor_cnt] ,hall_bufs[motor_cnt] );
+
+		// Use acknowledge command to signal to control-loop that initialisation is complete
+		acknowledge_hall_command( all_hall_data[motor_cnt] ,c_hall[motor_cnt] );
 	} // for motor_cnt
 
 	// Loop forever
@@ -166,7 +167,7 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 					break; // case HALL_CMD_DATA_REQ
 
 					case HALL_CMD_LOOP_STOP : // Termination Command
-						service_client_stop_request( all_hall_data[motor_id] ,c_hall[motor_id] );
+						acknowledge_hall_command( all_hall_data[motor_id] ,c_hall[motor_id] );
 
 						do_loop = 0; // Terminate while loop
 					break; // case HALL_CMD_DATA_REQ

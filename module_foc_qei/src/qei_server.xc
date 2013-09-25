@@ -297,7 +297,7 @@ static void update_spin_state( // Update spin-state from QEI-state and 'confiden
 	else
 	{ // Invalid current spin state (BIT_ERROR, JUMP, or STALL)
 		inp_qei_s.state_errs++; // Increment error cnt
-//MB~		assert(MAX_QEI_STATE_ERR > inp_qei_s.state_errs); // Too Many QEI errors
+		assert(MAX_QEI_STATE_ERR > inp_qei_s.state_errs); // Too Many QEI errors
 	} // else !(QEI_BIT_ERR != inp_qei_s.curr_state)
 
 	// Assign spin-direction based on sign of 'confidence'
@@ -353,7 +353,6 @@ static void update_speed( // Update speed estimate from time period. (Angular_sp
 	const_val = (TICKS_PER_MIN_PER_QEI * abs_inc) + inp_qei_s.speed_err; // Add diffusion error to constant;
 
 
-// acquire_lock(); printstr("Ticks="); printint(ticks); printstr(" Inc="); printintln(abs_inc); release_lock(); //MB~
 	inp_qei_s.ang_speed = (const_val + (ticks >> 1)) / ticks;  // Evaluate speed
 	inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
 
@@ -411,7 +410,7 @@ static void update_phase_state( // Update phase state
 	// Check for sensible time
 	if (THR_TICKS_PER_QEI < inp_qei_s.diff_time)
 	{ // Sensible time!
-xscope_probe_data( 6 ,inp_qei_s.diff_time ); //MB~
+// xscope_probe_data( 6 ,inp_qei_s.diff_time ); //MB~
 		// Update previous down-scaled time differences ...
 
 		// Check for first pass
@@ -520,7 +519,7 @@ static void service_input_pins( // Service detected change on input pins
 	unsigned err_flg; // Flag set when Error condition detected
 
 
-xscope_probe_data( 3 ,inp_qei_s.curr_time ); //MB~
+// xscope_probe_data( 3 ,inp_qei_s.curr_time ); //MB~
 	// MB~ ToDo Insert noise filter here for each pin.
  
 	// NB Due to noise corrupting bit-values, flags may change, even though phase does NOT appear to have changed
@@ -671,15 +670,13 @@ static void service_client_data_request( // Send processed QEI data to client
 } // service_client_data_request
 /*****************************************************************************/
 #pragma unsafe arrays
-static void service_client_stop_request( // Acknowledge termination request from QEI client
+static void acknowledge_qei_command( // Acknowledge QEI command
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	streaming chanend c_qei // Data channel to client (carries processed QEI data)
 )
 {
-	inp_qei_s.params.err = QEI_TERMINATED; // Signal QEI Termination to Client
-
-	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
-} // service_client_stop_request
+	c_qei <: QEI_CMD_ACK; // Transmit QEI parameters to Client
+} // acknowledge_qei_command
 #if (QEI_DBG)
 /*****************************************************************************/
 static void print_smp_dbg( // MB~ Print debug sample
@@ -722,7 +719,7 @@ static void print_all_dbg( // MB~ Print all debug info.
 #pragma unsafe arrays
 void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	streaming chanend c_qei[], // Array of data channel to client (carries processed QEI data)
-	buffered port:4 in pb4_QEI[] // Array of buffered 4-bit input ports (carries raw QEI motor data)
+	buffered port:4 in pb4_QEI[NUMBER_OF_MOTORS] // Array of buffered 4-bit input ports (carries raw QEI motor data)
 )
 #define STAT_BITS 12
 #define NUM_STATS (1 << STAT_BITS)
@@ -731,27 +728,40 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 {
 	QEI_BUF_TYP buffer[QEI_BUF_SIZ]; // Buffers raw QEI values
 	QEI_DATA_TYP all_qei_s[NUMBER_OF_MOTORS]; // Array of structures containing QEI parameters for all motor
-	QEI_RAW_TYP inp_pins[NUMBER_OF_MOTORS]; // Set of raw data values on input port pins
+	QEI_RAW_TYP inp_pins[NUMBER_OF_MOTORS]; // Array of raw data values on input port pins
+	QEI_RAW_TYP prev_pins[NUMBER_OF_MOTORS]; // Array of previous input pin values
 	CMD_QEI_ENUM inp_cmd; // QEI command from Client
 	timer chronometer; // H/W timer
+	unsigned ticks; // Timer value
 	int read_cnt = 0; // No of QEI values read from buffer
 	int write_cnt = 0; // No of QEI values written to buffer
 	unsigned read_off = 0; // read offset into buffer
 	unsigned write_off = 0; // wtite offset into buffer
-	int do_loop = 1;   // Flag set until loop-end condition found 
+	int do_loop = 1;   // Flag set until loop-end condition found
 
 
 	acquire_lock(); 
 	printstrln("                                             QEI Server Starts");
 	release_lock();
 
+	// Check if we are running on the simulator
+	if(0 == _is_simulation())
+	{ // Running on real hardware
+		// Wait 128ms for UV_FAULT pin to finish toggling
+		chronometer :> ticks;
+		chronometer when timerafter(ticks + (MILLI_SEC << 7)) :> void;
+	} // if (0 == _is_simulation())
 
-	for (int motor_id=0; motor_id<NUMBER_OF_MOTORS; ++motor_id) 
+	for (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; ++motor_cnt) 
 	{
-		chronometer :> all_qei_s[motor_id].prev_time;	// Initialise previous time-stamp with sensible value
+		prev_pins[motor_cnt] = 0;  // Clear previous pin data
+		init_qei_data( all_qei_s[motor_cnt] ,inp_pins[motor_cnt] ,motor_cnt ); // Initialise QEI data for current motor
 
-		init_qei_data( all_qei_s[motor_id] ,inp_pins[motor_id] ,motor_id ); // Initialise QEI data for current motor
-	} // for motor_id
+		chronometer :> all_qei_s[motor_cnt].prev_time;	// Initialise previous time-stamp with sensible value
+
+		// Use acknowledge command to signal to control-loop that initialisation is complete
+		acknowledge_qei_command( all_qei_s[motor_cnt] ,c_qei[motor_cnt] );
+	} // for motor_cnt
 
 	while (do_loop) {
 #pragma xta endpoint "qei_main_loop"
@@ -760,18 +770,21 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pb4_QEI[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] :
 			{
-				chronometer :> buffer[write_off].time;	// Get new time stamp as soon as possible
-				buffer[write_off].inp_pins = inp_pins[motor_id];
-				buffer[write_off].id = motor_id;	
+				// WARNING: H/W pin-change detector sometimes mis-fires, so also do check in S/W
+				if (inp_pins[motor_id] != prev_pins[motor_id])
+				{
+					chronometer :> buffer[write_off].time;	// Get new time stamp as soon as possible
+					buffer[write_off].inp_pins = inp_pins[motor_id];
+					buffer[write_off].id = motor_id;	
+	
+					// new QEI data written to buffer
+					write_cnt++; // Increment write counter.  WARNING No overflow check
+					write_off = write_cnt & QEI_BUF_MASK; // Wrap into buffer range
+	
+					assert( (write_cnt - read_cnt) < QEI_BUF_MASK); // Check for buffer overflow
 
-if (motor_id) xscope_probe_data( 0 ,(inp_pins[motor_id] & 1) );
-if (motor_id) xscope_probe_data( 1 ,((inp_pins[motor_id] & 2) >> 1) );
-
-				// new QEI data written to buffer
-				write_cnt++; // Increment write counter.  WARNING No overflow check
-				write_off = write_cnt & QEI_BUF_MASK; // Wrap into buffer range
-
-				assert( (write_cnt - read_cnt) < QEI_BUF_MASK); // Check for buffer overflow
+					prev_pins[motor_id] = inp_pins[motor_id]; // Update previous pin values
+				} // if (inp_pins[motor_id] != prev_pins[motor_id])
 			} // case
 			break;
 
@@ -781,12 +794,11 @@ if (motor_id) xscope_probe_data( 1 ,((inp_pins[motor_id] & 2) >> 1) );
 				switch(inp_cmd)
 				{
 					case QEI_CMD_DATA_REQ : // Data Request
-// acquire_lock(); printstr(" VEL="); printintln(all_qei_s[motor_id].params.veloc );	release_lock(); //MB~
 						service_client_data_request( all_qei_s[motor_id] ,c_qei[motor_id] );
 					break; // case QEI_CMD_DATA_REQ
 
 					case QEI_CMD_LOOP_STOP : // Termination Command
-						service_client_stop_request( all_qei_s[motor_id] ,c_qei[motor_id] );
+						acknowledge_qei_command( all_qei_s[motor_id] ,c_qei[motor_id] );
 
 						do_loop = 0; // Terminate while loop
 					break; // case QEI_CMD_DATA_REQ

@@ -23,6 +23,7 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 {
 	unsigned cmd; // WatchDog command from Client
 	unsigned pulse_width; // width of pulse in clock ticks
+	int motor_cnt; // motor counter
 	timer chronometer; // Timer
 
 
@@ -30,8 +31,11 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 	wd_data_s.shared_out = 0; // Clear (Bit_0 and Bit_1 of) data for shared output port 
 
 	// Wait for Initialisation command from Client
-	c_wd[1] :> cmd;
-	assert (WD_CMD_INIT == cmd); // Un-expected command Received
+	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	{
+		c_wd[motor_cnt] :> cmd;
+		assert (WD_CMD_INIT == cmd); // Un-expected command Received
+	} // for motor_cnt
 
 	// Initialise	WatchDog ...
 	chronometer :> wd_data_s.time;	// Get 'enable' time (first tick)
@@ -48,6 +52,11 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 	wd_data_s.shared_out |= ENABLE_MASK; ; // Set Bit_0 (end of rising Edge for FlipFlop Chip)
 	p2_wd <: wd_data_s.shared_out; // NB Switches on FlipFlop chip
 
+	// Signal Initialisation complete
+	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	{
+		c_wd[motor_cnt] <: WD_CMD_ACK;
+	} // for motor_cnt
 } // init_wd
 /*****************************************************************************/
 static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have warmed-up

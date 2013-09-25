@@ -392,11 +392,16 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 )
 {
 	timer chronometer; // XMOS timer
+	unsigned cmd; // Hall Control Command
 	int do_loop = 1;   // Flag set until loop-end condition found 
 
 
 	chronometer :> chk_data_s.time; // Get start time
 	chronometer when timerafter(chk_data_s.time + (MICRO_SEC << 1)) :> chk_data_s.time; // Wait for Test Generation to Start
+
+	// Wait for Hall server to start
+	c_hall :> cmd;
+	assert(HALL_CMD_ACK == cmd); // ERROR: Hall server did NOT send acknowledge signal
 
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
@@ -444,17 +449,16 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 		} // select
 	} // while( loop )
 
-	// Loop until Hall Server terminates
-	while(HALL_TERMINATED != chk_data_s.curr_params.err)
+	// Loop until Hall Server acknowledges termination request
+	do // while(HALL_CMD_ACK != cmd)
 	{
-		chronometer when timerafter(chk_data_s.time + HALL_PERIOD) :> chk_data_s.time;
-		get_new_hall_client_data( chk_data_s ,c_hall ); // Request data from server & check
+		c_hall :> cmd;
 
 		if (0 == chk_data_s.print_on)
 		{
 			print_progress( chk_data_s ); // Print progress indicator
 		} // if (0 == chk_data_s.print_on)
-	} // while(QEI_TERMINATED != chk_data_s.curr_params.err)
+	} while(HALL_CMD_ACK != cmd);
 
 } // check_motor_hall_client_data
 /*****************************************************************************/

@@ -321,6 +321,15 @@ static void service_data_request( // Services client command data request for th
 	} // switch(inp_cmd)
 } // service_data_request 
 /*****************************************************************************/
+#pragma unsafe arrays
+static void acknowledge_adc_command( // Acknowledge ADC command
+	ADC_DATA_TYP &adc_data_s, // Reference to structure containing data for this trigger
+	streaming chanend c_control // ADC Channel connecting to Control, for this trigger
+)
+{
+	c_control <: ADC_CMD_ACK; // Acknowledge ADC Command
+} // acknowledge_adc_command
+/*****************************************************************************/
 void foc_adc_7265_triggered( // Thread for ADC server
 	streaming chanend c_control[NUM_ADC_TRIGGERS], // Array of ADC control Channels connecting to Control (inner_loop.xc)
 	chanend c_trigger[NUM_ADC_TRIGGERS], // Array of channels receiving control token triggers from PWM threads
@@ -345,15 +354,17 @@ void foc_adc_7265_triggered( // Thread for ADC server
 	printstrln("                                             ADC Server Starts");
 	release_lock();
 
+	set_thread_fast_mode_on();
+
+	configure_adc_ports_7265( p32_data ,xclk ,p1_serial_clk ,p1_ready ,p4_mux );
+
 	// Initialise data structure for each trigger
 	for (trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) 
 	{
 		init_adc_trigger( all_adc_data[trig_id] ,trigger_channel_to_adc_mux[trig_id] );
+
+		acknowledge_adc_command( all_adc_data[trig_id] ,c_control[trig_id] ); // Signal initialisation complete
 	} // for trig_id
-
-	set_thread_fast_mode_on();
-
-	configure_adc_ports_7265( p32_data ,xclk ,p1_serial_clk ,p1_ready ,p4_mux );
 
 	// Loop until loop termination condition detected
 	while (do_loop)
@@ -385,6 +396,12 @@ void foc_adc_7265_triggered( // Thread for ADC server
 			break;
 		} // select
 	} // while (do_loop)
+
+	// Initialise data structure for each trigger
+	for (trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) 
+	{
+		acknowledge_adc_command( all_adc_data[trig_id] ,c_control[trig_id] ); // Signal ADC server shutdown
+	} // for trig_id
 
 	acquire_lock(); 
 	printstrln("");

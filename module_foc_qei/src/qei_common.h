@@ -55,7 +55,9 @@
 /** Different QEI Commands (Client --> Server) */
 typedef enum CMD_QEI_ETAG
 {
-	QEI_CMD_LOOP_STOP = (-1), // Stop while-loop. NB Can't use non-negative integer, due to conflicts in test harness
+	// NB Can't use non-negative integers, due to conflicts in test harness
+  QEI_CMD_ACK = (-2),	// QEI Server Command Acknowledged (Control)
+	QEI_CMD_LOOP_STOP = (-1), // Stop while-loop.
 	QEI_CMD_DATA_REQ = 1,	// QEI Data Request
   NUM_QEI_CMDS	// Handy Value!-)
 } CMD_QEI_ENUM;
@@ -65,7 +67,6 @@ typedef enum ERROR_QEI_ETAG
 {
   QEI_ERR_OFF = 0,	// No Error
   QEI_ERR_ON,			// Error
-  QEI_TERMINATED,	// QEI Server Terminated (Control)
   NUM_QEI_ERRS	// Handy Value!-)
 } ERROR_QEI_ENUM;
 

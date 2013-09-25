@@ -64,7 +64,9 @@
 /** Different HALL Commands (Client --> Server) */
 typedef enum CMD_HALL_ETAG
 {
-	HALL_CMD_LOOP_STOP = (-1), // Stop while-loop. NB Can't use non-negative integer, due to conflicts in test harness
+	// NB Can't use non-negative integer, due to conflicts in test harness
+	HALL_CMD_ACK = (-2),	// HALL Server Command Acknowledged (Control)
+	HALL_CMD_LOOP_STOP = (-1), // Stop while-loop.
 	HALL_CMD_DATA_REQ = 1,	// HALL Data Request
   NUM_HALL_CMDS	// Handy Value!-)
 } CMD_HALL_ENUM;
@@ -74,7 +76,6 @@ typedef enum ERROR_HALL_ETAG
 {
   HALL_ERR_OFF = 0,	// No Error
   HALL_ERR_ON,			// Error
-  HALL_TERMINATED,	// HALL Server Terminated (Control)
   NUM_HALL_ERRS	// Handy Value!-)
 } ERROR_HALL_ENUM;
 
