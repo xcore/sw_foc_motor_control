@@ -14,8 +14,10 @@ WARNING: By Convention Phase_A is the most significant bit. However on the XMOS 
 
 There are 2 possible pattern sequences for the phase bits, and these are used to determine the direction in which the motor is spinning. Note well, 2 patterns (000, 111) are never used. By convention, the positive spin direction is the one where Phase_A leads Phase_B.	E.g. Phase_A goes high, one bit-change earlier than Phase_B goes high. This definition is based on time, and is therefore NOT dependent on the spatial orientation of the motor.
 
-   * -------------------------------->  Negative Spin
-   * CBA:  001 101 100 110 010 011 001
-   * <--------------------------------  Positive Spin
+::
+
+         -------------------------->  Negative Spin
+   CBA:  001 101 100 110 010 011 001
+         <--------------------------  Positive Spin
 
 WARNING: Each motor manufacturer may use their own definition for spin direction.

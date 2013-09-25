@@ -16,9 +16,10 @@ WARNING: By convention, Phase_A is normally the most significant bit of the pair
 There are 2 possible pattern sequences for the phase bits, and these are used to determine the direction in which the motor is spinning. By convention, the positive spin direction is the one where Phase_A leads Phase_B.	E.g. Phase_A goes high, one bit-change earlier than Phase_B goes high. This definition is based on time, and is therefore NOT dependent on the spatial orientation of the motor.
 
 ::
-   ------------------------>  Positive Spin
+
+        ------------->  Positive Spin
    BA:  00 01 11 10 00
-   <------------------------  Negative Spin
+        <-------------  Negative Spin
 
 WARNING: Each motor manufacturer may use their own definition for spin direction.
 

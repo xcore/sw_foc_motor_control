@@ -9,7 +9,7 @@ By convention, the positive spin direction is defined as the one where Phase_A l
 
 WARNING: Each motor manufacturer may use their own definition for spin direction.
 
-It currently has the following specification:-
+This PWM module currently has the following specification:-
 
   * Maximum loop frequency: 360 kHz if using a reference frequency of 100 MHz (inner PWM loop requires 276 cycles)
   * PWM duty cycle: 4096 cycles, (allows 2048 different voltages)
