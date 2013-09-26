@@ -73,6 +73,8 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 	PWM_ARRAY_TYP pwm_ctrl_s; // Structure containing double-buffered PWM output data
 	PWM_SERV_TYP pwm_serv_s; // Structure containing PWM server control data 
 	PWM_COMMS_TYP pwm_comms_s; // Structure containing PWM communication data
+	int cmd; // PWM command
+	int do_loop = 1; // Set 'while loop' flag
 	unsigned pattern; // Bit-pattern on port
 
 
@@ -94,10 +96,10 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 
 	pwm_serv_s.data_ready = 1; // Signal new data ready. NB this happened in init_pwm_data() 
 
-	/* This loop requires at least ~280 cycles, which means the PWM period must be at least 512 cycles.
+	/* This loop requires at least ~280 cycles, which means the PWM period must be at least 512 cycles (as needs to be 2^n)
 	 * If convert_all_pulse_widths was optimised for speed, maybe a PWM period of 256 cycles would be possible
 	 */
-	while (1)
+	while (do_loop)
 	{
 #pragma xta endpoint "pwm_main_loop"
 		// Do processing for one PWM period, using PWM data in current buffer 
@@ -111,8 +113,6 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 		
 				c_pwm :> pwm_comms_s.params; // Receive PWM parameters from Client
 
-				if (PWM_TERMINATED == pwm_comms_s.params.id) break; // Break out of while loop
- 
 				// Convert all PWM pulse widths to pattern/time_offset port data
 				convert_all_pulse_widths( pwm_comms_s ,pwm_ctrl_s.buf_data[pwm_comms_s.buf] ); // Max 178 Cycles
 			} // if (0 == PWM_SHARED_MEM)
@@ -163,19 +163,34 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 		// Check if new data is ready  - ~8 cycles
 		select
 		{
-			case c_pwm :> pwm_comms_s.buf : // Is new buf_id ready?
-				pwm_serv_s.data_ready = 1; // signal new data ready
+			case c_pwm :> cmd : // Get next PWM command
+				if (PWM_CMD_LOOP_STOP == cmd)
+				{
+					do_loop = 0; // Clear flag to terminate loop
+
+					pwm_serv_s.data_ready = 0; // signal data NOT ready
+				} // if (PWM_CMD_LOOP_STOP == cmd)
+				else
+				{ // cmd must be buffer index
+					pwm_comms_s.buf = cmd;
+
+					pwm_serv_s.data_ready = 1; // signal new data ready
+				} // else !(PWM_CMD_LOOP_STOP == cmd)
 			break; // c_pwm :> pwm_comms_s.buf;
 	
 			default :
 				pwm_serv_s.data_ready = 0; // signal data NOT ready
 			break; // default
 		} // select
-	} // while(1)
+	} // while(do_loop)
 
 	acquire_lock(); 
-	printstrln("PWM Server Ends");
+	printstr("PWM Server_");
+	printint(motor_id);
+	printstrln(" Ends");
 	release_lock();
+
+	c_pwm <: PWM_CMD_ACK; // Acknowledge command to terminate PWM Server
 } // foc_pwm_do_triggered
 /*****************************************************************************/
 // pwm_service_inv

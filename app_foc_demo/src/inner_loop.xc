@@ -95,7 +95,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.set_Vq = 0;	// Ideal voltage producing tangential magnetic field. (NB Updated based on the speed error)
 	motor_s.prev_Vq = 0;	// Previous voltage producing tangential magnetic field.
 	motor_s.est_Iq = 0;	// Clear Iq value estimated from measured angular velocity
-	motor_s.xscope = 0; 	// Clear xscope print flag
+	motor_s.xscope = 1; 	// Swithc on xscope print flag
 	motor_s.prev_time = 0; 	// previous open-loop time stamp
 	motor_s.prev_angl = 0; 	// previous angular position
 	motor_s.coef_err = 0; // Clear Extrema Coef. diffusion error
@@ -948,7 +948,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
-//MB~ motor_s.xscope = 0; // MB~ Crude Switch
+motor_s.xscope = 1; // MB~ Crude Switch
 
 			if (STOP != motor_s.state)
 			{
@@ -1080,27 +1080,62 @@ void wait_for_servers_to_start( // Wait for other servers to initialise
 	streaming chanend c_qei,  // Channel for communication with QEI server
 	streaming chanend c_adc_cntrl // Channel for communication with ADC server
 )
+#define NUM_INIT_SERVERS 4 // edit this line to indicate No of servers to wait on
 {
+	timer chronometer;	// Timer
+	unsigned ts1;	// timestamp
+	int wait_cnt = NUM_INIT_SERVERS; // Initialise number of running servers
 	unsigned cmd; // Command from Server
 
 
 	c_wd <: WD_CMD_INIT;	// Signal WatchDog to Initialise ...
 
-	// Wait for Hall server to start
-	c_hall :> cmd;
-	assert(HALL_CMD_ACK == cmd); // ERROR: Hall server did NOT send acknowledge signal
+	// Loop until all servers have started
+	while(0 < wait_cnt)
+	{
+		select {
+			case c_qei :> cmd : // QEI server
+			{
+				assert(QEI_CMD_ACK == cmd); // ERROR: QEI server did NOT send acknowledge signal
+				wait_cnt--; // Decrement number of un-initialised servers
+if (motor_s.xscope) xscope_probe_data( 0 ,2 );
+			} // case	c_qei
+			break;
 
-	// Wait for ADC server to start
-	c_adc_cntrl :> cmd;
-	assert(ADC_CMD_ACK == cmd); // ERROR: ADC server did NOT send acknowledge signal
+			case c_hall :> cmd : // Hall server
+			{
+				assert(HALL_CMD_ACK == cmd); // ERROR: Hall server did NOT send acknowledge signal
+				wait_cnt--; // Decrement number of un-initialised servers
+if (motor_s.xscope) xscope_probe_data( 0 ,4 );
+			} // case	c_hall
+			break;
 
-	// Wait for QEI server to start
-	c_qei :> cmd;
-	assert(QEI_CMD_ACK == cmd); // ERROR: QEI server did NOT send acknowledge signal
+			case c_adc_cntrl :> cmd : // ADC server
+			{
+				assert(ADC_CMD_ACK == cmd); // ERROR: ADC server did NOT send acknowledge signal
+				wait_cnt--; // Decrement number of un-initialised servers
+if (motor_s.xscope) xscope_probe_data( 0 ,6 );
+			} // case	c_adc_cntrl
+			break;
 
-	// Wait for WatchDog server to start
-	c_wd :> cmd;
-	assert(WD_CMD_ACK == cmd); // ERROR: Hall server did NOT send acknowledge signal
+			case c_wd :> cmd : // WatchDog server
+			{
+				assert(WD_CMD_ACK == cmd); // ERROR: WatchDog server did NOT send acknowledge signal
+				wait_cnt--; // Decrement number of un-initialised servers
+if (motor_s.xscope) xscope_probe_data( 0 ,8 );
+			} // case	c_pwm
+			break;
+
+			default :
+if (motor_s.xscope) xscope_probe_data( 0 ,0 );
+				acquire_lock(); printchar('.');	release_lock();
+				chronometer :> ts1;
+				chronometer when timerafter(ts1 + MILLI_SEC) :> void;
+			break; // default
+		} // select
+	} // while(0 < run_cnt)
+
+	acquire_lock(); printstrln("");	release_lock();
 
 } // wait_for_servers_to_start
 /*****************************************************************************/
@@ -1112,15 +1147,17 @@ void signal_servers_to_stop( // Wait for other servers to terminate
 	streaming chanend c_qei,  // Channel for communication with QEI server
 	streaming chanend c_adc_cntrl // Channel for communication with ADC server
 )
-#define NUM_SERVERS 3 // edit this line to indicate No of servers to close 
+#define NUM_STOP_SERVERS 4 // edit this line to indicate No of servers to close 
 {
 	unsigned cmd; // Command from Server
 	timer chronometer;	// Timer
 	unsigned ts1;	// timestamp
-	int run_cnt = NUM_SERVERS; // Initialise number of running servers
+	int run_cnt = NUM_STOP_SERVERS; // Initialise number of running servers
 
 
 	// Signal other processes to stop ...
+
+	c_pwm <: PWM_CMD_LOOP_STOP; // Stop PWM server
 	c_adc_cntrl <: ADC_CMD_LOOP_STOP; // Stop ADC server
 	c_qei <: QEI_CMD_LOOP_STOP; // Stop QEI server
 	c_hall <: HALL_CMD_LOOP_STOP; // Stop Hall server
@@ -1148,6 +1185,13 @@ void signal_servers_to_stop( // Wait for other servers to terminate
 				// If Shutdown acknowledged, decrement No. of running servers
 				if (ADC_CMD_ACK == cmd) run_cnt--;
 			} // case	c_adc_cntrl
+			break;
+
+			case c_pwm :> cmd : // PWM server
+			{
+				// If Shutdown acknowledged, decrement No. of running servers
+				if (PWM_CMD_ACK == cmd) run_cnt--;
+			} // case	c_pwm
 			break;
 
 			default :
@@ -1184,18 +1228,12 @@ void run_motor (
 	printstrln(" Starts");
 	release_lock();
 
-	// Pause to allow the rest of the system to settle
-	{
-		unsigned thread_id = get_logical_core_id();
-		chronometer :> ts1;
-		chronometer when timerafter(ts1 + (MILLI_400_SECS << 1) + (256 * thread_id)) :> void;
-	}
+	// Allow the rest of the system to settle
+	chronometer :> ts1;
+	chronometer when timerafter(ts1 + (MILLI_400_SECS << 1)) :> ts1;
 
-	// Pause to allow the rest of the system to settle
-	{
-		unsigned thread_id = get_logical_core_id();
-		chronometer :> ts1;
-	}
+	// Stagger the start of each motor 
+	chronometer when timerafter(ts1 + ((MICRO_SEC << 4) * motor_id)) :> ts1;
 
 	init_motor( motor_s ,motor_id );	// Initialise motor data
 

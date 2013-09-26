@@ -52,8 +52,13 @@
 /** Maximum Port timer value. See also PORT_TIME_TYP */
 #define PORT_TIME_MASK 0xFFFF
 
-/** Loop termination Command */
-#define PWM_TERMINATED (-1) // Choose a negative value
+/** Different PWM Control Commands (Client --> Server) */
+typedef enum CMD_PWM_ETAG
+{
+	// NB Don't use non-negative integer, due to conflicts with Buffer indices
+	PWM_CMD_ACK = (-2),	// PWM Server Command Acknowledged (Control)
+	PWM_CMD_LOOP_STOP = (-1), // Stop while-loop.
+} CMD_PWM_ENUM;
 
 /** Different PWM Phases */
 typedef enum PWM_PHASE_ETAG
@@ -86,7 +91,7 @@ typedef struct PWM_PARAM_TAG //
 typedef struct PWM_COMMS_TAG
 {
 	PWM_PARAM_TYP params; // Structure of PWM parameters (for Server)
-	unsigned buf; 	// double-buffer identifier (0 or 1)
+	int buf; 	// double-buffer identifier. e.g. 0 or 1 (NB -1 used to signal termination)
 	unsigned mem_addr; // Shared memory address (if used)
 } PWM_COMMS_TYP;
 

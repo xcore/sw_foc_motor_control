@@ -48,7 +48,7 @@ on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used 
 void xscope_user_init()
 {
 	xscope_register( 7
-		,XSCOPE_CONTINUOUS, "0_Diff", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "State", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "1_Diff", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "0_pins", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "1_pins", XSCOPE_INT , "n"

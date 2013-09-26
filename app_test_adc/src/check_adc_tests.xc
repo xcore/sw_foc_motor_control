@@ -565,13 +565,22 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 	streaming chanend c_adc // ADC channel communication with between ADC Client
 )
 {
+	unsigned cmd; // ADC control Command
 	int do_loop = 1;   // Flag set until loop-end condition found 
+
+
+	// Wait for ADC server to start
+	c_adc :> cmd; // Receive ADC control command
+	assert(ADC_CMD_ACK == cmd); // ERROR: ADC server did NOT send acknowledge signal
 
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
 	printstr("Start Checks For Motor_"); printintln( chk_data_s.common.options.flags[TST_MOTOR] ); 
 	release_lock(); // Release Display Mutex
+
+	// Initialise parameter values by calling Client function
+	foc_adc_get_parameters( chk_data_s.curr_params ,c_adc );
 
 	// Loop until end condition found
 	while( do_loop )
@@ -604,6 +613,16 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 
 		c_gen <: (int)END_TST_CMD; // Signal to test generator that this test is complete
 	} // while( loop )
+
+	do // while(ADC_CMD_ACK != cmd)
+	{
+		c_adc :> cmd; // Receive ADC control command
+
+		if (0 == chk_data_s.print_on)
+		{
+			print_progress( chk_data_s ); // Progress indicator
+		} // if (0 == chk_data_s.print_on)
+	} while(ADC_CMD_ACK != cmd);
 
 } // check_motor_adc_client_data
 /*****************************************************************************/
@@ -722,9 +741,6 @@ void check_all_adc_client_data( // Display ADC results for all motors
 
 
 	c_gen :> chk_data_s.common.options; // Get test options from generator core
-
-	// Initialise parameter values by calling Client function
-	foc_adc_get_parameters( chk_data_s.curr_params ,c_adc[chk_data_s.common.options.flags[TST_MOTOR]]  );
 
 	init_check_data( chk_data_s ); // Initialise check data
 

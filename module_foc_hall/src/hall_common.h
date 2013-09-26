@@ -68,7 +68,6 @@ typedef enum CMD_HALL_ETAG
 	HALL_CMD_ACK = (-2),	// HALL Server Command Acknowledged (Control)
 	HALL_CMD_LOOP_STOP = (-1), // Stop while-loop.
 	HALL_CMD_DATA_REQ = 1,	// HALL Data Request
-  NUM_HALL_CMDS	// Handy Value!-)
 } CMD_HALL_ENUM;
 
 /** Different HALL Error states */

@@ -868,6 +868,6 @@ void check_pwm_server_data( // Checks PWM results
 	printstrln( "Test Check Ends " );
 	release_lock(); // Release Display Mutex
 
-	c_gen <: PWM_TERMINATED; // Signal to Generator that Checker has terminated
+	c_gen <: PWM_CMD_ACK; // Acknowledge command to terminate Checker
 } // check_pwm_server_data
 /*****************************************************************************/

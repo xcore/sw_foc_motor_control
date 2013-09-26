@@ -23,19 +23,33 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 {
 	unsigned cmd; // WatchDog command from Client
 	unsigned pulse_width; // width of pulse in clock ticks
+	unsigned ts1; // Time-Stamp
 	int motor_cnt; // motor counter
 	timer chronometer; // Timer
+	int wait_cnt = NUMBER_OF_MOTORS; ; // Set number of un-initialised channels
 
 
 	wd_data_s.state = WD_UNARMED; // Initialise WatchDog to Un-armed state
 	wd_data_s.shared_out = 0; // Clear (Bit_0 and Bit_1 of) data for shared output port 
 
-	// Wait for Initialisation command from Client
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	// Loop until all channels have sent initialisation command
+	while(0 < wait_cnt)
 	{
-		c_wd[motor_cnt] :> cmd;
-		assert (WD_CMD_INIT == cmd); // Un-expected command Received
-	} // for motor_cnt
+		select {
+			// Service any change on input port pins
+			case (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) c_wd[motor_cnt] :> cmd :
+			{
+				assert (WD_CMD_INIT == cmd); // Un-expected command Received
+				wait_cnt--;
+			} // case
+			break;
+
+			default :
+				chronometer :> ts1;
+				chronometer when timerafter(ts1 + MICRO_SEC) :> void;
+			break; // default
+		} // select
+	} // while(0 < run_cnt)
 
 	// Initialise	WatchDog ...
 	chronometer :> wd_data_s.time;	// Get 'enable' time (first tick)
@@ -149,6 +163,7 @@ void foc_loop_do_wd( // Controls WatchDog circuit (2 chips)
 )
 {
 	WD_DATA_TYP wd_data_s; // Structure containing data for WatchDog circuit
+
 
 //MB~ Once both motors are running, need to update watchdog to monitor both motors. 
 

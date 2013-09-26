@@ -705,20 +705,6 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 		} // if (0 == chk_data_s.print_on)
 	} while(QEI_CMD_ACK != cmd);
 
-#ifdef MB
-	// Loop until QEI Server terminates
-	while(QEI_TERMINATED != chk_data_s.curr_params.err)
-	{
-		chronometer when timerafter(chk_data_s.time + QEI_PERIOD) :> chk_data_s.time;
-		get_new_qei_client_data( chk_data_s ,c_disp ,c_qei ); // Request data from server & check
-
-		if (0 == chk_data_s.print_on)
-		{
-			c_disp <: DISP_CLASS_PROG; // Signal printing of progress indicator
-		} // if (0 == chk_data_s.print_on)
-	} // while(QEI_TERMINATED != chk_data_s.curr_params.err)
-#endif //MB~
-
 	// special case: finalisation for last speed test
 	finalise_speed_test_vector( chk_data_s ,chk_data_s.curr_vect.comp_state[SPEED] ); 
 

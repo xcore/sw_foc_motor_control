@@ -19,6 +19,8 @@
 #include <assert.h>
 #include <print.h>
 
+#include "use_locks.h"
+
 #include "app_global.h"
 
 #define ENABLE_MASK 1 // WatchDog Enable is Bit_0 on WD port
