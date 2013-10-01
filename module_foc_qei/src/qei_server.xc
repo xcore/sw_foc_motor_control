@@ -410,7 +410,6 @@ static void update_phase_state( // Update phase state
 	// Check for sensible time
 	if (THR_TICKS_PER_QEI < inp_qei_s.diff_time)
 	{ // Sensible time!
-// xscope_probe_data( 6 ,inp_qei_s.diff_time ); //MB~
 		// Update previous down-scaled time differences ...
 
 		// Check for first pass
@@ -519,7 +518,6 @@ static void service_input_pins( // Service detected change on input pins
 	unsigned err_flg; // Flag set when Error condition detected
 
 
-// xscope_probe_data( 3 ,inp_qei_s.curr_time ); //MB~
 	// MB~ ToDo Insert noise filter here for each pin.
  
 	// NB Due to noise corrupting bit-values, flags may change, even though phase does NOT appear to have changed
@@ -817,6 +815,8 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 					int motor_id = buffer[read_off].id;	
 
 					all_qei_s[motor_id].curr_time = buffer[read_off].time;
+//MB~ if (motor_id) xscope_probe_data( 5 ,(2 * (buffer[read_off].inp_pins & 1)) ); // Phase_A
+//MB~ if (motor_id) xscope_probe_data( 6 ,((buffer[read_off].inp_pins & 2) + 1) ); // Phase_B
 					service_input_pins( all_qei_s[motor_id] ,buffer[read_off].inp_pins );
 
 					read_cnt++; // Increment read counter. WARNING No overflow check

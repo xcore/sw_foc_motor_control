@@ -48,14 +48,18 @@ on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used 
 void xscope_user_init()
 {
 	xscope_register( 7
-		,XSCOPE_CONTINUOUS, "State", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "1_Diff", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "0_pins", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "1_pins", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "prv_tim", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "adc_A", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "dif_tim", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Qtheta", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Qveloc", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "eGamma", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "state", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "pwm_A", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "pwm_B", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "pwm_C", XSCOPE_INT , "n"
 /*
+		,XSCOPE_CONTINUOUS, "Stheta", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "adc_alf", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "adc_bet", XSCOPE_INT , "n"
+
 		,XSCOPE_CONTINUOUS, "pid_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "req_vel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "est_Iq", XSCOPE_INT , "n"
@@ -66,9 +70,6 @@ void xscope_user_init()
 		,XSCOPE_CONTINUOUS, "rev_cnt", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "p_err", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "s_err", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "pwm_A", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "pwm_B", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "pwm_C", XSCOPE_INT , "n"
 */
 	); // xscope_register 
 

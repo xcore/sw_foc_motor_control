@@ -78,14 +78,9 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.hall_params.hall_val = HALL_NERR_MASK; // Initialise to 'No Errors'
 	motor_s.prev_hall = (!HALL_NERR_MASK); // Arbitary value different to above
 
-//MB~	motor_s.req_veloc = REQ_VELOCITY;
-	motor_s.req_veloc = REQ_VELOCITY;
-	motor_s.half_veloc = (motor_s.req_veloc >> 1);
-
 	motor_s.Iq_alg = TRANSFORM; // [TRANSFORM VELOCITY EXTREMA] Assign algorithm used to estimate coil current Iq (and Id)
-	motor_s.first_foc = 1; // Set flag until first FOC (closed-loop) iteration completed
+	motor_s.first_foc = 1; // Set flag until first FOC iteration completed
 	motor_s.set_theta = 0;
-	motor_s.start_theta = 0; // Theta start position during warm-up (START and SEARCH states)
 	motor_s.theta_offset = 0; // Offset between Hall-state and QEI origin
 	motor_s.phi_err = 0; // Erro diffusion value for phi estimate
 	motor_s.pid_Id = 0;	// Output from radial current PID
@@ -101,35 +96,68 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.coef_err = 0; // Clear Extrema Coef. diffusion error
 	motor_s.scale_err = 0; // Clear Extrema Scaling diffusion error
 	motor_s.Iq_err = 0; // Clear Error diffusion value for measured Iq
-	motor_s.gamma_est = 0;	// Estimate of leading-angle, used to 'pull' pole towards coil.
 	motor_s.gamma_off = 0;	// Gamma value offset
 	motor_s.gamma_err = 0;	// Error diffusion value for Gamma value
 	motor_s.gamma_ramp = 0;	// Initialise Gamma ramp value to zero
-	motor_s.gamma_inc = 0;	// MB~ Used in tuning
+//MB~	motor_s.gamma_est = 0;	// Estimate of leading-angle, used to 'pull' pole towards coil.
+	motor_s.gamma_inc = 0; //MB~ tuning
 	motor_s.phi_ramp = 0;	// Initialise Phi (phase lag) ramp value to zero
+
+	motor_s.phase_1 = PWM_PHASE_A;	// 1st Phase identifier (for start-up)
+	motor_s.phase_2 = PWM_PHASE_B;	// 2nd Phase identifier (for start-up)
+	motor_s.phase_3 = PWM_PHASE_C;	// 3rd Phase identifier (for start-up)
+	motor_s.phase_Vq = 2000;	// Phase identifier (for start-up)
+	motor_s.phase_time = 0; 	// previous open-loop time stamp
+
+	motor_s.Vd_openloop = START_VD_OPENLOOP;
+	motor_s.Vq_openloop = START_VQ_OPENLOOP;
+
+//MB~	motor_s.req_veloc = REQ_VELOCITY;
+	motor_s.req_veloc = REQ_VELOCITY;
+	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 
 	// NB Display will require following variables, before we have measured them! ...
 	motor_s.qei_params.veloc = motor_s.req_veloc;
 	motor_s.meas_speed = abs(motor_s.req_veloc);
 
-	// Initialise variables dependant on spin direction
+	// Initialise angle variables dependant on spin direction
 	if (0 > motor_s.req_veloc)
 	{ // Negative spin direction
 		motor_s.gamma_off = -GAMMA_INTERCEPT;
 		motor_s.phi_off = -PHI_INTERCEPT;
-		motor_s.Vd_openloop = -START_VD_OPENLOOP; // Requested Vd value open-loop start-up
-		motor_s.Vq_openloop = -START_VQ_OPENLOOP; // Requested Vq value open-loop start-up
 
 		motor_s.end_hall = NEGA_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
+motor_s.gamma_est = -38;	// MB~ Motor_00
+motor_s.gamma_est = 108;	// MB~ Motor_01
+motor_s.gamma_est = -16;	// MB~ Motor_02
+motor_s.gamma_est = -44;	// MB~ Motor_03
+motor_s.gamma_est = 100;	// MB~ Motor_04
+motor_s.gamma_est = 114;	// MB~ Motor_05
+motor_s.gamma_est = 60;	// MB~ Motor_06
+motor_s.gamma_est = -83;	// MB~ Motor_07
+motor_s.gamma_est = -46;	// MB~ Motor_08
+motor_s.gamma_est = -62;	// MB~ Motor_09
+motor_s.gamma_est = -49;	// MB~ Motor_10
+motor_s.gamma_est = -38;	// MB~ Motor_11
 	} // if (0 > motor_s.req_veloc)
 	else
 	{ // Positive spin direction
 		motor_s.gamma_off = GAMMA_INTERCEPT;
 		motor_s.phi_off = PHI_INTERCEPT;
-		motor_s.Vd_openloop = START_VD_OPENLOOP; // Requested Id value open-loop start-up
-		motor_s.Vq_openloop = START_VQ_OPENLOOP; // Requested Iq value open-loop start-up
 
 		motor_s.end_hall = POSI_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
+motor_s.gamma_est = 45;	// MB~ Motor_00
+motor_s.gamma_est = 90;	// MB~ Motor_01
+motor_s.gamma_est = 46;	// MB~ Motor_02
+motor_s.gamma_est = 42;	// MB~ Motor_03
+motor_s.gamma_est = 47;	// MB~ Motor_04
+motor_s.gamma_est = 55;	// MB~ Motor_05
+motor_s.gamma_est = 41;	// MB~ Motor_06
+motor_s.gamma_est = -22;	// MB~ Motor_07
+motor_s.gamma_est = -55;	// MB~ Motor_08
+motor_s.gamma_est = 86;	// MB~ Motor_09
+motor_s.gamma_est = 44;	// MB~ Motor_10
+motor_s.gamma_est = -121;	// MB~ Motor_11
 	} // else !(0 > motor_s.req_veloc)
 
 	motor_s.req_Vd = motor_s.Vd_openloop; // Requested 'radial' voltage 
@@ -142,6 +170,7 @@ static void init_motor( // initialise data structure for one motor
 		motor_s.adc_params.vals[phase_cnt] = -1;
 	} // for phase_cnt
 
+	motor_s.tmp = 0; // MB~ Dbg
 	motor_s.temp = 0; // MB~ Dbg
 } // init_motor
 /*****************************************************************************/
@@ -309,14 +338,20 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 #pragma xta label "foc_loop_clarke"
 
 	// To calculate alpha and beta currents from measured data
+// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.adc_params.vals[ADC_PHASE_A] );
+// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.adc_params.vals[ADC_PHASE_B] );
+// if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.adc_params.vals[ADC_PHASE_C] );
 	clarke_transform( motor_s.adc_params.vals[ADC_PHASE_A], motor_s.adc_params.vals[ADC_PHASE_B], motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
+// if (motor_s.xscope) xscope_probe_data( 5 ,alpha_meas);
+// if (motor_s.xscope) xscope_probe_data( 6 ,beta_meas );
 
 	// Update Phi estimate ...
 	scaled_phi = motor_s.qei_params.veloc * PHI_GRAD + motor_s.phi_off + motor_s.phi_err;
 	phi_est = (scaled_phi + HALF_PHASE) >> PHASE_BITS;
 	motor_s.phi_err = scaled_phi - (phi_est << PHASE_BITS);
 
-	smooth_phi = motor_s.theta_offset + phi_est;
+//MB~	smooth_phi = motor_s.theta_offset + phi_est;
+	smooth_phi = motor_s.theta_offset;
 
 	// Smooth changes in Phi estimate ...
 
@@ -349,6 +384,8 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 
 	// Estimate coil currents (Id & Iq) using park transform
 	park_transform( motor_s.est_Id ,motor_s.est_Iq ,alpha_meas ,beta_meas ,theta_park );
+// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.est_Id );
+// if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.est_Iq );
 
 } // estimate_Iq_using_transforms
 /*****************************************************************************/
@@ -389,41 +426,83 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	int phase_cnt; // phase counter
 
 
-// if (motor_s.xscope) xscope_probe_data( 3 ,inp_theta );
-
-	// Smooth Vq values
-	if (set_Vq > motor_s.prev_Vq)
+	if (FOC <= motor_s.state)
 	{
-		set_Vq = motor_s.prev_Vq + 1; // Allow small increase
-	} // if (set_Vq > motor_s.prev_Vq)
+		// Smooth Vq values
+		if (set_Vq > motor_s.prev_Vq)
+		{
+			set_Vq = motor_s.prev_Vq + 1; // Allow small increase
+		} // if (set_Vq > motor_s.prev_Vq)
+		else
+		{
+			if (set_Vq < motor_s.prev_Vq)
+			{
+				set_Vq = motor_s.prev_Vq - 1; // Allow small decrease
+			} // if 
+		} // else !(set_Vq > motor_s.prev_Vq)
+	
+		motor_s.prev_Vq = set_Vq; // Store smoothed Vq value
+	
+		// Inverse park  [d, q, theta] --> [alpha, beta]
+// if (motor_s.xscope) xscope_probe_data( 4 ,set_Vq );
+		inverse_park_transform( alpha_set, beta_set, set_Vd, set_Vq, inp_theta  );
+	
+		// Final voltages applied: 
+		inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
+	
+	} // if (FOC == motor_s.state)
 	else
 	{
-		if (set_Vq < motor_s.prev_Vq)
+		timer chronometer; // timer
+		unsigned curr_time; // current time value
+		int diff_time; // time since last theta update
+	
+	
+		volts[motor_s.phase_1] = motor_s.phase_Vq;
+		volts[motor_s.phase_2] = ((-motor_s.phase_Vq) >> 1);
+		volts[motor_s.phase_3] = ((-motor_s.phase_Vq) >> 1);
+
+		chronometer :> curr_time;
+		diff_time = curr_time - motor_s.phase_time;
+
+		if (diff_time > (24 * MILLI_SEC))
 		{
-			set_Vq = motor_s.prev_Vq - 1; // Allow small decrease
-		} // if 
-	} // else !(set_Vq > motor_s.prev_Vq)
+	
+			motor_s.phase_Vq = -motor_s.phase_Vq; // Invert Voltage
+	
+			if (motor_s.req_veloc < 0)
+			{
+				motor_s.phase_1++;
+				motor_s.phase_2++;
+				motor_s.phase_3++;
+	
+				if (motor_s.phase_1 >= NUM_PWM_PHASES) motor_s.phase_1 -= NUM_PWM_PHASES; // Clamp into phase range [0..2]
+				if (motor_s.phase_2 >= NUM_PWM_PHASES) motor_s.phase_2 -= NUM_PWM_PHASES; // Clamp into phase range [0..2]
+				if (motor_s.phase_3 >= NUM_PWM_PHASES) motor_s.phase_3 -= NUM_PWM_PHASES; // Clamp into phase range [0..2]
+			} // if (motor_s.req_veloc < 0)
+			else
+			{
+				motor_s.phase_1--;
+				motor_s.phase_2--;
+				motor_s.phase_3--;
+	
+				if (motor_s.phase_1 < 0) motor_s.phase_1 += NUM_PWM_PHASES; // Clamp into phase range [0..2]
+				if (motor_s.phase_2 < 0) motor_s.phase_2 += NUM_PWM_PHASES; // Clamp into phase range [0..2]
+				if (motor_s.phase_3 < 0) motor_s.phase_3 += NUM_PWM_PHASES; // Clamp into phase range [0..2]
+			} // else !(motor_s.req_veloc < 0)
+	
+			motor_s.phase_time = curr_time;
+		} // if (diff_time > (12 * MILLI_SEC))
+	} // else !(FOC == motor_s.state)
 
-	motor_s.prev_Vq = set_Vq; // Store smoothed Vq value
-
-	// Inverse park  [d, q, theta] --> [alpha, beta]
-	inverse_park_transform( alpha_set, beta_set, set_Vd, set_Vq, inp_theta  );
-
-	// Final voltages applied: 
-	inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
+// acquire_lock(); printstr("PWM="); printint(volts[0]); printstr("  "); printint(volts[1]); printstr("  "); printintln(volts[2]); release_lock(); //MB~
 
 	/* Scale to 12bit unsigned for PWM output */
 	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
-	{ 
+	{
+if (motor_s.xscope) xscope_probe_data( (phase_cnt + 4) ,volts[phase_cnt] );
 		motor_s.pwm_comms.params.widths[phase_cnt] = convert_volts_to_pwm_width( volts[phase_cnt] );
 	} // for phase_cnt
-
-// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.pwm_comms.params.widths[PWM_PHASE_A] );
-// if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.pwm_comms.params.widths[PWM_PHASE_B] );
-
-// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.pwm_comms.params.widths[PWM_PHASE_A] );
-// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.pwm_comms.params.widths[PWM_PHASE_B] );
-// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.pwm_comms.params.widths[PWM_PHASE_C] );
 } // dq_to_pwm
 /*****************************************************************************/
 static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spins magnetic field around (regardless of the encoder)
@@ -456,27 +535,8 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 		motor_s.prev_time = cur_time; // Update previous time
 	} // if (OPEN_LOOP_PERIOD < diff_time)
 
-#ifdef MB
-#if PLATFORM_REFERENCE_MHZ == 100
-	motor_s.set_theta = motor_s.start_theta >> 2;
-#else
-	motor_s.set_theta = motor_s.start_theta >> 4;
-#endif
-#endif //MB~ DEPRECIATED
-
 	// NB QEI_REV_MASK correctly maps -ve values into +ve range 0 <= theta < QEI_PER_REV;
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
-
-	// Update start position ready for next iteration
-
-	if (motor_s.req_veloc < 0)
-	{
-		motor_s.start_theta--; // Step on motor in ANTI-clockwise direction
-	} // if (motor_s.req_veloc < 0)
-	else
-	{
-		motor_s.start_theta++; // Step on motor in Clockwise direction
-	} // else !(motor_s.req_veloc < 0)
 } // calc_open_loop_pwm
 /*****************************************************************************/
 static void calc_foc_pwm( // Calculate FOC PWM output values
@@ -500,7 +560,6 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 
 	// Applying Speed PID.
 
-//	if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
 	// Check if PID's need presetting
 	if (motor_s.first_foc)
 	{
@@ -519,8 +578,6 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 		motor_s.pid_veloc = motor_s.req_Vq + corr_veloc;
 	} // else !(PROPORTIONAL)
 
-// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.pid_veloc );
-
 	if (VELOC_CLOSED)
 	{ // Evaluate set IQ from velocity PID
 		motor_s.req_Vq = motor_s.pid_veloc;
@@ -529,8 +586,6 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	{ 
 		motor_s.req_Vq = motor_s.Vq_openloop;
 	} // if (VELOC_CLOSED)
-
-// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.req_veloc );
 
 #pragma xta label "foc_loop_id_iq_pid"
 
@@ -560,11 +615,7 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
     break;
 	} // switch (motor_s.Iq_alg)
 
-// if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.est_Iq );
-
 	// Apply PID control to Iq and Id
-
-// if (motor_s.xscope) xscope_probe_data( 8 ,targ_Iq );
 
 	// Check if PID's need presetting
 	if (motor_s.first_foc)
@@ -586,7 +637,6 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 		motor_s.pid_Id = motor_s.set_Vd + corr_Id;
 		motor_s.pid_Iq = motor_s.set_Vq + corr_Iq;
 	} // else !(PROPORTIONAL)
-// if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_Iq );
 
 	if (IQ_ID_CLOSED)
 	{ // Update set DQ values
@@ -612,9 +662,20 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	} // else !(IQ_ID_CLOSED)
 
 	// Update Gamma estimate ...
-	scaled_phase = motor_s.qei_params.veloc * GAMMA_GRAD + motor_s.gamma_off + motor_s.gamma_err;
+#ifdef MB
+//MB~	scaled_phase = motor_s.qei_params.veloc * GAMMA_GRAD + motor_s.gamma_off + motor_s.gamma_err;
+	scaled_phase = 50 * GAMMA_GRAD + motor_s.gamma_off + motor_s.gamma_err;
 	motor_s.gamma_est = (scaled_phase + HALF_PHASE) >> PHASE_BITS;
 	motor_s.gamma_err = scaled_phase - (motor_s.gamma_est << PHASE_BITS);
+#endif //MB~
+
+motor_s.tmp++;
+if ((1 << 10) == motor_s.tmp)
+{
+	motor_s.tmp = 0;
+	motor_s.gamma_est++;
+} // if (1024 == motor_s.tmp)
+if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.gamma_est);
 
 	smooth_gamma = motor_s.gamma_est;
 
@@ -643,9 +704,6 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 
 	// Update 'demand' theta value for next dq_to_pwm iteration
 	motor_s.set_theta = motor_s.qei_params.theta + motor_s.theta_offset + smooth_gamma;
-
-motor_s.set_theta += motor_s.gamma_inc; //MB~  Tuning
-//MB~ motor_s.gamma_inc += 2; //MB~ Tuning
 
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 
@@ -685,13 +743,9 @@ static MOTOR_STATE_ENUM check_hall_state( // Inspect Hall-state and update motor
 
 	hall_inp &= HALL_PHASE_MASK; // Mask out 3 Hall Sensor Phase Bits
 
-// if (motor_s.xscope) xscope_probe_data( 0 ,(hall_inp & 1) );
-// if (motor_s.xscope) xscope_probe_data( 1 ,((hall_inp & 2) >> 1) );
-
 	// Check for change in Hall state
 	if (motor_s.prev_hall != hall_inp)
 	{
-// if (motor_s.xscope) xscope_probe_data( 0 ,hall_inp );
 		// Check for 1st Hall state, as we only do this check once a revolution
 		if (hall_inp == FIRST_HALL_STATE) 
 		{
@@ -709,7 +763,7 @@ static MOTOR_STATE_ENUM check_hall_state( // Inspect Hall-state and update motor
 					motor_s.theta_offset = motor_s.set_theta - motor_s.qei_params.theta;
 
 					motor_state = FOC; // Switch to main FOC state
-					motor_s.cnts[FOC] = 0; // Initialise FOC-state counter 
+acquire_lock(); printstrln("SYNC"); release_lock(); //MB~
 				} // if (0 < motor_s.qei_params.rev_cnt)
 			} // if (motor_s.prev_hall == motor_s.end_hall)
 			else
@@ -766,6 +820,7 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 	
 		case FOC : // Normal FOC state
 			// Check for a stall
+#ifdef MB
 			// check for correct spin direction
       if (0 > motor_s.half_veloc)
 			{
@@ -791,6 +846,7 @@ if (motor_s.state == STOP)
 acquire_lock(); printstr("BAD VEL="); printintln(motor_s.qei_params.veloc); release_lock(); //MB~
 }
       } // if (0 > motor_s.half_veloc)
+#endif //MB~
 
 			if (motor_s.meas_speed < STALL_SPEED) 
 			{
@@ -801,6 +857,7 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.qei_params.veloc); rele
 	
 		case STALL : // state where motor stalled
 			// Check if still stalled
+#ifdef MB
 			if (motor_s.meas_speed < STALL_SPEED) 
 			{
 				// Check if too many stalled states
@@ -813,6 +870,7 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.qei_params.veloc); rele
 				} // if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
 			} // if (motor_s.meas_speed < STALL_SPEED) 
 			else
+#endif //MB~
 			{ // No longer stalled
 				motor_s.state = FOC; // Switch to main FOC state
 				motor_s.cnts[FOC] = 0; // Initialise FOC-state counter 
@@ -829,7 +887,6 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.qei_params.veloc); rele
 	} // switch( motor_s.state )
 
 	motor_s.cnts[motor_s.state]++; // Update counter for new motor state 
-// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.state );
 
 	// Select correct method of calculating DQ values
 #pragma fallthrough
@@ -863,6 +920,68 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.qei_params.veloc); rele
 	return;
 } // update_motor_state
 /*****************************************************************************/
+void wait_for_servers_to_start( // Wait for other servers to initialise
+	MOTOR_DATA_TYP motor_s, // Structure containing motor data
+	chanend c_wd, // Channel for communication with WatchDog server
+	chanend c_pwm, // Channel for communication with PWM server
+	streaming chanend c_hall, // Channel for communication with Hall server 
+	streaming chanend c_qei,  // Channel for communication with QEI server
+	streaming chanend c_adc_cntrl // Channel for communication with ADC server
+)
+#define NUM_INIT_SERVERS 4 // WARNING: edit this line to indicate No of servers to wait on
+{
+	timer chronometer;	// Timer
+	unsigned ts1;	// timestamp
+	int wait_cnt = NUM_INIT_SERVERS; // Set number of un-initialised servers
+	unsigned cmd; // Command from Server
+
+
+	c_wd <: WD_CMD_INIT;	// Signal WatchDog to Initialise ...
+
+	// Loop until all servers have started
+	while(0 < wait_cnt)
+	{
+		select {
+			case c_hall :> cmd : // Hall server
+			{
+				assert(HALL_CMD_ACK == cmd); // ERROR: Hall server did NOT send acknowledge signal
+				wait_cnt--; // Decrement number of un-initialised servers
+			} // case	c_hall
+			break;
+
+			case c_qei :> cmd : // QEI server
+			{
+				assert(QEI_CMD_ACK == cmd); // ERROR: QEI server did NOT send acknowledge signal
+				wait_cnt--; // Decrement number of un-initialised servers
+			} // case	c_qei
+			break;
+
+			case c_adc_cntrl :> cmd : // ADC server
+			{
+				assert(ADC_CMD_ACK == cmd); // ERROR: ADC server did NOT send acknowledge signal
+				wait_cnt--; // Decrement number of un-initialised servers
+			} // case	c_adc_cntrl
+			break;
+
+			case c_wd :> cmd : // WatchDog server
+			{
+				assert(WD_CMD_ACK == cmd); // ERROR: WatchDog server did NOT send acknowledge signal
+				wait_cnt--; // Decrement number of un-initialised servers
+			} // case	c_pwm
+			break;
+
+			default :
+				acquire_lock(); printchar('.');	release_lock();
+				chronometer :> ts1;
+				chronometer when timerafter(ts1 + MILLI_SEC) :> void;
+			break; // default
+		} // select
+	} // while(0 < run_cnt)
+
+	acquire_lock(); printstrln("");	release_lock();
+
+} // wait_for_servers_to_start
+/*****************************************************************************/
 #pragma unsafe arrays
 static void use_motor ( // Start motor, and run step through different motor states
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
@@ -882,6 +1001,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 	while (STOP != motor_s.state)
 	{
 #pragma xta endpoint "foc_loop"
+if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.state );
 		select
 		{
 		case c_speed :> command:		/* This case responds to speed control through shared I/O */
@@ -960,7 +1080,6 @@ motor_s.xscope = 1; // MB~ Crude Switch
 				} // if (motor_s.iters > DEMO_LIMIT)
 
 				foc_hall_get_parameters( motor_s.hall_params ,c_hall ); // Get new hall state
-// if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.hall_params.hall_val );
 
 				// Check error status
 				if (motor_s.hall_params.err)
@@ -981,9 +1100,8 @@ motor_s.xscope = 1; // MB~ Crude Switch
 	motor_s.qei_params.veloc = -motor_s.qei_params.veloc;
 	motor_s.qei_params.rev_cnt= -motor_s.qei_params.rev_cnt;
 #endif // (LDO_MOTOR_SPIN)
-
-// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_params.theta );
-// if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.qei_params.veloc );
+if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.qei_params.theta );
+if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.veloc );
 
 					motor_s.meas_speed = abs( motor_s.qei_params.veloc ); // NB Used to spot stalling behaviour
 
@@ -999,14 +1117,11 @@ motor_s.xscope = 1; // MB~ Crude Switch
 
 					// Get ADC sensor data
 					foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
-if (motor_s.xscope) xscope_probe_data( 5 ,(motor_s.adc_params.vals[ADC_PHASE_A] >> 4) );
-// if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.adc_params.vals[ADC_PHASE_B] );
-// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.adc_params.vals[ADC_PHASE_C] );
+// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.adc_params.vals[ADC_PHASE_A] );
+// if (motor_s.xscope) xscope_probe_data( 6 ,(motor_s.adc_params.vals[ADC_PHASE_B] >> 4) );
 
 					update_motor_state( motor_s ,motor_s.hall_params.hall_val );
 				} // else !(motor_s.hall_params.err)
-
-// if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.set_theta );
 
 				// Check if motor needs stopping
 				if (STOP == motor_s.state)
@@ -1017,9 +1132,9 @@ if (motor_s.xscope) xscope_probe_data( 5 ,(motor_s.adc_params.vals[ADC_PHASE_A] 
 				else
 				{
 					// Convert new set DQ values to PWM values
+// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.set_theta );
 					dq_to_pwm( motor_s ,motor_s.set_Vd ,motor_s.set_Vq ,motor_s.set_theta ); // Convert Output DQ values to PWM values
 
-// if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.pwm_comms.params.widths[PWM_PHASE_A] );
 					foc_pwm_put_parameters( motor_s.pwm_comms ,c_pwm ); // Update the PWM values
 
 #ifdef USE_XSCOPE
@@ -1047,32 +1162,7 @@ if (motor_s.xscope) xscope_probe_data( 5 ,(motor_s.adc_params.vals[ADC_PHASE_A] 
 	}	// while (STOP != motor_s.state)
 } // use_motor
 /*****************************************************************************/
-static void error_handling( // Prints out error messages
-	ERR_DATA_TYP &err_data_s // Reference to structure containing data for error-handling
-)
-{
-	int err_cnt; // counter for different error types 
-	unsigned cur_flgs = err_data_s.err_flgs; // local copy of error flags
-
-
-	// Loop through error types
-	for (err_cnt=0; err_cnt<NUM_ERR_TYPS; err_cnt++)
-	{
-		// Test LS-bit for active flag
-		if (cur_flgs & 1)
-		{
-			printstr( "Line " );
-			printint( err_data_s.line[err_cnt] );
-			printstr( ": " );
-			printstrln( err_data_s.err_strs[err_cnt].str );
-		} // if (cur_flgs & 1)
-
-		cur_flgs >>= 1; // Discard flag
-	} // for err_cnt
-
-} // error_handling
-/*****************************************************************************/
-void wait_for_servers_to_start( // Wait for other servers to initialise
+void signal_servers_to_stop( // Signal then wait for other servers to terminate
 	MOTOR_DATA_TYP motor_s, // Structure containing motor data
 	chanend c_wd, // Channel for communication with WatchDog server
 	chanend c_pwm, // Channel for communication with PWM server
@@ -1080,74 +1170,7 @@ void wait_for_servers_to_start( // Wait for other servers to initialise
 	streaming chanend c_qei,  // Channel for communication with QEI server
 	streaming chanend c_adc_cntrl // Channel for communication with ADC server
 )
-#define NUM_INIT_SERVERS 4 // edit this line to indicate No of servers to wait on
-{
-	timer chronometer;	// Timer
-	unsigned ts1;	// timestamp
-	int wait_cnt = NUM_INIT_SERVERS; // Initialise number of running servers
-	unsigned cmd; // Command from Server
-
-
-	c_wd <: WD_CMD_INIT;	// Signal WatchDog to Initialise ...
-
-	// Loop until all servers have started
-	while(0 < wait_cnt)
-	{
-		select {
-			case c_qei :> cmd : // QEI server
-			{
-				assert(QEI_CMD_ACK == cmd); // ERROR: QEI server did NOT send acknowledge signal
-				wait_cnt--; // Decrement number of un-initialised servers
-if (motor_s.xscope) xscope_probe_data( 0 ,2 );
-			} // case	c_qei
-			break;
-
-			case c_hall :> cmd : // Hall server
-			{
-				assert(HALL_CMD_ACK == cmd); // ERROR: Hall server did NOT send acknowledge signal
-				wait_cnt--; // Decrement number of un-initialised servers
-if (motor_s.xscope) xscope_probe_data( 0 ,4 );
-			} // case	c_hall
-			break;
-
-			case c_adc_cntrl :> cmd : // ADC server
-			{
-				assert(ADC_CMD_ACK == cmd); // ERROR: ADC server did NOT send acknowledge signal
-				wait_cnt--; // Decrement number of un-initialised servers
-if (motor_s.xscope) xscope_probe_data( 0 ,6 );
-			} // case	c_adc_cntrl
-			break;
-
-			case c_wd :> cmd : // WatchDog server
-			{
-				assert(WD_CMD_ACK == cmd); // ERROR: WatchDog server did NOT send acknowledge signal
-				wait_cnt--; // Decrement number of un-initialised servers
-if (motor_s.xscope) xscope_probe_data( 0 ,8 );
-			} // case	c_pwm
-			break;
-
-			default :
-if (motor_s.xscope) xscope_probe_data( 0 ,0 );
-				acquire_lock(); printchar('.');	release_lock();
-				chronometer :> ts1;
-				chronometer when timerafter(ts1 + MILLI_SEC) :> void;
-			break; // default
-		} // select
-	} // while(0 < run_cnt)
-
-	acquire_lock(); printstrln("");	release_lock();
-
-} // wait_for_servers_to_start
-/*****************************************************************************/
-void signal_servers_to_stop( // Wait for other servers to terminate
-	MOTOR_DATA_TYP motor_s, // Structure containing motor data
-	chanend c_wd, // Channel for communication with WatchDog server
-	chanend c_pwm, // Channel for communication with PWM server
-	streaming chanend c_hall, // Channel for communication with Hall server 
-	streaming chanend c_qei,  // Channel for communication with QEI server
-	streaming chanend c_adc_cntrl // Channel for communication with ADC server
-)
-#define NUM_STOP_SERVERS 4 // edit this line to indicate No of servers to close 
+#define NUM_STOP_SERVERS 4 // WARNING: edit this line to indicate No of servers to close 
 {
 	unsigned cmd; // Command from Server
 	timer chronometer;	// Timer
@@ -1195,7 +1218,7 @@ void signal_servers_to_stop( // Wait for other servers to terminate
 			break;
 
 			default :
-				acquire_lock(); printchar('.');	release_lock();
+				acquire_lock(); printchar('X');	release_lock();
 				chronometer :> ts1;
 				chronometer when timerafter(ts1 + MILLI_SEC) :> void;
 			break; // default
@@ -1204,6 +1227,31 @@ void signal_servers_to_stop( // Wait for other servers to terminate
 
 	acquire_lock(); printstrln("");	release_lock();
 } // signal_servers_to_stop
+/*****************************************************************************/
+static void error_handling( // Prints out error messages
+	ERR_DATA_TYP &err_data_s // Reference to structure containing data for error-handling
+)
+{
+	int err_cnt; // counter for different error types 
+	unsigned cur_flgs = err_data_s.err_flgs; // local copy of error flags
+
+
+	// Loop through error types
+	for (err_cnt=0; err_cnt<NUM_ERR_TYPS; err_cnt++)
+	{
+		// Test LS-bit for active flag
+		if (cur_flgs & 1)
+		{
+			printstr( "Line " );
+			printint( err_data_s.line[err_cnt] );
+			printstr( ": " );
+			printstrln( err_data_s.err_strs[err_cnt].str );
+		} // if (cur_flgs & 1)
+
+		cur_flgs >>= 1; // Discard flag
+	} // for err_cnt
+
+} // error_handling
 /*****************************************************************************/
 #pragma unsafe arrays
 void run_motor ( 

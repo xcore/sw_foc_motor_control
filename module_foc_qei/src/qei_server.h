@@ -86,7 +86,7 @@
 #define MAX_CONFID 11 // Maximum confidence value NB Choose odd positive number
 
 // WARNING: The noisier the input data the higher MAX_QEI_STATE_ERR has to be.
-#define MAX_QEI_STATE_ERR 128 // 128 for 1 in 8 bit errors. Max. consecutive errors allowed.
+#define MAX_QEI_STATE_ERR 128000 //MB~ 128 // 128 for 1 in 8 bit errors. Max. consecutive errors allowed.
 
 #define QEI_CNT_LIMIT (QEI_PER_REV + HALF_QEI_CNT) // 540 degrees of rotation
 

@@ -100,6 +100,7 @@
 #define VOLT_OFFSET (VOLT_MAX_MAG + HALF_VOLT_TO_PWM) // Offset required to make PWM pulse-width +ve
 
 #define STALL_SPEED 100
+//MB~ #define STALL_TRIP_COUNT 5000
 #define STALL_TRIP_COUNT 5000
 
 #define FIRST_HALL_STATE 0b001 // [CBA] 1st Hall state of 6-state cycle
@@ -117,7 +118,8 @@
 #define REQ_VELOCITY 4000 // Initial start-up speed
 #define START_VQ_OPENLOOP 2000 // Vq value for open-loop startup phase
 #define START_VD_OPENLOOP 0		// Vd value for open-loop startup phase
-#define REQ_VQ_OPENLOOP 6500 // Vq value for open-loop tuning
+//MB~ #define REQ_VQ_OPENLOOP 6500 // Vq value for open-loop tuning
+#define REQ_VQ_OPENLOOP 3000 // MB~ tuning
 #define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value
 
 // Set-up defines for scaling ...
@@ -146,11 +148,11 @@
 
 #define PROPORTIONAL 1 // Selects between 'proportional' and 'offset' error corrections
 #define VELOC_CLOSED 0 // MB~ 1 Selects fully closed loop (both velocity, Iq and Id)
-#define IQ_ID_CLOSED 0 // MB~ 1 Selcects Iq/Id closed-loop, velocity open-loop
+#define IQ_ID_CLOSED 0 // MB~ 1 Selects Iq/Id closed-loop, velocity open-loop
 
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
-	#define DEMO_LIMIT 100000 // XSCOPE
+	#define DEMO_LIMIT 400000 // XSCOPE
 #else // if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 4000000
 	#define DEMO_LIMIT 4000
@@ -236,7 +238,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int set_Vq;	// Demand 'tangential' voltage set by control loop 
 	int prev_Vq;	// Previous Demand 'tangential' voltage
 	int set_theta;	// theta value
-	int start_theta; // MB~ DEPRECIATED Theta start position during warm-up (START and SEARCH states)
 	int first_foc; // Flag set until first FOC (closed-loop) iteration completed
 
 	int iters; // Iterations of inner_loop
@@ -258,12 +259,18 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter
 	int prev_angl; 	// previous angular position
+	int phase_1; 	// 1st Phase identifier (for start-up)
+	int phase_2; 	// 2nd Phase identifier (for start-up)
+	int phase_3; 	// 3rd Phase identifier (for start-up)
+	int phase_Vq; 	// start-up tangential Voltage
+	unsigned phase_time; // time-stamp used during start-up
 	unsigned prev_time; 	// previous open-loop time stamp
 
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error
 	int scale_err; // Scaling diffusion error 
 
+	int tmp; // MB~
 	int temp; // MB~ Dbg
 } MOTOR_DATA_TYP;
 
