@@ -193,10 +193,12 @@ typedef struct QEI_DATA_TAG //
 	int state_errs; // counter for invalid QEI state transistions
 	int status_errs; // counter for invalid QEI status errors
 	int pin_changes; // Counts pin changes during start-up phase
+	int orig_cnt; // Counts number of origin detections (revolutions) of motor
 	int ang_cnt; // Counts angular position of motor (from origin)
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
 	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident Negative spin)
 	int prev_orig; // Previous origin flag
+	int half_qei; // Half QEI points per revolution (used for rounding)
 	int id; // Unique motor identifier
 	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
 

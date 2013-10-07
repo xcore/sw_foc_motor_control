@@ -23,8 +23,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 {
 // Choose last Hall state of 6-state cycle, depending on spin direction
 	QEI_PHASE_TYP bit_patterns = {{ 0 ,1 ,3 ,2 }};	// Table to convert QEI Phase value to circular index [BA] (NB Increment for positive rotation)
-	unsigned diff_bits; // No. of bits required to represent max. time-difference between QEI changes
-	unsigned tmp_diff; // temporary time difference
+	int tmp_val; // temporary manipulation value
 
 
 #if (QEI_DBG)
@@ -38,10 +37,13 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.params.theta = 0; // Reset angular position returned to client
 	inp_qei_s.params.rev_cnt = 0; // Reset revolution counter  returned to client
 	inp_qei_s.params.veloc = 0; // Clear velocity returned to client
+	inp_qei_s.params.old_ang = 0; // Clear old angular position (at reset)
+	inp_qei_s.params.calib = 0; // Clear calibration flag
 	inp_qei_s.params.err = QEI_ERR_OFF; // Clear error status flag returned to client
 
 	inp_qei_s.pin_changes = 0; // NB Initially this is used to count input-pin changes
 	inp_qei_s.id = inp_id; // Clear Previous phase values
+	inp_qei_s.orig_cnt = 0; // Reset origin counter
 	inp_qei_s.ang_cnt = 0; // Reset counter indicating angular position of motor (from origin)
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
 	inp_qei_s.ang_speed = 1;	// Default initial speed value
@@ -65,16 +67,11 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.dbg_str[2] = 0; // String Terminator
 	inp_qei_s.dbg = 0;
 
-	// Calculate how much down-scaling of time-differences is required to maintain precision ...
+	// Check consistency of pre-defined QEI values
+	tmp_val = (1 << QEI_RES_BITS); // Build No. of QEI points from resolution bits
+	assert( QEI_PER_REV == tmp_val );
 
-	// Evaluate how many bits required for maximum time difference
-	diff_bits = 0; // Initialise number of time-diff bits to zero
-	tmp_diff = MAX_TIME_DIFF; // Load maximum expected time difference
-	while(0 < tmp_diff)
-	{
-		tmp_diff >>= 1;
-		diff_bits++;
-	} // while(0 < tmp_diff)
+	inp_qei_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
 
 	return;
 } // init_qei_data
@@ -380,7 +377,7 @@ static void check_for_missed_origin( // Check for missed origin, and update angu
 		{ // A few mis-interpreted values
 			if (inp_qei_s.ang_cnt < (-QEI_CNT_LIMIT))
 			{ // Too many mis-interpreted values: Origin Missed --> Correct counters
-				inp_qei_s.params.rev_cnt--; // Decrement origin counter
+				inp_qei_s.orig_cnt--; // Decrement origin counter
 				inp_qei_s.ang_cnt += QEI_PER_REV; // 'Unwind' a whole Negative rotation
 			} // (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
 		} // if (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
@@ -391,7 +388,7 @@ static void check_for_missed_origin( // Check for missed origin, and update angu
 		{ // A few mis-interpreted values
 			if (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
 			{ // Too many mis-interpreted values: Origin Missed --> Correct counters
-				inp_qei_s.params.rev_cnt++; // Increment origin counter
+				inp_qei_s.orig_cnt++; // Increment origin counter
 				inp_qei_s.ang_cnt -= QEI_PER_REV; // 'Unwind' a whole Positive rotation
 			} // (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
 		} // if (inp_qei_s.ang_cnt > QEI_PER_REV)
@@ -452,17 +449,21 @@ static void update_origin_state( // Update origin state
 	if (orig_flg)
 	{ // Reset position ( 'orig_flg' transition  0 --> 1 )
 
-		// Update origin counter
-		if (0 < inp_qei_s.ang_inc)
-		{
-			inp_qei_s.params.rev_cnt++; // Increment
-		} // if (0 < inp_qei_s.ang_inc)
-		else
-		{
-			inp_qei_s.params.rev_cnt--; // Decrement
-		} // else !(0 < inp_qei_s.ang_inc)
+		// Store total-angle before reset
+		inp_qei_s.params.old_ang = (inp_qei_s.orig_cnt * QEI_REV_MASK) + inp_qei_s.ang_cnt;
+		inp_qei_s.params.calib = 1; // Set flag indicating angular position is calibrated
 
-		inp_qei_s.ang_cnt = 0; // Reset position value
+		// Update origin counter
+		if (0 > inp_qei_s.ang_inc)
+		{ // Negative Angle
+			inp_qei_s.orig_cnt--; // Decrement
+		} // if (0 > inp_qei_s.ang_inc)
+		else
+		{ // Positive Angle
+			inp_qei_s.orig_cnt++; // Increment
+		} // else !(0 > inp_qei_s.ang_inc)
+
+		inp_qei_s.ang_cnt = 0; // Reset position value to maintain total-angle for +ve spin
 	} // if (orig_flg)
 
 	return;
@@ -573,7 +574,7 @@ static void service_input_pins( // Service detected change on input pins
 		{
 			update_origin_state( inp_qei_s ,orig_flg ); // update origin state
 		
-			check_for_missed_origin( inp_qei_s ); // NB May update inp_qei_s.ang_cnt & inp_qei_s.params.rev_cnt
+			check_for_missed_origin( inp_qei_s ); // NB May update inp_qei_s.ang_cnt & inp_qei_s.orig_cnt
 	
 			inp_qei_s.prev_orig = orig_flg; // Store origin flag value
 		} // if (orig_flg != inp_qei_s.prev_orig)
@@ -584,9 +585,6 @@ static void service_input_pins( // Service detected change on input pins
 			// Update estimate of error status using new error flag
 			estimate_error_status( inp_qei_s ,err_flg ); // NB Updates inp_qei_s.params.err
 		} // if (err_flg != inp_qei_s.params.err)
-	
-	 	// The theta value returned to the client should be in the range:  0 <= ang_cnt < 360 degrees
-		inp_qei_s.params.theta = (inp_qei_s.ang_cnt & QEI_REV_MASK); // force into range [0..QEI_REV_MASK]
 	} // else !(0 == inp_qei_s.pin_changes)
 
 	return;
@@ -631,15 +629,9 @@ static void service_client_data_request( // Send processed QEI data to client
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	streaming chanend c_qei // Data channel to client (carries processed QEI data)
 )
-/*	The speed is calculated assuming the angular change is always 1 position.
- *	Experiment shows this to be more robust than using the actual position change, e.g. one of [0, 1, 2]
- *	This is because, the actual positions are estimates (and are sometimes incorrect)
- *	Whereas using the value 1, is effectively applying a lo-pass filter to the position change.
- *
- *	NB If angular position has NOT updated since last transmission, then the same data is re-transmitted
- */
 {
 	int meas_veloc; // Angular_velocity of motor in RPM
+	int tot_ang; // Total angle traversed
 
 
 	// Evaluate (signed) angular_velocity of motor in RPM
@@ -663,6 +655,21 @@ static void service_client_data_request( // Send processed QEI data to client
 	{
 		inp_qei_s.params.veloc = meas_veloc;
 	} // else !(QEI_FILTER)
+
+/* The theta value returned to the client should be in the range:  -180 <= theta < 180 degrees
+ * However, the total-angle, as defined by:-  tot_ang = (rev_cnt * QEI_PER_REV) + theta
+ * must be maintained therefore theta is adjusted accordingly.
+ */
+	
+	// Preset Client data with angle and origin counts
+	tot_ang = (inp_qei_s.orig_cnt * QEI_PER_REV) + inp_qei_s.ang_cnt;
+
+	inp_qei_s.params.rev_cnt = (tot_ang + inp_qei_s.half_qei) >> QEI_RES_BITS; 
+	inp_qei_s.params.theta = tot_ang - (inp_qei_s.params.rev_cnt << QEI_RES_BITS); 
+
+	// Nb theta should now be in range [-(QEI_PER_REV/2) .. (QEI_PER_REV/2 - 1)]
+	assert(-inp_qei_s.half_qei <= inp_qei_s.params.theta);
+	assert(inp_qei_s.params.theta < inp_qei_s.half_qei);
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
 } // service_client_data_request

@@ -82,7 +82,7 @@
 
 // Timing definitions
 #define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
-#define OPEN_LOOP_PERIOD (262 * MICRO_SEC) // 262us. Time between open-loop theta increments
+#define OPEN_LOOP_PERIOD (128 * MICRO_SEC) // 128us. Time between open-loop theta increments
 
 #define PWM_MIN_LIMIT (PWM_MAX_VALUE >> 4) // Min PWM value allowed (1/16th of max range)
 #define PWM_MAX_LIMIT (PWM_MAX_VALUE - PWM_MIN_LIMIT) // Max. PWM value allowed
@@ -179,8 +179,8 @@ typedef enum IQ_EST_TAG
 /** Different Motor Phases */
 typedef enum MOTOR_STATE_ETAG
 {
-  START = 0,	// Initial entry state
-  SEARCH,		// Turn motor until FOC start condition found
+  SEARCH = 0, // Turn motor until FOC start conditions found
+  TRANSIT,	// transit stage
   FOC,		  // Normal FOC state
 	STALL,		// state where motor stalled
 	STOP,			// Error state where motor stopped
@@ -231,14 +231,18 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int half_veloc;	// Half requested angular velocity
 	int Vd_openloop;	// Requested Id value when tuning open-loop
 	int Vq_openloop;	// Requested Iq value when tuning open-loop
+	int update_period;	// Time between updates to PWM theta
 	int pid_veloc;	// Output of angular velocity PID
 	int pid_Id;	// Output of 'radial' current PID
 	int pid_Iq;	// Output of 'tangential' current PID
 	int set_Vd;	// Demand 'radial' voltage set by control loop
 	int set_Vq;	// Demand 'tangential' voltage set by control loop 
 	int prev_Vq;	// Previous Demand 'tangential' voltage
-	int set_theta;	// theta value
+	int set_theta;	// PWM theta value
+	int open_theta;	// Open-loop theta value
+	int foc_theta;	// FOC theta value
 	int first_foc; // Flag set until first FOC (closed-loop) iteration completed
+	int half_qei; // Half QEI points per revolution (used for rounding)
 
 	int iters; // Iterations of inner_loop
 	unsigned id; // Unique Motor identifier e.g. 0 or 1
@@ -247,7 +251,10 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int Iq_alg;	// Algorithm used to estimate coil current Iq (and Id)
 	unsigned xscope;	// Flag set when xscope output required
 
-	int theta_offset;	// Phase difference between the QEI and the coils
+	int qei_offset;	// Phase difference between the QEI origin and PWM theta origin
+	int hall_offset;	// Phase difference between the Hall sensor origin and PWM theta origin
+	int qei_found;	// Flag set when Hall orign found
+	int hall_found;	// Flag set when QEI orign found
 	int phi_err;	// Error diffusion value for Phi value
 	int phi_off;	// Phi value offset
 	int gamma_est;	// Estimate of leading-angle, used to 'pull' pole towards coil.
@@ -258,12 +265,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int phi_ramp;	// Phi ramp value used to smoothly change between different Phi values (phase lag)
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter
-	int prev_angl; 	// previous angular position
-	int phase_1; 	// 1st Phase identifier (for start-up)
-	int phase_2; 	// 2nd Phase identifier (for start-up)
-	int phase_3; 	// 3rd Phase identifier (for start-up)
-	int phase_Vq; 	// start-up tangential Voltage
-	unsigned phase_time; // time-stamp used during start-up
 	unsigned prev_time; 	// previous open-loop time stamp
 
 	int filt_val; // filtered value

@@ -42,13 +42,15 @@
 #define NUM_POLE_PAIRS 4
 
 /** Define the number of different QEI sensor positions per pole-pair */
-#define QEI_PER_POLE 256
+#define QEI_PER_PAIR 256
+
+/** Define the No. Of QEI resolution bits */
+#define QEI_RES_BITS 10 // No. Of bits used to represent QEI_PER_REV (see below)
 
 /** Define the number of different Hall sensor positions per pole-pair */
-#define HALL_PER_POLE 6
+#define HALL_PER_PAIR 6
 
-#define HALL_PER_REV (HALL_PER_POLE * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
-
+#define HALL_PER_REV (HALL_PER_PAIR * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
 
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000
@@ -56,8 +58,8 @@
 /** Define Minimum motor speed, below which motor stalls. WARNING: Safety critical */
 #define MIN_STALL_RPM 500
 
-#define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS) // No. Of QEI positions per Revolution
-#define HALL_PER_REV (HALL_PER_POLE * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
+#define QEI_PER_REV (QEI_PER_PAIR * NUM_POLE_PAIRS) // No. Of QEI positions per Revolution
+#define HALL_PER_REV (HALL_PER_PAIR * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
 
 /**  Seconds in a minute */
 #define SECS_PER_MIN 60

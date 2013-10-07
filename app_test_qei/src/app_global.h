@@ -36,6 +36,9 @@
 /** Define default No. OF QEI positions per Revolution */
 #define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
 
+/** Define the No. Of QEI resolution bits */
+#define QEI_RES_BITS 10 // No. Of bits used to represent QEI_PER_REV (see below)
+
 /** Define default Filter Mode  1 == On */
 #define QEI_FILTER 0
 

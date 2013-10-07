@@ -84,6 +84,8 @@ typedef struct QEI_PARAM_TAG //
 	int theta;		// Angular position
 	int veloc;		// Angular velocity
 	int rev_cnt;	// Revolution counter (No. of origin traversals)
+	int old_ang;	// Old angular position before origin reset to zero
+	int calib;		// Flag set when angular position is calibrated
 	ERROR_QEI_ENUM err;	// Flag set when Error condition detected
 	// WARNING: If editing this structure, also edit parameter_compare() in check_qei_test.xc 
 } QEI_PARAM_TYP;
