@@ -50,11 +50,11 @@ void xscope_user_init()
 	xscope_register( 7
 		,XSCOPE_CONTINUOUS, "Qtheta", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Qveloc", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "Qoff", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "Qrevs", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "Ftheta", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Sgamma", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Set_Vq", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Vq_ol", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "pwm_A", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "Ptheta", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Stheta", XSCOPE_INT , "n"
 /*
 		,XSCOPE_CONTINUOUS, "adc_alf", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "adc_bet", XSCOPE_INT , "n"

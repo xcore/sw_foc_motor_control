@@ -310,7 +310,7 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 	unsigned cur_phases // Current set of phase values
 )
 {
-	ANG_INC_TYP tmp_inc; // Used to circumvents 'ambiguous evaluation' error
+	ANG_INC_TYP tmp_inc; // Used to circumvent 'ambiguous evaluation' error
 
 
 	tmp_inc = estimate_angle_increment( inp_qei_s ,cur_phases ); // Estimate angle increment and spin direction
@@ -373,25 +373,21 @@ static void check_for_missed_origin( // Check for missed origin, and update angu
 {
 	if (0 > inp_qei_s.ang_cnt)
 	{ // Negative angles
-		if (inp_qei_s.ang_cnt < (-QEI_PER_REV))
-		{ // A few mis-interpreted values
-			if (inp_qei_s.ang_cnt < (-QEI_CNT_LIMIT))
-			{ // Too many mis-interpreted values: Origin Missed --> Correct counters
-				inp_qei_s.orig_cnt--; // Decrement origin counter
-				inp_qei_s.ang_cnt += QEI_PER_REV; // 'Unwind' a whole Negative rotation
-			} // (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
-		} // if (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
+		if (inp_qei_s.ang_cnt < (-QEI_CNT_LIMIT))
+		{ // Too many mis-interpreted values: Origin Missed --> Correct counters
+			inp_qei_s.orig_cnt--; // Decrement origin counter
+			inp_qei_s.ang_cnt += QEI_PER_REV; // 'Unwind' a whole Negative rotation
+acquire_lock(); printstrln("MISSED -VE ORIGIN"); release_lock(); //MB~
+		} // (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
 	} // if (0 > inp_qei_s.ang_cnt)
 	else
 	{ // Positive angles
-		if (inp_qei_s.ang_cnt > QEI_PER_REV)
-		{ // A few mis-interpreted values
-			if (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
-			{ // Too many mis-interpreted values: Origin Missed --> Correct counters
-				inp_qei_s.orig_cnt++; // Increment origin counter
-				inp_qei_s.ang_cnt -= QEI_PER_REV; // 'Unwind' a whole Positive rotation
-			} // (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
-		} // if (inp_qei_s.ang_cnt > QEI_PER_REV)
+		if (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
+		{ // Too many mis-interpreted values: Origin Missed --> Correct counters
+			inp_qei_s.orig_cnt++; // Increment origin counter
+			inp_qei_s.ang_cnt -= QEI_PER_REV; // 'Unwind' a whole Positive rotation
+acquire_lock(); printstrln("MISSED +VE ORIGIN"); release_lock(); //MB~
+		} // (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
 	} // else !(0 > inp_qei_s.ang_cnt)
 
 } // check_for_missed_origin
@@ -448,9 +444,8 @@ static void update_origin_state( // Update origin state
 {
 	if (orig_flg)
 	{ // Reset position ( 'orig_flg' transition  0 --> 1 )
-
 		// Store total-angle before reset
-		inp_qei_s.params.old_ang = (inp_qei_s.orig_cnt * QEI_REV_MASK) + inp_qei_s.ang_cnt;
+		inp_qei_s.params.old_ang = (inp_qei_s.orig_cnt * QEI_PER_REV) + inp_qei_s.ang_cnt;
 		inp_qei_s.params.calib = 1; // Set flag indicating angular position is calibrated
 
 		// Update origin counter
@@ -463,7 +458,7 @@ static void update_origin_state( // Update origin state
 			inp_qei_s.orig_cnt++; // Increment
 		} // else !(0 > inp_qei_s.ang_inc)
 
-		inp_qei_s.ang_cnt = 0; // Reset position value to maintain total-angle for +ve spin
+		inp_qei_s.ang_cnt = 0; // Reset position value to origin
 	} // if (orig_flg)
 
 	return;
@@ -656,13 +651,9 @@ static void service_client_data_request( // Send processed QEI data to client
 		inp_qei_s.params.veloc = meas_veloc;
 	} // else !(QEI_FILTER)
 
-/* The theta value returned to the client should be in the range:  -180 <= theta < 180 degrees
- * However, the total-angle, as defined by:-  tot_ang = (rev_cnt * QEI_PER_REV) + theta
- * must be maintained therefore theta is adjusted accordingly.
- */
+	// The theta value returned to the client should be in the range:  -180 <= theta < 180 degrees ...
 	
-	// Preset Client data with angle and origin counts
-	tot_ang = (inp_qei_s.orig_cnt * QEI_PER_REV) + inp_qei_s.ang_cnt;
+	tot_ang = (inp_qei_s.orig_cnt * QEI_PER_REV) + inp_qei_s.ang_cnt;	// Calculate total angle traversed
 
 	inp_qei_s.params.rev_cnt = (tot_ang + inp_qei_s.half_qei) >> QEI_RES_BITS; 
 	inp_qei_s.params.theta = tot_ang - (inp_qei_s.params.rev_cnt << QEI_RES_BITS); 

@@ -82,6 +82,7 @@
 
 // Timing definitions
 #define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
+#define ALIGN_PERIOD (24 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
 #define OPEN_LOOP_PERIOD (128 * MICRO_SEC) // 128us. Time between open-loop theta increments
 
 #define PWM_MIN_LIMIT (PWM_MAX_VALUE >> 4) // Min PWM value allowed (1/16th of max range)
@@ -116,11 +117,23 @@
 #define INIT_THETA 0 // Initial start-up angle
 
 #define REQ_VELOCITY 4000 // Initial start-up speed
-#define START_VQ_OPENLOOP 2000 // Vq value for open-loop startup phase
+#define START_VQ_OPENLOOP 3000 // Vq value for open-loop startup phase
 #define START_VD_OPENLOOP 0		// Vd value for open-loop startup phase
 //MB~ #define REQ_VQ_OPENLOOP 6500 // Vq value for open-loop tuning
 #define REQ_VQ_OPENLOOP 3000 // MB~ tuning
 #define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value
+
+#define MAX_VQ_OPENLOOP 5500 // MB~ Max Vq value for open-loop tuning
+#define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
+
+// Definitions for Gamma value, (amount that PWM leads QEI angle)
+
+#define GAMMA_BITS 16 // No of bits used to generate Gamma up-scaliing factor
+#define GAMMA_SCALE (1 << 16) // Gamma up-scaliing factor
+#define HALF_GAMMA (GAMMA_SCALE >> 1) // Half Gamma scaliing factor
+
+#define MIN_GAMMA 32 // Gamma value at low speed (and start-up)
+#define MAX_GAMMA 96 // Gamma value at max speed
 
 // Set-up defines for scaling ...
 #define SHIFT_20 20
@@ -134,9 +147,6 @@
 #define PHI_GRAD 11880 // 0.01133 as integer ratio PHI_GRAD/PHASE_DENOM
 #define PHI_INTERCEPT 35693527 // 34.04 as integer ratio PHI_INTERCEPT/PHASE_DENOM
 
-#define GAMMA_GRAD 7668 // 0.007313 as integer ratio GAMMA_GRAD/PHASE_DENOM
-#define GAMMA_INTERCEPT 33019658 // 31.49 as integer ratio GAMMA_INTERCEPT/PHASE_DENOM
-
 #define VEL_GRAD 10000 // (Estimated_Current)^2 = VEL_GRAD * Angular_Velocity
 
 #define XTR_SCALE_BITS SHIFT_16 // Used to generate 2^n scaling factor
@@ -149,6 +159,12 @@
 #define PROPORTIONAL 1 // Selects between 'proportional' and 'offset' error corrections
 #define VELOC_CLOSED 0 // MB~ 1 Selects fully closed loop (both velocity, Iq and Id)
 #define IQ_ID_CLOSED 0 // MB~ 1 Selects Iq/Id closed-loop, velocity open-loop
+
+#define BLEND_BITS 11 // Number of bits used to up-scale blending weigths in 'TRANSIT state'
+#define BLEND_UP (1 << BLEND_BITS) // Up-scaling factor
+
+#define VQ_DIFF_BITS 10 // Used to down-scale Vq differences in blending function
+#define VQ_DIFF_MASK ((1 << VQ_DIFF_BITS ) - 1) // Used to mask out Vq difference bits
 
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
@@ -179,7 +195,8 @@ typedef enum IQ_EST_TAG
 /** Different Motor Phases */
 typedef enum MOTOR_STATE_ETAG
 {
-  SEARCH = 0, // Turn motor until FOC start conditions found
+  ALIGN = 0, // Align Coils opposite magnet
+  SEARCH, // Turn motor until FOC start conditions found
   TRANSIT,	// transit stage
   FOC,		  // Normal FOC state
 	STALL,		// state where motor stalled
@@ -231,6 +248,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int half_veloc;	// Half requested angular velocity
 	int Vd_openloop;	// Requested Id value when tuning open-loop
 	int Vq_openloop;	// Requested Iq value when tuning open-loop
+	int Vq_inc;	// Increment to Vq value during 'TRANSIT state'
+	int half_Vq;	// Half Vq increment (used in rounding)
 	int update_period;	// Time between updates to PWM theta
 	int pid_veloc;	// Output of angular velocity PID
 	int pid_Id;	// Output of 'radial' current PID
@@ -238,11 +257,17 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int set_Vd;	// Demand 'radial' voltage set by control loop
 	int set_Vq;	// Demand 'tangential' voltage set by control loop 
 	int prev_Vq;	// Previous Demand 'tangential' voltage
+	int tot_ang;	// Total angle traversed (NB accounts for multiple revolutions)
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
 	int foc_theta;	// FOC theta value
 	int first_foc; // Flag set until first FOC (closed-loop) iteration completed
 	int half_qei; // Half QEI points per revolution (used for rounding)
+	int search_theta;	// theta value at end of 'SEARCH state'
+	int trans_theta;	// theta value at end of 'TRANSIT state'
+	int blend_bits;	// No of bits used to as 'quick' divisor in 'TRANSIT state' blending function
+	int blend_up;	// Up-scaling factor for 'TRANSIT state' blending function
+	int half_blend;	// Used for rounding in 'TRANSIT state' blending function
 
 	int iters; // Iterations of inner_loop
 	unsigned id; // Unique Motor identifier e.g. 0 or 1
@@ -257,14 +282,13 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int hall_found;	// Flag set when QEI orign found
 	int phi_err;	// Error diffusion value for Phi value
 	int phi_off;	// Phi value offset
-	int gamma_est;	// Estimate of leading-angle, used to 'pull' pole towards coil.
-	int gamma_off;	// Gamma value offset
-	int gamma_inc;	// MB~ Used in Tuning
-	int gamma_err;	// Error diffusion value for Gamma value
-	int gamma_ramp;	// Gamma ramp value used to smoothly change between different Gamma values
+	int gamma_grad;	// Multiplier used to generate Gamma values from speed
+	int gamma_off;	// Offset used to generate Gamma values from speed
 	int phi_ramp;	// Phi ramp value used to smoothly change between different Phi values (phase lag)
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter
+
+	timer tymer;	// Timer
 	unsigned prev_time; 	// previous open-loop time stamp
 
 	int filt_val; // filtered value

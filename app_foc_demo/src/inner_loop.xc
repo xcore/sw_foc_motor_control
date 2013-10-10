@@ -39,6 +39,91 @@ static void init_error_data( // Initialise Error-handling data
 
 } // init_error_data 
 /*****************************************************************************/
+static unsigned calc_bit_resolution( // Calculate No of bits required to represent (unsigned) input value
+	unsigned inp_val // Input value
+) // Returns No. of resolution bits
+{
+	unsigned out_bits = 0; // No. of resolution bits to return
+
+
+	while (inp_val > 0)
+	{
+		inp_val >>= 1;
+		out_bits++;
+	} // while (inp_val > 0)
+
+	return out_bits; // Return No. of resolution bits
+} // calc_bit_resolution
+/*****************************************************************************/
+static void init_gamma_data( // Initialise Gamma data for leading angle
+	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
+)
+{
+	int speed_rng = (MAX_SPEC_RPM - MIN_STALL_RPM); // Speed range
+	int gamma_rng = (MAX_GAMMA - MIN_GAMMA); // Gamma range
+	int tmp_val; // Temporary manipulation variable;
+
+
+	tmp_val = (gamma_rng << GAMMA_BITS); // Up-scale Gamma range
+
+	// Calculate up-scaled Gamma gradient
+	motor_s.gamma_grad = (tmp_val + (speed_rng >> 1)) / speed_rng; 
+
+	tmp_val = (MIN_GAMMA << GAMMA_BITS); // Up-scale Minimum Gamma
+
+	// Calculate up-scaled Gamma offset
+	motor_s.gamma_off = tmp_val - MIN_STALL_RPM * motor_s.gamma_grad;
+
+} // init_blend_data
+/*****************************************************************************/
+static void init_blend_data( // Initialise blending data for 'TRANSIT state'
+	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
+)
+/* Calculate time in TRANSIT state based on Requested open-loop Vq ...
+ * Using at least one electrical cycle per  1000 Vq units
+ * Then compute blending function data, so bit-shift division can be used.
+ */
+{
+	unsigned num_cycles; // No. of electrical cycles
+	unsigned diff_theta; // blending period (measured as QEI angle positions)
+	unsigned numer_bits; // No of bits used to represent numerator of blending function
+
+
+	// Evaluate state termination conditions
+	motor_s.search_theta = QEI_PER_PAIR; // theta value at end of 'SEARCH state'
+
+	// Here we use at least one electrical cycle per 1024 Vq values.
+	num_cycles = (abs(REQ_VQ_OPENLOOP - START_VQ_OPENLOOP) + VQ_DIFF_MASK) >> VQ_DIFF_BITS;
+
+	if (num_cycles < 1) num_cycles = 1; // Ensure at least one cycle
+
+	diff_theta = QEI_PER_PAIR * num_cycles; // No of QEI positions (theta)
+	motor_s.trans_theta = motor_s.search_theta + diff_theta; // theta at end of 'TRANSIT state'
+
+	// Calculate upscale value based on No. of electrical cycles
+	motor_s.blend_up = (BLEND_UP + (num_cycles >> 1)) / num_cycles;
+
+	// Check bit precision ...
+
+	numer_bits = calc_bit_resolution( diff_theta ); // Preset with period bits
+
+	numer_bits = (2 * numer_bits) + 1; // Update to account for maximum variable size
+
+	numer_bits += calc_bit_resolution( motor_s.blend_up ); // Add in bits for up-scale factor
+
+	assert(32 > numer_bits); // ERROR: Failed numeric overflow test
+
+	// Preset blend divisor-bits with bit resolution of QEI_PER_PAIR ...
+	motor_s.blend_bits = calc_bit_resolution(QEI_PER_PAIR - 1);
+
+	motor_s.Vq_inc = (1 << (VQ_DIFF_BITS - motor_s.blend_bits)); // Calculate Vq increment 
+	motor_s.half_Vq = (motor_s.Vq_inc >> 1); // Half Vq increment (used in rounding)
+
+	motor_s.blend_bits += BLEND_BITS; // Add bits for up-scaling factor
+
+	motor_s.half_blend = (1 << (motor_s.blend_bits -1)); // Used in rounding
+} // init_blend_data
+/*****************************************************************************/
 static void init_motor( // initialise data structure for one motor
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
 	unsigned motor_id // Unique Motor identifier e.g. 0 or 1
@@ -51,6 +136,7 @@ static void init_motor( // initialise data structure for one motor
 
 	init_error_data( motor_s.err_data );
 
+	init_gamma_data( motor_s );
 
 	// Initialise PID constants [ K_p ,K_i ,Kd, ,resolution ] ...
 
@@ -79,8 +165,10 @@ static void init_motor( // initialise data structure for one motor
 
 	motor_s.id = motor_id; // Unique Motor identifier e.g. 0 or 1
 	motor_s.iters = 0;
+	motor_s.cnts[ALIGN] = 0;
 	motor_s.cnts[SEARCH] = 0;
-	motor_s.state = SEARCH;
+//MB~	motor_s.state = SEARCH;
+	motor_s.state = ALIGN;
 	motor_s.hall_params.hall_val = HALL_NERR_MASK; // Initialise to 'No Errors'
 	motor_s.prev_hall = (!HALL_NERR_MASK); // Arbitary value different to above
 
@@ -94,22 +182,16 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.pid_Id = 0;	// Output from radial current PID
 	motor_s.pid_Iq = 0;	// Output from tangential current PID
 	motor_s.pid_veloc = 0;	// Output from velocity PID
-	motor_s.set_Vd = 0;	// Ideal voltage producing radial magnetic field (NB never update as no radial force is required)
-	motor_s.set_Vq = 0;	// Ideal voltage producing tangential magnetic field. (NB Updated based on the speed error)
 	motor_s.prev_Vq = 0;	// Previous voltage producing tangential magnetic field.
 	motor_s.est_Iq = 0;	// Clear Iq value estimated from measured angular velocity
-	motor_s.xscope = 1; 	// Swithc on xscope print flag
+	motor_s.xscope = 1; 	// Switch on xscope print flag
 	motor_s.prev_time = 0; 	// previous open-loop time stamp
 	motor_s.coef_err = 0; // Clear Extrema Coef. diffusion error
 	motor_s.scale_err = 0; // Clear Extrema Scaling diffusion error
 	motor_s.Iq_err = 0; // Clear Error diffusion value for measured Iq
-	motor_s.gamma_off = 0;	// Gamma value offset
-	motor_s.gamma_err = 0;	// Error diffusion value for Gamma value
-	motor_s.gamma_ramp = 0;	// Initialise Gamma ramp value to zero
-//MB~	motor_s.gamma_est = 0;	// Estimate of leading-angle, used to 'pull' pole towards coil.
-	motor_s.gamma_inc = 0; //MB~ tuning
 	motor_s.phi_ramp = 0;	// Initialise Phi (phase lag) ramp value to zero
 
+	motor_s.tot_ang = 0;	// Total angle traversed (NB accounts for multiple revolutions)
 	motor_s.set_theta = 0; // PWM theta value
 	motor_s.open_theta = 0; // Open-loop theta value
 	motor_s.foc_theta = 0; // FOC theta value
@@ -120,9 +202,12 @@ static void init_motor( // initialise data structure for one motor
 
 	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
 
+	motor_s.set_Vd = START_VD_OPENLOOP; // Ideal voltage producing radial magnetic field (NB never update as no radial force is required)
+	motor_s.set_Vq = START_VQ_OPENLOOP; // Ideal voltage producing tangential magnetic field. (NB Updated based on the speed error)
 	motor_s.Vd_openloop = START_VD_OPENLOOP;
 	motor_s.Vq_openloop = START_VQ_OPENLOOP;
 	motor_s.update_period = OPEN_LOOP_PERIOD; // Time between updates to PWM theta
+
 
 	motor_s.req_Vd = motor_s.Vd_openloop; // Requested 'radial' voltage 
 	motor_s.req_Vq = motor_s.Vq_openloop; // Requested 'tangential' voltage 
@@ -137,56 +222,26 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.qei_params.veloc = motor_s.req_veloc;
 	motor_s.meas_speed = abs(motor_s.req_veloc);
 
+
 	// Initialise angle variables dependant on spin direction
 	if (0 > motor_s.req_veloc)
 	{ // Negative spin direction
-		motor_s.gamma_off = -GAMMA_INTERCEPT;
 		motor_s.phi_off = -PHI_INTERCEPT;
+		motor_s.gamma_off = -motor_s.gamma_off;
+		motor_s.gamma_grad = -motor_s.gamma_grad;
 
 		motor_s.end_hall = NEGA_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
-/*
-motor_s.gamma_est = -38;	// MB~ Motor_00
-motor_s.gamma_est = 108;	// MB~ Motor_01
-motor_s.gamma_est = -16;	// MB~ Motor_02
-motor_s.gamma_est = -44;	// MB~ Motor_03
-motor_s.gamma_est = 100;	// MB~ Motor_04
-motor_s.gamma_est = 114;	// MB~ Motor_05
-motor_s.gamma_est = 60;	// MB~ Motor_06
-motor_s.gamma_est = -83;	// MB~ Motor_07
-motor_s.gamma_est = -46;	// MB~ Motor_08
-motor_s.gamma_est = -62;	// MB~ Motor_09
-motor_s.gamma_est = -49;	// MB~ Motor_10
-motor_s.gamma_est = -38;	// MB~ Motor_11
-*/
-motor_s.gamma_est = 123;	// MB~ Motor_09
-motor_s.gamma_est = -40;	// MB~ Motor_08
 	} // if (0 > motor_s.req_veloc)
 	else
 	{ // Positive spin direction
-		motor_s.gamma_off = GAMMA_INTERCEPT;
 		motor_s.phi_off = PHI_INTERCEPT;
-
 		motor_s.end_hall = POSI_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
-/*
-motor_s.gamma_est = 45;	// MB~ Motor_00
-motor_s.gamma_est = 90;	// MB~ Motor_01
-motor_s.gamma_est = 46;	// MB~ Motor_02
-motor_s.gamma_est = 42;	// MB~ Motor_03
-motor_s.gamma_est = 47;	// MB~ Motor_04
-motor_s.gamma_est = 55;	// MB~ Motor_05
-motor_s.gamma_est = 41;	// MB~ Motor_06
-motor_s.gamma_est = -22;	// MB~ Motor_07
-motor_s.gamma_est = -55;	// MB~ Motor_08
-motor_s.gamma_est = 86;	// MB~ Motor_09
-motor_s.gamma_est = 44;	// MB~ Motor_10
-motor_s.gamma_est = -121;	// MB~ Motor_11
-*/
-motor_s.gamma_est = 44;	// MB~ Motor_09
-motor_s.gamma_est = 40;	// MB~ Motor_08
 	} // else !(0 > motor_s.req_veloc)
 
+	init_blend_data( motor_s );	// Initialise blending data for 'TRANSIT state'
+
 	motor_s.tmp = 0; // MB~ Dbg
-	motor_s.temp = 0; // MB~ Dbg
+	motor_s.temp = 1; // MB~ Dbg
 
 } // init_motor
 /*****************************************************************************/
@@ -464,6 +519,7 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	// Final voltages applied: 
 	inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
 
+if (motor_s.xscope) xscope_probe_data( 3 ,set_Vq );
 if (motor_s.xscope) xscope_probe_data( 5 ,volts[0] );
 if (motor_s.xscope) xscope_probe_data( 6 ,inp_theta );
 
@@ -478,15 +534,11 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	timer chronometer; // timer
 	unsigned cur_time; // current time value
 	int diff_time; // time since last theta update
 
 
-	motor_s.set_Vd = motor_s.Vd_openloop;
-	motor_s.set_Vq = motor_s.Vq_openloop;
-
-	chronometer :> cur_time;
+	motor_s.tymer :> cur_time;
 	diff_time = (int)(cur_time - motor_s.prev_time); 
 
 	// Check if theta needs incrementing
@@ -506,24 +558,56 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 
 	// NB QEI_REV_MASK correctly maps -ve values into +ve range 0 <= theta < QEI_PER_REV;
 	motor_s.set_theta = motor_s.open_theta & QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
-
-	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 } // calc_open_loop_pwm
+/*****************************************************************************/
+static int calc_foc_angle( // Calculate PWM angle for FOC
+	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
+	int qei_theta // QEI angle
+) // Returns FOC angle
+{
+	int foc_angle; 	// FOC angle
+	int gamma_est;	// Estimate of leading-angle, amount PWM_angle leads QEI_angle
+	int speed= abs(motor_s.qei_params.veloc); // Motor speed
+
+
+	// Clip speed into conversion range
+	if (speed < MIN_STALL_RPM)
+	{
+		speed = MIN_STALL_RPM; // Clip to minimum speed
+	} // if (speed < MIN_STALL_RPM)
+	else
+	{
+		if (speed > MAX_SPEC_RPM)
+		{
+			speed = MAX_SPEC_RPM; // Clip to maximum speed
+		} // if (speed > MAX_SPEC_RPM)
+	} // if (speed < MIN_STALL_RPM)
+
+	gamma_est = motor_s.gamma_off + (motor_s.gamma_grad * speed); // Calculate up-scaled Gamma estimate
+
+	// Down-scale Gamma estimate back into range [MIN_GAMMA .. MAX_GAMMA]
+	gamma_est = (gamma_est + HALF_GAMMA) >> GAMMA_BITS;
+
+if (motor_s.xscope) xscope_probe_data( 2 ,gamma_est);
+
+	foc_angle = qei_theta + motor_s.qei_offset + gamma_est; // Calculate FOC angle
+
+	return foc_angle; // Return FOC angle
+} // calc_foc_angle 
 /*****************************************************************************/
 static void calc_transit_pwm( // Calculate FOC PWM output values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	timer chronometer; // timer
 	unsigned cur_time; // current time value
 	int diff_time; // time since last theta update
 	int weight;	// Weighting for FOC theta
-	int tot_ang;	// Total angle traversed
 
 
 #pragma xta label "trans_loop_speed_pid"
 
-	chronometer :> cur_time;
+
+	motor_s.tymer :> cur_time;
 	diff_time = (int)(cur_time - motor_s.prev_time); 
 
 	// Check if theta needs incrementing
@@ -539,38 +623,35 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 		} // else !(motor_s.req_veloc < 0)
 
 		motor_s.prev_time = cur_time; // Update previous time
+
+	// If necessary, smoothly change open-loop Vq to requested value. NB REQ_VQ_OPENLOOP always +ve 
+	if (motor_s.Vq_openloop > (REQ_VQ_OPENLOOP + motor_s.half_Vq))
+	{
+		motor_s.Vq_openloop -= motor_s.Vq_inc; // Decrease slightly
+	} // if (motor_s.Vq_openloop > (REQ_VQ_OPENLOOP + motor_s.half_Vq))
+	else
+	{
+		if (motor_s.Vq_openloop < (REQ_VQ_OPENLOOP - motor_s.half_Vq))
+		{
+			motor_s.Vq_openloop += motor_s.Vq_inc; // Increase slightly
+		} // if (motor_s.Vq_openloop < (REQ_VQ_OPENLOOP - motor_s.half_Vq))
+	} // else !(motor_s.Vq_openloop >(REQ_VQ_OPENLOOP + motor_s.half_Vq))
+
+	motor_s.set_Vq = motor_s.Vq_openloop; // Ideal voltage producing tangential magnetic field. (NB Updated based on the speed error)
+
 	} // if (motor_s.update_period < diff_time)
 
 	// WARNING: Do NOT allow  motor_s.foc_theta or motor_s.open_theta to wrap otherwise weighting will NOT work
 
-	tot_ang = motor_s.qei_params.theta + (QEI_PER_REV * motor_s.qei_params.rev_cnt); // Total angle traversed
-	motor_s.foc_theta = tot_ang + motor_s.qei_offset + motor_s.gamma_est;
-if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.foc_theta );
+	motor_s.foc_theta = calc_foc_angle( motor_s ,motor_s.tot_ang ); // Calculate FOC-angle, from QEI-angle
 
-	weight = abs(motor_s.open_theta) - QEI_PER_PAIR; // Weighting for FOC. NB [0 --> QEI_PER_PAIR]
+	// Calculate weighting for FOC.
+	weight = motor_s.blend_up * (abs(motor_s.open_theta) - motor_s.search_theta);
 
-	// NB Round and divide by QEI_PER_PAIR)   
-	motor_s.set_theta = (weight * (motor_s.foc_theta - motor_s.open_theta) + (QEI_PER_PAIR >> 1)) >> 8;
+	// NB Round and down-scale
+	motor_s.set_theta = (weight * (motor_s.foc_theta - motor_s.open_theta) + motor_s.half_blend) >> motor_s.blend_bits;
 
 	motor_s.set_theta += motor_s.open_theta;
-
-if (motor_s.temp)
-{
-acquire_lock();
-printint(motor_s.temp); 
-printstr(": Qtheta="); printint(motor_s.qei_params.theta );
-printstr(" Qrevs="); printint(motor_s.qei_params.rev_cnt );
-printstr(" Qang="); printintln(tot_ang);
-printstr(" Qoff="); printint(motor_s.qei_offset );
-printstr(" Gamma="); printint(motor_s.gamma_est );
-printstr(" Open="); printint(motor_s.open_theta); 
-printstr(" FOC="); printint(motor_s.foc_theta); 
-printstr(" Set="); printint(motor_s.set_theta);
-printstr(" Wrap="); printintln(motor_s.set_theta & QEI_REV_MASK); 
-release_lock(); //MB~
-
-motor_s.temp--;
-}
 
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 } // calc_transit_pwm
@@ -590,6 +671,7 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	int corr_veloc;	// Correction to angular velocity
 	int scaled_phase;	// Scaled Phase offset
 	int smooth_gamma;	// Smoothed Gamma value (Leading angle)
+	int speed;	// Motor speed
 
 
 #pragma xta label "foc_loop_speed_pid"
@@ -681,85 +763,41 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	} // if (IQ_ID_CLOSED)
 	else
 	{ // Open-loop
-		// If necessary, smoothly change open-loop Vq to requested value. NB REQ_VQ_OPENLOOP always +ve 
-		if (motor_s.Vq_openloop > REQ_VQ_OPENLOOP )
-		{
-			motor_s.Vq_openloop -= 1; // Decrease slightly
-		} // if (motor_s.Vq_openloop > REQ_VQ_OPENLOOP )
-		else
-		{
-			if (motor_s.Vq_openloop < REQ_VQ_OPENLOOP )
-			{
-				motor_s.Vq_openloop += 1; // Increase slightly
-			} // if (motor_s.Vq_openloop > REQ_VQ_OPENLOOP )
-		} // else !(motor_s.Vq_openloop > REQ_VQ_OPENLOOP )
+		motor_s.set_Vd = motor_s.Vd_openloop; // Ideal voltage producing radial magnetic field (NB never update as no radial force is required)
+		motor_s.set_Vq = motor_s.Vq_openloop; // Ideal voltage producing tangential magnetic field. (NB Updated based on the speed error)
 
 		calc_open_loop_pwm( motor_s );
 	} // else !(IQ_ID_CLOSED)
 
-	// Update Gamma estimate ...
-#ifdef MB
-//MB~	scaled_phase = motor_s.qei_params.veloc * GAMMA_GRAD + motor_s.gamma_off + motor_s.gamma_err;
-	scaled_phase = 50 * GAMMA_GRAD + motor_s.gamma_off + motor_s.gamma_err;
-	motor_s.gamma_est = (scaled_phase + HALF_PHASE) >> PHASE_BITS;
-	motor_s.gamma_err = scaled_phase - (motor_s.gamma_est << PHASE_BITS);
-#endif //MB~
-
 motor_s.tmp++;
-if ((1 << 10) == motor_s.tmp)
+if (64 == motor_s.tmp)
 {
 	motor_s.tmp = 0;
-	motor_s.gamma_est++;
-	if (QEI_PER_PAIR == motor_s.gamma_est)
-	{
-		motor_s.gamma_est = 0;
-		motor_s.gamma_ramp -= QEI_PER_PAIR; 
-	}  // if (QEI_PER_PAIR == motor_s.gamma_est)
+
+	if (1 == motor_s.temp)
+	{ // Increasing
+		motor_s.Vq_openloop += motor_s.Vq_inc;
+
+		if (MAX_VQ_OPENLOOP < motor_s.Vq_openloop)
+		{ // Switch direction
+			motor_s.temp = -1;
+		} // if (MAX_VQ_OPENLOOP < motor_s.Vq_openloop)
+	} // if (1 == motor_s.temp)
+	else
+	{ // Decreasing
+		motor_s.Vq_openloop -= motor_s.Vq_inc;
+
+		if (MIN_VQ_OPENLOOP > motor_s.Vq_openloop)
+		{ // Switch direction
+			motor_s.temp = 1;
+		} // if (MIN_VQ_OPENLOOP < motor_s.Vq_openloop)
+	} // if (1 == motor_s.temp)
+
+xscope_probe_data( 4 ,motor_s.Vq_openloop );
 } // if (1024 == motor_s.tmp)
-// if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.gamma_est);
 
-	if (motor_s.gamma_ramp > motor_s.gamma_est)
-	{
-		motor_s.gamma_ramp--; // Decrement ramp value
-	} // if
-	else
-	{
-		if (motor_s.gamma_ramp < motor_s.gamma_est)
-		{
-			motor_s.gamma_ramp++; // Increment ramp value
-		} // if
-	} // else
-	smooth_gamma = motor_s.gamma_ramp;
-
-#ifdef MB
-	// Smooth changes in Gamma estimate ...
-	smooth_gamma = motor_s.gamma_est;
-
-	if (0 > motor_s.req_veloc)
-	{ // Negative spin direction
-
-		// If necessary, force a smooth change
-		if (motor_s.gamma_ramp > motor_s.gamma_est)
-		{
-			motor_s.gamma_ramp--; // Decrement ramp value
-			smooth_gamma = motor_s.gamma_ramp;
-		} //if (motor_s.gamma_ramp < motor_s.gamma_est)
- 	} // if (0 > motor_s.req_veloc)
-	else
-	{ // Positive spin direction
-
-		// If necessary, force a smooth change
-		if (motor_s.gamma_ramp < motor_s.gamma_est)
-		{
-			motor_s.gamma_ramp++; // Increment ramp value
-			smooth_gamma = motor_s.gamma_ramp;
-		} //if (motor_s.gamma_ramp < motor_s.gamma_est)
-	} // else !(0 > motor_s.req_veloc)
-#endif //MB~
-
-	// Update 'demand' theta value for next dq_to_pwm iteration
-//MB~ if (motor_s.xscope) xscope_probe_data( 4 ,smooth_gamma);
-	motor_s.set_theta = motor_s.qei_params.theta + motor_s.qei_offset + motor_s.gamma_est;
+	// Update 'demand' theta value for next dq_to_pwm iteration from QEI-angle
+	motor_s.set_theta = calc_foc_angle( motor_s ,motor_s.qei_params.theta );
 
 	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 
@@ -781,29 +819,36 @@ static void update_motor_state( // Update state of motor based on motor sensor d
  */
 {
 	MOTOR_STATE_ENUM motor_state; // local motor state
-	int tot_ang;	// Total angle traversed
 
 
 	// Update motor state based on new sensor data
 	switch( motor_s.state )
 	{
+		case ALIGN: // Align Motor coils opposite matgnets
+		{
+			unsigned ts1;	// timestamp
+			unsigned diff_time;	// time difference
+
+			motor_s.tymer :> ts1;
+			diff_time = ts1 - motor_s.prev_time;
+
+			if (ALIGN_PERIOD < diff_time)
+			{
+				motor_s.prev_time = ts1; // Store time-stamp
+				motor_state = SEARCH; 
+				motor_s.state = motor_state; // NB Required due to XC compiler rules
+			} // if 
+		} break; // case ALIGN
+	
 		case SEARCH : // Turn motor using theta steps (open-loop), and update motor state
-//MB~ acquire_lock(); printstr("Open="); printintln(motor_s.open_theta); release_lock(); //MB~
 			// Check if one full electrical cycle completed
-			if (QEI_PER_PAIR == abs(motor_s.open_theta))
+			if (motor_s.search_theta == abs(motor_s.open_theta))
 			{ /* Calculate QEI offset
 				 * In FOC state, theta will be based on angle returned from QEI sensor.
          * So recalibrate, to create smooth transition between SEARCH and FOC states.  
 				 */
-				tot_ang = motor_s.qei_params.theta + (QEI_PER_REV * motor_s.qei_params.rev_cnt); // Total QEI qngle
-				motor_s.qei_offset = motor_s.open_theta - tot_ang; // Difference betweene Open-loop and QEI angle
-acquire_lock();
-printstr("TRANS Otheta="); printint(motor_s.open_theta);
-printstr(" Qtheta="); printint(tot_ang);
-printstr(" Ptheta="); printint(motor_s.set_theta);
-printstr(" Qoff="); printintln(motor_s.qei_offset); 
-release_lock(); //MB~
-motor_s.temp = 1;
+				motor_s.qei_offset = motor_s.open_theta - motor_s.tot_ang; // Difference betweene Open-loop and QEI angle
+acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
 				motor_state = TRANSIT; 
 				motor_s.state = motor_state; // NB Required due to XC compiler rules
 			} // if (QEI_PER_PAIR == abs(motor_s.open_theta))
@@ -811,10 +856,10 @@ motor_s.temp = 1;
 	
 		case TRANSIT : // Transit between open-loop and FOC, and update motor state
 			// Check if two full electrical cycles completed
-			if ((QEI_PER_PAIR << 1) == abs(motor_s.open_theta))
+			if (motor_s.trans_theta == abs(motor_s.open_theta))
 			{
-acquire_lock(); printstrln("FOC"); release_lock(); //MB~
-
+				motor_s.Vq_openloop = REQ_VQ_OPENLOOP; // NB Correct for any rounding inaccuracy from TRANSIT state
+acquire_lock(); printstrln("FOC");release_lock(); //MB~
 				motor_state = FOC; 
 				motor_s.state = motor_state; // NB Required due to XC compiler rules
 			} // if ((QEI_PER_PAIR << 1) == abs(motor_s.open_theta))
@@ -888,13 +933,16 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.qei_params.veloc); rele
     break;
 	} // switch( motor_s.state )
 
-if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_offset );
 	motor_s.cnts[motor_s.state]++; // Update counter for new motor state 
 
 	// Select correct method of calculating DQ values
 #pragma fallthrough
 	switch( motor_s.state )
 	{
+		case ALIGN : // Turn motor until Aligned
+			// Nothing to do
+		break; // case ALIGN
+	
 		case SEARCH : // Turn motor until FOC start condition found
  			calc_open_loop_pwm( motor_s );
 		break; // case SEARCH 
@@ -924,7 +972,7 @@ if (motor_s.xscope) xscope_probe_data( 2 ,motor_s.qei_offset );
 } // update_motor_state
 /*****************************************************************************/
 void wait_for_servers_to_start( // Wait for other servers to initialise
-	MOTOR_DATA_TYP motor_s, // Structure containing motor data
+	MOTOR_DATA_TYP &motor_s, // Structure containing motor data
 	chanend c_wd, // Channel for communication with WatchDog server
 	chanend c_pwm, // Channel for communication with PWM server
 	streaming chanend c_hall, // Channel for communication with Hall server 
@@ -933,7 +981,6 @@ void wait_for_servers_to_start( // Wait for other servers to initialise
 )
 #define NUM_INIT_SERVERS 4 // WARNING: edit this line to indicate No of servers to wait on
 {
-	timer chronometer;	// Timer
 	unsigned ts1;	// timestamp
 	int wait_cnt = NUM_INIT_SERVERS; // Set number of un-initialised servers
 	unsigned cmd; // Command from Server
@@ -975,8 +1022,8 @@ void wait_for_servers_to_start( // Wait for other servers to initialise
 
 			default :
 				acquire_lock(); printchar('.');	release_lock();
-				chronometer :> ts1;
-				chronometer when timerafter(ts1 + MILLI_SEC) :> void;
+				motor_s.tymer :> ts1;
+				motor_s.tymer when timerafter(ts1 + MILLI_SEC) :> void;
 			break; // default
 		} // select
 	} // while(0 < run_cnt)
@@ -1047,30 +1094,14 @@ static void find_qei_origin( // Test QEI state for origin
 	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
 ) // Returns new motor-state
 {
-	int tot_ang;	// Total angle traversed
-
-
 	if (motor_s.qei_params.calib) // Check if angular position origin found
 	{
-acquire_lock();
  		// Check if we finished SEARCH state
 		if (SEARCH != motor_s.state)
 		{ // Re-calculate QEI offset, now QEI theta has done origin reset
-			tot_ang = (motor_s.qei_params.rev_cnt * QEI_PER_REV) + motor_s.qei_params.theta; // Total QEI angle
-			motor_s.qei_offset += (motor_s.qei_params.old_ang - tot_ang); // Add back old QEI, & subtract new
-
-printstr(" Old_Ang="); printint(motor_s.qei_params.old_ang);
-printstr(" Qrevs="); printint(motor_s.qei_params.rev_cnt );
-printstr(" Qtheta="); printint(motor_s.qei_params.theta );
-printstr(" TotAng="); printint(tot_ang);
-printstr(" Otheta="); printint(motor_s.open_theta);
-printstr(" Ptheta="); printint(motor_s.set_theta);
-printstr(" Qoff="); printint(motor_s.qei_offset);
-
-motor_s.temp = 2;
+			motor_s.qei_offset += (motor_s.qei_params.old_ang - motor_s.tot_ang); // Add back old QEI, & subtract new
 		} // if (FOC == motor_s.state)
 
-printstrln(" ORIGIN"); release_lock(); //MB~
 		motor_s.qei_found = 1; // Set flag indicating QEI origin located
 	} // if (motor_s.qei_params.calib)
 
@@ -1089,8 +1120,9 @@ static void use_motor ( // Start motor, and run step through different motor sta
 )
 {
 	unsigned command;	// Command received from the control interface
-	int tot_ang;	// Total angle traversed
 
+
+	motor_s.tymer :> motor_s.prev_time; // Store time-stamp
 
 	/* Main loop */
 	while (STOP != motor_s.state)
@@ -1194,18 +1226,18 @@ static void use_motor ( // Start motor, and run step through different motor sta
 					/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
 					foc_qei_get_parameters( motor_s.qei_params ,c_qei );
 
-					tot_ang = motor_s.qei_params.rev_cnt * QEI_PER_REV + motor_s.qei_params.theta;
+					motor_s.tot_ang = motor_s.qei_params.rev_cnt * QEI_PER_REV + motor_s.qei_params.theta;
 #if (LDO_MOTOR_SPIN)
 {	// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
 	motor_s.qei_params.old_ang = -motor_s.qei_params.old_ang; // Invert velocity
 	motor_s.qei_params.veloc = -motor_s.qei_params.veloc; // Invert old angle
-	tot_ang = -tot_ang; // Invert total angle
+	motor_s.tot_ang = -motor_s.tot_ang; // Invert total angle
 
 	// Re-calculate rev_cnt and theta
-	motor_s.qei_params.rev_cnt = (tot_ang + motor_s.half_qei) >> QEI_RES_BITS; 
-	motor_s.qei_params.theta = tot_ang - (motor_s.qei_params.rev_cnt << QEI_RES_BITS); 
+	motor_s.qei_params.rev_cnt = (motor_s.tot_ang + motor_s.half_qei) >> QEI_RES_BITS; 
+	motor_s.qei_params.theta = motor_s.tot_ang - (motor_s.qei_params.rev_cnt << QEI_RES_BITS); 
 
-	assert( tot_ang == (motor_s.qei_params.rev_cnt * QEI_PER_REV + motor_s.qei_params.theta)); // MB~ Check angle
+	assert( motor_s.tot_ang == (motor_s.qei_params.rev_cnt * QEI_PER_REV + motor_s.qei_params.theta)); // MB~ Check angle
 }
 #endif // (LDO_MOTOR_SPIN)
 
@@ -1215,10 +1247,9 @@ if (1 < abs(motor_s.qei_params.rev_cnt))
 }
 else
 {
-	if (motor_s.xscope) xscope_probe_data( 0 ,tot_ang );
+	if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.tot_ang );
 }
 if (motor_s.xscope) xscope_probe_data( 1 ,motor_s.qei_params.veloc );
-if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.qei_params.rev_cnt );
 
 					if (0 == motor_s.qei_found)
 					{
@@ -1284,7 +1315,7 @@ if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.qei_params.rev_cnt );
 } // use_motor
 /*****************************************************************************/
 void signal_servers_to_stop( // Signal then wait for other servers to terminate
-	MOTOR_DATA_TYP motor_s, // Structure containing motor data
+	MOTOR_DATA_TYP &motor_s, // Structure containing motor data
 	chanend c_wd, // Channel for communication with WatchDog server
 	chanend c_pwm, // Channel for communication with PWM server
 	streaming chanend c_hall, // Channel for communication with Hall server 
@@ -1294,7 +1325,6 @@ void signal_servers_to_stop( // Signal then wait for other servers to terminate
 #define NUM_STOP_SERVERS 4 // WARNING: edit this line to indicate No of servers to close 
 {
 	unsigned cmd; // Command from Server
-	timer chronometer;	// Timer
 	unsigned ts1;	// timestamp
 	int run_cnt = NUM_STOP_SERVERS; // Initialise number of running servers
 
@@ -1340,8 +1370,8 @@ void signal_servers_to_stop( // Signal then wait for other servers to terminate
 
 			default :
 				acquire_lock(); printchar('X');	release_lock();
-				chronometer :> ts1;
-				chronometer when timerafter(ts1 + MILLI_SEC) :> void;
+				motor_s.tymer :> ts1;
+				motor_s.tymer when timerafter(ts1 + MILLI_SEC) :> void;
 			break; // default
 		} // select
 	} // while(0 < run_cnt)
@@ -1387,7 +1417,6 @@ void run_motor (
 )
 {
 	MOTOR_DATA_TYP motor_s; // Structure containing motor data
-	timer chronometer;	/* Timer */
 	unsigned ts1;	/* timestamp */
 
 
@@ -1398,11 +1427,12 @@ void run_motor (
 	release_lock();
 
 	// Allow the rest of the system to settle
-	chronometer :> ts1;
-	chronometer when timerafter(ts1 + (MILLI_400_SECS << 1)) :> ts1;
+	motor_s.tymer :> ts1;
+	motor_s.tymer when timerafter(ts1 + (MILLI_400_SECS << 1)) :> ts1;
 
 	// Stagger the start of each motor 
-	chronometer when timerafter(ts1 + ((MICRO_SEC << 4) * motor_id)) :> ts1;
+	motor_s.tymer when timerafter(ts1 + ((MICRO_SEC << 4) * motor_id)) :> ts1;
+	motor_s.prev_time = ts1; // Store time_stamp
 
 	init_motor( motor_s ,motor_id );	// Initialise motor data
 
