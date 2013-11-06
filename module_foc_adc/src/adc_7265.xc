@@ -24,6 +24,9 @@ static void init_adc_phase( // Initialise the data for this phase of one ADC tri
 	phase_data_s.adc_val = 0;
 	phase_data_s.coef_err = 0;
 	phase_data_s.scale_err = 0;
+	phase_data_s.rem = 0;
+	phase_data_s.curr_raw = 0;
+	phase_data_s.prev_raw = 0;
 
 } // init_adc_phase
 /*****************************************************************************/
@@ -113,38 +116,108 @@ static void configure_adc_ports_7265( // Configure all ADC data ports
 	start_clock( xclk );
 } // configure_adc_ports_7265
 /*****************************************************************************/
+static ADC_TYP median3_filter( // Returns median of 3 input values
+	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing data for this phase of one ADC trigger
+	ADC_TYP new_val  // newest (32-bit) ADC value 
+)
+{
+	ADC_TYP cur_val = phase_data_s.curr_raw; // current raw ADC value 
+	ADC_TYP old_val = phase_data_s.prev_raw; // oldest raw ADC value 
+
+
+	if (new_val < cur_val)
+	{ // N < (C,O) or O < N < C
+		if (cur_val < old_val)
+		{ // N < C < O
+			return cur_val;
+		} // if (cur_val < old_val)
+		else
+		{ // (N,O) < C
+			if (new_val < old_val)
+			{ // N < O < C
+				return old_val;
+			} // if (new_val < old_val)
+			else
+			{ // O < N < C
+				return new_val;
+			}	// else !(new_val < old_val)
+		}	// else !(cur_val < old_val)
+	} // if (new_val < cur_val)
+	else
+	{ // C < (N,O) or C < N <= O
+		if (cur_val < old_val)
+		{ // C < (N,O)
+			if (new_val < old_val)
+			{ // C < N < O
+				return new_val;
+			} // if (new_val < old_val)
+			else
+			{ // C < O < N
+				return old_val;
+			}	// else !(new_val < old_val)
+		} // if (cur_val < old_val)
+		else
+		{ // O < C < N
+			return cur_val;
+		}	// else !(cur_val < old_val)
+	} // else !(new_val < cur_val)
+} // median3_filter
+/*****************************************************************************/
 static void get_adc_port_data( // Get ADC data from one port
 	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing data for this phase of one ADC trigger
-	in buffered port:32 inp_data_port // ADC input data port for one phase
+	in buffered port:32 inp_data_port, // ADC input data port for one phase
+	int filt_cnt // Counter used in filter
 )
 {
 	unsigned inp_val; // input value read from buffered ports
 	unsigned tmp_val; // Temporary manipulation value
 	short word_16; // signed 16-bit value
-	ADC_TYP int_32; // signed (32-bit) ADC value 
+	ADC_TYP inp_int_32; // signed (32-bit) raw ADC input value 
+	ADC_TYP out_val; // (possibly filtered) output input value 
 
 
 	endin( inp_data_port ); // End the previous input on this buffered port
 
 	inp_data_port :> inp_val; // Get new input
 
+	// This section extracts active bits from sample with padding zeros ...
 
-	// This section extracts active bits from sample with padding zeros
 	tmp_val = bitrev( inp_val );	// Reverse bit order. WARNING. Machine dependent
 	tmp_val <<= ADC_SHIFT_BITS;		// Align active bits to MS 16-bit boundary
 	word_16 = (short)(tmp_val & ADC_MASK);	// Mask out active bits and convert to signed word
-	int_32 = ((int)word_16) >> ADC_DIFF_BITS; // Convert to int and recover original magnitude
+	inp_int_32 = ((int)word_16) >> ADC_DIFF_BITS; // Convert to int and recover original magnitude
+
+	out_val = inp_int_32; // Preset output to raw input value
 
 	// Check if filtering selected
-	if (1 == ADC_FILTER)
+	if (1 == ADC_FILTER) 
 	{
-		ADC_TYP sum_val = phase_data_s.adc_val; // get old value
+		// Skip if NOT enough data to filter
+		if (1 < filt_cnt)
+		{
+			ADC_TYP prev_val = phase_data_s.adc_val; // get previous filtered value
+			int corr_val; // Correction to previous value
 
-		// Create filtered value and store in int_32 ...
-		int_32 = (sum_val + (sum_val << 1) + int_32 + 2) >> 2; // 1st order filter (uncalibrated value)
+
+			// Remove single-sample spikes
+			out_val = median3_filter( phase_data_s ,inp_int_32 ); // returns median of 3 adjacent ADC values.
+
+			// Do Low-pass filter ...
+
+			corr_val = (out_val - prev_val); // compute correction to previous filtered value
+			corr_val += phase_data_s.rem; // Add in error diffusion remainder
+
+			out_val = (corr_val + ADC_HALF_FILT) >> ADC_FILT_BITS ; // 1st order filter (uncalibrated value)
+			phase_data_s.rem = corr_val - (out_val << ADC_FILT_BITS); // Update remainder
+			out_val += prev_val; // Add filtered difference to previous value
+		} // if (0 < filt_cnt)
 	} // if (1 == ADC_FILTER)
 
-	phase_data_s.adc_val = int_32; // Store uncalibrated value
+	phase_data_s.adc_val = out_val; // Update uncalibrated value
+
+	// update store of raw values
+	phase_data_s.prev_raw = phase_data_s.curr_raw; 
+	phase_data_s.curr_raw = inp_int_32; 
 
 } // get_adc_port_data
 /*****************************************************************************/
@@ -176,7 +249,7 @@ static void get_trigger_data_7265(
 	// Get ADC data for each used phase
 	for (port_cnt=0; port_cnt<NUM_ADC_DATA_PORTS; port_cnt++)
 	{
-		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] );
+		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] ,adc_data_s.filt_cnt );
 	} // for port_cnt
 
 } // get_trigger_data_7265

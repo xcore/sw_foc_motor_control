@@ -94,6 +94,15 @@
 #define ADC_TRIGGER_CORR 68 // Timing correction
 #define ADC_TRIGGER_DELAY (QUART_PWM_MAX - ADC_TRIGGER_CORR) // MB~ Re-tune
 
+// Parameters for filtering raw ADC values.
+#define ADC_FILT_BITS 2 // WARNING: Values larger than 2 will significantly reduced the amplitude of the ADC signal
+#if (1 <  ADC_FILT_BITS)
+#define ADC_HALF_FILT (1 << (ADC_FILT_BITS - 1))
+#else
+#define ADC_HALF_FILT 0
+#endif
+
+// Parameters for filtering to obtain the mean ADC values
 #define ADC_SCALE_BITS 16 // Used to generate 2^n scaling factor
 #define ADC_HALF_SCALE (1 << (ADC_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
 
@@ -103,10 +112,13 @@
 typedef struct ADC_PHASE_TAG // Structure containing data for one phase of ADC Trigger
 {
 	ADC_TYP adc_val; // measured current ADC value
+	ADC_TYP curr_raw; // current raw ADC value
+	ADC_TYP prev_raw; // previous raw ADC value
 	ADC_TYP mean; // local mean value
 	int filt_val; // (Upscaled) filtered value
 	int coef_err; // (Upscaled) Coefficient diffusion error
 	int scale_err; // (Upscaled) Scaling diffusion error 
+	int rem; // remainder for error diffusion 
 } ADC_PHASE_TYP;
 
 typedef struct ADC_FILT_TAG // Structure containing data for one ADC Trigger
