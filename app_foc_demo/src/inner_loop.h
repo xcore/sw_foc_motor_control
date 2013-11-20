@@ -122,7 +122,7 @@
 #define END_VOLT_OPENLOOP 3000 // 3000  Voltage (Vh) magnitude for end of open-loop state
 #define END_GAMMA_OPENLOOP 19 //  32 Voltage angle for end of open-loop state (ie Vq = Vh.cos(angle)
 
-#define REQ_VOLT_CLOSEDLOOP 2500 // Used to tune IQ PID
+#define REQ_VOLT_CLOSEDLOOP 2600 // Used to tune IQ PID
 #define REQ_GAMMA_CLOSEDLOOP 19     // Used to tune IQ PID
 
 #define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value

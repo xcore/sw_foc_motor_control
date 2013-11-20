@@ -836,7 +836,22 @@ release_lock(); //MB~
 	/* Here we would like to set targ_Id = 0, for max. efficiency.
 	 * However, some motors can NOT reach 4000 RPM, no matter how much Vq is increased.
    * Therefore need to adjust targ_Is slightly to targ_Id = sign(req_veloc);
+	 * NB Future work ... Add new motor-state where targ_Id = sign(req_veloc) * est_Iq;
+	 * req_V is much lower for this state, ~920. Therefore need smooth tranasition
    */
+
+	// Check if time to switch from zero target mode
+	if (motor_s.iters > 25000)
+	{ // Track est_Iq value
+		if (0 > motor_s.req_veloc)
+		{ // Negative spin direction
+			motor_s.targ_Id = -1;
+		} // if (0 > motor_s.req_veloc)
+		else
+		{ // Positive spin direction
+			motor_s.targ_Id = 1;
+		} // else !(0 > motor_s.req_veloc)
+	} //if (motor_s.iters > 25000)
 
 // if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.vect_data[D_ROTA].req_closed_V ); //MB~
 // targ_Iq = ((motor_s.vect_data[Q_ROTA].req_closed_V + 32) >> 6) + 139; // MB~
