@@ -28,17 +28,16 @@ void init_pid_consts( // Initialise a set of PID Constants
 	PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
 	int inp_K_p, // Input Proportional Error constant
 	int inp_K_i, // Input Integral Error constant
-	int inp_K_d, // Input Differential Error constant
-	int inp_resolution // Input PID resolution
+	int inp_K_d // Input Differential Error constant
 )
 {
 	pid_const_p->K_p = inp_K_p;
 	pid_const_p->K_d = inp_K_d;
 	pid_const_p->K_i = inp_K_i;
-	pid_const_p->resolution = inp_resolution;
 
-	// Calculate rounding error based on resolution
-	pid_const_p->half_res = (1 << (pid_const_p->resolution - 1));
+	// Preset resolution for sum-of-errors to NO down-scaling
+	pid_const_p->sum_res = 0;
+	pid_const_p->half_scale = 0;
 } // init_pid_consts
 /*****************************************************************************/
 void initialise_pid( // Initialise PID regulator 
@@ -67,7 +66,7 @@ void preset_pid( // Preset PID ready for first iteration
 	// Prevent divide by zero (by unused I_D PID)
 	if (pid_const_p->K_i)
 	{
-		tmp_64 = ((S64_T)open_val << pid_const_p->resolution); // Up-scale requested open-loop value
+		tmp_64 = ((S64_T)open_val << PID_CONST_RES); // Up-scale requested open-loop value
 		tmp_64 -= ((S64_T)pid_const_p->K_p * (S64_T)(closed_val - meas_val)); // Subtract up-scaled proportional error
 
 		// Integer division (with rounding) by up-scaled Integral constant
@@ -85,7 +84,7 @@ int get_pid_regulator_correction( // Computes new PID correction based on input 
 {
 	int inp_err = (requ_val - meas_val); // Compute input error
 	int diff_err; // Compute difference error
-	int tmp_err; // temporary error
+	int corr_err; // corrected error, by adding in diffusion remainder
 	int down_err; // down-scaled error
 	S64_T res_64; // Result at 64-bit precision
 	int res_32; // Result at 32-bit precision
@@ -97,12 +96,31 @@ int get_pid_regulator_correction( // Computes new PID correction based on input 
 	// Check if Integral Error used
 	if (pid_const_p->K_i)
 	{
-		tmp_err = inp_err + pid_regul_p->rem; // Add-in previous remainder
-		down_err = (int)((tmp_err + (S64_T)pid_const_p->half_res) >> pid_const_p->resolution); // Down-scale error 
-		pid_regul_p->rem = tmp_err - (down_err << pid_const_p->resolution); // Update remainder
+		corr_err = inp_err + pid_regul_p->rem; // Add-in previous remainder
+		down_err = (int)((corr_err + (S64_T)pid_const_p->half_scale) >> pid_const_p->sum_res); // Down-scale error 
+
+		// Check for overflow
+		while (pid_regul_p->sum_err > (MAX_ERR_SUM - down_err))
+		{ // Overflow condition detected. down-scale
+printf("PID Re-scale\n"); //MB~
+
+			// Save old scaling factor as new half-scaling-factor
+			pid_const_p->half_scale = (1 << pid_const_p->sum_res); 
+			pid_const_p->sum_res++; // Double down-scaling factor
+
+			assert(16 > pid_const_p->sum_res); // Check for over-large scaling factor
+
+ 			pid_regul_p->sum_err >>= 1; // Halve error-sum
+			pid_const_p->K_i <<= 1; // Double constant for error-sum
+ 
+			// Recompute down-scaled error
+			down_err = (int)((corr_err + (S64_T)pid_const_p->half_scale) >> pid_const_p->sum_res); // Down-scale error 
+		} // while (pid_regul_p->sum_err > (MAX_ERR_SUM - down_err))
 
 		pid_regul_p->sum_err += down_err; // Update Sum of (down-scaled) errors
 		res_64 += (S64_T)pid_const_p->K_i * (S64_T)pid_regul_p->sum_err;
+
+		pid_regul_p->rem = corr_err - (down_err << pid_const_p->sum_res); // Update remainder
 	} // if (pid_const_p->K_d)
  
 	// Check if Differential Error used
@@ -120,8 +138,8 @@ pid_regul_p->prev_err = inp_err; // MB~ Dbg
 	// Convert to 32-bit result ...
 
 	res_64 += pid_regul_p->qnt_err; // Add-in previous quantisation (diffusion) error
-	res_32 = (int)((res_64 + (S64_T)pid_const_p->half_res) >> pid_const_p->resolution); // Down-scale result
-	pid_regul_p->qnt_err = res_64 - ((S64_T)res_32 << pid_const_p->resolution); // Update diffusion error
+	res_32 = (int)((res_64 + (S64_T)PID_HALF_SCALE) >> PID_CONST_RES); // Down-scale result
+	pid_regul_p->qnt_err = res_64 - ((S64_T)res_32 << PID_CONST_RES); // Update diffusion error
 
 	return res_32;
 } // get_pid_regulator_correction 

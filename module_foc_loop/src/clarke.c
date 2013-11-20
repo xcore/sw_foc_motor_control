@@ -33,7 +33,7 @@ void clarke_transform( // Do a clarke transform
 )
 {
 	*I_alpha = Ia;
-	*I_beta = (ONE_OVER_ROOT_3 * (Ib - Ic) + 8192 ) >> 14;
+	*I_beta = (ONE_OVER_ROOT_3 * (Ib - Ic) + HALF_CONST) >> CONST_RES_BITS;
 } // clarke_transform 
 /*****************************************************************************/
 void inverse_clarke_transform( // Inverse clarke transform
@@ -44,7 +44,7 @@ void inverse_clarke_transform( // Inverse clarke transform
 	int beta 
 )
 {
-	int sqrt3_beta = ((ROOT_THREE * beta ) >> 14); // sqrt(3) * beta
+	int sqrt3_beta = ((ROOT_THREE * beta + HALF_CONST) >> CONST_RES_BITS); // sqrt(3) * beta
 
 
 	*Ia = alpha;

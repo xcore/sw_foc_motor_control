@@ -18,6 +18,11 @@
 #ifndef PARK_H_
 #define PARK_H_
 
+#include <assert.h>
+
+#define MAX_RES_BITS (30 - SINE_RES_BITS) // Max. size of input values in bits 
+#define MAX_INP_VAL (1 << MAX_RES_BITS) // Max. allowed input value
+
 #ifdef __XC__
 
 	// XC versions

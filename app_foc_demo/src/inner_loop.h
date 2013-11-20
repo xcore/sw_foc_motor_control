@@ -101,7 +101,6 @@
 #define VOLT_OFFSET (VOLT_MAX_MAG + HALF_VOLT_TO_PWM) // Offset required to make PWM pulse-width +ve
 
 #define STALL_SPEED 100
-//MB~ #define STALL_TRIP_COUNT 5000
 #define STALL_TRIP_COUNT 5000
 
 #define FIRST_HALL_STATE 0b001 // [CBA] 1st Hall state of 6-state cycle
@@ -116,15 +115,26 @@
 
 #define INIT_THETA 0 // Initial start-up angle
 
-#define REQ_VELOCITY 4000 // Initial start-up speed
-#define START_VQ_OPENLOOP 3000 // Vq value for open-loop startup phase
-#define START_VD_OPENLOOP 0		// Vd value for open-loop startup phase
-//MB~ #define REQ_VQ_OPENLOOP 6500 // Vq value for open-loop tuning
-#define REQ_VQ_OPENLOOP 3000 // MB~ tuning
-#define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value
 
+#define START_VOLT_OPENLOOP 3000 // Voltage (Vh) magnitude for start of open-loop state
+#define START_GAMMA_OPENLOOP 64  // Voltage angle for start of open-loop state (ie Vq = Vh.cos(angle)
+
+#define END_VOLT_OPENLOOP 3000 // 3000  Voltage (Vh) magnitude for end of open-loop state
+#define END_GAMMA_OPENLOOP 19 //  32 Voltage angle for end of open-loop state (ie Vq = Vh.cos(angle)
+
+#define REQ_VOLT_CLOSEDLOOP 2500 // Used to tune IQ PID
+#define REQ_GAMMA_CLOSEDLOOP 19     // Used to tune IQ PID
+
+#define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value
 #define MAX_VQ_OPENLOOP 5500 // MB~ Max Vq value for open-loop tuning
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
+
+
+#define REQ_VELOCITY 2000 // Requested motor speed
+
+// MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
+#define VELOC_FILT 1
+#define MAX_VELOC_INC 1 // MB~ Maximum allowed velocity increment.
 
 // Definitions for Gamma value, (amount that PWM leads QEI angle)
 
@@ -144,9 +154,6 @@
 #define PHASE_DENOM (1 << PHASE_BITS)
 #define HALF_PHASE (PHASE_DENOM >> 1)
 
-#define PHI_GRAD 11880 // 0.01133 as integer ratio PHI_GRAD/PHASE_DENOM
-#define PHI_INTERCEPT 35693527 // 34.04 as integer ratio PHI_INTERCEPT/PHASE_DENOM
-
 #define VEL_GRAD 10000 // (Estimated_Current)^2 = VEL_GRAD * Angular_Velocity
 
 #define XTR_SCALE_BITS SHIFT_16 // Used to generate 2^n scaling factor
@@ -158,13 +165,18 @@
 
 #define PROPORTIONAL 1 // Selects between 'proportional' and 'offset' error corrections
 #define VELOC_CLOSED 0 // MB~ 1 Selects fully closed loop (both velocity, Iq and Id)
-#define IQ_ID_CLOSED 0 // MB~ 1 Selects Iq/Id closed-loop, velocity open-loop
+#define IQ_ID_CLOSED 1 // MB~ 1 Selects Iq/Id closed-loop, velocity open-loop
 
-#define BLEND_BITS 11 // Number of bits used to up-scale blending weigths in 'TRANSIT state'
+// TRANSIT state uses at least one electrical cycle per 1024 Vq values ...
+#define VOLT_DIFF_BITS 10 // NB 2^10 = 1024, Used to down-scale Voltage differences in blending function
+#define VOLT_DIFF_MASK ((1 << VOLT_DIFF_BITS ) - 1) // Used to mask out Voltage difference bits
+#define BLEND_BITS 8 // Number of bits used to up-scale blending weigths in 'TRANSIT state'
 #define BLEND_UP (1 << BLEND_BITS) // Up-scaling factor
+#define HALF_BLEND (1 << (BLEND_BITS - 1)) // Half Up-scaling factor. Used in rounding
 
-#define VQ_DIFF_BITS 10 // Used to down-scale Vq differences in blending function
-#define VQ_DIFF_MASK ((1 << VQ_DIFF_BITS ) - 1) // Used to mask out Vq difference bits
+// Used to smooth demand Voltage
+#define SMOOTH_VOLT_INC 2 // Maximum allowed increment in demand voltage
+#define HALF_SMOOTH_VOLT (SMOOTH_VOLT_INC >> 1)  // Half max. allowed increment
 
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
@@ -175,6 +187,17 @@
 #endif // else !(USE_XSCOPE)
 
 #define STR_LEN 80 // String Length
+
+// Debug/Tuning switches
+#define GAMMA_SWEEP 0 // IQ/ID Open-loop, Gamma swept through electrical cycle
+
+// Parameters for filtering estimated rotational current values.
+#define ROTA_FILT_BITS 9 // WARNING: Using larger values will increase the response time of the motor
+#if (1 <  ROTA_FILT_BITS)
+#define ROTA_HALF_FILT (1 << (ROTA_FILT_BITS - 1))
+#else
+#define ROTA_HALF_FILT 0
+#endif
 
 #pragma xta command "add exclusion foc_loop_motor_fault"
 #pragma xta command "add exclusion foc_loop_speed_comms"
@@ -216,6 +239,30 @@ typedef enum ERROR_ETAG
   NUM_ERR_TYPS	// Handy Value!-)
 } ERROR_ENUM;
 
+/** Different Rotating Vector components (in rotor frame of reference) */
+typedef enum ROTA_VECT_ETAG
+{
+  D_ROTA = 0,  // Radial Component
+  Q_ROTA,      // Tangential (Torque) Component
+  NUM_ROTA_COMPS     // Handy Value!-)
+} ROTA_VECT_ENUM;
+
+typedef struct ROTA_DATA_TAG // Structure containing data for one rotating vector component
+{
+	int start_open_V;	// Voltage at start of open-loop state (to generate magnetic field).
+	int end_open_V;	// Voltage at end of open-loop state (to generate magnetic field).
+	int trans_V;	// voltage during TRANSIT state
+	int req_closed_V;	// Requested closed-loop voltage (to generate magnetic field).
+	int set_V;	// Demand voltage set by control loop
+	int prev_V;	// Previous Demand voltage
+	int diff_V;	// Difference between Start and Requested Voltage
+	int rem_V;	// Voltage remainder, used in error diffusion
+	int inp_I;	// Unfiltered input current value (generated by rotor motion)
+	int est_I;	// (Possibly filtered) Estimated current value (generated by rotor motion)
+	int prev_I;	// Previous estimated current value
+	int rem_I;	// Electrical current remainder used in error diffusion
+} ROTA_DATA_TYP;
+
 typedef struct STRING_TAG // Structure containing string
 {
 	char str[STR_LEN]; // Array of characters
@@ -237,34 +284,28 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	PID_CONST_TYP pid_consts[NUM_IQ_ESTIMATES][NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
 	ERR_DATA_TYP err_data; // Structure containing data for error-handling
+	ROTA_DATA_TYP vect_data[NUM_ROTA_COMPS]; // Array of structures holding data for each rotating vector component
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
 	MOTOR_STATE_ENUM state; // Current motor state
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
-	int est_Id;	// Estimated radial current value
-	int est_Iq;	// Estimated tangential current value
-	int req_Vd;	// Requested voltage producing radial magnetic field.
-	int req_Vq;	// Requested voltage producing tangential magnetic field
 	int req_veloc;	// Requested (target) angular velocity set by the user/comms interface
 	int half_veloc;	// Half requested angular velocity
-	int Vd_openloop;	// Requested Id value when tuning open-loop
-	int Vq_openloop;	// Requested Iq value when tuning open-loop
-	int Vq_inc;	// Increment to Vq value during 'TRANSIT state'
-	int half_Vq;	// Half Vq increment (used in rounding)
+	int prev_veloc;	// previous velocity
 	int update_period;	// Time between updates to PWM theta
 	int pid_veloc;	// Output of angular velocity PID
 	int pid_Id;	// Output of 'radial' current PID
 	int pid_Iq;	// Output of 'tangential' current PID
-	int set_Vd;	// Demand 'radial' voltage set by control loop
-	int set_Vq;	// Demand 'tangential' voltage set by control loop 
-	int prev_Vq;	// Previous Demand 'tangential' voltage
+	int targ_Id;	// target 'radial' current value
 	int tot_ang;	// Total angle traversed (NB accounts for multiple revolutions)
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
 	int foc_theta;	// FOC theta value
-	int first_foc; // Flag set until first FOC (closed-loop) iteration completed
+	int first_pid; // Flag set until first set of PID's completed
 	int half_qei; // Half QEI points per revolution (used for rounding)
 	int search_theta;	// theta value at end of 'SEARCH state'
 	int trans_theta;	// theta value at end of 'TRANSIT state'
+	int trans_cycles;	// Number of electrical cycles spent in 'TRANSIT state'
+	int trans_cnt;	// Incremented every time trans_theta is updated
 	int blend_bits;	// No of bits used to as 'quick' divisor in 'TRANSIT state' blending function
 	int blend_up;	// Up-scaling factor for 'TRANSIT state' blending function
 	int half_blend;	// Used for rounding in 'TRANSIT state' blending function
@@ -280,18 +321,15 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int hall_offset;	// Phase difference between the Hall sensor origin and PWM theta origin
 	int qei_found;	// Flag set when Hall orign found
 	int hall_found;	// Flag set when QEI orign found
-	int phi_err;	// Error diffusion value for Phi value
-	int phi_off;	// Phi value offset
 	int gamma_grad;	// Multiplier used to generate Gamma values from speed
 	int gamma_off;	// Offset used to generate Gamma values from speed
-	int phi_ramp;	// Phi ramp value used to smoothly change between different Phi values (phase lag)
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter
 
 	timer tymer;	// Timer
 	unsigned prev_time; 	// previous open-loop time stamp
 
-	int filt_val; // filtered value
+	int filt_adc; // filtered ADC value
 	int coef_err; // Coefficient diffusion error
 	int scale_err; // Scaling diffusion error 
 

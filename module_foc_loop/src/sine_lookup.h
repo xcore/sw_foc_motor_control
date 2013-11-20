@@ -15,6 +15,11 @@
 #ifndef __SINE_LOOKUP_H__
 #define __SINE_LOOKUP_H__
 
+// WARNING: If the value of SINE_RES_BITS is changed sine_table[] needs to be regenerated
+#define SINE_RES_BITS 14 // Number of bits used to scale Sine/Cosine functions
+#define MAX_SINE (1 << SINE_RES_BITS) // Max. table value, i.e. sine( 90 degrees )
+#define HALF_SINE (MAX_SINE >> 1) // Half of max. sine value ), NB used for rounding
+
 extern short sine_table[];
 
 /** \brief Look up the fixed point sine value

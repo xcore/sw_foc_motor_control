@@ -17,6 +17,12 @@
 
 // Constants are fixed point with a 14 bit fractional component
 
+// WARNING: If the value of CONST_RES_BITS is changed the constants need to be regenerated
+#define CONST_RES_BITS 14 // Number of bits used to scale constants
+#define CONST_SCALE (1 << CONST_RES_BITS) // Up-Scaling factor for constants
+#define HALF_CONST (CONST_SCALE >> 1) // Half of scaling factor, NB used for rounding
+
+
 #define ROOT_THREE				28377				// root( 3 )
 #define ROOT_2_OVER_2 			11585				//root( 2 ) / 2
 #define ROOT_TWO_THIRDS     	13377				//root( 2/3 )
