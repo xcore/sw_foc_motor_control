@@ -84,6 +84,7 @@
 #define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
 #define ALIGN_PERIOD (24 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
 #define OPEN_LOOP_PERIOD (128 * MICRO_SEC) // 128us. Time between open-loop theta increments
+#define TARG_ID_PERIOD (SECOND) // 1 second. Time between target (ADC) Id increments
 
 #define PWM_MIN_LIMIT (PWM_MAX_VALUE >> 4) // Min PWM value allowed (1/16th of max range)
 #define PWM_MAX_LIMIT (PWM_MAX_VALUE - PWM_MIN_LIMIT) // Max. PWM value allowed
@@ -122,7 +123,7 @@
 #define END_VOLT_OPENLOOP 3000 // 3000  Voltage (Vh) magnitude for end of open-loop state
 #define END_GAMMA_OPENLOOP 19 //  32 Voltage angle for end of open-loop state (ie Vq = Vh.cos(angle)
 
-#define REQ_VOLT_CLOSEDLOOP 2600 // Used to tune IQ PID
+#define REQ_VOLT_CLOSEDLOOP 1000 // Used to tune IQ PID
 #define REQ_GAMMA_CLOSEDLOOP 19     // Used to tune IQ PID
 
 #define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value
@@ -130,7 +131,7 @@
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
 
-#define REQ_VELOCITY 2000 // Requested motor speed
+#define REQ_VELOCITY 4000 // Requested motor speed
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
 #define VELOC_FILT 1
@@ -164,7 +165,7 @@
 #define XTR_HALF_COEF (XTR_COEF_DIV >> 1) // Half of Coef divisor
 
 #define PROPORTIONAL 1 // Selects between 'proportional' and 'offset' error corrections
-#define VELOC_CLOSED 0 // MB~ 1 Selects fully closed loop (both velocity, Iq and Id)
+#define VELOC_CLOSED 1 // MB~ 1 Selects fully closed loop (both velocity, Iq and Id)
 #define IQ_ID_CLOSED 1 // MB~ 1 Selects Iq/Id closed-loop, velocity open-loop
 
 // TRANSIT state uses at least one electrical cycle per 1024 Vq values ...
@@ -177,6 +178,11 @@
 // Used to smooth demand Voltage
 #define SMOOTH_VOLT_INC 2 // Maximum allowed increment in demand voltage
 #define HALF_SMOOTH_VOLT (SMOOTH_VOLT_INC >> 1)  // Half max. allowed increment
+
+/* NB Near stability, targ_Id is incrementally moved towards est_Iq, 
+ * However, a 1 unit change is Id caused a 4 unit change is Iq, so 2 units is the nearest Id and Iq can get
+ */
+#define IQ_ID_ERR 2 // allowable absolute difference error between ADC Id and Iq currents
 
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
@@ -291,7 +297,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int req_veloc;	// Requested (target) angular velocity set by the user/comms interface
 	int half_veloc;	// Half requested angular velocity
 	int prev_veloc;	// previous velocity
-	int update_period;	// Time between updates to PWM theta
+	int pwm_period;	// Time between updates to PWM theta
+	int Id_period;	// Time between updates to target (ADC) Id
 	int pid_veloc;	// Output of angular velocity PID
 	int pid_Id;	// Output of 'radial' current PID
 	int pid_Iq;	// Output of 'tangential' current PID
@@ -327,7 +334,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int adc_err;	// Error diffusion value for ADC extrema filter
 
 	timer tymer;	// Timer
-	unsigned prev_time; 	// previous open-loop time stamp
+	unsigned prev_pwm_time; 	// previous open-loop time stamp
+	unsigned prev_Id_time; 	// previous target (ADC) Id time stamp
 
 	int filt_adc; // filtered ADC value
 	int coef_err; // Coefficient diffusion error

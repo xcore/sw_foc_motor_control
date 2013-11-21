@@ -158,7 +158,7 @@ static void init_pid_data( // Initialise PID data
 //MB~ 		init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,(1 << (PID_CONST_RES - 1) ,100 ,0 ); // NB Kp assumes target Id=0
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1600000 ,4000 ,0 ); // NB Kp assumes target Id=0
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
-	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,32800 ,0 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
+	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,6 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
 
 // MB~ EXTREMA and VELOCITY need a re-tune
 	init_pid_consts( motor_s.pid_consts[EXTREMA][ID_PID] ,0 ,0 ,0 );
@@ -248,7 +248,8 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.hall_found = 0;	// Set flag to Hall origin NOT found
 	motor_s.qei_found = 0;	// Set flag to QEI origin NOT found
 	motor_s.xscope = 1; 	// Switch on xscope print flag
-	motor_s.prev_time = 0; 	// previous open-loop time stamp
+	motor_s.prev_pwm_time = 0; 	// previous open-loop time stamp
+	motor_s.prev_Id_time = 0; 	// previous target (ADC) Id time stamp
 	motor_s.coef_err = 0; // Clear Extrema Coef. diffusion error
 	motor_s.scale_err = 0; // Clear Extrema Scaling diffusion error
 	motor_s.Iq_err = 0; // Clear Error diffusion value for measured Iq
@@ -267,12 +268,13 @@ static void init_motor( // initialise data structure for one motor
 	assert( QEI_PER_REV == tmp_val );
 
 	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
-	motor_s.update_period = OPEN_LOOP_PERIOD; // Time between updates to PWM theta
+	motor_s.pwm_period = OPEN_LOOP_PERIOD; // Time between updates to PWM theta
+	motor_s.Id_period = TARG_ID_PERIOD; // Time between updates to target (ADC) Id value
 
 	motor_s.filt_adc = START_VOLT_OPENLOOP; // Preset filtered value to something sensible
 
 //MB~	motor_s.req_veloc = REQ_VELOCITY;
-	motor_s.req_veloc = -REQ_VELOCITY;
+	motor_s.req_veloc =  REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 	motor_s.prev_veloc = 0; // Previous measured velocity
 
@@ -612,7 +614,7 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	motor_s.vect_data[Q_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[Q_ROTA] );
 
 if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.vect_data[D_ROTA].set_V ); //MB~
-if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
+if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
 
 	// Inverse park  [d, q, theta] --> [alpha, beta]
 	inverse_park_transform( alpha_set, beta_set, motor_s.vect_data[D_ROTA].set_V, motor_s.vect_data[Q_ROTA].set_V, inp_theta );
@@ -636,10 +638,10 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 
 
 	motor_s.tymer :> cur_time;
-	diff_time = (int)(cur_time - motor_s.prev_time); 
+	diff_time = (int)(cur_time - motor_s.prev_pwm_time); 
 
 	// Check if theta needs incrementing
-	if (motor_s.update_period < diff_time)
+	if (motor_s.pwm_period < diff_time)
 	{
 		if (motor_s.req_veloc < 0)
 		{
@@ -650,8 +652,8 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 			motor_s.open_theta++; // Increment demand theta value
 		} // else !(motor_s.req_veloc < 0)
 
-		motor_s.prev_time = cur_time; // Update previous time
-	} // if (motor_s.update_period < diff_time)
+		motor_s.prev_pwm_time = cur_time; // Update previous time
+	} // if (motor_s.pwm_period < diff_time)
 
 	// NB QEI_REV_MASK correctly maps -ve values into +ve range 0 <= theta < QEI_PER_REV;
 	motor_s.set_theta = motor_s.open_theta & QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
@@ -701,12 +703,12 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 
 
 	motor_s.tymer :> cur_time;
-	diff_time = (int)(cur_time - motor_s.prev_time); 
+	diff_time = (int)(cur_time - motor_s.prev_pwm_time); 
 
 	// Check if theta needs incrementing
-	if (motor_s.update_period < diff_time)
+	if (motor_s.pwm_period < diff_time)
 	{
-		motor_s.prev_time = cur_time; // Update previous time
+		motor_s.prev_pwm_time = cur_time; // Update previous time
 
 		if (motor_s.req_veloc < 0)
 		{
@@ -728,7 +730,7 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 			motor_s.vect_data[D_ROTA].trans_V = increment_voltage_component( motor_s.vect_data[D_ROTA] );
 			motor_s.vect_data[Q_ROTA].trans_V = increment_voltage_component( motor_s.vect_data[Q_ROTA] );
 		} // if (motor_s.trans_cycles == motor_s.trans_cnt)
-	} // if (motor_s.update_period < diff_time)
+	} // if (motor_s.pwm_period < diff_time)
 
 	// WARNING: Do NOT allow  motor_s.foc_theta or motor_s.open_theta to wrap otherwise weighting will NOT work
 
@@ -763,6 +765,8 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	int corr_Iq;	// Correction to tangential current value
 	int corr_veloc;	// Correction to angular velocity
 	int lim_Vd; // Limiting Vd value (prevents oscillation)
+	unsigned cur_time; // current time value
+	int diff_time; // time since last targ_Id update
 
 
 #pragma xta label "foc_loop_speed_pid"
@@ -775,8 +779,8 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.qei_params.veloc ,motor_s.req_veloc ,motor_s.qei_params.veloc );
 	}; // if (motor_s.first_pid)
 
+if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.req_veloc);
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.req_veloc ,motor_s.qei_params.veloc );
-// if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.pid_regs[SPEED_PID].sum_err  );
 // if (motor_s.xscope) xscope_probe_data( 6 ,corr_veloc );
 
 	// Calculate velocity PID output
@@ -788,19 +792,12 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	{ // Offset update
 		motor_s.pid_veloc = motor_s.vect_data[Q_ROTA].req_closed_V + corr_veloc;
 	} // else !(PROPORTIONAL)
-/*
-if (motor_s.xscope)
-{
-acquire_lock(); 
-printstr(" Targ="); printint( motor_s.req_veloc );
-printstr(" Meas="); printint( motor_s.qei_params.veloc );
-printstr(" Corr="); printintln( motor_s.pid_veloc );
-release_lock(); //MB~
-}
-*/
+
+if (motor_s.xscope) xscope_probe_data( 9 ,motor_s.pid_regs[SPEED_PID].sum_err  );
+if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.pid_veloc );
 	if (VELOC_CLOSED)
-	{ // Evaluate set IQ from velocity PID
-		motor_s.vect_data[Q_ROTA].req_closed_V = motor_s.pid_veloc;
+	{ // Evaluate requested IQ from velocity PID
+		motor_s.vect_data[Q_ROTA].req_closed_V = 415 + (abs(motor_s.pid_veloc) >> 1);
 	} // if (VELOC_CLOSED)
 
 #pragma xta label "foc_loop_id_iq_pid"
@@ -833,27 +830,56 @@ release_lock(); //MB~
     break;
 	} // switch (motor_s.Iq_alg)
 
+// #ifdef MB
+	if (motor_s.iters > 50000)
+	{ // Track est_Iq value
+		motor_s.temp++; 
+	
+		if (128 == motor_s.temp)
+		{
+			motor_s.temp = 0; 
+			motor_s.vect_data[Q_ROTA].req_closed_V++;
+		} // if (1024 == motor_s.temp)
+	} //if (motor_s.iters > 25000)
+// #endif //MB~
+
+
 	/* Here we would like to set targ_Id = 0, for max. efficiency.
 	 * However, some motors can NOT reach 4000 RPM, no matter how much Vq is increased.
-   * Therefore need to adjust targ_Is slightly to targ_Id = sign(req_veloc);
-	 * NB Future work ... Add new motor-state where targ_Id = sign(req_veloc) * est_Iq;
+   * Therefore need to adjust targ_Id slowly to targ_Id = sign(req_veloc) * est_Iq;
+	 * NB Future work:- Add new motor-state where targ_Id = sign(req_veloc) * est_Iq;
 	 * req_V is much lower for this state, ~920. Therefore need smooth tranasition
+	 * Also, each time targ_Id is changed, Iq takes about 1 second to stabilise 
    */
 
 	// Check if time to switch from zero target mode
-	if (motor_s.iters > 25000)
-	{ // Track est_Iq value
+	motor_s.tymer :> cur_time;
+	diff_time = (int)(cur_time - motor_s.prev_Id_time); 
+
+	// Check if targ_Id needs incrementing
+	if (motor_s.Id_period < diff_time)
+	{
+		// Re-create signed value
 		if (0 > motor_s.req_veloc)
 		{ // Negative spin direction
-			motor_s.targ_Id = -1;
+			if ((motor_s.vect_data[Q_ROTA].est_I + motor_s.targ_Id) > IQ_ID_ERR)
+			{
+				motor_s.targ_Id--; // Decrement target Id value
+			} // if ((motor_s.vect_data[Q_ROTA].est_I + motor_s.targ_Id) > IQ_ID_ERR)
 		} // if (0 > motor_s.req_veloc)
 		else
 		{ // Positive spin direction
-			motor_s.targ_Id = 1;
-		} // else !(0 > motor_s.req_veloc)
-	} //if (motor_s.iters > 25000)
+			if ((motor_s.vect_data[Q_ROTA].est_I - motor_s.targ_Id) > IQ_ID_ERR)
+			{
+				motor_s.targ_Id++; // Increment target Id value
+			} // if ((motor_s.vect_data[Q_ROTA].est_I - motor_s.targ_Id) > IQ_ID_ERR)
+		} // if (0 > motor_s.req_veloc)
 
-// if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.vect_data[D_ROTA].req_closed_V ); //MB~
+		motor_s.prev_Id_time = cur_time; // Update Id time-stamp
+	} // if (motor_s.Id_period < diff_time)
+
+// if (motor_s.xscope) xscope_probe_data( 7 ,motor_s.vect_data[D_ROTA].req_closed_V ); //MB~
+if (motor_s.xscope) xscope_probe_data( 8 ,motor_s.vect_data[Q_ROTA].req_closed_V ); //MB~
 // targ_Iq = ((motor_s.vect_data[Q_ROTA].req_closed_V + 32) >> 6) + 139; // MB~
 // targ_Iq = ((341 * motor_s.vect_data[Q_ROTA].req_closed_V + 8) >> 4) - 48; // MB~
 // targ_Iq = (motor_s.vect_data[Q_ROTA].req_closed_V + 10)/20 - 34; // MB~
@@ -869,14 +895,12 @@ targ_Iq = (motor_s.vect_data[Q_ROTA].req_closed_V + 20)/40 - 10;
 		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
 	}; // if (motor_s.first_pid)
 
-// if (motor_s.xscope) xscope_probe_data( 3 ,targ_Iq );
+// if (motor_s.xscope) xscope_probe_data( 4 ,targ_Iq );
+if (motor_s.xscope) xscope_probe_data( 6 ,motor_s.targ_Id );
 	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,motor_s.targ_Id ,motor_s.vect_data[D_ROTA].est_I );
 	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
 
 // if (motor_s.xscope) xscope_probe_data( 5 ,motor_s.pid_regs[ID_PID].sum_err  );
-// if (motor_s.xscope) xscope_probe_data( 4 ,motor_s.pid_regs[ID_PID].sum_err  );
-if (motor_s.xscope) xscope_probe_data( 4 ,targ_Iq );
-if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.targ_Id );
 
 	if (PROPORTIONAL)
 	{ // Proportional update
@@ -885,32 +909,14 @@ if (motor_s.xscope) xscope_probe_data( 3 ,motor_s.targ_Id );
 	} // if (PROPORTIONAL)
 	else
 	{ // Offset update
-		motor_s.pid_Id = motor_s.vect_data[D_ROTA].set_V + corr_Id;
-		motor_s.pid_Iq = motor_s.vect_data[Q_ROTA].set_V + corr_Iq;
+		motor_s.pid_Id = motor_s.targ_Id + corr_Id;
+		motor_s.pid_Iq = targ_Iq + corr_Iq;
 	} // else !(PROPORTIONAL)
 
 	if (IQ_ID_CLOSED)
 	{ // Update set DQ values
 		motor_s.vect_data[D_ROTA].set_V  = motor_s.pid_Id;
 		motor_s.vect_data[Q_ROTA].set_V = motor_s.pid_Iq;
-
-#ifdef MB
-	motor_s.temp++; 
-
-	if (64 == motor_s.temp)
-	{
-		motor_s.temp = 0; 
-
-		if (motor_s.req_veloc < 0)
-		{
-			motor_s.vect_data[D_ROTA].req_closed_V--;
-		} // if (motor_s.req_veloc < 0)
-		else
-		{
-			motor_s.vect_data[D_ROTA].req_closed_V++;
-		} // else !(motor_s.req_veloc < 0)
-	} // if (1024 == motor_s.temp)
-#endif //MB~
 
 // motor_s.vect_data[D_ROTA].set_V = motor_s.vect_data[D_ROTA].req_closed_V; // MB~
 // motor_s.vect_data[Q_ROTA].set_V = motor_s.vect_data[Q_ROTA].req_closed_V; // MB~
@@ -980,11 +986,11 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 			unsigned diff_time;	// time difference
 
 			motor_s.tymer :> ts1;
-			diff_time = ts1 - motor_s.prev_time;
+			diff_time = ts1 - motor_s.prev_pwm_time;
 
 			if (ALIGN_PERIOD < diff_time)
 			{
-				motor_s.prev_time = ts1; // Store time-stamp
+				motor_s.prev_pwm_time = ts1; // Store time-stamp
 				motor_state = SEARCH; 
 				motor_s.state = motor_state; // NB Required due to XC compiler rules
 			} // if 
@@ -1010,6 +1016,7 @@ acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
 			{
 				motor_s.vect_data[D_ROTA].start_open_V = motor_s.vect_data[D_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
 				motor_s.vect_data[Q_ROTA].start_open_V = motor_s.vect_data[Q_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
+				motor_s.prev_Id_time = motor_s.prev_pwm_time; 	// Set previous targ_Id time-stamp to PWM time-stamp
 acquire_lock(); printstrln("FOC");release_lock(); //MB~
 				motor_state = FOC; 
 				motor_s.state = motor_state; // NB Required due to XC compiler rules
@@ -1273,7 +1280,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 	unsigned command;	// Command received from the control interface
 
 
-	motor_s.tymer :> motor_s.prev_time; // Store time-stamp
+	motor_s.tymer :> motor_s.prev_pwm_time; // Store time-stamp
 
 	/* Main loop */
 	while (STOP != motor_s.state)
@@ -1598,7 +1605,7 @@ void run_motor (
 
 	// Stagger the start of each motor 
 	motor_s.tymer when timerafter(ts1 + ((MICRO_SEC << 4) * motor_id)) :> ts1;
-	motor_s.prev_time = ts1; // Store time_stamp
+	motor_s.prev_pwm_time = ts1; // Store time_stamp
 
 	init_motor( motor_s ,motor_id );	// Initialise motor data
 
