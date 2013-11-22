@@ -57,7 +57,7 @@ void xscope_user_init()
 		,XSCOPE_CONTINUOUS, "targId", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "setVel", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "req_Vq", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "sumVel", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "targIq", XSCOPE_INT , "n"
 /*
 		,XSCOPE_CONTINUOUS, "Eficny", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "set_Vd", XSCOPE_INT , "n"

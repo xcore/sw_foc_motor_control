@@ -84,7 +84,6 @@
 #define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
 #define ALIGN_PERIOD (24 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
 #define OPEN_LOOP_PERIOD (128 * MICRO_SEC) // 128us. Time between open-loop theta increments
-#define TARG_ID_PERIOD (SECOND) // 1 second. Time between target (ADC) Id increments
 
 #define PWM_MIN_LIMIT (PWM_MAX_VALUE >> 4) // Min PWM value allowed (1/16th of max range)
 #define PWM_MAX_LIMIT (PWM_MAX_VALUE - PWM_MIN_LIMIT) // Max. PWM value allowed
@@ -132,6 +131,7 @@
 
 
 #define REQ_VELOCITY 4000 // Requested motor speed
+#define SAFE_MAX_SPEED 7000 // Maximum safe burst speed (allows some overshoot)
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
 #define VELOC_FILT 1
@@ -148,6 +148,7 @@
 
 // Set-up defines for scaling ...
 #define SHIFT_20 20
+#define SHIFT_13 13
 #define SHIFT_16 16
 #define SHIFT_9   9
 
@@ -171,18 +172,27 @@
 // TRANSIT state uses at least one electrical cycle per 1024 Vq values ...
 #define VOLT_DIFF_BITS 10 // NB 2^10 = 1024, Used to down-scale Voltage differences in blending function
 #define VOLT_DIFF_MASK ((1 << VOLT_DIFF_BITS ) - 1) // Used to mask out Voltage difference bits
+
 #define BLEND_BITS 8 // Number of bits used to up-scale blending weigths in 'TRANSIT state'
 #define BLEND_UP (1 << BLEND_BITS) // Up-scaling factor
 #define HALF_BLEND (1 << (BLEND_BITS - 1)) // Half Up-scaling factor. Used in rounding
+
+// A linear conversion is used to relate the PWM Voltage applied to the coil current produced  (I = m*V + c)
+#define V2I_BITS SHIFT_13 // No of bits in Voltage to current scaling factor 
+#define V2I_DENOM (1 << V2I_BITS)
+#define HALF_V2I (V2I_DENOM >> 1)
+#define V2I_MUX 205 // Voltage multiplier. NB 1/40 ~= 205/2^13 
+#define V2I_OFF (-10)  // Voltage Offset
 
 // Used to smooth demand Voltage
 #define SMOOTH_VOLT_INC 2 // Maximum allowed increment in demand voltage
 #define HALF_SMOOTH_VOLT (SMOOTH_VOLT_INC >> 1)  // Half max. allowed increment
 
-/* NB Near stability, targ_Id is incrementally moved towards est_Iq, 
- * However, a 1 unit change is Id caused a 4 unit change is Iq, so 2 units is the nearest Id and Iq can get
- */
-#define IQ_ID_ERR 2 // allowable absolute difference error between ADC Id and Iq currents
+// Defines for Field Weakening
+#define IQ_LIM 60 // Maximum allowed target Iq value, before field weakening applied
+#define IQ_ID_BITS 2 // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
+#define IQ_ID_RATIO (1 << IQ_ID_BITS) // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
+#define IQ_ID_HALF (IQ_ID_RATIO >> 1) // Quantisation error is half IQ_ID_RATIO 
 
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
@@ -298,11 +308,10 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int half_veloc;	// Half requested angular velocity
 	int prev_veloc;	// previous velocity
 	int pwm_period;	// Time between updates to PWM theta
-	int Id_period;	// Time between updates to target (ADC) Id
 	int pid_veloc;	// Output of angular velocity PID
 	int pid_Id;	// Output of 'radial' current PID
 	int pid_Iq;	// Output of 'tangential' current PID
-	int targ_Id;	// target 'radial' current value
+	int prev_Id;	// previous target 'radial' current value
 	int tot_ang;	// Total angle traversed (NB accounts for multiple revolutions)
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
@@ -335,7 +344,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	timer tymer;	// Timer
 	unsigned prev_pwm_time; 	// previous open-loop time stamp
-	unsigned prev_Id_time; 	// previous target (ADC) Id time stamp
 
 	int filt_adc; // filtered ADC value
 	int coef_err; // Coefficient diffusion error
