@@ -130,7 +130,7 @@
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
 
-#define REQ_VELOCITY 4000 // Requested motor speed
+#define REQ_VELOCITY 2000 // Requested motor speed
 #define SAFE_MAX_SPEED 7000 // Maximum safe burst speed (allows some overshoot)
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data

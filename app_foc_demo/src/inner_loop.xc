@@ -1173,7 +1173,7 @@ void wait_for_servers_to_start( // Wait for other servers to initialise
 			break;
 
 			default :
-				acquire_lock(); printchar('.');	release_lock();
+				acquire_lock(); printint(motor_s.id);	release_lock();
 				motor_s.tymer :> ts1;
 				motor_s.tymer when timerafter(ts1 + MILLI_SEC) :> void;
 			break; // default
@@ -1477,7 +1477,6 @@ if (motor_s.xscope) xscope_probe_data( 0 ,motor_s.qei_params.veloc );
 		}	// select
 
 		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
-
 	}	// while (STOP != motor_s.state)
 } // use_motor
 /*****************************************************************************/
@@ -1597,16 +1596,22 @@ void run_motor (
 	motor_s.tymer :> ts1;
 	motor_s.tymer when timerafter(ts1 + (MILLI_400_SECS << 1)) :> ts1;
 
-	// Stagger the start of each motor 
-	motor_s.tymer when timerafter(ts1 + ((MICRO_SEC << 4) * motor_id)) :> ts1;
-	motor_s.prev_pwm_time = ts1; // Store time_stamp
-
 	init_motor( motor_s ,motor_id );	// Initialise motor data
 
 	init_pwm( motor_s.pwm_comms ,c_pwm ,motor_id );	// Initialise PWM communication data
 
 	// Wait for other processes to start ...
 	wait_for_servers_to_start( motor_s ,c_wd ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
+
+	acquire_lock(); 
+	printstr("                      Motor_");
+	printint(motor_id);
+	printstrln(" Starts");
+	release_lock();
+
+	// Stagger the start of each motor 
+//MB~	motor_s.tymer when timerafter(ts1 + ((MICRO_SEC << 4) * motor_id)) :> ts1;
+	motor_s.prev_pwm_time = ts1; // Store time_stamp
 
 	// start-and-run motor
 	use_motor( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl ,c_speed ,c_commands ,c_wd );

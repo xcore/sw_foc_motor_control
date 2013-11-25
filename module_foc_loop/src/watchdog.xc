@@ -26,21 +26,28 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 	unsigned ts1; // Time-Stamp
 	int motor_cnt; // motor counter
 	timer chronometer; // Timer
-	int wait_cnt = NUMBER_OF_MOTORS; ; // Set number of un-initialised channels
+	unsigned curr_flag; // flag for current motor
+	unsigned unarm_flags = ALL_MOTOR_FLAGS; // set of unarmed flags for all motors
 
+
+	assert (NUMBER_OF_MOTORS < 32); // ERROR: Only supports upto 31 motors
 
 	wd_data_s.state = WD_UNARMED; // Initialise WatchDog to Un-armed state
 	wd_data_s.shared_out = 0; // Clear (Bit_0 and Bit_1 of) data for shared output port 
 
+
 	// Loop until all channels have sent initialisation command
-	while(0 < wait_cnt)
+	while(0 != unarm_flags)
 	{
 		select {
 			// Service any change on input port pins
 			case (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) c_wd[motor_cnt] :> cmd :
 			{
 				assert (WD_CMD_INIT == cmd); // Un-expected command Received
-				wait_cnt--;
+
+				curr_flag = (1 << motor_cnt); // generate flag for current motor				
+
+				unarm_flags = unarm_flags & ~curr_flag; // Clear unarmed flag from set
 			} // case
 			break;
 
@@ -67,7 +74,7 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 	p2_wd <: wd_data_s.shared_out; // NB Switches on FlipFlop chip
 
 	// Signal Initialisation complete
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+ 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{
 		c_wd[motor_cnt] <: WD_CMD_ACK;
 	} // for motor_cnt
@@ -81,16 +88,18 @@ static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have war
 {
 	unsigned cmd; // WatchDog command from Client
 	timer chronometer; // Timer
+	unsigned unarm_flags = ALL_MOTOR_FLAGS; // set of unarmed flags for all motors
+	unsigned curr_flag; // flag for current motor
 
 
-	// Loop while WatchDog in Un-armed state
 	while (WD_UNARMED == wd_data_s.state)
 	{
 		// Wait for one of following events
 		select
 		{
-			// Check for a command from the Client
-			case c_wd[1] :> cmd:
+			// Service any change on input port pins
+			case (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) c_wd[motor_cnt] :> cmd :
+			{
 				switch(cmd)
 				{
 					case WD_CMD_DISABLE : // Actively disable the WatchDog circuit
@@ -99,14 +108,20 @@ static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have war
 
 					case WD_CMD_TICK : // Check for end of Start-up mode
 						wd_data_s.shared_out ^= TICK_MASK; // Toggle Bit_1 (for WatchDog Chip)
-						wd_data_s.state = WD_ARMED; // Switch to fully armed WatchDog state
+
+						curr_flag = (1 << motor_cnt); // generate flag for current motor				
+						unarm_flags = unarm_flags & ~curr_flag; // Clear unarmed flag from set
+
+						// Check if all motors now armed
+						if (0 == unarm_flags)	wd_data_s.state = WD_ARMED; // Switch to fully armed WatchDog state
 					break; // WD_CMD_TICK
 
 					default :
 						assert( 0 == 1 ); // Unexpected Command Received
 					break; // default
 				} // switch(cmd)
-			break; // case c_wd[1] :> cmd:
+			}
+			break; // case motor_cnt
 
 			// Check if periodic tick required
 			case chronometer when timerafter(wd_data_s.time + HALF_TICK_PERIOD) :> wd_data_s.time:
@@ -116,7 +131,7 @@ static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have war
 		} // select
 
 		p2_wd <: wd_data_s.shared_out; // Send out the new value to the shared port
-	} // while(WD_UNARMED == wd_data_s.state)
+	} // while
 
 } // run_unarmed 
 /*****************************************************************************/
@@ -127,30 +142,58 @@ static void run_wd_armed( // Run WatchDog fully armed until STOP request receive
 )
 {
 	unsigned cmd; // WatchDog command from Client
+	int tick_cnts[NUMBER_OF_MOTORS];
+	int motor_id;
 
+
+	// Clear counter array
+	for (motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) tick_cnts[motor_id] = 0;
 
 	// Enter active WatchDog mode ...
 
 	// Loop until disabled
 	while (WD_STOP != wd_data_s.state)
 	{
-		// Wait for a command from the Client
-		c_wd[1] :> cmd;
-
-		switch(cmd)
+		// Wait for one of following events
+		select
 		{
-			case WD_CMD_DISABLE : // Actively disable the WatchDog circuit
-				wd_data_s.state = WD_STOP; // Switch to state where WatchDog stops Motors
-			break; // WD_CMD_DISABLE 
+			// Service any change on input port pins
+			case (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) c_wd[motor_cnt] :> cmd :
+			{
+				switch(cmd)
+				{
+					case WD_CMD_DISABLE : // Actively disable the WatchDog circuit
+						wd_data_s.state = WD_STOP; // Switch to state where WatchDog stops Motors
+					break; // WD_CMD_DISABLE 
+		
+					case WD_CMD_TICK : // Toggle WD_TICK pin to keep WatchDog 'alive'
+						wd_data_s.shared_out ^= TICK_MASK; // Toggle Bit_1 (for WatchDog Chip)
+						tick_cnts[motor_cnt]++; // Increment No. of ticks for this motor
 
-			case WD_CMD_TICK : // Toggle WD_TICK pin to keep WatchDog 'alive'
-				wd_data_s.shared_out ^= TICK_MASK; // Toggle Bit_1 (for WatchDog Chip)
-			break; // WD_CMD_TICK 
+						// Check if tick-limit reached
+						if (tick_cnts[motor_cnt] > MAX_WD_TICKS)
+						{ // Check all motors have supplied ticks
+							for (motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++)
+							{
+								if (0 == tick_cnts[motor_id])
+								{ // ERROR: One of motors is NOT suppliing enough ticks
+									assert(0 == 1); // ERROR: One of motors is NOT suppliing enough ticks
+									wd_data_s.state = WD_STOP; // Switch to state where WatchDog stops Motors
+									break;
+								} // if (0 == tick_cnts[motor_id])
 
-			default :
-				assert( 1 == 2 ); // Unexpected Command Received
-			break; // default
-		} // switch(cmd)
+								tick_cnts[motor_id] = 0; // Clear all tick counts
+							} // for motor_id
+						} // if (tick_cnts[motor_cnt] > MAX_WD_TICKS)
+					break; // WD_CMD_TICK 
+		
+					default :
+						assert( 1 == 2 ); // Unexpected Command Received
+					break; // default
+				} // switch(cmd)
+			}
+			break; // case motor_cnt
+		} // select
 
 		p2_wd <: wd_data_s.shared_out; // Send out the new value to the shared port
 	} // while (WD_STOP != wd_data_s.state)
