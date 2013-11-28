@@ -91,7 +91,7 @@
 /* ADC_TRIGGER_DELAY needs to be tuned to move the ADC trigger point into the centre of the PWM 'OFF' period.
  * This value is related to the PWM_MAX_VALUE (in module_pwm_foc) and is independent of the Reference Frequency
  */
-#define ADC_TRIGGER_CORR 68 // Timing correction
+#define ADC_TRIGGER_CORR 128 // Timing correction
 #define ADC_TRIGGER_DELAY (QUART_PWM_MAX - ADC_TRIGGER_CORR) // MB~ Re-tune
 
 // Parameters for filtering raw ADC values.
@@ -138,6 +138,8 @@ typedef struct ADC_DATA_TAG // Structure containing data for one ADC Trigger
 	char guard_off;	// Guard
 	int mux_id; // Mux input identifier
 	int filt_cnt; // Counter used in filter
+	int id; // Trigger id
+	int tmp; // MB~
 } ADC_DATA_TYP;
 
 /*****************************************************************************/

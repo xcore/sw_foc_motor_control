@@ -12,6 +12,23 @@
  * copyright notice above.
  **/                                   
 
+/*****************************************************************************\
+This WatchDog protects a specific selection of motors from a lerger set.
+There is an array of flags, one for each motor in the larger set.
+For each flag, it is set to one if the motor needs protecting, zero otherwise.
+
+WARNING: The user must set these flags (and update the checksum), 
+at the following location:-
+  File: watchdog.xc
+  Function: init_wd
+  Structure: guard_prot_s
+  Method: Initialiser
+
+If any of the selected motors stop sending their 'ticks',
+then the WatchDog fires (and switches off the power board)
+The WatchDog ignores the behaviour of 'ticks' from UN-selected motors.
+\*****************************************************************************/
+
 #ifndef _WATCHDOG_H_
 #define _WATCHDOG_H_
 
@@ -50,10 +67,17 @@ typedef enum WD_STATE_ETAG
   NUM_WD_STATES 	// Handy Value!-)
 } WD_STATE_ENUM;
 
-/** Structure containing WatchDog data */
+/** Structure containing guard data, one flag for each motor */
+typedef struct WD_GUARD_TAG // 
+{
+	int guards[NUMBER_OF_MOTORS]; // Array of flags used as guards
+	int num; // Number of protected motors
+} WD_GUARD_TYP;
+
 typedef struct WD_DATA_TAG // 
 {
 	WD_STATE_ENUM state; // WatchDog State
+	WD_GUARD_TYP protect_s; // Structure of guard data, indicating which motors are protected
 	unsigned shared_out; // Clear (Bit_0 and Bit_1 of) shared output port
 	unsigned time; // time when previous WatchDog tick occured
 } WD_DATA_TYP;

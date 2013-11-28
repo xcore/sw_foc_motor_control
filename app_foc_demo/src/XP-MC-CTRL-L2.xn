@@ -73,7 +73,7 @@ xsi:schemaLocation="http://www.xmos.com http://www.xmos.com">
 	<Port Location="XS1_PORT_1F" Name="PORT_M1_HI_C" />
 	<Port Location="XS1_PORT_1C" Name="PORT_M1_LO_C" />
 	<Port Location="XS1_PORT_4E" Name="PORT_M1_ENCODER" />
-    <Port Location="XS1_PORT_4A" Name="PORT_M1_HALLSENSOR" />
+  <Port Location="XS1_PORT_4A" Name="PORT_M1_HALLSENSOR" />
     
     <!-- MOTOR 2 -->
 	<Port Location="XS1_PORT_1N" Name="PORT_M2_HI_A" />

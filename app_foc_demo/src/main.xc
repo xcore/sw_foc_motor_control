@@ -20,7 +20,7 @@ on tile[INTERFACE_TILE]: in port p_btns = PORT_BUTTONS;
 on tile[INTERFACE_TILE]: out port p_leds = PORT_LEDS;
 
 // PWM ports
-on tile[MOTOR_TILE]: clock pwm_clk[NUMBER_OF_MOTORS] = { XS1_CLKBLK_5 ,XS1_CLKBLK_4 };
+on tile[MOTOR_TILE]: clock pwm_clk = XS1_CLKBLK_5;
 on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
 on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
 	= {	{PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
@@ -28,7 +28,7 @@ on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_
 	= {	{PORT_M1_LO_A, PORT_M1_LO_B, PORT_M1_LO_C} ,{PORT_M2_LO_A, PORT_M2_LO_B, PORT_M2_LO_C} };
 
 // ADC ports
-	on tile[MOTOR_TILE]: buffered in port:32 pb32_adc_data[NUM_ADC_DATA_PORTS] = { PORT_ADC_MISOA ,PORT_ADC_MISOB };
+on tile[MOTOR_TILE]: buffered in port:32 pb32_adc_data[NUM_ADC_DATA_PORTS] = { PORT_ADC_MISOA ,PORT_ADC_MISOB };
 on tile[MOTOR_TILE]: out port p1_adc_sclk = PORT_ADC_CLK; // 1-bit port connecting to external ADC serial clock
 on tile[MOTOR_TILE]: port p1_ready = PORT_ADC_CONV; // 1-bit port used to as ready signal for pb32_adc_data ports and ADC chip
 on tile[MOTOR_TILE]: out port p4_adc_mux = PORT_ADC_MUX; // 4-bit port used to control multiplexor on ADC chip
@@ -48,16 +48,16 @@ on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used 
 void xscope_user_init()
 {
 	xscope_register( 10
-		,XSCOPE_CONTINUOUS, "Qveloc", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "est_Id", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "est_Iq", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "reqVel", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "set_Vq", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "set_Vd", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "targId", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "setVel", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "req_Vq", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "targIq", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "PWM_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "PWM_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "The_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "The_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Vel_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Vel_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "HALL_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "HALL_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "RUN_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "RUN_1", XSCOPE_INT , "n"
 /*
 		,XSCOPE_CONTINUOUS, "Eficny", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "set_Vd", XSCOPE_INT , "n"
@@ -105,18 +105,27 @@ int main ( void ) // Program Entry Point
 	par
 	{
 		on tile[INTERFACE_TILE] :
-		par {
-			foc_display_shared_io_manager( c_speed ,lcd_ports ,p_btns, p_leds );
-	
-			/* NB Ideally WatchDog Server Core should be on Tile most likely to Hang,
-			 * However, unfortunately p2_i2c_wd port is on INTERFACE_TILE
-			 */
-			foc_loop_do_wd( c_wd, p2_i2c_wd );
+		{
+		  init_locks(); // Initialise Mutex for display
+
+			par {
+				foc_display_shared_io_manager( c_speed ,lcd_ports ,p_btns, p_leds );
+		
+				/* NB Ideally WatchDog Server Core should be on Tile most likely to Hang,
+				 * However, unfortunately p2_i2c_wd port is on INTERFACE_TILE
+				 */
+				foc_loop_do_wd( c_wd, p2_i2c_wd );
+			} // par
+
+		  free_locks(); // Free Mutex for display
 		} // on tile[INTERFACE_TILE]
 
 		on tile[MOTOR_TILE] : 
 		{
 		  init_locks(); // Initialise Mutex for display
+
+			// Configure PWM ports to run from common clock
+			foc_pwm_config( c_pwm ,pb32_pwm_hi ,pb32_pwm_lo ,p16_adc_sync ,pwm_clk );
 
 			par {
 				// Loop through all motors
@@ -126,11 +135,13 @@ int main ( void ) // Program Entry Point
 						,c_adc_cntrl[motor_cnt] ,c_speed[motor_cnt] ,c_commands ); //MB~ Was ,c_commands[motor_cnt] );
 		
 					foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] 
-						,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
+						,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] );
+
+					foc_qei_do_single( motor_cnt ,c_qei[motor_cnt] , pb4_qei[motor_cnt] );
 				} // par motor_cnt
 	
 		
-				foc_qei_do_multiple( c_qei, pb4_qei );
+//MB~				foc_qei_do_multiple( c_qei, pb4_qei );
 		
 				foc_hall_do_multiple( c_hall ,p4_hall );
 		

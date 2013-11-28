@@ -130,7 +130,7 @@
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
 
-#define REQ_VELOCITY 2000 // Requested motor speed
+#define REQ_VELOCITY 4000 // Requested motor speed
 #define SAFE_MAX_SPEED 7000 // Maximum safe burst speed (allows some overshoot)
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
@@ -351,6 +351,16 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	int tmp; // MB~
 	int temp; // MB~ Dbg
+
+timer dbg_tmr; // MB~
+unsigned dbg_orig; // MB~
+unsigned dbg_strt;
+unsigned dbg_end;
+unsigned dbg_prev;
+unsigned dbg_diff;
+unsigned dbg_sum; // MB~
+int dbg_err; // MB~
+
 } MOTOR_DATA_TYP;
 
 /*****************************************************************************/
