@@ -20,6 +20,7 @@ on tile[INTERFACE_TILE]: in port p_btns = PORT_BUTTONS;
 on tile[INTERFACE_TILE]: out port p_leds = PORT_LEDS;
 
 // PWM ports
+on tile[MOTOR_TILE]: clock qei_clk = XS1_CLKBLK_4;
 on tile[MOTOR_TILE]: clock pwm_clk = XS1_CLKBLK_5;
 on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
 on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
@@ -48,14 +49,14 @@ on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used 
 void xscope_user_init()
 {
 	xscope_register( 10
-		,XSCOPE_CONTINUOUS, "PWM_0", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "PWM_1", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "The_0", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "The_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "ADC_U", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "ADC_F", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "ADC_D", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "ADC_Q", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Vel_0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Vel_1", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "HALL_0", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "HALL_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "The_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "The_1", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "RUN_0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "RUN_1", XSCOPE_INT , "n"
 /*
@@ -125,7 +126,10 @@ int main ( void ) // Program Entry Point
 		  init_locks(); // Initialise Mutex for display
 
 			// Configure PWM ports to run from common clock
-			foc_pwm_config( c_pwm ,pb32_pwm_hi ,pb32_pwm_lo ,p16_adc_sync ,pwm_clk );
+			foc_pwm_config( pb32_pwm_hi ,pb32_pwm_lo ,p16_adc_sync ,pwm_clk );
+
+			// Configure QEI ports to run from common clock
+			foc_qei_config( pb4_qei ,qei_clk );
 
 			par {
 				// Loop through all motors
@@ -137,11 +141,10 @@ int main ( void ) // Program Entry Point
 					foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] 
 						,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] );
 
-					foc_qei_do_single( motor_cnt ,c_qei[motor_cnt] , pb4_qei[motor_cnt] );
+//MB~			foc_qei_do_single( motor_cnt ,c_qei[motor_cnt] , pb4_qei[motor_cnt] );
 				} // par motor_cnt
 	
-		
-//MB~				foc_qei_do_multiple( c_qei, pb4_qei );
+				foc_qei_do_multiple( c_qei ,pb4_qei );
 		
 				foc_hall_do_multiple( c_hall ,p4_hall );
 		

@@ -24,10 +24,10 @@
 /** Define this to switch on error checks */
 #define CHECK_ERRORS 1
 
-/**  Default Filter Mode  1 == On */
+/**  Default ADC Filter Mode  1 == On */
 #define ADC_FILTER 1
 
-/**  Default Filter Mode  1 == On */
+/**  Default QEI Filter Mode  1 == On */
 #define QEI_FILTER 1
 
 /** Define the number of motors */
@@ -82,6 +82,9 @@
 /** Define if Shared Memory is used to transfer PWM data from Client to Server */
 #define PWM_SHARED_MEM 0 // 0: Use c_pwm channel for pwm data transfer
 
+/** Maximum Port timer value. See also PORT_TIME_TYP */
+#define PORT_TIME_MASK 0xFFFF
+
 /* This is a bit of a cludge, we are using a non-standard configuration
  * where the timer on the tile for inner_loop() is running at 250 MHz,
  * but other timers are running at the default of 100 MHz.
@@ -102,5 +105,8 @@
 
 typedef signed long long S64_T;
 typedef unsigned long long U64_T;
+
+/** Type for Port timer values. See also PORT_TIME_MASK */
+typedef unsigned short PORT_TIME_TYP;
 
 #endif /* _APP_GLOBAL_H_ */

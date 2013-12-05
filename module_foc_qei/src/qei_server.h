@@ -212,6 +212,15 @@ typedef struct QEI_DATA_TAG //
 
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client
+ * \param p4_qei // Array of QEI data ports for each motor
+ * \param qei_clk // clock for generating accurate QEI timing
+ */
+void foc_qei_config(  // Configure all QEI ports
+  buffered port:4 in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
+	clock qei_clk // clock for generating accurate QEI timing
+	);
+/*****************************************************************************/
+/** \brief Get QEI Sensor data from port (motor) and send to client
  * \param c_qei // Array of channels connecting server & client
  * \param p4_qei // Array of QEI data ports for each motor
  */

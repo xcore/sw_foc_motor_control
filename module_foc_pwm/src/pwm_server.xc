@@ -54,10 +54,9 @@ static void do_pwm_port_config(
 	{
 		configure_in_port( p16_adc_sync ,pwm_clk );	// Dummy port used to send ADC synchronisation pulse
 	} // if (1 == LOCK_ADC_TO_PWM)
-} // do_pwm_port_config_inv_adc_trig
+} // do_pwm_port_config
 /*****************************************************************************/
 void foc_pwm_config(  // Configure ports
-	chanend c_pwm[NUMBER_OF_MOTORS], // PWM channel between Client and Server
 	buffered out port:32 p32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (High side)  
 	buffered out port:32 p32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (Low side)   
 	in port p16_adc_sync[NUMBER_OF_MOTORS], // Dummy port used with ADC trigger

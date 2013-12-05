@@ -54,7 +54,6 @@ typedef struct PWM_SERV_TAG
  *  \param pwm_clk a clock for generating accurate PWM timing
  */
 void foc_pwm_config( // Configure PWM ports
-	chanend c_pwm[NUMBER_OF_MOTORS], // PWM channel between Client and Server
 	buffered out port:32 p32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (High side)  
 	buffered out port:32 p32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (Low side)   
 	in port p16_adc_sync[NUMBER_OF_MOTORS], // Dummy port used with ADC trigger

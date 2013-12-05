@@ -126,12 +126,12 @@
 #define REQ_GAMMA_CLOSEDLOOP 19     // Used to tune IQ PID
 
 #define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value
-#define MAX_VQ_OPENLOOP 5500 // MB~ Max Vq value for open-loop tuning
+#define MAX_VQ_OPENLOOP 5800 // MB~ Max Vq value for open-loop tuning
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
 
-#define REQ_VELOCITY 4000 // Requested motor speed
-#define SAFE_MAX_SPEED 7000 // Maximum safe burst speed (allows some overshoot)
+#define REQ_VELOCITY 1000 // Requested motor speed
+#define SAFE_MAX_SPEED 5800 // Maximum safe burst speed (allows some overshoot)
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
 #define VELOC_FILT 1

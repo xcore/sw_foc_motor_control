@@ -169,7 +169,8 @@ static ADC_TYP median3_filter( // Returns median of 3 input values
 static void get_adc_port_data( // Get ADC data from one port
 	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing data for this phase of one ADC trigger
 	in buffered port:32 inp_data_port, // ADC input data port for one phase
-	int filt_cnt // Counter used in filter
+	int filt_cnt, // Counter used in filter
+	int port_id // port identifier
 )
 {
 	unsigned inp_val; // input value read from buffered ports
@@ -244,7 +245,6 @@ static void get_trigger_data_7265(
 	} // for port_cnt
 
 	p1_ready <: 1 @ time_stamp; // Switch ON input reads (and ADC conversion)
-// xscope_probe_data( (2+adc_data_s.id) ,adc_data_s.tmp+1 ); //MB~
 	time_stamp += ADC_TOTAL_BITS; // Allows sample-bits to be read on buffered input ports
 	p1_ready @ time_stamp <: 0; // Switch OFF input reads, (and ADC conversion) 
 
@@ -252,7 +252,7 @@ static void get_trigger_data_7265(
 
 	for (port_cnt=0; port_cnt<NUM_ADC_DATA_PORTS; port_cnt++)
 	{
-		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] ,adc_data_s.filt_cnt );
+		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] ,adc_data_s.filt_cnt ,port_cnt );
 	} // for port_cnt
 
 } // get_trigger_data_7265
@@ -421,16 +421,7 @@ void foc_adc_7265_triggered( // Thread for ADC server
 	int cmd_id; // command identifier
 	int trig_id; // trigger identifier
 	int do_loop = 1;   // Flag set until loop-end condition found 
-	int trig = 0; // MB~
-	int updt = 0; // MB~
-	int clnt = 0; // MB~
 
-timer dbg_tmr; // MB~
-unsigned dbg_orig; // MB~
-unsigned dbg_strt;
-unsigned dbg_end;
-unsigned dbg_sum = 390; // MB~
-int dbg_err = 0; // MB~
 
 	acquire_lock(); 
 	printstrln("                                             ADC Server Starts");
@@ -457,34 +448,18 @@ int dbg_err = 0; // MB~
 		{
 			// Service any Control Tokens that are received
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) inct_byref( c_trigger[trig_id], cntrl_token ) :
-all_adc_data[trig_id].tmp = 8 - all_adc_data[trig_id].tmp; // MB~
-// xscope_probe_data( (2+trig_id) ,all_adc_data[trig_id].tmp ); //MB~
 				service_control_token( all_adc_data[trig_id] ,cntrl_token );
 			break;
 	
 			// If guard is OFF, load 'my_timer' at time 'time_stamp' 
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) all_adc_data[trig_id].guard_off => all_adc_data[trig_id].my_timer when timerafter( all_adc_data[trig_id].time_stamp ) :> void :
 				update_adc_trigger_data( all_adc_data[trig_id] ,p32_data ,p1_ready ,p4_mux ); 
-#ifdef MB
-{
-	unsigned dbg_diff = (unsigned)(dbg_end - dbg_strt);
-	int dbg_inc = (int)dbg_diff - (int)dbg_sum + dbg_err;
-
-	int dbg_filt = (dbg_inc + 128) >> 8;
-	dbg_err = dbg_inc - (dbg_filt << 8);
-
-	dbg_sum += dbg_filt;
-
-//	if (trig_id) xscope_probe_data( (2+trig_id) ,dbg_sum ); //MB~
-}
-#endif //MB~
 			break;
 	
 			// Service any client request for ADC data
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) c_control[trig_id] :> cmd_id :
 				if (ADC_CMD_LOOP_STOP != cmd_id)
 				{
-// xscope_probe_data( (2+trig_id) ,all_adc_data[trig_id].tmp+2 ); //MB~
 					service_data_request( all_adc_data[trig_id] ,c_control[trig_id] ,cmd_id );
 				} // if (ADC_CMD_LOOP_STOP != cmd_id)
 				else
