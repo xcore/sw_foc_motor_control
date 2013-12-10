@@ -254,12 +254,14 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.qei_found = 0;	// Set flag to QEI origin NOT found
 	motor_s.xscope = 1; 	// Switch on xscope print flag
 	motor_s.prev_pwm_time = 0; 	// previous open-loop time stamp
+	motor_s.prev_qei_time = 0; 	// previous open-loop time stamp
 	motor_s.coef_err = 0; // Clear Extrema Coef. diffusion error
 	motor_s.scale_err = 0; // Clear Extrema Scaling diffusion error
 	motor_s.Iq_err = 0; // Clear Error diffusion value for measured Iq
 	motor_s.prev_Id = 0;	// Initial target 'radial' current value
 
 	motor_s.tot_ang = 0;	// Total angle traversed (NB accounts for multiple revolutions)
+	motor_s.prev_ang = 0;	// Previous value of
 	motor_s.set_theta = 0; // PWM theta value
 	motor_s.open_theta = 0; // Open-loop theta value
 	motor_s.foc_theta = 0; // FOC theta value
@@ -267,11 +269,16 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.trans_cycles = 1; // Default number of electrical cycles spent in TRANSIT state
 	motor_s.trans_cnt = 0; // Counts trans_theta updates
 
+	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
+	motor_s.filt_veloc = 0; // filtered value
+	motor_s.coef_vel_err = 0; // Coefficient diffusion error
+	motor_s.scale_vel_err = 0; // Scaling diffusion error 
+	motor_s.veloc_err = 0; // Speed diffusion error 
+
 	// Check consistency of pre-defined QEI values
 	tmp_val = (1 << QEI_RES_BITS); // Build No. of QEI points from resolution bits
 	assert( QEI_PER_REV == tmp_val );
 
-	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
 	motor_s.pwm_period = OPEN_LOOP_PERIOD; // Time between updates to PWM theta
 
 	motor_s.filt_adc = START_VOLT_OPENLOOP; // Preset filtered value to something sensible
@@ -524,8 +531,8 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 		filter_current_component( motor_s.vect_data[comp_cnt] );
 	} // for comp_cnt
 
-// if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[D_ROTA].est_I );
-// if (motor_s.xscope) xscope_int( 3 ,motor_s.vect_data[Q_ROTA].est_I );
+if (motor_s.xscope) xscope_int( (0+motor_s.id) ,motor_s.vect_data[D_ROTA].est_I );
+if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I );
 
 { // MB~
 	int d_abs = abs(motor_s.vect_data[D_ROTA].est_I);
@@ -619,8 +626,8 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	motor_s.vect_data[D_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[D_ROTA] );
 	motor_s.vect_data[Q_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[Q_ROTA] );
 
-// if (motor_s.xscope) xscope_int( 5 ,motor_s.vect_data[D_ROTA].set_V ); //MB~
-// if (motor_s.xscope) xscope_int( 4 ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
+if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
 
 // if (motor_s.xscope) xscope_int( (2+motor_s.id) ,inp_theta ); //MB~
  
@@ -819,14 +826,15 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	} // if (VELOC_CLOSED)
 
 #ifdef MB
-	if (motor_s.iters > 50000)
-	{ // Track est_Iq value
+	if (motor_s.iters > 25000)
+	{
 		motor_s.temp++; 
 	
-		if (256 == motor_s.temp)
+		if (128  == motor_s.temp)
 		{
 			motor_s.temp = 0; 
-			if (4000 > motor_s.qei_params.veloc) motor_s.vect_data[Q_ROTA].req_closed_V--;
+			if (4000 > motor_s.qei_params.veloc) motor_s.vect_data[Q_ROTA].req_closed_V++;
+if (motor_s.xscope) xscope_int( 8 ,motor_s.vect_data[Q_ROTA].req_closed_V );
 		} // if (1024 == motor_s.temp)
 	} //if (motor_s.iters > 25000)
 #endif //MB~
@@ -914,8 +922,6 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
 	}; // if (motor_s.first_pid)
 
-// if (motor_s.xscope) xscope_int( 6 ,targ_Id );
-// if (motor_s.xscope) xscope_int( 9 ,targ_Iq );
 	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
 	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
 
@@ -1283,6 +1289,111 @@ static void find_qei_origin( // Test QEI state for origin
 
 } // find_qei_origin
 /*****************************************************************************/
+static int filter_velocity( // Smooths velocity estimate using low-pass filter
+	MOTOR_DATA_TYP &motor_s, // Reference to structure containing motor data
+	int meas_veloc // Angular velocity of motor measured in Ticks/angle_position
+) // Returns filtered output value
+/* This is a 1st order IIR filter, it is configured as a low-pass filter, 
+ * The input velocity value is up-scaled, to allow integer arithmetic to be used.
+ * The output mean value is down-scaled by the same amount.
+ * Error diffusion is used to keep control of systematic quantisation errors.
+ */
+{
+	int scaled_inp = (meas_veloc << VEL_SCALE_BITS); // Upscaled QEI input value
+	int diff_val; // Difference between input and filtered output
+	int increment; // new increment to filtered output value
+	int out_val; // filtered output value
+
+
+	// Form difference with previous filter output
+	diff_val = scaled_inp - motor_s.filt_veloc;
+
+	// Multiply difference by filter coefficient (alpha)
+	diff_val += motor_s.coef_vel_err; // Add in diffusion error;
+	increment = (diff_val + VEL_HALF_COEF) >> VEL_COEF_BITS ; // Multiply by filter coef (with rounding)
+	motor_s.coef_vel_err = diff_val - (increment << VEL_COEF_BITS); // Evaluate new quantisation error value 
+
+	motor_s.filt_veloc += increment; // Update (up-scaled) filtered output value
+
+	// Update mean value by down-scaling filtered output value
+	motor_s.filt_veloc += motor_s.scale_vel_err; // Add in diffusion error;
+	out_val = (motor_s.filt_veloc + VEL_HALF_SCALE) >> VEL_SCALE_BITS; // Down-scale
+	motor_s.scale_vel_err = motor_s.filt_veloc - (out_val << VEL_SCALE_BITS); // Evaluate new remainder value 
+
+	return out_val; // return filtered output value
+} // filter_velocity
+/*****************************************************************************/
+static int get_velocity( // Return velocity estimate based on change in time and angular position
+	MOTOR_DATA_TYP &motor_s, // Reference to structure containing motor data
+	int ang_diff, // Change in angular position
+	unsigned time_diff // Change in time-stamp
+)
+{
+	int const_val;
+	const_val = (TICKS_PER_MIN_PER_QEI * ang_diff) + motor_s.veloc_err; // Add diffusion error to constant;
+	int ang_veloc; // Output angular velocity
+
+
+	ang_veloc = (const_val + (time_diff >> 1)) / time_diff;  // Evaluate speed
+	motor_s.veloc_err = const_val - (ang_veloc * time_diff); // Evaluate new remainder value 
+
+	return ang_veloc; // Return new velocity estimate
+}	// get_velocity
+/*****************************************************************************/
+static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. Velocity estimate)
+	MOTOR_DATA_TYP &motor_s, // Reference to structure containing motor data
+	streaming chanend c_qei // QEI channel
+)
+{
+	int tot_ang; // Total angle traversed
+	int ang_diff; // Angle difference
+	int meas_veloc = 0; // Measured angular velocity
+	unsigned time_diff; // Time difference
+
+
+	// Request latest QEI data
+	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
+
+return; //MB~
+	// The theta value should be in the range:  -180 <= theta < 180 degrees ...
+	
+	tot_ang = (motor_s.qei_params.orig_cnt * QEI_PER_REV) + motor_s.qei_params.ang_cnt;	// Calculate total angle traversed
+
+	motor_s.qei_params.rev_cnt = (tot_ang + motor_s.half_qei) >> QEI_RES_BITS; 
+	motor_s.qei_params.theta = tot_ang - (motor_s.qei_params.rev_cnt << QEI_RES_BITS); 
+
+	// NB theta should now be in range [-(QEI_PER_REV/2) .. (QEI_PER_REV/2 - 1)]
+	assert(-motor_s.half_qei <= motor_s.qei_params.theta); //MB~ Remove this trap when confident
+	assert(motor_s.qei_params.theta < motor_s.half_qei);
+
+	//Check for 1st set of data
+	if (motor_s.prev_ang != 0)
+	{
+		assert(motor_s.qei_params.time > motor_s.prev_qei_time); // Check for sensible values
+		time_diff = motor_s.qei_params.time - motor_s.prev_qei_time;
+		ang_diff = tot_ang - motor_s.prev_ang;
+
+		// Get new angular velocity estimate
+		meas_veloc = get_velocity( motor_s ,ang_diff ,time_diff );
+	} // if (motor_s.prev_ang != 0)
+
+	// Check if filter selected
+	if (QEI_FILTER)
+	{
+		int tmp_veloc = filter_velocity( motor_s ,meas_veloc );
+
+		motor_s.qei_params.veloc = tmp_veloc; // NB XC ambiguous evaluation rule.
+	} // if (QEI_FILTER)
+	else
+	{
+		motor_s.qei_params.veloc = meas_veloc;
+	} // else !(QEI_FILTER)
+
+	// Store QEI data for next iteration
+	motor_s.prev_ang = tot_ang;
+	motor_s.prev_qei_time = motor_s.qei_params.time;
+} // get_qei_data
+/*****************************************************************************/
 #pragma unsafe arrays
 static void collect_sensor_data( // Collect sensor data and update motor state if necessary
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
@@ -1311,7 +1422,9 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 	} // if (0 == motor_s.hall_found)
 
 	/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
+//MB~	get_qei_data( motor_s ,c_qei );
 	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
+
 // if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.qei_params.veloc ); // MB~
 // if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.qei_params.theta ); //MB~
 
@@ -1479,7 +1592,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			motor_s.iters++; // Increment No. of iterations 
 
 			// NB There is not enough band-width to probe all xscope data
-			if (motor_s.iters & 7) // probe every 8th value
+			if (motor_s.iters & 15) // probe every 8th value
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))

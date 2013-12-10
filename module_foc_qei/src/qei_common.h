@@ -43,8 +43,6 @@
 
 #define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK] 
 
-#define QEI_BITS 4 // MB~ Depr.
-
 #define QEI_SAMP_BITS 4 // Size of QEI input port sample in bits
 #define QEI_SAMP_SIZ (1 << QEI_SAMP_BITS) // Max. No. of possible QEI sample values
 #define QEI_SAMP_MASK (QEI_SAMP_SIZ - 1) // Mask used to extract sample bits from buffer

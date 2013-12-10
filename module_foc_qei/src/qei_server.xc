@@ -872,7 +872,8 @@ void foc_qei_do_single( // Get QEI data from motor and send to client
 #pragma unsafe arrays
 void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	streaming chanend c_qei[], // Array of data channel to client (carries processed QEI data)
-	buffered port:4 in pb4_QEI[NUMBER_OF_MOTORS] // Array of buffered 4-bit input ports (carries raw QEI motor data)
+	buffered port:32 in pb4_inp[NUMBER_OF_MOTORS] // Array of 32-bit buffered 4-bit input ports on which to receive test data
+//MB~	buffered port:4 in pb4_inp[NUMBER_OF_MOTORS] // Array of buffered 4-bit input ports (carries raw QEI motor data)
 )
 #define STAT_BITS 12
 #define NUM_STATS (1 << STAT_BITS)
@@ -907,7 +908,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	unsigned prt_ticks; // Timer value
 
 	chronometer :> pre_ticks;
-	pb4_QEI[0] :> tmp_pins @ prt_ticks; // Re-sample to test for glitch
+	pb4_inp[0] :> tmp_pins @ prt_ticks; // Re-sample to test for glitch
 	chronometer :> pst_ticks;
 
 	acquire_lock(); 
@@ -940,9 +941,9 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 #pragma ordered // If multiple cases fire at same time, service top-most first
 		select {
 			// Service any change on input port pins
-			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pb4_QEI[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] @ port16_ticks:
+			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pb4_inp[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] @ port16_ticks:
 			{
-				pb4_QEI[motor_id] :> tmp_pins; // Re-sample to test for glitch
+				pb4_inp[motor_id] :> tmp_pins; // Re-sample to test for glitch
 
 				// WARNING: H/W pin-change detector sometimes mis-fires, so also do check in S/W
 				if (tmp_pins == inp_pins[motor_id])
