@@ -48,17 +48,19 @@ on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used 
 /*****************************************************************************/
 void xscope_user_init()
 {
-	xscope_register( 10
-		,XSCOPE_CONTINUOUS, "ADC_U", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "ADC_F", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "ADC_D", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "ADC_Q", XSCOPE_INT , "n"
+	xscope_register( 12
+		,XSCOPE_CONTINUOUS, "mId_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "mId_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "mIq_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "mIq_1", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Vel_0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Vel_1", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "The_0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "The_1", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "RUN_0", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "RUN_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "rVd_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "rVd_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "rVq_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "rVq_1", XSCOPE_INT , "n"
 /*
 		,XSCOPE_CONTINUOUS, "Eficny", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "set_Vd", XSCOPE_INT , "n"

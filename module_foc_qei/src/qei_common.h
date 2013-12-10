@@ -43,12 +43,18 @@
 
 #define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK] 
 
-#define QEI_BITS 4 // No of Active bits in QEI value
+#define QEI_BITS 4 // MB~ Depr.
+
+#define QEI_SAMP_BITS 4 // Size of QEI input port sample in bits
+#define QEI_SAMP_SIZ (1 << QEI_SAMP_BITS) // Max. No. of possible QEI sample values
+#define QEI_SAMP_MASK (QEI_SAMP_SIZ - 1) // Mask used to extract sample bits from buffer
 #define QEI_PHASE_MASK (0b0011) // 2 LS-bits contain [A,B] phase info.
 #define QEI_ORIG_MASK (0b0100) // Bit_2 contain origin info.
 #define QEI_NERR_MASK (0b1000) // Bit_3 contains error status (1 == No Errors)
 
-#define NUM_QEI_PHASES (QEI_PHASE_MASK + 1) // Number of QEI Phases
+#define QEI_PERIOD_LEN (QEI_PHASE_MASK + 1) // Number of different Phase combinations before a repeat. e.g [00 10 11 01]
+
+#define NUM_QEI_PHASES (QEI_PHASE_MASK + 1) // MB~ Depr.
 
 #define WAIT_TIME SECOND // Termination wait-time
 
@@ -72,18 +78,27 @@ typedef enum ERROR_QEI_ETAG
 /** Raw QEI data type (on input pins) */
 typedef unsigned long QEI_RAW_TYP;
 
-/** Type containing array of QEI Phase values */
+/** Type containing array of all QEI Phase combinations */
+typedef struct QEI_PERIOD_TAG // Structure containing Array of QEI Phase combinations
+{
+	int vals[QEI_PERIOD_LEN];	// Array of QEI Phase combinations (NB Increment for positive rotation)
+} QEI_PERIOD_TYP;
+
+// MB Depr
 typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
 {
 	int vals[NUM_QEI_PHASES];	// Array of QEI Phase values (NB Increment for positive rotation)
 } QEI_PHASE_TYP;
 
-/** Structure containing QEI parameters for one motor */
+//** Structure containing QEI parameters for one motor */
 typedef struct QEI_PARAM_TAG // 
 {
+	unsigned time; // Time-stamp for Theta value
+	int ang_cnt;	// Angular position
 	int theta;		// Angular position
 	int veloc;		// Angular velocity
 	int rev_cnt;	// Revolution counter (No. of origin traversals)
+	int orig_cnt;	// Origin counter (No. of origin traversals)
 	int old_ang;	// Old angular position before origin reset to zero
 	int calib;		// Flag set when angular position is calibrated
 	ERROR_QEI_ENUM err;	// Flag set when Error condition detected
