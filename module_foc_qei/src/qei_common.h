@@ -54,8 +54,6 @@
 
 #define QEI_PERIOD_LEN (QEI_PHASE_MASK + 1) // Number of different Phase combinations before a repeat. e.g [00 10 11 01]
 
-#define NUM_QEI_PHASES (QEI_PHASE_MASK + 1) // MB~ Depr.
-
 #define WAIT_TIME SECOND // Termination wait-time
 
 /** Different QEI Commands (Client --> Server) */
@@ -83,12 +81,6 @@ typedef struct QEI_PERIOD_TAG // Structure containing Array of QEI Phase combina
 {
 	int vals[QEI_PERIOD_LEN];	// Array of QEI Phase combinations (NB Increment for positive rotation)
 } QEI_PERIOD_TYP;
-
-// MB Depr
-typedef struct QEI_PHASE_TAG // Structure containing Array of QEI Phase values
-{
-	int vals[NUM_QEI_PHASES];	// Array of QEI Phase values (NB Increment for positive rotation)
-} QEI_PHASE_TYP;
 
 //** Structure containing QEI parameters for one motor */
 typedef struct QEI_PARAM_TAG // 

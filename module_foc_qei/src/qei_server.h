@@ -138,12 +138,11 @@
 #define DBG_SIZ 384
 				
 /** Different QEI phases */
-typedef enum QEI_PHASEE_ETAG
+typedef enum QEI_PHASE_ETAG
 {
   QEI_PHASE_A = 0,  // Phase_A identifier
   QEI_PHASE_B,  // Phase_A identifier
-	//MB~	NUM_QEI_PHASES // Number of different QEI Phase signals
-	NUM_DBG_PHASES // MB~Depr
+	NUM_QEI_PHASES // Number of different QEI Phase signals
 } QEI_PHASE_ETYP;
 
 // WARNING. Positive and Negative states must have same magnitude
@@ -193,7 +192,6 @@ typedef struct QEI_LUT_TAG
 	int incs[QEI_PERIOD_LEN][QEI_PERIOD_LEN];	// 2-D Look-up table
 } QEI_LUT_TYP;
 
-#ifdef MB
 /** Structure containing all data for one QEI phase */
 typedef struct QEI_PHASE_TAG // 
 {
@@ -204,7 +202,6 @@ typedef struct QEI_PHASE_TAG //
 	QEI_PHASE_ETYP phase_id; // Unique QEI Phase identifier
 	int motor_id; // Unique motor identifier
 } QEI_PHASE_TYP;
-#endif //MB~
 
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_DATA_TAG // 
@@ -214,9 +211,8 @@ typedef struct QEI_DATA_TAG //
 #endif // QEI_DBG
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
 	QEI_LUT_TYP ang_lut;	// Look-up table for converting phase changes to angle increments
-  //MB~ QEI_PHASE_TYP phase_data[NUM_QEI_PHASES];	// Structure containing all data for one QEI phase
-	//MB~ QEI_PERIOD_TYP inv_phase;	// Structure containing all inverse QEI phase values;
-	QEI_PHASE_TYP inv_phase;	// Structure containing all inverse QEI phase values; //MB~ Depr.
+  QEI_PHASE_TYP phase_data[NUM_QEI_PHASES];	// Structure containing all data for one QEI phase
+	QEI_PERIOD_TYP inv_phase;	// Structure containing all inverse QEI phase values;
 	unsigned prev_phases; // Previous phase values
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp

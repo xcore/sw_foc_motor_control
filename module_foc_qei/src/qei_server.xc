@@ -57,7 +57,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 )
 {
 // Choose last Hall state of 6-state cycle, depending on spin direction
-	QEI_PHASE_TYP bit_patterns = {{ 0 ,1 ,3 ,2 }};	// Table to convert QEI Phase value to circular index [BA] (NB Increment for positive rotation)
+	QEI_PERIOD_TYP bit_patterns = {{ 0 ,1 ,3 ,2 }};	// Table to convert QEI Phase value to circular index [BA] (NB Increment for positive rotation)
 	int tmp_val; // temporary manipulation value
 
 
@@ -128,7 +128,7 @@ static ANG_INC_TYP estimate_increment_bound( // Estimate bound on angular increm
 
 	if (0 >= tst_diff) return out_a_inc; // Return if exit criterion already met
 
-	while (( 0 < tst_diff) && (out_a_inc < NUM_QEI_PHASES)) 
+	while (( 0 < tst_diff) && (out_a_inc < QEI_PERIOD_LEN)) 
 	{
 		diff_est = (factor * diff_est + HALF_QEI_SCALE) >> SCALE_QEI_BITS; // Scale time-diff estimate 
 		prev_tst = tst_diff;
@@ -185,7 +185,7 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 	inp_qei_s.phase_index = inp_qei_s.inv_phase.vals[cur_phases];	// Convert phase val into circ. index [0..QEI_PHASE_MASK]
 
 	// Force phase increment into range [0..QEI_PHASE_MASK]
-	inp_qei_s.phase_inc = (inp_qei_s.phase_index + NUM_QEI_PHASES - inp_qei_s.prev_index) & QEI_PHASE_MASK;
+	inp_qei_s.phase_inc = (inp_qei_s.phase_index + QEI_PERIOD_LEN - inp_qei_s.prev_index) & QEI_PHASE_MASK;
 
 /* The Decision table for estimating angle increments and QEI-states looks like this ...
  *
