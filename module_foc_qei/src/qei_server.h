@@ -122,7 +122,29 @@
 #define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
 #define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
 
+/* HALF_PERIOD determines the clock frequency for port sampling. 
+ * The sampling period must allow enough time (inbetween samples) for processing
+ * Currently this is about 660..680 cycles per 32-bit buffer. 
+ * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
+ * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
+ */
+#define HALF_PERIOD 96 // 192 Sample period) NB Number less than 256
+#define TICKS_PER_SAMP (HALF_PERIOD << 1) // NB Max 510
+
+#define SAMP_LOOP_BITS 3
+#define SAMPS_PER_LOOP (1 << SAMP_LOOP_BITS) // 8
+#define TICKS_PER_LOOP (TICKS_PER_SAMP << SAMP_LOOP_BITS) // 4080
+
 #define DBG_SIZ 384
+				
+/** Different QEI phases */
+typedef enum QEI_PHASEE_ETAG
+{
+  QEI_PHASE_A = 0,  // Phase_A identifier
+  QEI_PHASE_B,  // Phase_A identifier
+	//MB~	NUM_QEI_PHASES // Number of different QEI Phase signals
+	NUM_DBG_PHASES // MB~Depr
+} QEI_PHASE_ETYP;
 
 // WARNING. Positive and Negative states must have same magnitude
 /** Different QEI decode states */
@@ -165,6 +187,25 @@ typedef struct ALL_DBG_TAG // MB~ Dbg
 } ALL_DBG_TYP;
 #endif // QEI_DBG
 
+/** Type containing 2-D array for look-up table */
+typedef struct QEI_LUT_TAG
+{
+	int incs[QEI_PERIOD_LEN][QEI_PERIOD_LEN];	// 2-D Look-up table
+} QEI_LUT_TYP;
+
+#ifdef MB
+/** Structure containing all data for one QEI phase */
+typedef struct QEI_PHASE_TAG // 
+{
+	int up_filt; // Up-scaled Low-pass filtered Phase signal
+	unsigned prev; // Previous value of filtered phase signal
+	int scale_err; // Error diffusion value for scaling
+	int filt_err; // Error diffusion value for filtering
+	QEI_PHASE_ETYP phase_id; // Unique QEI Phase identifier
+	int motor_id; // Unique motor identifier
+} QEI_PHASE_TYP;
+#endif //MB~
+
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_DATA_TAG // 
 {
@@ -172,7 +213,10 @@ typedef struct QEI_DATA_TAG //
 	ALL_DBG_TYP dd; // All Debug data
 #endif // QEI_DBG
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
-	QEI_PHASE_TYP inv_phase;	// Structure containing all inverse QEI phase values;
+	QEI_LUT_TYP ang_lut;	// Look-up table for converting phase changes to angle increments
+  //MB~ QEI_PHASE_TYP phase_data[NUM_QEI_PHASES];	// Structure containing all data for one QEI phase
+	//MB~ QEI_PERIOD_TYP inv_phase;	// Structure containing all inverse QEI phase values;
+	QEI_PHASE_TYP inv_phase;	// Structure containing all inverse QEI phase values; //MB~ Depr.
 	unsigned prev_phases; // Previous phase values
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
@@ -195,6 +239,7 @@ typedef struct QEI_DATA_TAG //
 	int pin_changes; // Counts pin changes during start-up phase
 	int orig_cnt; // Counts number of origin detections (revolutions) of motor
 	int ang_cnt; // Counts angular position of motor (from origin)
+	int new_ang; // Counts angular position of motor (from origin)
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
 	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident Negative spin)
 	int prev_orig; // Previous origin flag
@@ -226,7 +271,8 @@ void foc_qei_config(  // Configure all QEI ports
  */
 void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to client
 	streaming chanend c_qei[], // Array of channels connecting server & client
-	buffered port:4 in pb4_qei[NUMBER_OF_MOTORS] // Array of buffered QEI data ports for each motor
+	//MB~	buffered port:32 in pb4_inp[NUMBER_OF_MOTORS] // Array of 32-bit buffered 4-bit input ports on which to receive test data
+	buffered port:4 in pb4_inp[NUMBER_OF_MOTORS] // MB~Depr
 );
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client
