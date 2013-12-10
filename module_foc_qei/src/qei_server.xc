@@ -33,7 +33,12 @@ void foc_qei_config(  // Configure all QEI ports
 	int motor_cnt; // motor counter
 
 
- 	configure_clock_rate( qei_clk ,PLATFORM_REFERENCE_MHZ ,1 ); // Configure clock rate to PLATFORM_REFERENCE_MHZ/1 (100 MHz)
+//MB~ 	configure_clock_rate( qei_clk ,PLATFORM_REFERENCE_MHZ ,1 ); // Configure clock rate to PLATFORM_REFERENCE_MHZ/1 (100 MHz)
+
+	assert( HALF_PERIOD < 256 ); // Check for illegal value
+
+	// NB We want to sample the QEI data every 128 ticks (for both motors).
+	configure_clock_ref( qei_clk ,HALF_PERIOD ); // Configure clock rate to PLATFORM_REFERENCE_MHZ/(2*HALF_PERIOD) (100/128 MHz)
 
 	// Loop through all ports to be configured
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
@@ -64,6 +69,77 @@ static void init_phase_data( // Initialise structure of QEI phase data
 	phase_s.motor_id = motor_index; // Unigue motor identifier
 } // init_phase_data
 /*****************************************************************************/
+static void init_qei_data( // Initialise  QEI data for one motor
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	QEI_RAW_TYP &inp_pins, // raw data value on input port pins
+	int inp_id  // Input unique motor identifier
+)
+{
+  // Look-up table for converting phase changes to angle increments, inner(fastest) changing index is NEW phase combination
+	QEI_LUT_TYP ang_incs = {{{ 0 , 1 , -1 ,  0},
+													 {-1 , 0 ,  0 ,  1},
+													 { 1 , 0 ,  0 , -1},
+													 { 0 , -1 , 1 ,  0}}};
+
+	QEI_PERIOD_TYP bit_patterns = {{ 0 ,1 ,3 ,2 }};	// Table to convert QEI Phase value to circular index [BA] (NB Increment for positive rotation)
+	int tmp_val; // temporary manipulation value
+
+#if (QEI_DBG)
+	inp_qei_s.dd.cnt = 0; // MB~ Dbg
+#endif //(QEI_DBG)
+
+	inp_qei_s.ang_lut = ang_incs; // Assign table converting phase changes to angle increments
+	inp_qei_s.inv_phase = bit_patterns; // Assign table converting QEI Phase value to circular index
+
+	inp_pins = 0xFF; // Set buffer for reading input pins to impossible value
+
+	inp_qei_s.params.theta = 0; // Reset angular position returned to client
+	inp_qei_s.params.rev_cnt = 0; // Reset revolution counter  returned to client
+	inp_qei_s.params.veloc = 0; // Clear velocity returned to client
+	inp_qei_s.params.old_ang = 0; // Clear old angular position (at reset)
+	inp_qei_s.params.calib = 0; // Clear calibration flag
+	inp_qei_s.params.err = QEI_ERR_OFF; // Clear error status flag returned to client
+
+	inp_qei_s.pin_changes = 0; // NB Initially this is used to count input-pin changes
+	inp_qei_s.id = inp_id; // Assign unique motor identifier
+	inp_qei_s.orig_cnt = 0; // Reset origin counter
+	inp_qei_s.ang_cnt = 0; // Reset counter indicating angular position of motor (from origin)
+	inp_qei_s.ang_inc = 0; // Reset angular position increment
+	inp_qei_s.ang_speed = 1;	// Default initial speed value
+	inp_qei_s.prev_inc = 0;
+	inp_qei_s.curr_state = QEI_BIT_ERR; // Initialise current QEI state
+	inp_qei_s.state_errs = 0; // Initialise counter for invalid QEI state transitions
+	inp_qei_s.status_errs = 0; // Initialise counter for QEI status errors
+	inp_qei_s.confid = 1; // Initialise spin-direction confidence value (1: Marginal Positive-spin probability)
+
+	inp_qei_s.prev_diff = 0;
+	inp_qei_s.prev_orig = 0;
+	inp_qei_s.prev_phases = 0;
+	inp_qei_s.filt_val = 0; // filtered value
+	inp_qei_s.coef_err = 0; // Coefficient diffusion error
+	inp_qei_s.scale_err = 0; // Scaling diffusion error 
+	inp_qei_s.speed_err = 0; // Speed diffusion error 
+
+	inp_qei_s.t_dif_old = 0; // Initialise to unassigned time difference
+	inp_qei_s.t_dif_cur = 0; // Initialise to unassigned time difference
+
+	inp_qei_s.dbg_str[2] = 0; // String Terminator
+	inp_qei_s.dbg = 0;
+
+	// Check consistency of pre-defined QEI values
+	tmp_val = (1 << QEI_RES_BITS); // Build No. of QEI points from resolution bits
+	assert( QEI_PER_REV == tmp_val );
+
+	inp_qei_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
+
+	// Initialise data for both QEI Phases 
+	init_phase_data( inp_qei_s.phase_data[QEI_PHASE_A] ,QEI_PHASE_A ,inp_id );
+	init_phase_data( inp_qei_s.phase_data[QEI_PHASE_B] ,QEI_PHASE_B ,inp_id );
+
+	return;
+} // init_qei_data
+/*****************************************************************************/
+#ifdef MB
 static void init_qei_data( // Initialise  QEI data for one motor
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	QEI_RAW_TYP &inp_pins, // raw data value on input port pins
@@ -125,6 +201,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	return;
 } // init_qei_data
 /*****************************************************************************/
+#endif //MB~
 static ANG_INC_TYP estimate_increment_bound( // Estimate bound on angular increment given time-diff
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	int factor // time-diff scaling factor
