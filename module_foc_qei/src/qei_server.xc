@@ -102,8 +102,8 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.id = inp_id; // Assign unique motor identifier
 	inp_qei_s.orig_cnt = 0; // Reset origin counter
 	inp_qei_s.ang_cnt = 0; // Reset counter indicating angular position of motor (from origin)
-	inp_qei_s.new_ang = 0; // Reset counter indicating angular position of motor (from origin)
-	inp_qei_s.prev_ang = 0; // Reset counter indicating previous angular position of motor (from origin)
+	inp_qei_s.tot_ang = 0; // Reset counter indicating total angular position of motor (since time=0)
+	inp_qei_s.prev_ang = 0; // Previous value of total angular position
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
 	inp_qei_s.ang_speed = 1;	// Default initial speed value
 	inp_qei_s.prev_inc = 0;
@@ -423,6 +423,26 @@ static void update_speed( // Update speed estimate from time period. (Angular_sp
 
 }	// update_speed
 /*****************************************************************************/
+static void update_velocity( // Update velocity estimate from time period. (Angular_speed in RPM) 
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	unsigned abs_inc, // Absolute angle increment
+	unsigned ticks // ticks per QEI position (in Reference Frequency Cycles)
+)
+{
+	int const_val;
+	const_val = (TICKS_PER_MIN_PER_QEI * abs_inc) + inp_qei_s.speed_err; // Add diffusion error to constant;
+
+	assert(ticks > 0); // ERROR: invalid time difference
+
+	inp_qei_s.ang_speed = (const_val + (ticks >> 1)) / ticks;  // Evaluate speed
+	inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
+
+	// Update previous values
+	inp_qei_s.prev_inc =  abs_inc;
+	inp_qei_s.prev_diff = inp_qei_s.diff_time; 
+
+}	// update_velocity
+/*****************************************************************************/
 static void check_for_missed_origin( // Check for missed origin, and update angular position info. if necessary
 	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
 )
@@ -441,8 +461,6 @@ static void check_for_missed_origin( // Check for missed origin, and update angu
 		{ // Too many mis-interpreted values: Origin Missed --> Correct counters
 			inp_qei_s.orig_cnt--; // Decrement origin counter
 			inp_qei_s.ang_cnt += QEI_PER_REV; // 'Unwind' a whole Negative rotation
-
-			inp_qei_s.new_ang += QEI_PER_REV; // 'Unwind' a whole Negative rotation
 acquire_lock(); printstrln("MISSED -VE ORIGIN"); release_lock(); //MB~
 		} // (inp_qei_s.ang_cnt < -QEI_CNT_LIMIT)
 	} // if (0 > inp_qei_s.ang_cnt)
@@ -452,8 +470,6 @@ acquire_lock(); printstrln("MISSED -VE ORIGIN"); release_lock(); //MB~
 		{ // Too many mis-interpreted values: Origin Missed --> Correct counters
 			inp_qei_s.orig_cnt++; // Increment origin counter
 			inp_qei_s.ang_cnt -= QEI_PER_REV; // 'Unwind' a whole Positive rotation
-
-			inp_qei_s.new_ang -= QEI_PER_REV; // 'Unwind' a whole Positive rotation
 acquire_lock(); printstrln("MISSED +VE ORIGIN"); release_lock(); //MB~
 		} // (inp_qei_s.ang_cnt > QEI_CNT_LIMIT)
 	} // else !(0 > inp_qei_s.ang_cnt)
@@ -527,11 +543,40 @@ static void update_origin_state( // Update origin state
 		} // else !(0 > inp_qei_s.ang_inc)
 
 		inp_qei_s.ang_cnt = 0; // Reset position value to origin
-		inp_qei_s.new_ang = 0; // Reset position value to origin
 	} // if (orig_flg)
 
 	return;
 } // update_origin_state
+/*****************************************************************************/
+static void update_rs_origin_state( // Regular Sampling: Update origin state
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	unsigned orig_flg // Flag set when motor at origin position 
+)
+{
+	if (orig_flg)
+	{ // Reset position ( 'orig_flg' transition  0 --> 1 )
+		inp_qei_s.params.old_ang = inp_qei_s.tot_ang; // Store uncorrected total-angle
+		inp_qei_s.params.calib = 1; // Set flag indicating angular position is calibrated
+
+		// Update origin counter
+		if (0 > inp_qei_s.ang_inc)
+		{ // Negative Angle
+			inp_qei_s.orig_cnt--; // Decrement
+		} // if (0 > inp_qei_s.ang_inc)
+		else
+		{ // Positive Angle
+			inp_qei_s.orig_cnt++; // Increment
+		} // else !(0 > inp_qei_s.ang_inc)
+
+		inp_qei_s.ang_cnt = 0; // Reset position value to origin
+
+		// Round total angle to multiple of QEI_PER_REV;
+		inp_qei_s.tot_ang += HALF_QEI_CNT; // Add offset to get rounding
+		inp_qei_s.tot_ang &= ~QEI_REV_MASK; // Clear least significant bits
+	} // if (orig_flg)
+
+	return;
+} // update_rs_origin_state
 /*****************************************************************************/
 static void estimate_error_status( // Update estimate of error status based on new data
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
@@ -751,11 +796,11 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 	// Check if speed update required
 	if (diff_time > 100000)
 	{
-		diff_ang = inp_qei_s.new_ang - inp_qei_s.prev_ang; // Angle change since last request
-		update_speed( inp_qei_s ,abs(diff_ang) ,diff_time ); // Update speed value with new time difference
+		diff_ang = inp_qei_s.tot_ang - inp_qei_s.prev_ang; // Angle change since last request
+		update_velocity( inp_qei_s ,abs(diff_ang) ,diff_time ); // Update speed value with new time difference
 
 		inp_qei_s.prev_filt = inp_qei_s.filt_time;
-		inp_qei_s.prev_ang = inp_qei_s.new_ang;
+		inp_qei_s.prev_ang = inp_qei_s.tot_ang;
 	} // if (diff_time > 0)
 
 	// Evaluate (signed) angular_velocity of motor in RPM
@@ -782,8 +827,8 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 
 	inp_qei_s.params.rev_cnt = inp_qei_s.orig_cnt; //MB~ Depreciated
 	inp_qei_s.params.orig_cnt = inp_qei_s.orig_cnt;
-	inp_qei_s.params.theta = inp_qei_s.new_ang; //MB~ Depreciated
-	inp_qei_s.params.ang_cnt = inp_qei_s.new_ang;
+	inp_qei_s.params.theta = inp_qei_s.tot_ang; //MB~ Depreciated
+	inp_qei_s.params.ang_cnt = inp_qei_s.tot_ang;
 	inp_qei_s.params.time = inp_qei_s.curr_time;
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
@@ -904,7 +949,7 @@ printstr(" NP=");	printint(filt_phases);
 printstr(" AI=");	printintln(inp_qei_s.ang_inc);	
 release_lock();
 #endif //MB~
-		inp_qei_s.new_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
+		inp_qei_s.tot_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
 
 		inp_qei_s.filt_time = inp_qei_s.curr_time; // Store time of filtered phase change
 
@@ -959,9 +1004,7 @@ static void service_rs_input_pins( // Regular-Sampling: Service detected change 
 		// Check for change in origin state
 		if (orig_flg != inp_qei_s.prev_orig)
 		{
-			update_origin_state( inp_qei_s ,orig_flg ); // update origin state
-		
-			check_for_missed_origin( inp_qei_s ); // NB May update inp_qei_s.ang_cnt & inp_qei_s.orig_cnt
+			update_rs_origin_state( inp_qei_s ,orig_flg ); // update origin state
 	
 			inp_qei_s.prev_orig = orig_flg; // Store origin flag value
 		} // if (orig_flg != inp_qei_s.prev_orig)
