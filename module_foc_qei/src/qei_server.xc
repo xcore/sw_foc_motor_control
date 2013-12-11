@@ -25,7 +25,7 @@ static void do_qei_port_config( // Configure one QEI input port
 /*****************************************************************************/
 void foc_qei_config(  // Configure all QEI ports
 	buffered port:4 in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
-	clock qei_clk // clock for generating accurate QEI timing
+	clock qei_clks[NUMBER_OF_MOTORS] // Array of clocks for generating accurate QEI timing (one per input port)
 )
 {
 	timer chronometer; // H/W timer
@@ -35,13 +35,13 @@ void foc_qei_config(  // Configure all QEI ports
 
 	assert( HALF_PERIOD < 256 ); // Check for illegal value
 
-	// NB We want to sample the QEI data every 128 ticks (for both motors).
-	configure_clock_ref( qei_clk ,HALF_PERIOD ); // Configure clock rate to PLATFORM_REFERENCE_MHZ/(2*HALF_PERIOD) (100/128 MHz)
-
 	// Loop through all ports to be configured
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{
-		do_qei_port_config( pb4_QEI[motor_cnt] ,qei_clk ); // configure current port
+		// NB We want to sample the QEI data every 128 ticks (for both motors).
+		configure_clock_ref( qei_clks[motor_cnt] ,HALF_PERIOD ); // Configure clock rate to PLATFORM_REFERENCE_MHZ/(2*HALF_PERIOD) (100/128 MHz)
+
+		do_qei_port_config( pb4_QEI[motor_cnt] ,qei_clks[motor_cnt] ); // configure current port
 	} // for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
 
 	// Once all ports configured, synchronise port-timers with reference clock
@@ -50,7 +50,12 @@ void foc_qei_config(  // Configure all QEI ports
 	big_ticks += 0x20000;														// Step on time by 2 port-timer cycles
 	chronometer when timerafter(big_ticks) :> void;	// Wait until synchronisation time
 
-	start_clock( qei_clk ); // Start common QEI clock, 
+	start_clock( qei_clks[0] ); // Start 1st QEI clock, 
+
+	big_ticks += HALF_TICKS; // Start 2nd port halfway through sample period
+	chronometer when timerafter(big_ticks) :> void;	// Wait until synchronisation time
+
+	start_clock( qei_clks[1] ); // Start 2nd QEI clock, 
 } // foc_qei_config
 /*****************************************************************************/
 static void init_phase_data( // Initialise structure of QEI phase data
@@ -825,7 +830,7 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 	inp_qei_s.params.orig_cnt = inp_qei_s.orig_cnt;
 	inp_qei_s.params.theta = inp_qei_s.tot_ang; //MB~ Depreciated
 	inp_qei_s.params.ang_cnt = inp_qei_s.tot_ang;
-	inp_qei_s.params.time = inp_qei_s.curr_time;
+	inp_qei_s.params.time = inp_qei_s.filt_time;
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
 
@@ -1212,7 +1217,8 @@ unsigned dbg_diff; // MB~
 		for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 		{
 			// Read 8 4-bit data samples from QEI port buffer
- pb4_inp[motor_cnt] :> buf_data @ port16_cnt; // Get all buffer samples (8)
+			pb4_inp[motor_cnt] :> buf_data @ port16_cnt; // Get all buffer samples (8)
+// xscope_int( (8+motor_cnt) ,port16_cnt );
 
 			// Check Timing has been met
 			diff16_ticks = (PORT_TIME_TYP)(port16_cnt - prev16_cnt[motor_cnt]);
@@ -1223,10 +1229,9 @@ unsigned dbg_diff; // MB~
 			low16_ticks = (PORT_TIME_TYP)(approx32_ticks & PORT_TIME_MASK); // Get lowest 16-bits of 32-bit timer
 
 			// Calculate timer correction. NB correctly handles wrapped timer values
-			port16_ticks = (PORT_TIME_TYP)(port16_cnt * TICKS_PER_SAMP); // Convert port sample count to Ref. clock ticks
+			port16_ticks = (PORT_TIME_TYP)((port16_cnt * TICKS_PER_SAMP) + (motor_cnt * HALF_TICKS)); // Convert port sample count to Ref. clock ticks
 			diff16_ticks = (PORT_TIME_TYP)(low16_ticks - port16_ticks); // Calculate correction
 			all_qei_s[motor_cnt].curr_time = approx32_ticks - (unsigned)diff16_ticks; // Correct 32-bit timer value
-// if (motor_cnt) xscope_int( 0 ,(all_qei_s[motor_cnt].curr_time & 0xfffff) );
 
 			// Read individual samples from buffer 
 			for (samp_cnt=0; samp_cnt<SAMPS_PER_LOOP; samp_cnt++)

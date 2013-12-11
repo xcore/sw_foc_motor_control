@@ -135,6 +135,7 @@
 #define SAMP_LOOP_BITS 3
 #define SAMPS_PER_LOOP (1 << SAMP_LOOP_BITS) // 8
 #define TICKS_PER_LOOP (TICKS_PER_SAMP << SAMP_LOOP_BITS) // 4080
+#define HALF_TICKS (HALF_PERIOD << SAMP_LOOP_BITS) // 2040
 
 #define DBG_SIZ 384
 				
@@ -262,7 +263,7 @@ typedef struct QEI_DATA_TAG //
  */
 void foc_qei_config(  // Configure all QEI ports
   buffered port:4 in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
-	clock qei_clk // clock for generating accurate QEI timing
+	clock qei_clks[NUMBER_OF_MOTORS] // Array of clocks for generating accurate QEI timing (one per input port)
 	);
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client

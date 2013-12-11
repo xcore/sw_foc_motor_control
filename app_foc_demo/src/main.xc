@@ -20,8 +20,8 @@ on tile[INTERFACE_TILE]: in port p_btns = PORT_BUTTONS;
 on tile[INTERFACE_TILE]: out port p_leds = PORT_LEDS;
 
 // PWM ports
-on tile[MOTOR_TILE]: clock qei_clk = XS1_CLKBLK_4;
-on tile[MOTOR_TILE]: clock pwm_clk = XS1_CLKBLK_5;
+on tile[MOTOR_TILE]: clock pwm_clk = XS1_CLKBLK_3;
+on tile[MOTOR_TILE]: clock qei_clks[NUMBER_OF_MOTORS] = { XS1_CLKBLK_4 ,XS1_CLKBLK_5 };
 on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
 on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
 	= {	{PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
@@ -131,7 +131,7 @@ int main ( void ) // Program Entry Point
 			foc_pwm_config( pb32_pwm_hi ,pb32_pwm_lo ,p16_adc_sync ,pwm_clk );
 
 			// Configure QEI ports to run from common clock
-			foc_qei_config( pb4_qei ,qei_clk );
+			foc_qei_config( pb4_qei ,qei_clks );
 
 			par {
 				// Loop through all motors

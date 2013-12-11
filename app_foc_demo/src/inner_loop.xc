@@ -626,8 +626,8 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	motor_s.vect_data[D_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[D_ROTA] );
 	motor_s.vect_data[Q_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[Q_ROTA] );
 
-if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
-if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
+// if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
+// if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
 
 // if (motor_s.xscope) xscope_int( (2+motor_s.id) ,inp_theta ); //MB~
  
