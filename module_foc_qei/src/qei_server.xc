@@ -814,24 +814,6 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 	streaming chanend c_qei // Data channel to client (carries processed QEI data)
 )
 {
-#ifdef MB
-	int diff_ang; // Difference angle
-	unsigned diff_time; // Difference time
-
-
-	diff_time = inp_qei_s.filt_time - inp_qei_s.prev_filt; // Time change since last request
-
-	// Check if speed update required
-	if (diff_time > 100000)
-	{
-		diff_ang = inp_qei_s.tot_ang - inp_qei_s.prev_ang; // Angle change since last request
-		inp_qei_s.params.veloc = update_velocity( inp_qei_s ,diff_ang ,diff_time ); // Update speed value with new time difference
-
-		inp_qei_s.prev_filt = inp_qei_s.filt_time;
-		inp_qei_s.prev_ang = inp_qei_s.tot_ang;
-	} // if (diff_time > 0)
-#endif //MB~
-
 	inp_qei_s.params.rev_cnt = inp_qei_s.orig_cnt; //MB~ Depreciated
 	inp_qei_s.params.orig_cnt = inp_qei_s.orig_cnt;
 	inp_qei_s.params.theta = inp_qei_s.tot_ang; //MB~ Depreciated
@@ -839,7 +821,6 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 	inp_qei_s.params.time = inp_qei_s.filt_time;
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
-
 } // service_rs_client_data_request
 /*****************************************************************************/
 #pragma unsafe arrays
