@@ -1198,7 +1198,7 @@ unsigned dbg_diff; // MB~
 		prev16_cnt[motor_cnt] = (PORT_TIME_TYP)tmp_time;
 	} // for motor_cnt
 
-// dbg_tmr :> dbg_orig; // MB~
+// chronometer :> dbg_orig; // MB~
 
 	while (do_loop) 
 	{
@@ -1210,6 +1210,7 @@ unsigned dbg_diff; // MB~
 			pb4_inp[motor_cnt] :> buf_data @ port16_cnt; // Get all buffer samples (8)
 // xscope_int( (8+motor_cnt) ,port16_cnt ); //MB~
 
+// chronometer :> dbg_strt; // MB~
 			// Check Timing has been met
 			diff16_ticks = (PORT_TIME_TYP)(port16_cnt - prev16_cnt[motor_cnt]);
 			assert(diff16_ticks == SAMPS_PER_LOOP); // ERROR: Input QEI port samples dropped (Increase HALF_PERIOD)
@@ -1232,6 +1233,7 @@ unsigned dbg_diff; // MB~
 				buf_data >>= QEI_SAMP_BITS; // Shift next sample to LS end of buffer
 			} // for samp_cnt
 
+// chronometer :> dbg_end; // MB~
 			select {
 				case c_qei[motor_cnt] :> inp_cmd :
 				{
@@ -1239,6 +1241,7 @@ unsigned dbg_diff; // MB~
 					{
 						case QEI_CMD_DATA_REQ : // Data Request
 							service_rs_client_data_request( all_qei_s[motor_cnt] ,c_qei[motor_cnt] );
+// xscope_int( (8+motor_cnt) ,(dbg_end - dbg_strt) ); //MB~
 						break; // case QEI_CMD_DATA_REQ
 	
 						case QEI_CMD_LOOP_STOP : // Termination Command
