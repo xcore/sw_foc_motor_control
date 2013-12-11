@@ -135,7 +135,7 @@
 #define SAMP_LOOP_BITS 3
 #define SAMPS_PER_LOOP (1 << SAMP_LOOP_BITS) // 8
 #define TICKS_PER_LOOP (TICKS_PER_SAMP << SAMP_LOOP_BITS) // 4080
-#define HALF_TICKS (HALF_PERIOD << SAMP_LOOP_BITS) // 2040
+#define STAG_TICKS ((TICKS_PER_LOOP + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS) // 2040 NB Used to stagger servicing of port buffers
 
 #define DBG_SIZ 384
 				

@@ -134,7 +134,7 @@
 #define SAFE_MAX_SPEED 5860 // This value is derived from the Optical Encoder Max. rate of 100kHz
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
-#define VELOC_FILT 1
+#define VELOC_FILT 0
 #define MAX_VELOC_INC 1 // MB~ Maximum allowed velocity increment.
 
 // Definitions for Gamma value, (amount that PWM leads QEI angle)
@@ -312,6 +312,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
 	MOTOR_STATE_ENUM state; // Current motor state
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
+	int est_veloc;	// Estimated angular velocity (from QEI data)
 	int req_veloc;	// Requested (target) angular velocity set by the user/comms interface
 	int half_veloc;	// Half requested angular velocity
 	int prev_veloc;	// previous velocity
@@ -322,6 +323,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int prev_Id;	// previous target 'radial' current value
 	int tot_ang;	// Total angle traversed (NB accounts for multiple revolutions)
 	int prev_ang;	// Previous total angle traversed (NB accounts for multiple revolutions)
+	int est_theta;		// Estimated Angular position (from QEI data)
+	int est_revs;	// Estimated No of revolutions (No. of origin traversals) (from QEI data)
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
 	int foc_theta;	// FOC theta value
