@@ -230,7 +230,6 @@ typedef struct QEI_DATA_TAG //
 	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
 	ANG_INC_TYP ang_inc; // angular increment value
-	unsigned prev_inc; // previous absolute angular increment value
 	QEI_STATE_ETYP curr_state; // Current QEI state
 	QEI_STATE_ETYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
@@ -250,7 +249,8 @@ typedef struct QEI_DATA_TAG //
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error
 	int scale_err; // Scaling diffusion error 
-	int speed_err; // Speed diffusion error 
+	int speed_err; // Speed diffusion error  //MB~ depreciated
+	int veloc_err; // Velocity diffusion error 
 
 	int dbg; // Debug
 } QEI_DATA_TYP;

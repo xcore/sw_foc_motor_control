@@ -106,7 +106,6 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.prev_ang = 0; // Previous value of total angular position
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
 	inp_qei_s.ang_speed = 1;	// Default initial speed value
-	inp_qei_s.prev_inc = 0;
 	inp_qei_s.curr_state = QEI_BIT_ERR; // Initialise current QEI state
 	inp_qei_s.state_errs = 0; // Initialise counter for invalid QEI state transitions
 	inp_qei_s.status_errs = 0; // Initialise counter for QEI status errors
@@ -118,7 +117,8 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.filt_val = 0; // filtered value
 	inp_qei_s.coef_err = 0; // Coefficient diffusion error
 	inp_qei_s.scale_err = 0; // Scaling diffusion error 
-	inp_qei_s.speed_err = 0; // Speed diffusion error 
+	inp_qei_s.speed_err = 0; // Speed diffusion error //MB~ Depreciated
+	inp_qei_s.veloc_err = 0; // Velocity diffusion error 
 
 	inp_qei_s.t_dif_old = 0; // Initialise to unassigned time difference
 	inp_qei_s.t_dif_cur = 0; // Initialise to unassigned time difference
@@ -403,6 +403,40 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 #endif //(QEI_DBG)
 } // update_qei_state
 /*****************************************************************************/
+static int filter_velocity( // Smooths velocity estimate using low-pass filter
+	QEI_DATA_TYP &qei_data_s, // Reference to structure containing QEI parameters for one motor
+	int meas_veloc // Angular velocity of motor measured in Ticks/angle_position
+) // Returns filtered output value
+/* This is a 1st order IIR filter, it is configured as a low-pass filter, 
+ * The input velocity value is up-scaled, to allow integer arithmetic to be used.
+ * The output mean value is down-scaled by the same amount.
+ * Error diffusion is used to keep control of systematic quantisation errors.
+ */
+{
+	int scaled_inp = (meas_veloc << QEI_SCALE_BITS); // Upscaled QEI input value
+	int diff_val; // Difference between input and filtered output
+	int increment; // new increment to filtered output value
+	int out_val; // filtered output value
+
+
+	// Form difference with previous filter output
+	diff_val = scaled_inp - qei_data_s.filt_val;
+
+	// Multiply difference by filter coefficient (alpha)
+	diff_val += qei_data_s.coef_err; // Add in diffusion error;
+	increment = (diff_val + QEI_HALF_COEF) >> QEI_COEF_BITS ; // Multiply by filter coef (with rounding)
+	qei_data_s.coef_err = diff_val - (increment << QEI_COEF_BITS); // Evaluate new quantisation error value 
+
+	qei_data_s.filt_val += increment; // Update (up-scaled) filtered output value
+
+	// Update mean value by down-scaling filtered output value
+	qei_data_s.filt_val += qei_data_s.scale_err; // Add in diffusion error;
+	out_val = (qei_data_s.filt_val + QEI_HALF_SCALE) >> QEI_SCALE_BITS; // Down-scale
+	qei_data_s.scale_err = qei_data_s.filt_val - (out_val << QEI_SCALE_BITS); // Evaluate new remainder value 
+
+	return out_val; // return filtered output value
+} // filter_velocity
+/*****************************************************************************/
 static void update_speed( // Update speed estimate from time period. (Angular_speed in RPM) 
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	unsigned abs_inc, // Absolute angle increment
@@ -418,29 +452,50 @@ static void update_speed( // Update speed estimate from time period. (Angular_sp
 	inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
 
 	// Update previous values
-	inp_qei_s.prev_inc =  abs_inc;
 	inp_qei_s.prev_diff = inp_qei_s.diff_time; 
 
 }	// update_speed
 /*****************************************************************************/
-static void update_velocity( // Update velocity estimate from time period. (Angular_speed in RPM) 
+static int update_velocity( // Returns updated velocity estimate from time period. (Angular_speed in RPM) 
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	unsigned abs_inc, // Absolute angle increment
-	unsigned ticks // ticks per QEI position (in Reference Frequency Cycles)
+	int ang_inc, // Absolute angle increment
+	unsigned inp_ticks // input (unsigned) ticks per QEI position (in Reference Frequency Cycles)
 )
 {
-	int const_val;
-	const_val = (TICKS_PER_MIN_PER_QEI * abs_inc) + inp_qei_s.speed_err; // Add diffusion error to constant;
+	int meas_veloc; // Measured angular velocity
+	int out_veloc; // Output (possibly filtered) angular velocity
+	int int_ticks = (int)inp_ticks; // Convert to an integer to make arithmetic work!-(
+	int ticks_rpm; // Ticks * Revolutions Per Min
 
-	assert(ticks > 0); // ERROR: invalid time difference
 
-	inp_qei_s.ang_speed = (const_val + (ticks >> 1)) / ticks;  // Evaluate speed
-	inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
+	assert(inp_ticks > 0); // ERROR: invalid time difference
 
-	// Update previous values
-	inp_qei_s.prev_inc =  abs_inc;
-	inp_qei_s.prev_diff = inp_qei_s.diff_time; 
+	ticks_rpm = ((int)TICKS_PER_MIN_PER_QEI * ang_inc) + inp_qei_s.veloc_err; // Add in diffusion error
 
+	// Add in appropriate offset to get correct rounding
+	if (0 < ang_inc)
+	{
+		ticks_rpm += (int_ticks >> 1);
+	} // if (0 < ang_inc)
+	else
+	{
+		ticks_rpm -= (int_ticks >> 1);
+	} // else !(0 < ang_inc)
+
+	meas_veloc = (ticks_rpm / int_ticks); // Evaluate (signed) angular_velocity of motor in RPM
+	inp_qei_s.veloc_err = ticks_rpm - (meas_veloc * int_ticks); // Evaluate new remainder value 
+
+	// Check if filter selected
+	if (QEI_FILTER)
+	{
+		out_veloc = filter_velocity( inp_qei_s ,meas_veloc );
+	} // if (QEI_FILTER)
+	else
+	{
+		out_veloc = meas_veloc;
+	} // else !(QEI_FILTER)
+
+	return out_veloc;
 }	// update_velocity
 /*****************************************************************************/
 static void check_for_missed_origin( // Check for missed origin, and update angular position info. if necessary
@@ -497,7 +552,6 @@ static void update_phase_state( // Update phase state
 		} // if (0 < inp_qei_s.t_dif_cur)
 		else
 		{ // 1st pass
-			inp_qei_s.prev_inc = 1;
 			inp_qei_s.prev_diff = inp_qei_s.diff_time;
 			inp_qei_s.t_dif_cur = inp_qei_s.diff_time;
 			inp_qei_s.t_dif_old = inp_qei_s.diff_time;
@@ -699,40 +753,6 @@ static void service_input_pins( // Service detected change on input pins
 	return;
 } // service_input_pins
 /*****************************************************************************/
-static int filter_velocity( // Smooths velocity estimate using low-pass filter
-	QEI_DATA_TYP &qei_data_s, // Reference to structure containing QEI parameters for one motor
-	int meas_veloc // Angular velocity of motor measured in Ticks/angle_position
-) // Returns filtered output value
-/* This is a 1st order IIR filter, it is configured as a low-pass filter, 
- * The input velocity value is up-scaled, to allow integer arithmetic to be used.
- * The output mean value is down-scaled by the same amount.
- * Error diffusion is used to keep control of systematic quantisation errors.
- */
-{
-	int scaled_inp = (meas_veloc << QEI_SCALE_BITS); // Upscaled QEI input value
-	int diff_val; // Difference between input and filtered output
-	int increment; // new increment to filtered output value
-	int out_val; // filtered output value
-
-
-	// Form difference with previous filter output
-	diff_val = scaled_inp - qei_data_s.filt_val;
-
-	// Multiply difference by filter coefficient (alpha)
-	diff_val += qei_data_s.coef_err; // Add in diffusion error;
-	increment = (diff_val + QEI_HALF_COEF) >> QEI_COEF_BITS ; // Multiply by filter coef (with rounding)
-	qei_data_s.coef_err = diff_val - (increment << QEI_COEF_BITS); // Evaluate new quantisation error value 
-
-	qei_data_s.filt_val += increment; // Update (up-scaled) filtered output value
-
-	// Update mean value by down-scaling filtered output value
-	qei_data_s.filt_val += qei_data_s.scale_err; // Add in diffusion error;
-	out_val = (qei_data_s.filt_val + QEI_HALF_SCALE) >> QEI_SCALE_BITS; // Down-scale
-	qei_data_s.scale_err = qei_data_s.filt_val - (out_val << QEI_SCALE_BITS); // Evaluate new remainder value 
-
-	return out_val; // return filtered output value
-} // filter_velocity
-/*****************************************************************************/
 #pragma unsafe arrays
 static void service_client_data_request( // Send processed QEI data to client
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
@@ -785,8 +805,6 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 	streaming chanend c_qei // Data channel to client (carries processed QEI data)
 )
 {
-	int meas_veloc; // Angular_velocity of motor in RPM
-	int tot_ang; // Total angle traversed
 	int diff_ang; // Difference angle
 	unsigned diff_time; // Difference time
 
@@ -797,33 +815,11 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 	if (diff_time > 100000)
 	{
 		diff_ang = inp_qei_s.tot_ang - inp_qei_s.prev_ang; // Angle change since last request
-		update_velocity( inp_qei_s ,abs(diff_ang) ,diff_time ); // Update speed value with new time difference
+		inp_qei_s.params.veloc = update_velocity( inp_qei_s ,diff_ang ,diff_time ); // Update speed value with new time difference
 
 		inp_qei_s.prev_filt = inp_qei_s.filt_time;
 		inp_qei_s.prev_ang = inp_qei_s.tot_ang;
 	} // if (diff_time > 0)
-
-	// Evaluate (signed) angular_velocity of motor in RPM
-	if (0 < inp_qei_s.ang_inc)
-	{
-		meas_veloc = inp_qei_s.ang_speed; // +ve
-	} // if (0 < inp_qei_s.ang_inc)
-	else
-	{
-		meas_veloc = -inp_qei_s.ang_speed; // -ve
-	} // else !(0 < inp_qei_s.ang_inc)
-
-	// Check if filter selected
-	if (QEI_FILTER)
-	{
-		int tmp_veloc = filter_velocity( inp_qei_s ,meas_veloc );
-
-		inp_qei_s.params.veloc = tmp_veloc; // NB XC ambiguous evaluation rule.
-	} // if (QEI_FILTER)
-	else
-	{
-		inp_qei_s.params.veloc = meas_veloc;
-	} // else !(QEI_FILTER)
 
 	inp_qei_s.params.rev_cnt = inp_qei_s.orig_cnt; //MB~ Depreciated
 	inp_qei_s.params.orig_cnt = inp_qei_s.orig_cnt;
