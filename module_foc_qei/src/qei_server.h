@@ -128,7 +128,7 @@
  * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
  * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
  */
-#define HALF_PERIOD 160 // Need to get down to 96
+#define HALF_PERIOD 255 // Need to get down to 96
 //MB~ #define HALF_PERIOD 96 // 192 Sample period) NB Number less than 256
 #define TICKS_PER_SAMP (HALF_PERIOD << 1) // NB Max 510
 
@@ -220,6 +220,8 @@ typedef struct QEI_DATA_TAG //
 	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 
+	int filt_time; // Time-stamp when filtered phase changes
+	int prev_filt; // Previous filtered phase change Time-stamp
 	int diff_time; // Difference between 2 adjacent time-stamps.
 	int prev_diff; // Previous Difference between 2 adjacent time-stamps.
 	int phase_index; // Converts [BA] phase value into circular index [0, 1, 2, 3]
@@ -237,6 +239,7 @@ typedef struct QEI_DATA_TAG //
 	int orig_cnt; // Counts number of origin detections (revolutions) of motor
 	int ang_cnt; // Counts angular position of motor (from origin)
 	int new_ang; // Counts angular position of motor (from origin)
+	int prev_ang; // Previous value of angular position
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
 	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident Negative spin)
 	int prev_orig; // Previous origin flag

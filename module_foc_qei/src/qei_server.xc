@@ -102,6 +102,8 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.id = inp_id; // Assign unique motor identifier
 	inp_qei_s.orig_cnt = 0; // Reset origin counter
 	inp_qei_s.ang_cnt = 0; // Reset counter indicating angular position of motor (from origin)
+	inp_qei_s.new_ang = 0; // Reset counter indicating angular position of motor (from origin)
+	inp_qei_s.prev_ang = 0; // Reset counter indicating previous angular position of motor (from origin)
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
 	inp_qei_s.ang_speed = 1;	// Default initial speed value
 	inp_qei_s.prev_inc = 0;
@@ -402,14 +404,15 @@ static void update_qei_state( // Update QEI state	by estimating angular position
 } // update_qei_state
 /*****************************************************************************/
 static void update_speed( // Update speed estimate from time period. (Angular_speed in RPM) 
-	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	unsigned abs_inc, // Absolute angle increment
+	unsigned ticks // ticks per QEI position (in Reference Frequency Cycles)
 )
 {
-	unsigned abs_inc = abs(inp_qei_s.ang_inc); // Absolute angle increment
-	unsigned ticks = inp_qei_s.diff_time; // ticks per QEI position (in Reference Frequency Cycles)
 	int const_val;
 	const_val = (TICKS_PER_MIN_PER_QEI * abs_inc) + inp_qei_s.speed_err; // Add diffusion error to constant;
 
+	assert(ticks > 0); // ERROR: invalid time difference
 
 	inp_qei_s.ang_speed = (const_val + (ticks >> 1)) / ticks;  // Evaluate speed
 	inp_qei_s.speed_err = const_val - (inp_qei_s.ang_speed * ticks); // Evaluate new remainder value 
@@ -492,7 +495,7 @@ static void update_phase_state( // Update phase state
 		// Check if we have good data
 		if (QEI_HI_POSI == abs(inp_qei_s.curr_state))
 		{
-			update_speed( inp_qei_s ); // Update speed value with new time difference
+			update_speed( inp_qei_s ,abs(inp_qei_s.ang_inc) ,inp_qei_s.diff_time ); // Update speed value with new time difference
 		} // if (QEI_BIT_ERR != inp_qei_s.curr_state)
 	
 		inp_qei_s.prev_time = inp_qei_s.curr_time; // Store time stamp
@@ -737,6 +740,46 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 	streaming chanend c_qei // Data channel to client (carries processed QEI data)
 )
 {
+	int meas_veloc; // Angular_velocity of motor in RPM
+	int tot_ang; // Total angle traversed
+	int diff_ang; // Difference angle
+	unsigned diff_time; // Difference time
+
+
+	diff_time = inp_qei_s.filt_time - inp_qei_s.prev_filt; // Time change since last request
+
+	// Check if speed update required
+	if (diff_time > 100000)
+	{
+		diff_ang = inp_qei_s.new_ang - inp_qei_s.prev_ang; // Angle change since last request
+		update_speed( inp_qei_s ,abs(diff_ang) ,diff_time ); // Update speed value with new time difference
+
+		inp_qei_s.prev_filt = inp_qei_s.filt_time;
+		inp_qei_s.prev_ang = inp_qei_s.new_ang;
+	} // if (diff_time > 0)
+
+	// Evaluate (signed) angular_velocity of motor in RPM
+	if (0 < inp_qei_s.ang_inc)
+	{
+		meas_veloc = inp_qei_s.ang_speed; // +ve
+	} // if (0 < inp_qei_s.ang_inc)
+	else
+	{
+		meas_veloc = -inp_qei_s.ang_speed; // -ve
+	} // else !(0 < inp_qei_s.ang_inc)
+
+	// Check if filter selected
+	if (QEI_FILTER)
+	{
+		int tmp_veloc = filter_velocity( inp_qei_s ,meas_veloc );
+
+		inp_qei_s.params.veloc = tmp_veloc; // NB XC ambiguous evaluation rule.
+	} // if (QEI_FILTER)
+	else
+	{
+		inp_qei_s.params.veloc = meas_veloc;
+	} // else !(QEI_FILTER)
+
 	inp_qei_s.params.rev_cnt = inp_qei_s.orig_cnt; //MB~ Depreciated
 	inp_qei_s.params.orig_cnt = inp_qei_s.orig_cnt;
 	inp_qei_s.params.theta = inp_qei_s.new_ang; //MB~ Depreciated
@@ -744,6 +787,7 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 	inp_qei_s.params.time = inp_qei_s.curr_time;
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
+
 } // service_rs_client_data_request
 /*****************************************************************************/
 #pragma unsafe arrays
@@ -861,6 +905,8 @@ printstr(" AI=");	printintln(inp_qei_s.ang_inc);
 release_lock();
 #endif //MB~
 		inp_qei_s.new_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
+
+		inp_qei_s.filt_time = inp_qei_s.curr_time; // Store time of filtered phase change
 
 		inp_qei_s.prev_phases = filt_phases;
 	} // if (inp_qei_s.prev_phases != filt_phases)
@@ -1106,7 +1152,10 @@ unsigned dbg_diff; // MB~
 		prev_pins[motor_cnt] = 0;  // Clear previous pin data
 		init_qei_data( all_qei_s[motor_cnt] ,inp_pins[motor_cnt] ,motor_cnt ); // Initialise QEI data for current motor
 
-		chronometer :> all_qei_s[motor_cnt].prev_time;	// Initialise previous time-stamp with sensible value
+		chronometer :> tmp_time;	// Get current time
+		all_qei_s[motor_cnt].filt_time = tmp_time; // Initialise time-stamp with sensible value
+		all_qei_s[motor_cnt].prev_filt = tmp_time; // Initialise time-stamp with sensible value
+		all_qei_s[motor_cnt].prev_time = tmp_time; // Initialise time-stamp with sensible value
 
 		// Use acknowledge command to signal to control-loop that initialisation is complete
 		acknowledge_qei_command( all_qei_s[motor_cnt] ,c_qei[motor_cnt] );
@@ -1124,7 +1173,7 @@ unsigned dbg_diff; // MB~
 		for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 		{
 			// Read 8 4-bit data samples from QEI port buffer
-			pb4_inp[motor_cnt] :> buf_data @ port16_cnt; // Get all buffer samples (8)
+ pb4_inp[motor_cnt] :> buf_data @ port16_cnt; // Get all buffer samples (8)
 
 			// Check Timing has been met
 			diff16_ticks = (PORT_TIME_TYP)(port16_cnt - prev16_cnt[motor_cnt]);
@@ -1136,9 +1185,9 @@ unsigned dbg_diff; // MB~
 
 			// Calculate timer correction. NB correctly handles wrapped timer values
 			port16_ticks = (PORT_TIME_TYP)(port16_cnt * TICKS_PER_SAMP); // Convert port sample count to Ref. clock ticks
-			diff16_ticks = (PORT_TIME_TYP)(low16_ticks - port16_ticks);
+			diff16_ticks = (PORT_TIME_TYP)(low16_ticks - port16_ticks); // Calculate correction
 			all_qei_s[motor_cnt].curr_time = approx32_ticks - (unsigned)diff16_ticks; // Correct 32-bit timer value
-// if (motor_cnt) xscope_int( 0 ,(all_qei_s[motor_cnt].curr_time & 0xffff) );
+// if (motor_cnt) xscope_int( 0 ,(all_qei_s[motor_cnt].curr_time & 0xfffff) );
 
 			// Read individual samples from buffer 
 			for (samp_cnt=0; samp_cnt<SAMPS_PER_LOOP; samp_cnt++)
