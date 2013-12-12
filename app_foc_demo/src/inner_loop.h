@@ -130,7 +130,7 @@
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
 
-#define REQ_VELOCITY 1000 // Requested motor speed
+#define REQ_VELOCITY 4000 // Requested motor speed
 #define SAFE_MAX_SPEED 5860 // This value is derived from the Optical Encoder Max. rate of 100kHz
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
@@ -166,7 +166,7 @@
 #define XTR_HALF_COEF (XTR_COEF_DIV >> 1) // Half of Coef divisor
 
 #define PROPORTIONAL 1 // Selects between 'proportional' and 'offset' error corrections
-#define VELOC_CLOSED 0 // MB~ 1 Selects fully closed loop (both velocity, Iq and Id)
+#define VELOC_CLOSED 1 // MB~ 1 Selects fully closed loop (both velocity, Iq and Id)
 #define IQ_ID_CLOSED 1 // MB~ 1 Selects Iq/Id closed-loop, velocity open-loop
 
 // TRANSIT state uses at least one electrical cycle per 1024 Vq values ...

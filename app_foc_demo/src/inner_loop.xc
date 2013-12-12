@@ -163,7 +163,7 @@ static void init_pid_data( // Initialise PID data
 
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1600000 ,1000 ,0 ); // NB Kp assumes target Id=0
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
-	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,6 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
+	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,3 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
 
 // MB~ EXTREMA and VELOCITY need a re-tune
 	init_pid_consts( motor_s.pid_consts[EXTREMA][ID_PID] ,0 ,0 ,0 );
@@ -287,6 +287,8 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.filt_adc = START_VOLT_OPENLOOP; // Preset filtered value to something sensible
 
 	motor_s.req_veloc = REQ_VELOCITY;
+if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY; //MB~
+
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 	motor_s.prev_veloc = 0; // Previous measured velocity
 
