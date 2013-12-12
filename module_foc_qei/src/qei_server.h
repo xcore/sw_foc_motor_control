@@ -137,6 +137,8 @@
 #define TICKS_PER_LOOP (TICKS_PER_SAMP << SAMP_LOOP_BITS) // 4080
 #define STAG_TICKS ((TICKS_PER_LOOP + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS) // 2040 NB Used to stagger servicing of port buffers
 
+#define MAX_TIME_ERR 4 // Max. No of consecutive timing errors allowed 
+
 #define DBG_SIZ 384
 				
 /** Different QEI phases */
@@ -231,7 +233,6 @@ typedef struct QEI_DATA_TAG //
 	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
 	ANG_INC_TYP ang_inc; // angular increment value
-//MB~ ANG_INC_TYP prev_inc; // Previous angular increment value
 	QEI_STATE_ETYP curr_state; // Current QEI state
 	QEI_STATE_ETYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
