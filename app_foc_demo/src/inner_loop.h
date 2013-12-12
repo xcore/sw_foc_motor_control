@@ -325,6 +325,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int prev_ang;	// Previous total angle traversed (NB accounts for multiple revolutions)
 	int est_theta;		// Estimated Angular position (from QEI data)
 	int est_revs;	// Estimated No of revolutions (No. of origin traversals) (from QEI data)
+	int prev_revs;	// Previous No of revolutions
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
 	int foc_theta;	// FOC theta value

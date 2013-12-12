@@ -84,14 +84,14 @@ typedef struct QEI_PERIOD_TAG // Structure containing Array of QEI Phase combina
 typedef struct QEI_PARAM_TAG // 
 {
 	int ang_cnt;	// Total angle traveresed since time=0
-	unsigned time; // Time-stamp for angular position change
-	int orig_cnt;	// Origin counter (No. of origin traversals)
+	unsigned period; // time (in ticks) to traverse one QEI phase (angular position)
 	int old_ang;	// Old angular position before origin reset to zero
 	int calib;		// Flag set when angular position is calibrated
 	ERROR_QEI_ENUM err;	// Flag set when Error condition detected
 
 	int theta;		// Angular position //MB~ Depreciated
 	int veloc;		// Angular velocity //MB~ Depreciated
+	int orig_cnt;	// Origin counter (No. of origin traversals) //MB~ Depreciated
 	int rev_cnt;	// Revolution counter (No. of origin traversals) //MB~ Depreciated
 	// WARNING: If editing this structure, also edit parameter_compare() in check_qei_test.xc 
 } QEI_PARAM_TYP;

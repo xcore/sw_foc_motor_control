@@ -100,12 +100,16 @@ static void init_qei_data( // Initialise  QEI data for one motor
 
 	inp_pins = 0xFF; // Set buffer for reading input pins to impossible value
 
-	inp_qei_s.params.theta = 0; // Reset angular position returned to client
-	inp_qei_s.params.rev_cnt = 0; // Reset revolution counter  returned to client
-	inp_qei_s.params.veloc = 0; // Clear velocity returned to client
+	inp_qei_s.params.orig_cnt = 0;
+	inp_qei_s.params.ang_cnt = 0;
+	inp_qei_s.params.period = 0;
 	inp_qei_s.params.old_ang = 0; // Clear old angular position (at reset)
 	inp_qei_s.params.calib = 0; // Clear calibration flag
 	inp_qei_s.params.err = QEI_ERR_OFF; // Clear error status flag returned to client
+
+	inp_qei_s.params.theta = 0; // MB~ Depreciated
+	inp_qei_s.params.rev_cnt = 0; //  MB~ Depreciated
+	inp_qei_s.params.veloc = 0; //  MB~ Depreciated
 
 	inp_qei_s.pin_changes = 0; // NB Initially this is used to count input-pin changes
 	inp_qei_s.id = inp_id; // Assign unique motor identifier
@@ -814,11 +818,12 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 	streaming chanend c_qei // Data channel to client (carries processed QEI data)
 )
 {
-	inp_qei_s.params.rev_cnt = inp_qei_s.orig_cnt; //MB~ Depreciated
+	inp_qei_s.params.ang_cnt = inp_qei_s.tot_ang;
+	inp_qei_s.params.period = (inp_qei_s.filt_time - inp_qei_s.prev_filt); // Time taken to traverse previous QEI phase
+
 	inp_qei_s.params.orig_cnt = inp_qei_s.orig_cnt;
 	inp_qei_s.params.theta = inp_qei_s.tot_ang; //MB~ Depreciated
-	inp_qei_s.params.ang_cnt = inp_qei_s.tot_ang;
-	inp_qei_s.params.time = inp_qei_s.filt_time;
+	inp_qei_s.params.rev_cnt = inp_qei_s.orig_cnt; //MB~ Depreciated
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
 } // service_rs_client_data_request
@@ -886,7 +891,7 @@ static unsigned update_one_phase( // Returns filtered phase value NB Only works 
 	inp_diff = ((int)scaled_inp - (int)phase_s.up_filt); // Evaluate input change
 	inp_diff += phase_s.filt_err; // Add diffusion error
 
- 	filt_corr = (inp_diff + QEI_HALF_VELOC) >> QEI_VELOC_BITS; // Multiply bt filter coeficient (1/4)
+ 	filt_corr = (inp_diff + QEI_HALF_VELOC) >> QEI_VELOC_BITS; // Multiply by filter coeficient (1/(2^n))
 	phase_s.filt_err = inp_diff - (filt_corr << QEI_VELOC_BITS); // Update filtering diffusion error
 
 	phase_s.up_filt = (int)phase_s.up_filt + filt_corr; // Update scaled filtered output
@@ -929,16 +934,9 @@ static void update_rs_phase_states( // Regular-Sampling: Update phase state
 
 		assert(inp_qei_s.ang_inc != 0); // Check for illegal values
 
-
-#ifdef MB
-acquire_lock(); 
-printstr(" OP=");	printint(inp_qei_s.prev_phases);
-printstr(" NP=");	printint(filt_phases);
-printstr(" AI=");	printintln(inp_qei_s.ang_inc);	
-release_lock();
-#endif //MB~
 		inp_qei_s.tot_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
 
+		inp_qei_s.prev_filt = inp_qei_s.filt_time; // Store previous phase change time
 		inp_qei_s.filt_time = inp_qei_s.curr_time; // Store time of filtered phase change
 
 		inp_qei_s.prev_phases = filt_phases;
@@ -1213,7 +1211,7 @@ unsigned dbg_diff; // MB~
 // chronometer :> dbg_strt; // MB~
 			// Check Timing has been met
 			diff16_ticks = (PORT_TIME_TYP)(port16_cnt - prev16_cnt[motor_cnt]);
-			assert(diff16_ticks == SAMPS_PER_LOOP); // ERROR: Input QEI port samples dropped (Increase HALF_PERIOD)
+//MB~			assert(diff16_ticks == SAMPS_PER_LOOP); // ERROR: Input QEI port samples dropped (Increase HALF_PERIOD)
 
 			// Build accurate 32-bit port time value (for newest sample) ...
 			chronometer :> approx32_ticks; // Get approximate 32-bit timer value
