@@ -1339,7 +1339,6 @@ static int get_velocity( // Returns updated velocity estimate from time period. 
 	int ticks_rpm; // Ticks * Revolutions Per Min
 
 
-
 	ticks_rpm = (int)TICKS_PER_MIN_PER_QEI + (int_period >> 1); // NB Intermediate value
 
 	// Account for sign: to get correct rounding
@@ -1360,6 +1359,7 @@ static int get_velocity( // Returns updated velocity estimate from time period. 
 	// Check if filter selected
 	if (QEI_FILTER)
 	{
+xscope_int( (8+motor_s.id) ,meas_veloc ); //MB~
 		out_veloc = filter_velocity( motor_s ,meas_veloc );
 	} // if (QEI_FILTER)
 	else

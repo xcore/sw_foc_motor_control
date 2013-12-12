@@ -128,7 +128,7 @@
  * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
  * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
  */
-#define HALF_PERIOD 88 // 88 Need to get down to 96
+#define HALF_PERIOD 96 // 88 Need to get down to 96
 //MB~ #define HALF_PERIOD 96 // 192 Sample period) NB Number less than 256
 #define TICKS_PER_SAMP (HALF_PERIOD << 1) // NB Max 510
 
@@ -137,7 +137,7 @@
 #define TICKS_PER_LOOP (TICKS_PER_SAMP << SAMP_LOOP_BITS) // 4080
 #define STAG_TICKS ((TICKS_PER_LOOP + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS) // 2040 NB Used to stagger servicing of port buffers
 
-#define MAX_TIME_ERR 4 // Max. No of consecutive timing errors allowed 
+#define MAX_TIME_ERR 1 // Max. No of consecutive timing errors allowed 
 
 #define DBG_SIZ 384
 				

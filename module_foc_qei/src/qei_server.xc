@@ -905,13 +905,12 @@ static unsigned update_one_phase( // Returns filtered phase value NB Only works 
 		out_phase = 1;
 	} // if (QEI_HALF_SCALE > phase_s.up_filt)
 
-// if (phase_s.phase_id & phase_s.motor_id) xscope_int( 9 ,phase_s.up_filt );
-
 	return (unsigned)out_phase;
 } // update_one_phase
 /*****************************************************************************/
 static void update_rs_phase_states( // Regular-Sampling: Update phase state
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	unsigned samp_time, // sample time-stamp (32-bit value)
 	unsigned cur_phases // Current set of phase values
 )
 {
@@ -926,7 +925,7 @@ static void update_rs_phase_states( // Regular-Sampling: Update phase state
 
 	filt_phases = (filt_b << 1) | filt_a; // Recombine phases
 
-	assert(filt_phases < QEI_PERIOD_LEN); // Check for illegal values
+//	assert(filt_phases < QEI_PERIOD_LEN); // Check for illegal values // MB~ Depreciated
 
 	if (inp_qei_s.prev_phases != filt_phases)
 	{ // Update angular position
@@ -935,7 +934,7 @@ static void update_rs_phase_states( // Regular-Sampling: Update phase state
 		inp_qei_s.tot_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
 
 		inp_qei_s.prev_filt = inp_qei_s.filt_time; // Store previous phase change time
-		inp_qei_s.filt_time = inp_qei_s.curr_time; // Store time of filtered phase change
+		inp_qei_s.filt_time = samp_time; // Store time of filtered phase change
 
 		inp_qei_s.prev_phases = filt_phases;
 	} // if (inp_qei_s.prev_phases != filt_phases)
@@ -954,6 +953,7 @@ static void update_first_phase( // Special case filter for 1st phase value
 /*****************************************************************************/
 static void service_rs_input_pins( // Regular-Sampling: Service detected change on input pins
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	unsigned samp_time, // sample time-stamp (32-bit value)
 	QEI_RAW_TYP inp_pins // Set of raw data values on input port pins
 )
 {
@@ -983,7 +983,7 @@ static void service_rs_input_pins( // Regular-Sampling: Service detected change 
 	} // if (0 == inp_qei_s.pin_changes)
 	else
 	{ // NOT first data
-		update_rs_phase_states( inp_qei_s ,cur_phases ); // update phase state
+		update_rs_phase_states( inp_qei_s ,samp_time ,cur_phases ); // update phase state
 	
 		// Check for change in origin state
 		if (orig_flg != inp_qei_s.prev_orig)
@@ -1146,6 +1146,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	int time_err = 0; // Timing error count
 
 	unsigned approx32_ticks; // Approximate port sample time (32-bit value)
+	unsigned exact32_ticks; // Exact port sample time (32-bit value)
 	PORT_TIME_TYP port16_cnt; // port sample counter (16-bit value)
 	PORT_TIME_TYP port16_ticks; // Port count converted to Reference clock ticks
 	PORT_TIME_TYP low16_ticks; // lowest 16-bits of 32-bit time (16-bit value)
@@ -1227,15 +1228,19 @@ unsigned dbg_diff; // MB~
 			// Calculate timer correction. NB correctly handles wrapped timer values
 			port16_ticks = (PORT_TIME_TYP)((port16_cnt * TICKS_PER_SAMP) + stag_off); // Convert port sample count to Ref. clock ticks
 			diff16_ticks = (PORT_TIME_TYP)(low16_ticks - port16_ticks); // Calculate correction
-			all_qei_s[motor_cnt].curr_time = approx32_ticks - (unsigned)diff16_ticks; // Correct 32-bit timer value
+			exact32_ticks = approx32_ticks - (unsigned)diff16_ticks; // Correct 32-bit timer value
+			exact32_ticks += ((unsigned)TICKS_PER_SAMP - (unsigned)TICKS_PER_LOOP); // Set time to end of previous buffer
 
 			// Read individual samples from buffer 
 			for (samp_cnt=0; samp_cnt<SAMPS_PER_LOOP; samp_cnt++)
 			{
+//MB~				all_qei_s[motor_cnt].curr_time = exact32_ticks; // Store sample time-stamp
+
 				tmp_pins = buf_data & QEI_SAMP_MASK; // mask out LS 4 bits
-				service_rs_input_pins( all_qei_s[motor_cnt] ,tmp_pins );
+				service_rs_input_pins( all_qei_s[motor_cnt] ,exact32_ticks ,tmp_pins );
 
 				buf_data >>= QEI_SAMP_BITS; // Shift next sample to LS end of buffer
+				exact32_ticks += (unsigned)TICKS_PER_SAMP; // Increment time to end next sample
 			} // for samp_cnt
 
 // chronometer :> dbg_end; // MB~
