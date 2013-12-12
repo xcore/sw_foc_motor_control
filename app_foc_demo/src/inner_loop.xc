@@ -1339,7 +1339,6 @@ static int get_velocity( // Returns updated velocity estimate from time period. 
 	int ticks_rpm; // Ticks * Revolutions Per Min
 
 
-	assert(inp_period > 0); // ERROR: invalid time difference
 
 	ticks_rpm = (int)TICKS_PER_MIN_PER_QEI + (int_period >> 1); // NB Intermediate value
 
@@ -1352,6 +1351,8 @@ static int get_velocity( // Returns updated velocity estimate from time period. 
 	{
 		ticks_rpm = motor_s.veloc_err - ticks_rpm; // Add in diffusion error
 	} // else !(0 < ang_inc)
+
+	assert(int_period != 0); // ERROR: Division by zero trap
 
 	meas_veloc = (ticks_rpm / int_period); // Evaluate (signed) angular_velocity of motor in RPM
 	motor_s.veloc_err = ticks_rpm - (meas_veloc * int_period); // Evaluate new remainder value 
@@ -1383,54 +1384,57 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	// Request latest QEI data
 	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
 
-	// The theta value should be in the range:  -180 <= theta < 180 degrees ...
-	motor_s.tot_ang = motor_s.qei_params.ang_cnt;	// Calculate total angle traversed
-
+	// Check for changed data
+	if (motor_s.qei_params.period > 0)
+	{
+		// The theta value should be in the range:  -180 <= theta < 180 degrees ...
+		motor_s.tot_ang = motor_s.qei_params.ang_cnt;	// Calculate total angle traversed
+	
 #if (LDO_MOTOR_SPIN)
-	// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
-	motor_s.qei_params.old_ang = -motor_s.qei_params.old_ang; // Invert old total angular value
-	motor_s.tot_ang = -motor_s.tot_ang; // Invert total angle
+		// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
+		motor_s.qei_params.old_ang = -motor_s.qei_params.old_ang; // Invert old total angular value
+		motor_s.tot_ang = -motor_s.tot_ang; // Invert total angle
 #endif // (LDO_MOTOR_SPIN)
-
-	rev_bits = (motor_s.tot_ang + motor_s.half_qei) >> QEI_RES_BITS; // Get revoultion bits
-	motor_s.est_theta = motor_s.tot_ang - (rev_bits << QEI_RES_BITS); // Calculate remaining angular position [-512..+511]
-
-	// Handle wrap-around ...
-	diff_revs = (signed char)(rev_bits - motor_s.est_revs); // Difference of Least Significant 8 bits
-	motor_s.est_revs += (int)diff_revs; // Update revolution counter with difference
-
-	// NB theta should now be in range [-(QEI_PER_REV/2) .. (QEI_PER_REV/2 - 1)]
-	assert(-motor_s.half_qei <= motor_s.est_theta); //MB~ Remove this trap when confident
-	assert(motor_s.est_theta < motor_s.half_qei);
-
-	diff_ang = motor_s.tot_ang - motor_s.prev_ang; // Form angle change since last request
-
-	// Check if velocity update required
-	if (diff_ang != 0)
-	{
-		motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,motor_s.qei_params.period ); // Update velocity estimate
-
-		motor_s.prev_ang = motor_s.tot_ang; // Store total angular position for next iteration
-	} // if (diff_ang != 0)
-
-#if (1 == VELOC_FILT) 
-	// Filter velocity. MB~ Need to investigate why velocity spikes occur
-
-	if (motor_s.est_veloc < (motor_s.prev_veloc - MAX_VELOC_INC))
-	{
-		motor_s.est_veloc = (motor_s.prev_veloc - MAX_VELOC_INC);
-	} // if (motor_s.est_veloc < (motor_s.prev_veloc - MAX_VELOC_INC))
-	else
-	{
-		if (motor_s.est_veloc > (motor_s.prev_veloc + MAX_VELOC_INC))
+	
+		rev_bits = (motor_s.tot_ang + motor_s.half_qei) >> QEI_RES_BITS; // Get revoultion bits
+		motor_s.est_theta = motor_s.tot_ang - (rev_bits << QEI_RES_BITS); // Calculate remaining angular position [-512..+511]
+	
+		// Handle wrap-around ...
+		diff_revs = (signed char)(rev_bits - motor_s.est_revs); // Difference of Least Significant 8 bits
+		motor_s.est_revs += (int)diff_revs; // Update revolution counter with difference
+	
+		// NB theta should now be in range [-(QEI_PER_REV/2) .. (QEI_PER_REV/2 - 1)]
+		assert(-motor_s.half_qei <= motor_s.est_theta); //MB~ Remove this trap when confident
+		assert(motor_s.est_theta < motor_s.half_qei);
+	
+		diff_ang = motor_s.tot_ang - motor_s.prev_ang; // Form angle change since last request
+	
+		// Check if velocity update required
+		if (diff_ang != 0)
 		{
-			motor_s.est_veloc = (motor_s.prev_veloc + MAX_VELOC_INC);
-		} // if (motor_s.est_veloc < (motor_s.prev_veloc + MAX_VELOC_INC))
-	} // else !(motor_s.est_veloc < (motor_s.prev_veloc -MAX_VELOC_INC ))
-
-	motor_s.prev_veloc = motor_s.est_veloc; // Update previous velocity
+			motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,motor_s.qei_params.period ); // Update velocity estimate
+	
+			motor_s.prev_ang = motor_s.tot_ang; // Store total angular position for next iteration
+		} // if (diff_ang != 0)
+	
+#if (1 == VELOC_FILT) 
+		// Filter velocity. MB~ Need to investigate why velocity spikes occur
+	
+		if (motor_s.est_veloc < (motor_s.prev_veloc - MAX_VELOC_INC))
+		{
+			motor_s.est_veloc = (motor_s.prev_veloc - MAX_VELOC_INC);
+		} // if (motor_s.est_veloc < (motor_s.prev_veloc - MAX_VELOC_INC))
+		else
+		{
+			if (motor_s.est_veloc > (motor_s.prev_veloc + MAX_VELOC_INC))
+			{
+				motor_s.est_veloc = (motor_s.prev_veloc + MAX_VELOC_INC);
+			} // if (motor_s.est_veloc < (motor_s.prev_veloc + MAX_VELOC_INC))
+		} // else !(motor_s.est_veloc < (motor_s.prev_veloc -MAX_VELOC_INC ))
+	
+		motor_s.prev_veloc = motor_s.est_veloc; // Update previous velocity
 #endif // VELOC_FILT
-
+	} // if (motor_s.qei_params.period > 0)
 } // get_qei_data
 /*****************************************************************************/
 #pragma unsafe arrays

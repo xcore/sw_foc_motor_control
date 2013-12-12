@@ -118,6 +118,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.tot_ang = 0; // Reset counter indicating total angular position of motor (since time=0)
 	inp_qei_s.prev_ang = 0; // Previous value of total angular position
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
+//MB~	inp_qei_s.prev_inc = 1; // Reset previous angular position increment. NB Use 1 or -1
 	inp_qei_s.ang_speed = 1;	// Default initial speed value
 	inp_qei_s.curr_state = QEI_BIT_ERR; // Initialise current QEI state
 	inp_qei_s.state_errs = 0; // Initialise counter for invalid QEI state transitions
@@ -932,7 +933,18 @@ static void update_rs_phase_states( // Regular-Sampling: Update phase state
 	{ // Update angular position
 		inp_qei_s.ang_inc = inp_qei_s.ang_lut.incs[inp_qei_s.prev_phases][filt_phases]; // Decode angular increment
 
-		assert(inp_qei_s.ang_inc != 0); // Check for illegal values
+#ifdef MB
+		// Check for illegal values
+		if (inp_qei_s.ang_inc == 0);
+		{
+			inp_qei_s.ang_inc = inp_qei_s.prev_inc;
+		} // if (inp_qei_s.ang_inc != 0);
+
+if (inp_qei_s.curr_time == inp_qei_s.prev_filt)
+{
+	xscope_int( (8+inp_qei_s.id) ,inp_qei_s.curr_time );
+}
+#endif // MB
 
 		inp_qei_s.tot_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
 
@@ -940,6 +952,7 @@ static void update_rs_phase_states( // Regular-Sampling: Update phase state
 		inp_qei_s.filt_time = inp_qei_s.curr_time; // Store time of filtered phase change
 
 		inp_qei_s.prev_phases = filt_phases;
+//MB~		inp_qei_s.prev_inc = inp_qei_s.ang_inc; // Store previous increment
 	} // if (inp_qei_s.prev_phases != filt_phases)
 
 	return;
@@ -1133,9 +1146,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	streaming chanend c_qei[], // Array of data channel to client (carries processed QEI data)
 	buffered port:32 in pb4_inp[NUMBER_OF_MOTORS] // Array of 32-bit buffered 4-bit input ports on which to receive test data
 )
-#define STAT_BITS 12
-#define NUM_STATS (1 << STAT_BITS)
-#define HALF_STATS (NUM_STATS >> 1)
+//MB~ #define MAX_TIME_ERR 8 // Maximum No of consecutive timing errors allowed 
 {
 	QEI_DATA_TYP all_qei_s[NUMBER_OF_MOTORS]; // Array of structures containing QEI parameters for all motor
 	QEI_RAW_TYP inp_pins[NUMBER_OF_MOTORS]; // Array of raw data values on input port pins
@@ -1148,6 +1159,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	int motor_cnt; // Motor counter
 	int samp_cnt; // Sample counter
 	int do_loop = 1;   // Flag set until loop-end condition found
+//MB~	int time_err = 0; // Timing error count
 
 	unsigned approx32_ticks; // Approximate port sample time (32-bit value)
 	PORT_TIME_TYP port16_cnt; // port sample counter (16-bit value)
@@ -1211,7 +1223,18 @@ unsigned dbg_diff; // MB~
 // chronometer :> dbg_strt; // MB~
 			// Check Timing has been met
 			diff16_ticks = (PORT_TIME_TYP)(port16_cnt - prev16_cnt[motor_cnt]);
-//MB~			assert(diff16_ticks == SAMPS_PER_LOOP); // ERROR: Input QEI port samples dropped (Increase HALF_PERIOD)
+
+#ifdef MB
+			if (diff16_ticks > SAMPS_PER_LOOP)
+			{
+				time_err++; // Increment error count
+				assert(time_err < MAX_TIME_ERR); // ERROR: Too many Input QEI port samples dropped (Increase HALF_PERIOD)
+			} // if (diff16_ticks > SAMPS_PER_LOOP)
+			else
+			{
+				if (time_err > 0) time_err--; // Decrement error count
+			} // if (diff16_ticks > SAMPS_PER_LOOP)
+#endif //MB~
 
 			// Build accurate 32-bit port time value (for newest sample) ...
 			chronometer :> approx32_ticks; // Get approximate 32-bit timer value

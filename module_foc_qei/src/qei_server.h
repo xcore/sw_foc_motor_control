@@ -128,7 +128,7 @@
  * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
  * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
  */
-#define HALF_PERIOD 88 // Need to get down to 96
+#define HALF_PERIOD 88 // 88 Need to get down to 96
 //MB~ #define HALF_PERIOD 96 // 192 Sample period) NB Number less than 256
 #define TICKS_PER_SAMP (HALF_PERIOD << 1) // NB Max 510
 
@@ -218,11 +218,11 @@ typedef struct QEI_DATA_TAG //
 	unsigned prev_phases; // Previous phase values
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
+	unsigned filt_time; // Time-stamp when filtered phase changes
+	unsigned prev_filt; // Previous filtered phase change Time-stamp
 	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 
-	int filt_time; // Time-stamp when filtered phase changes
-	int prev_filt; // Previous filtered phase change Time-stamp
 	int diff_time; // Difference between 2 adjacent time-stamps.
 	int prev_diff; // Previous Difference between 2 adjacent time-stamps.
 	int phase_index; // Converts [BA] phase value into circular index [0, 1, 2, 3]
@@ -231,6 +231,7 @@ typedef struct QEI_DATA_TAG //
 	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
 	ANG_INC_TYP ang_inc; // angular increment value
+//MB~ ANG_INC_TYP prev_inc; // Previous angular increment value
 	QEI_STATE_ETYP curr_state; // Current QEI state
 	QEI_STATE_ETYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
