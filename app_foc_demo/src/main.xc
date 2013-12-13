@@ -19,9 +19,11 @@ on tile[INTERFACE_TILE]: LCD_INTERFACE_TYP lcd_ports = { PORT_SPI_CLK, PORT_SPI_
 on tile[INTERFACE_TILE]: in port p_btns = PORT_BUTTONS;
 on tile[INTERFACE_TILE]: out port p_leds = PORT_LEDS;
 
+// Clock Blocks
+on tile[MOTOR_TILE]: clock pwm_clk = XS1_CLKBLK_3;
+on tile[MOTOR_TILE]: clock qei_clks[NUMBER_OF_MOTORS] = { XS1_CLKBLK_4 ,XS1_CLKBLK_5 };
+
 // PWM ports
-on tile[MOTOR_TILE]: clock qei_clk = XS1_CLKBLK_4;
-on tile[MOTOR_TILE]: clock pwm_clk = XS1_CLKBLK_5;
 on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
 on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
 	= {	{PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
@@ -39,7 +41,7 @@ on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
 on tile[MOTOR_TILE]: port in p4_hall[NUMBER_OF_MOTORS] = { PORT_M1_HALLSENSOR ,PORT_M2_HALLSENSOR };
 
 // QEI ports
-on tile[MOTOR_TILE]: buffered in port:4 pb4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER, PORT_M2_ENCODER };
+on tile[MOTOR_TILE]: buffered port:4 in pb4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER, PORT_M2_ENCODER };
 
 // Watchdog port
 on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used to control WatchDog chip
@@ -48,17 +50,19 @@ on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used 
 /*****************************************************************************/
 void xscope_user_init()
 {
-	xscope_register( 10
-		,XSCOPE_CONTINUOUS, "ADC_U", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "ADC_F", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "ADC_D", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "ADC_Q", XSCOPE_INT , "n"
+	xscope_register( 12
+		,XSCOPE_CONTINUOUS, "mId_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "mId_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "mIq_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "mIq_1", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Vel_0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Vel_1", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "The_0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "The_1", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "RUN_0", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "RUN_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "rVd_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "rVd_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "rVq_0", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "rVq_1", XSCOPE_INT , "n"
 /*
 		,XSCOPE_CONTINUOUS, "Eficny", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "set_Vd", XSCOPE_INT , "n"
@@ -129,7 +133,7 @@ int main ( void ) // Program Entry Point
 			foc_pwm_config( pb32_pwm_hi ,pb32_pwm_lo ,p16_adc_sync ,pwm_clk );
 
 			// Configure QEI ports to run from common clock
-			foc_qei_config( pb4_qei ,qei_clk );
+			foc_qei_config( pb4_qei ,qei_clks[0] );
 
 			par {
 				// Loop through all motors
