@@ -1145,15 +1145,11 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	int do_loop = 1;   // Flag set until loop-end condition found
 	int time_err = 0; // Timing error count
 
-	unsigned approx32_ticks; // Approximate port sample time (32-bit value)
-	unsigned exact32_ticks; // Exact port sample time (32-bit value)
+	unsigned samp32_time; // sample time-stamp (32-bit value) (with fixed delay)
 	PORT_TIME_TYP port16_cnt; // port sample counter (16-bit value)
-	PORT_TIME_TYP port16_ticks; // Port count converted to Reference clock ticks
-	PORT_TIME_TYP low16_ticks; // lowest 16-bits of 32-bit time (16-bit value)
 	PORT_TIME_TYP diff16_ticks; // difference between port times (16-bit value)
 	PORT_TIME_TYP prev16_cnt[NUMBER_OF_MOTORS]; // previous port sample cnt (16-bit value)
 	unsigned buf_data = 0;
-	unsigned tmp_time = 0;
 
 #ifdef MB
 unsigned dbg_orig = 0; // MB~
@@ -1171,8 +1167,8 @@ unsigned dbg_diff; // MB~
 	if(0 == _is_simulation())
 	{ // Running on real hardware
 		// Wait 128ms for UV_FAULT pin to finish toggling
-		chronometer :> approx32_ticks; 
-		chronometer when timerafter(approx32_ticks + (MILLI_SEC << 7)) :> void;
+		chronometer :> samp32_time; 
+		chronometer when timerafter(samp32_time + (MILLI_SEC << 7)) :> void;
 	} // if (0 == _is_simulation())
 
 	for (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; ++motor_cnt) 
@@ -1180,17 +1176,17 @@ unsigned dbg_diff; // MB~
 		prev_pins[motor_cnt] = 0;  // Clear previous pin data
 		init_qei_data( all_qei_s[motor_cnt] ,inp_pins[motor_cnt] ,motor_cnt ); // Initialise QEI data for current motor
 
-		chronometer :> tmp_time;	// Get current time
-		all_qei_s[motor_cnt].filt_time = tmp_time; // Initialise time-stamp with sensible value
-		all_qei_s[motor_cnt].prev_filt = tmp_time; // Initialise time-stamp with sensible value
-		all_qei_s[motor_cnt].prev_time = tmp_time; // Initialise time-stamp with sensible value
+		chronometer :> samp32_time;	// Get current time
+		all_qei_s[motor_cnt].filt_time = samp32_time; // Initialise time-stamp with sensible value
+		all_qei_s[motor_cnt].prev_filt = samp32_time; // Initialise time-stamp with sensible value
+		all_qei_s[motor_cnt].prev_time = samp32_time; // Initialise time-stamp with sensible value
 
 		// Use acknowledge command to signal to control-loop that initialisation is complete
 		acknowledge_qei_command( all_qei_s[motor_cnt] ,c_qei[motor_cnt] );
 
-		{buf_data ,tmp_time} = partin_timestamped( pb4_inp[motor_cnt] ,4 ); // Read 1st (dummy) value to get timestamp
+		{buf_data ,samp32_time} = partin_timestamped( pb4_inp[motor_cnt] ,4 ); // Read 1st (dummy) value to get timestamp
 
-		prev16_cnt[motor_cnt] = (PORT_TIME_TYP)tmp_time;
+		prev16_cnt[motor_cnt] = (PORT_TIME_TYP)samp32_time;
 	} // for motor_cnt
 
 // chronometer :> dbg_orig; // MB~
@@ -1203,6 +1199,7 @@ unsigned dbg_diff; // MB~
 		{
 			// Read 8 4-bit data samples from QEI port buffer
 			pb4_inp[motor_cnt] :> buf_data @ port16_cnt; // Get all buffer samples (8)
+			chronometer :> samp32_time; // Get 32-bit timer value to use as sample time-stamp
 // xscope_int( (8+motor_cnt) ,port16_cnt ); //MB~
 
 // chronometer :> dbg_strt; // MB~
@@ -1221,26 +1218,16 @@ unsigned dbg_diff; // MB~
 				if (time_err > 0) time_err--; // Decrement error count
 			} // if (diff16_ticks > SAMPS_PER_LOOP)
 
-			// Build accurate 32-bit port time value (for newest sample) ...
-			chronometer :> approx32_ticks; // Get approximate 32-bit timer value
-			low16_ticks = (PORT_TIME_TYP)(approx32_ticks & PORT_TIME_MASK); // Get lowest 16-bits of 32-bit timer
-
-			// Calculate timer correction. NB correctly handles wrapped timer values
-			port16_ticks = (PORT_TIME_TYP)((port16_cnt * TICKS_PER_SAMP) + stag_off); // Convert port sample count to Ref. clock ticks
-			diff16_ticks = (PORT_TIME_TYP)(low16_ticks - port16_ticks); // Calculate correction
-			exact32_ticks = approx32_ticks - (unsigned)diff16_ticks; // Correct 32-bit timer value
-			exact32_ticks += ((unsigned)TICKS_PER_SAMP - (unsigned)TICKS_PER_LOOP); // Set time to end of previous buffer
-
 			// Read individual samples from buffer 
 			for (samp_cnt=0; samp_cnt<SAMPS_PER_LOOP; samp_cnt++)
 			{
-//MB~				all_qei_s[motor_cnt].curr_time = exact32_ticks; // Store sample time-stamp
-
 				tmp_pins = buf_data & QEI_SAMP_MASK; // mask out LS 4 bits
-				service_rs_input_pins( all_qei_s[motor_cnt] ,exact32_ticks ,tmp_pins );
+
+				// NB As only the difference between time-stamps is used, the fixed delay cancels out
+				service_rs_input_pins( all_qei_s[motor_cnt] ,samp32_time ,tmp_pins );
 
 				buf_data >>= QEI_SAMP_BITS; // Shift next sample to LS end of buffer
-				exact32_ticks += (unsigned)TICKS_PER_SAMP; // Increment time to end next sample
+				samp32_time += (unsigned)TICKS_PER_SAMP; // Increment time to end next sample
 			} // for samp_cnt
 
 // chronometer :> dbg_end; // MB~
