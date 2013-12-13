@@ -1359,7 +1359,6 @@ static int get_velocity( // Returns updated velocity estimate from time period. 
 	// Check if filter selected
 	if (QEI_FILTER)
 	{
-xscope_int( (8+motor_s.id) ,meas_veloc ); //MB~
 		out_veloc = filter_velocity( motor_s ,meas_veloc );
 	} // if (QEI_FILTER)
 	else
