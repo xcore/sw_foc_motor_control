@@ -23,6 +23,101 @@ static void do_qei_port_config( // Configure one QEI input port
 	configure_in_port( pb4_QEI ,qei_clk );
 } // do_qei_port_config
 /*****************************************************************************/
+static void estimate_error_status( // Update estimate of error status based on new data
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	ERROR_QEI_ENUM new_err // Newly acquired error flag
+)
+// We require MAX_QEI_STATUS_ERR consecutive new errors before error estimate is set
+{
+	// Check if status changed
+	if (QEI_ERR_ON == new_err)
+	{ // new error detected
+
+		// Check previous error estimate
+		if (QEI_ERR_OFF == inp_qei_s.params.err)
+		{ // NO previous detected Error
+			inp_qei_s.status_errs++; // Increment new error count
+
+			// Check if too many errors occured
+			if (MAX_QEI_STATUS_ERR <=  inp_qei_s.status_errs)
+			{
+				inp_qei_s.params.err = QEI_ERR_ON; // Switch ON Error Estimate
+			} // if (MAX_QEI_STATUS_ERR <=  inp_qei_s.status_errs)
+		} // if (QEI_ERR_OFF == inp_qei_s.params.err)
+	} // if (QEI_ERR_ON == new_err)
+	else
+	{ // NO new error detected
+
+		// Check previous error estimate
+		if (QEI_ERR_ON == inp_qei_s.params.err)
+		{ // Already detected Error
+			inp_qei_s.status_errs--; // Decrement new error count
+
+			// Check if all errors cleared
+			if (0 >=  inp_qei_s.status_errs)
+			{
+				inp_qei_s.params.err = QEI_ERR_OFF; // Switch OFF Error Estimate
+			} // if (0 >=  inp_qei_s.status_errs)
+		} // if (QEI_ERR_ON == inp_qei_s.params.err)
+	} // else !(QEI_ERR_ON == new_err)
+
+} // estimate_error_status
+/*****************************************************************************/
+#pragma unsafe arrays
+static void acknowledge_qei_command( // Acknowledge QEI command
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	streaming chanend c_qei // Data channel to client (carries processed QEI data)
+)
+{
+	c_qei <: QEI_CMD_ACK; // Transmit QEI parameters to Client
+} // acknowledge_qei_command
+#if (QEI_DBG)
+/*****************************************************************************/
+static void print_smp_dbg( // MB~ Print debug sample
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	DBG_SMP_TYP dbg_smp_s // Reference to structure containing debug sample info
+)
+{
+	printstr( dbg_smp_s.dbg_str ); 
+
+	printstr(" TD="); printint( dbg_smp_s.diff_time ); 
+	printstr(" LI="); printint( dbg_smp_s.lo_inc ); 
+	printstr(" HI="); printint( dbg_smp_s.hi_inc );
+	printstr(" PI="); printint( dbg_smp_s.phase_inc ); 
+	printstr(" AI="); printint( dbg_smp_s.ang_inc ); 
+	printstr(" CS="); printint( dbg_smp_s.curr_state ); 
+	printstr(" CFD="); printint( dbg_smp_s.confid ); 
+	printstr(" VEL="); printint( dbg_smp_s.veloc ); 
+	printstrln("");
+} // print_smp_dbg
+/*****************************************************************************/
+static void print_all_dbg( // MB~ Print all debug info.
+	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
+)
+{
+	int dbg_cnt;
+
+
+	acquire_lock(); 
+
+	for(dbg_cnt=0; dbg_cnt<inp_qei_s.dd.cnt; dbg_cnt++)
+	{ 
+		printint(dbg_cnt); printstr(": "); 
+		print_smp_dbg( inp_qei_s ,inp_qei_s.dd.ss[dbg_cnt] );  
+	} // for dbg_cnt
+
+	release_lock();
+} // print_all_dbg
+#endif //(QEI_DBG)
+/*****************************************************************************/
+#if (1 == QEI_RS_MODE)  // Following functions for Regular-Sampling Mode
+/*****************************************************************************/
+
+
+
+/*****************************************************************************/
+#else // if (1 == QEI_RS_MODE)  // Following functions for Edge-Trigger Mode
+/*****************************************************************************/
 void foc_qei_config(  // Configure all QEI ports
 	buffered QEI_PORT in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
 	clock qei_clks[NUMBER_OF_MOTORS] // Array of clocks for generating accurate QEI timing (one per input port)
@@ -499,46 +594,6 @@ static void update_origin_state( // Update origin state
 	return;
 } // update_origin_state
 /*****************************************************************************/
-static void estimate_error_status( // Update estimate of error status based on new data
-	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	ERROR_QEI_ENUM new_err // Newly acquired error flag
-)
-// We require MAX_QEI_STATUS_ERR consecutive new errors before error estimate is set
-{
-	// Check if status changed
-	if (QEI_ERR_ON == new_err)
-	{ // new error detected
-
-		// Check previous error estimate
-		if (QEI_ERR_OFF == inp_qei_s.params.err)
-		{ // NO previous detected Error
-			inp_qei_s.status_errs++; // Increment new error count
-
-			// Check if too many errors occured
-			if (MAX_QEI_STATUS_ERR <=  inp_qei_s.status_errs)
-			{
-				inp_qei_s.params.err = QEI_ERR_ON; // Switch ON Error Estimate
-			} // if (MAX_QEI_STATUS_ERR <=  inp_qei_s.status_errs)
-		} // if (QEI_ERR_OFF == inp_qei_s.params.err)
-	} // if (QEI_ERR_ON == new_err)
-	else
-	{ // NO new error detected
-
-		// Check previous error estimate
-		if (QEI_ERR_ON == inp_qei_s.params.err)
-		{ // Already detected Error
-			inp_qei_s.status_errs--; // Decrement new error count
-
-			// Check if all errors cleared
-			if (0 >=  inp_qei_s.status_errs)
-			{
-				inp_qei_s.params.err = QEI_ERR_OFF; // Switch OFF Error Estimate
-			} // if (0 >=  inp_qei_s.status_errs)
-		} // if (QEI_ERR_ON == inp_qei_s.params.err)
-	} // else !(QEI_ERR_ON == new_err)
-
-} // estimate_error_status
-/*****************************************************************************/
 static void service_input_pins( // Service detected change on input pins
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	QEI_RAW_TYP inp_pins // Set of raw data values on input port pins
@@ -699,53 +754,6 @@ static void service_client_data_request( // Send processed QEI data to client
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
 } // service_client_data_request
-/*****************************************************************************/
-#pragma unsafe arrays
-static void acknowledge_qei_command( // Acknowledge QEI command
-	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	streaming chanend c_qei // Data channel to client (carries processed QEI data)
-)
-{
-	c_qei <: QEI_CMD_ACK; // Transmit QEI parameters to Client
-} // acknowledge_qei_command
-#if (QEI_DBG)
-/*****************************************************************************/
-static void print_smp_dbg( // MB~ Print debug sample
-	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	DBG_SMP_TYP dbg_smp_s // Reference to structure containing debug sample info
-)
-{
-	printstr( dbg_smp_s.dbg_str ); 
-
-	printstr(" TD="); printint( dbg_smp_s.diff_time ); 
-	printstr(" LI="); printint( dbg_smp_s.lo_inc ); 
-	printstr(" HI="); printint( dbg_smp_s.hi_inc );
-	printstr(" PI="); printint( dbg_smp_s.phase_inc ); 
-	printstr(" AI="); printint( dbg_smp_s.ang_inc ); 
-	printstr(" CS="); printint( dbg_smp_s.curr_state ); 
-	printstr(" CFD="); printint( dbg_smp_s.confid ); 
-	printstr(" VEL="); printint( dbg_smp_s.veloc ); 
-	printstrln("");
-} // print_smp_dbg
-/*****************************************************************************/
-static void print_all_dbg( // MB~ Print all debug info.
-	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
-)
-{
-	int dbg_cnt;
-
-
-	acquire_lock(); 
-
-	for(dbg_cnt=0; dbg_cnt<inp_qei_s.dd.cnt; dbg_cnt++)
-	{ 
-		printint(dbg_cnt); printstr(": "); 
-		print_smp_dbg( inp_qei_s ,inp_qei_s.dd.ss[dbg_cnt] );  
-	} // for dbg_cnt
-
-	release_lock();
-} // print_all_dbg
-#endif //(QEI_DBG)
 /*****************************************************************************/
 #pragma unsafe arrays
 void foc_qei_do_single( // Get QEI data from motor and send to client
@@ -1019,4 +1027,6 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 
 	return;
 } // foc_qei_do_multiple
+/*****************************************************************************/
+#endif // else !(1 == QEI_RS_MODE)
 /*****************************************************************************/
