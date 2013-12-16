@@ -113,7 +113,7 @@ static void print_all_dbg( // MB~ Print all debug info.
 #if (1 == QEI_RS_MODE)  // Following functions for Regular-Sampling Mode
 /*****************************************************************************/
 void foc_qei_config(  // Configure all QEI ports
-	buffered port:4 in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
+	buffered QEI_PORT in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
 	clock qei_clks[NUMBER_OF_MOTORS] // Array of clocks for generating accurate QEI timing (one per input port)
 )
 {
@@ -450,7 +450,7 @@ unsigned dbg_diff; // MB~
 
 
 	acquire_lock(); 
-	printstrln("                                             QEI Server Starts");
+	printstrln("                                          QEI RS_Server Starts");
 	release_lock();
 
 	// Check if we are running on the simulator
@@ -1355,7 +1355,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	int do_loop = 1;   // Flag set until loop-end condition found
 
 	acquire_lock(); 
-	printstrln("                                             QEI Server Starts");
+	printstrln("                                          QEI ET_Server Starts");
 	release_lock();
 
 {
