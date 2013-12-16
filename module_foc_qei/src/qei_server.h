@@ -220,8 +220,8 @@ typedef struct QEI_DATA_TAG //
 	unsigned prev_phases; // Previous phase values
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
-	unsigned filt_time; // Time-stamp when filtered phase changes
-	unsigned prev_filt; // Previous filtered phase change Time-stamp
+	unsigned change_time; // Time-stamp when valid phase change detected
+	unsigned prev_change; // Previous valid phase change Time-stamp
 	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 

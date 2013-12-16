@@ -1475,10 +1475,11 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 		find_hall_origin( motor_s );
 	} // if (0 == motor_s.hall_found)
 
-#if (1 == QEI_RS_MODE)
 	// Regular-Sampling Mode
 
 	get_qei_data( motor_s ,c_qei );
+#ifdef MB
+#if (1 == QEI_RS_MODE)
 #else // if (1 == QEI_RS_MODE)
 	// Edge-Trigger Mode
 
@@ -1523,6 +1524,7 @@ motor_s.est_theta = motor_s.tot_ang - (motor_s.est_revs << QEI_RES_BITS);
 #endif // (LDO_MOTOR_SPIN)
 
 #endif // else !(1 == QEI_RS_MODE)
+#endif //MB~
 
 if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
