@@ -311,6 +311,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
 	MOTOR_STATE_ENUM state; // Current motor state
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
+	int est_veloc;	// Estimated angular velocity (from QEI data)
 	int req_veloc;	// Requested (target) angular velocity set by the user/comms interface
 	int half_veloc;	// Half requested angular velocity
 	int prev_veloc;	// previous velocity
@@ -321,6 +322,9 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int prev_Id;	// previous target 'radial' current value
 	int tot_ang;	// Total angle traversed (NB accounts for multiple revolutions)
 	int prev_ang;	// Previous total angle traversed (NB accounts for multiple revolutions)
+	int est_theta;		// Estimated Angular position (from QEI data)
+	int est_revs;	// Estimated No of revolutions (No. of origin traversals) (from QEI data)
+	int prev_revs;	// Previous No of revolutions
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
 	int foc_theta;	// FOC theta value
@@ -351,6 +355,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	timer tymer;	// Timer
 	unsigned prev_pwm_time; 	// previous open-loop time stamp
+	unsigned prev_qei_time; 	// Previous QEI time-stamp
 
 	int filt_adc; // filtered ADC value
 	int coef_err; // Coefficient diffusion error
