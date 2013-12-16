@@ -172,7 +172,7 @@ typedef struct QEI_DATA_TAG //
 	ALL_DBG_TYP dd; // All Debug data
 #endif // QEI_DBG
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
-	QEI_PHASE_TYP inv_phase;	// Structure containing all inverse QEI phase values;
+	QEI_PERIOD_TYP inv_phase;	// Structure containing all inverse QEI phase values;
 	unsigned prev_phases; // Previous phase values
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
