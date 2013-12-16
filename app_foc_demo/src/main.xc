@@ -41,7 +41,7 @@ on tile[MOTOR_TILE]: clock adc_xclk = XS1_CLKBLK_2; // Internal XMOS clock
 on tile[MOTOR_TILE]: port in p4_hall[NUMBER_OF_MOTORS] = { PORT_M1_HALLSENSOR ,PORT_M2_HALLSENSOR };
 
 // QEI ports
-on tile[MOTOR_TILE]: buffered port:4 in pb4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER, PORT_M2_ENCODER };
+on tile[MOTOR_TILE]: buffered QEI_PORT in pb4_qei[NUMBER_OF_MOTORS] = { PORT_M1_ENCODER, PORT_M2_ENCODER };
 
 // Watchdog port
 on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used to control WatchDog chip
@@ -133,7 +133,7 @@ int main ( void ) // Program Entry Point
 			foc_pwm_config( pb32_pwm_hi ,pb32_pwm_lo ,p16_adc_sync ,pwm_clk );
 
 			// Configure QEI ports to run from common clock
-			foc_qei_config( pb4_qei ,qei_clks[0] );
+			foc_qei_config( pb4_qei ,qei_clks );
 
 			par {
 				// Loop through all motors

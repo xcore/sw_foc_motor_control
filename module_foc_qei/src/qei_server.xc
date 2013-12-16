@@ -16,7 +16,7 @@
 
 /*****************************************************************************/
 static void do_qei_port_config( // Configure one QEI input port
-	buffered port:4 in pb4_QEI, // buffered 4-bit input ports (carries raw QEI motor data)
+	buffered QEI_PORT in pb4_QEI, // buffered 4-bit input ports (carries raw QEI motor data)
 	clock qei_clk 
 )
 {
@@ -24,8 +24,8 @@ static void do_qei_port_config( // Configure one QEI input port
 } // do_qei_port_config
 /*****************************************************************************/
 void foc_qei_config(  // Configure all QEI ports
-	buffered port:4 in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
-	clock qei_clk // clock for generating accurate QEI timing
+	buffered QEI_PORT in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
+	clock qei_clks[NUMBER_OF_MOTORS] // Array of clocks for generating accurate QEI timing (one per input port)
 )
 {
 	timer chronometer; // H/W timer
@@ -33,12 +33,12 @@ void foc_qei_config(  // Configure all QEI ports
 	int motor_cnt; // motor counter
 
 
- 	configure_clock_rate( qei_clk ,PLATFORM_REFERENCE_MHZ ,1 ); // Configure clock rate to PLATFORM_REFERENCE_MHZ/1 (100 MHz)
+ 	configure_clock_rate( qei_clks[0] ,PLATFORM_REFERENCE_MHZ ,1 ); // Configure clock rate to PLATFORM_REFERENCE_MHZ/1 (100 MHz)
 
 	// Loop through all ports to be configured
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{
-		do_qei_port_config( pb4_QEI[motor_cnt] ,qei_clk ); // configure current port
+		do_qei_port_config( pb4_QEI[motor_cnt] ,qei_clks[0] ); // configure current port
 	} // for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
 
 	// Once all ports configured, synchronise port-timers with reference clock
@@ -47,7 +47,7 @@ void foc_qei_config(  // Configure all QEI ports
 	big_ticks += 0x20000;														// Step on time by 2 port-timer cycles
 	chronometer when timerafter(big_ticks) :> void;	// Wait until synchronisation time
 
-	start_clock( qei_clk ); // Start common QEI clock, 
+	start_clock( qei_clks[0] ); // Start common QEI clock, 
 } // foc_qei_config
 /*****************************************************************************/
 static void init_qei_data( // Initialise  QEI data for one motor
@@ -751,7 +751,7 @@ static void print_all_dbg( // MB~ Print all debug info.
 void foc_qei_do_single( // Get QEI data from motor and send to client
 	int motor_id, // Unique Motor identifier	
 	streaming chanend c_qei, // Array of data channel to client (carries processed QEI data)
-	buffered port:4 in pb4_QEI // Array of buffered 4-bit input ports (carries raw QEI motor data)
+	buffered QEI_PORT in pb4_QEI // Array of buffered 4-bit input ports (carries raw QEI motor data)
 )
 #define STAT_BITS 12
 #define NUM_STATS (1 << STAT_BITS)
@@ -872,7 +872,7 @@ void foc_qei_do_single( // Get QEI data from motor and send to client
 #pragma unsafe arrays
 void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	streaming chanend c_qei[], // Array of data channel to client (carries processed QEI data)
-	buffered port:4 in pb4_QEI[NUMBER_OF_MOTORS] // Array of buffered 4-bit input ports (carries raw QEI motor data)
+	buffered QEI_PORT in pb4_QEI[NUMBER_OF_MOTORS] // Array of buffered 4-bit input ports (carries raw QEI motor data)
 )
 #define STAT_BITS 12
 #define NUM_STATS (1 << STAT_BITS)

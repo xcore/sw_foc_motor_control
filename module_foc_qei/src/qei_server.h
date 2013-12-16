@@ -122,7 +122,32 @@
 #define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
 #define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
 
+/* HALF_PERIOD determines the clock frequency for port sampling. 
+ * The sampling period must allow enough time (inbetween samples) for processing
+ * Currently this is about 660..680 cycles per 32-bit buffer. 
+ * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
+ * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
+ */
+#define HALF_PERIOD 90 // (Min 87)
+//MB~ #define HALF_PERIOD 96 // 192 Sample period) NB Number less than 256
+#define TICKS_PER_SAMP (HALF_PERIOD << 1) // NB Max 510
+
+#define SAMP_LOOP_BITS 3
+#define SAMPS_PER_LOOP (1 << SAMP_LOOP_BITS) // 8
+#define TICKS_PER_LOOP (TICKS_PER_SAMP << SAMP_LOOP_BITS) // 4080
+#define STAG_TICKS ((TICKS_PER_LOOP + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS) // 2040 NB Used to stagger servicing of port buffers
+
+#define MAX_TIME_ERR 1 // Max. No of consecutive timing errors allowed 
+
 #define DBG_SIZ 384
+				
+/** Different QEI phases */
+typedef enum QEI_PHASE_ETAG
+{
+  QEI_PHASE_A = 0,  // Phase_A identifier
+  QEI_PHASE_B,  // Phase_A identifier
+	NUM_QEI_PHASES // Number of different QEI Phase signals
+} QEI_PHASE_ETYP;
 
 // WARNING. Positive and Negative states must have same magnitude
 /** Different QEI decode states */
@@ -165,6 +190,23 @@ typedef struct ALL_DBG_TAG // MB~ Dbg
 } ALL_DBG_TYP;
 #endif // QEI_DBG
 
+/** Type containing 2-D array for look-up table */
+typedef struct QEI_LUT_TAG
+{
+	int incs[QEI_PERIOD_LEN][QEI_PERIOD_LEN];	// 2-D Look-up table
+} QEI_LUT_TYP;
+
+/** Structure containing all data for one QEI phase */
+typedef struct QEI_PHASE_TAG // 
+{
+	int up_filt; // Up-scaled Low-pass filtered Phase signal
+	unsigned prev; // Previous value of filtered phase signal
+	int scale_err; // Error diffusion value for scaling
+	int filt_err; // Error diffusion value for filtering
+	QEI_PHASE_ETYP phase_id; // Unique QEI Phase identifier
+	int motor_id; // Unique motor identifier
+} QEI_PHASE_TYP;
+
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_DATA_TAG // 
 {
@@ -172,10 +214,14 @@ typedef struct QEI_DATA_TAG //
 	ALL_DBG_TYP dd; // All Debug data
 #endif // QEI_DBG
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
+	QEI_LUT_TYP ang_lut;	// Look-up table for converting phase changes to angle increments
+	QEI_PHASE_TYP phase_data[NUM_QEI_PHASES];	// Structure containing all data for one QEI phase
 	QEI_PERIOD_TYP inv_phase;	// Structure containing all inverse QEI phase values;
 	unsigned prev_phases; // Previous phase values
 	unsigned curr_time; // Time when port-pins read
 	unsigned prev_time; // Previous port time-stamp
+	unsigned filt_time; // Time-stamp when filtered phase changes
+	unsigned prev_filt; // Previous filtered phase change Time-stamp
 	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 
@@ -195,6 +241,8 @@ typedef struct QEI_DATA_TAG //
 	int pin_changes; // Counts pin changes during start-up phase
 	int orig_cnt; // Counts number of origin detections (revolutions) of motor
 	int ang_cnt; // Counts angular position of motor (from origin)
+	int tot_ang; // Counts total angular position of motor from time=0
+	int prev_ang; // Previous value of total angular position
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
 	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident Negative spin)
 	int prev_orig; // Previous origin flag
@@ -205,19 +253,28 @@ typedef struct QEI_DATA_TAG //
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error
 	int scale_err; // Scaling diffusion error 
-	int speed_err; // Speed diffusion error 
+	int speed_err; // Speed diffusion error  //MB~ depreciated
+	int veloc_err; // Velocity diffusion error 
 
 	int dbg; // Debug
 } QEI_DATA_TYP;
 
+// Assign correct port type for sampling mode
+#if (1 == QEI_RS_MODE)
+#define QEI_PORT port:32 // Use 32-bit buffering for Regular-Sampling mode 
+#else // if (1 == QEI_RS_MODE)
+#define QEI_PORT port:4  // Use 4-bit buffering for Edge-Trigger mode 
+#endif // else !(1 == QEI_RS_MODE)
+
+// Regular-Sampling Mode used 32-bit buffering on 4-bit port
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client
  * \param p4_qei // Array of QEI data ports for each motor
  * \param qei_clk // clock for generating accurate QEI timing
  */
 void foc_qei_config(  // Configure all QEI ports
-  buffered port:4 in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
-	clock qei_clk // clock for generating accurate QEI timing
+  buffered QEI_PORT in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
+	clock qei_clks[NUMBER_OF_MOTORS] // Array of clocks for generating accurate QEI timing (one per input port)
 	);
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client
@@ -226,7 +283,7 @@ void foc_qei_config(  // Configure all QEI ports
  */
 void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to client
 	streaming chanend c_qei[], // Array of channels connecting server & client
-	buffered port:4 in pb4_qei[NUMBER_OF_MOTORS] // Array of buffered QEI data ports for each motor
+	buffered QEI_PORT in pb4_inp[NUMBER_OF_MOTORS] // Array of 32-bit buffered 4-bit input ports on which to receive test data
 );
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client
@@ -236,7 +293,7 @@ void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to c
 void foc_qei_do_single( // Get QEI Sensor data from port (motor) and send to client
   int motor_id, // Unique Motor identifier	
 	streaming chanend c_qei, // Array of channels connecting server & client
-	buffered port:4 in pb4_qei // Array of buffered QEI data ports for each motor
+	buffered QEI_PORT in pb4_qei // Array of buffered QEI data ports for each motor
 );
 /*****************************************************************************/
 
