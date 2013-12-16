@@ -240,7 +240,6 @@ typedef struct QEI_DATA_TAG //
 	int status_errs; // counter for invalid QEI status errors
 	int pin_changes; // Counts pin changes during start-up phase
 	int orig_cnt; // Counts number of origin detections (revolutions) of motor
-	int ang_cnt; // Counts angular position of motor (from origin)
 	int tot_ang; // Counts total angular position of motor from time=0
 	int prev_ang; // Previous value of total angular position
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position

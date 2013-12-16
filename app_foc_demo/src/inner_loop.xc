@@ -1399,14 +1399,14 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	if (motor_s.qei_params.period > 0)
 	{
 		// The theta value should be in the range:  -180 <= theta < 180 degrees ...
-		motor_s.tot_ang = motor_s.qei_params.ang_cnt;	// Calculate total angle traversed
+		motor_s.tot_ang = motor_s.qei_params.tot_ang;	// Calculate total angle traversed
 	
 #if (LDO_MOTOR_SPIN)
 		// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
 		motor_s.qei_params.old_ang = -motor_s.qei_params.old_ang; // Invert old total angular value
 		motor_s.tot_ang = -motor_s.tot_ang; // Invert total angle
 #endif // (LDO_MOTOR_SPIN)
-	
+
 		rev_bits = (motor_s.tot_ang + motor_s.half_qei) >> QEI_RES_BITS; // Get revoultion bits
 		motor_s.est_theta = motor_s.tot_ang - (rev_bits << QEI_RES_BITS); // Calculate remaining angular position [-512..+511]
 	
@@ -1478,53 +1478,6 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 	// Regular-Sampling Mode
 
 	get_qei_data( motor_s ,c_qei );
-#ifdef MB
-#if (1 == QEI_RS_MODE)
-#else // if (1 == QEI_RS_MODE)
-	// Edge-Trigger Mode
-
-	/* Get the position from encoder module. NB returns rev_cnt=0 at start-up  */
-	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
-	motor_s.est_veloc = motor_s.qei_params.veloc;
-	motor_s.est_theta = motor_s.qei_params.theta;
-	motor_s.est_revs = motor_s.qei_params.rev_cnt;
-
-// if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
-// if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.est_theta ); //MB~
-
-#if (1 == VELOC_FILT) 
-	// Filter velocity. MB~ Need to investigate why velocity spikes occur
-
-	if (motor_s.est_veloc < (motor_s.prev_veloc - MAX_VELOC_INC))
-	{
-		motor_s.est_veloc = (motor_s.prev_veloc - MAX_VELOC_INC);
-	} // if (motor_s.est_veloc < (motor_s.prev_veloc - MAX_VELOC_INC))
-	else
-	{
-		if (motor_s.est_veloc > (motor_s.prev_veloc + MAX_VELOC_INC))
-		{
-			motor_s.est_veloc = (motor_s.prev_veloc + MAX_VELOC_INC);
-		} // if (motor_s.est_veloc < (motor_s.prev_veloc + MAX_VELOC_INC))
-	} // else !(motor_s.est_veloc < (motor_s.prev_veloc -MAX_VELOC_INC ))
-
-	motor_s.prev_veloc = motor_s.est_veloc; // Update previous velocity
-#endif // VELOC_FILT
-
-	motor_s.tot_ang = motor_s.est_revs * QEI_PER_REV + motor_s.est_theta;
-#if (LDO_MOTOR_SPIN)
-{	// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
-motor_s.qei_params.old_ang = -motor_s.qei_params.old_ang; // Invert velocity
-motor_s.est_veloc = -motor_s.est_veloc; // Invert old angle
-motor_s.tot_ang = -motor_s.tot_ang; // Invert total angle
-
-// Re-calculate rev_cnt and theta
-motor_s.est_revs = (motor_s.tot_ang + motor_s.half_qei) >> QEI_RES_BITS; 
-motor_s.est_theta = motor_s.tot_ang - (motor_s.est_revs << QEI_RES_BITS); 
-}
-#endif // (LDO_MOTOR_SPIN)
-
-#endif // else !(1 == QEI_RS_MODE)
-#endif //MB~
 
 if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
