@@ -161,9 +161,20 @@ static void init_pid_data( // Initialise PID data
 //MB~	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
 //MB~	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,6 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
 
+#if (1 == QEI_RS_MODE)
+	// Regular-Sampling mode 
+	init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1600000 ,1000 ,0 ); // NB Kp assumes target Id=0
+	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
+	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,3 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
+#else // if (1 == QEI_RS_MODE)
+	// Edge-Trigger mode 
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1600000 ,1000 ,0 ); // NB Kp assumes target Id=0
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,6 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
+#endif // else !(1 == QEI_RS_MODE)
+
+
+
 
 // MB~ EXTREMA and VELOCITY need a re-tune
 	init_pid_consts( motor_s.pid_consts[EXTREMA][ID_PID] ,0 ,0 ,0 );
@@ -260,6 +271,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.prev_Id = 0;	// Initial target 'radial' current value
 
 	motor_s.tot_ang = 0;	// Total angle traversed (NB accounts for multiple revolutions)
+	motor_s.prev_ang = 0;	// Previous value of
 	motor_s.set_theta = 0; // PWM theta value
 	motor_s.open_theta = 0; // Open-loop theta value
 	motor_s.foc_theta = 0; // FOC theta value
@@ -267,11 +279,16 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.trans_cycles = 1; // Default number of electrical cycles spent in TRANSIT state
 	motor_s.trans_cnt = 0; // Counts trans_theta updates
 
+	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
+	motor_s.filt_veloc = 0; // filtered value
+	motor_s.coef_vel_err = 0; // Coefficient diffusion error
+	motor_s.scale_vel_err = 0; // Scaling diffusion error 
+	motor_s.veloc_err = 0; // Speed diffusion error 
+
 	// Check consistency of pre-defined QEI values
 	tmp_val = (1 << QEI_RES_BITS); // Build No. of QEI points from resolution bits
 	assert( QEI_PER_REV == tmp_val );
 
-	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
 	motor_s.pwm_period = OPEN_LOOP_PERIOD; // Time between updates to PWM theta
 
 	motor_s.filt_adc = START_VOLT_OPENLOOP; // Preset filtered value to something sensible

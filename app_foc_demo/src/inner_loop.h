@@ -131,7 +131,7 @@
 
 
 #define REQ_VELOCITY 1000 // Requested motor speed
-#define SAFE_MAX_SPEED 5800 // Maximum safe burst speed (allows some overshoot)
+#define SAFE_MAX_SPEED 5860 // This value is derived from the Optical Encoder Max. rate of 100kHz
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
 #define VELOC_FILT 1
@@ -193,6 +193,13 @@
 #define IQ_ID_BITS 2 // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
 #define IQ_ID_RATIO (1 << IQ_ID_BITS) // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
 #define IQ_ID_HALF (IQ_ID_RATIO >> 1) // Quantisation error is half IQ_ID_RATIO 
+
+#define VEL_SCALE_BITS 16 // Used to generate 2^n scaling factor
+#define VEL_HALF_SCALE (1 << (VEL_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
+
+#define VEL_COEF_BITS 8 // Used to generate filter coef divisor. coef_div = 1/2^n
+#define VEL_COEF_DIV (1 << VEL_COEF_BITS) // Coef divisor
+#define VEL_HALF_COEF (VEL_COEF_DIV >> 1) // Half of Coef divisor
 
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
@@ -313,11 +320,11 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int pid_Iq;	// Output of 'tangential' current PID
 	int prev_Id;	// previous target 'radial' current value
 	int tot_ang;	// Total angle traversed (NB accounts for multiple revolutions)
+	int prev_ang;	// Previous total angle traversed (NB accounts for multiple revolutions)
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
 	int foc_theta;	// FOC theta value
 	int first_pid; // Flag set until first set of PID's completed
-	int half_qei; // Half QEI points per revolution (used for rounding)
 	int search_theta;	// theta value at end of 'SEARCH state'
 	int trans_theta;	// theta value at end of 'TRANSIT state'
 	int trans_cycles;	// Number of electrical cycles spent in 'TRANSIT state'
@@ -348,6 +355,12 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int filt_adc; // filtered ADC value
 	int coef_err; // Coefficient diffusion error
 	int scale_err; // Scaling diffusion error 
+
+	int half_qei; // Half QEI points per revolution (used for rounding)
+	int filt_veloc; // filtered velocity value
+	int coef_vel_err; // Coefficient diffusion error
+	int scale_vel_err; // Velocity Scaling diffusion error 
+	int veloc_err; // Velocity diffusion error 
 
 	int tmp; // MB~
 	int temp; // MB~ Dbg
