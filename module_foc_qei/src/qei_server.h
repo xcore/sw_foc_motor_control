@@ -233,7 +233,6 @@ typedef struct QEI_DATA_TAG //
 	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
 	ANG_INC_TYP ang_inc; // angular increment value
-	unsigned prev_inc; // previous absolute angular increment value
 	QEI_STATE_ETYP curr_state; // Current QEI state
 	QEI_STATE_ETYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
