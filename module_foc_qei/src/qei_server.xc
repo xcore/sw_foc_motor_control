@@ -50,7 +50,6 @@ static void init_qei_data( // Initialise  QEI data for one motor
 													 { 1 , 0 ,  0 , -1},
 													 { 0 , -1 , 1 ,  0}}};
 
-	QEI_PERIOD_TYP bit_patterns = {{ 0 ,1 ,3 ,2 }};	// Table to convert QEI Phase value to circular index [BA] (NB Increment for positive rotation)
 	int tmp_val; // temporary manipulation value
 
 #if (QEI_DBG)
@@ -58,7 +57,6 @@ static void init_qei_data( // Initialise  QEI data for one motor
 #endif //(QEI_DBG)
 
 	inp_qei_s.ang_lut = ang_incs; // Assign table converting phase changes to angle increments
-	inp_qei_s.inv_phase = bit_patterns; // Assign table converting QEI Phase value to circular index
 
 	inp_qei_s.params.tot_ang = 0;
 	inp_qei_s.params.period = 0;
@@ -70,25 +68,12 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.id = inp_id; // Assign unique motor identifier
 	inp_qei_s.orig_cnt = 0; // Reset origin counter
 	inp_qei_s.tot_ang = 0; // Reset counter indicating total angular position of motor (since time=0)
-	inp_qei_s.prev_ang = 0; // Previous value of total angular position
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
-	inp_qei_s.ang_speed = 1;	// Default initial speed value
-	inp_qei_s.curr_state = QEI_BIT_ERR; // Initialise current QEI state
-	inp_qei_s.state_errs = 0; // Initialise counter for invalid QEI state transitions
 	inp_qei_s.status_errs = 0; // Initialise counter for QEI status errors
-	inp_qei_s.confid = 1; // Initialise spin-direction confidence value (1: Marginal Positive-spin probability)
 
-	inp_qei_s.prev_diff = 0;
 	inp_qei_s.prev_orig = 0;
 	inp_qei_s.prev_phases = 0;
-	inp_qei_s.filt_val = 0; // filtered value
-	inp_qei_s.coef_err = 0; // Coefficient diffusion error
-	inp_qei_s.scale_err = 0; // Scaling diffusion error 
-	inp_qei_s.speed_err = 0; // Speed diffusion error //MB~ Depreciated
-	inp_qei_s.veloc_err = 0; // Velocity diffusion error 
 
-	inp_qei_s.t_dif_old = 0; // Initialise to unassigned time difference
-	inp_qei_s.t_dif_cur = 0; // Initialise to unassigned time difference
 
 	inp_qei_s.dbg_str[2] = 0; // String Terminator
 	inp_qei_s.dbg = 0;
@@ -107,8 +92,6 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	// Check consistency of pre-defined QEI values
 	tmp_val = (1 << QEI_RES_BITS); // Build No. of QEI points from resolution bits
 	assert( QEI_PER_REV == tmp_val );
-
-	inp_qei_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
 
 	// Initialise data for both QEI Phases 
 	init_phase_data( inp_qei_s.phase_data[QEI_PHASE_A] ,QEI_PHASE_A ,inp_id );

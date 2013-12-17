@@ -213,47 +213,53 @@ typedef struct QEI_DATA_TAG //
 #if (QEI_DBG)
 	ALL_DBG_TYP dd; // All Debug data
 #endif // QEI_DBG
+
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
 	QEI_LUT_TYP ang_lut;	// Look-up table for converting phase changes to angle increments
 	QEI_PHASE_TYP phase_data[NUM_QEI_PHASES];	// Structure containing all data for one QEI phase
-	QEI_PERIOD_TYP inv_phase;	// Structure containing all inverse QEI phase values;
+
 	unsigned prev_phases; // Previous phase values
-	unsigned curr_time; // Time when port-pins read
+
 	unsigned prev_time; // Previous port time-stamp
+	int diff_time; // Difference between 2 adjacent time-stamps.
 	unsigned change_time; // Time-stamp when valid phase change detected
 	unsigned prev_change; // Previous valid phase change Time-stamp
+	int tot_ang; // Counts total angular position of motor from time=0
+	ANG_INC_TYP ang_inc; // angular increment value
+	int orig_cnt; // Counts number of origin detections (revolutions) of motor
+	int prev_orig; // Previous origin flag
+
+	int status_errs; // counter for invalid QEI status errors
+	int pin_changes; // Counts pin changes during start-up phase
+	int id; // Unique motor identifier
+
+#ifdef MB
+	QEI_PERIOD_TYP inv_phase;	// Structure containing all inverse QEI phase values;
+	unsigned curr_time; // Time when port-pins read
 	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
 	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 
-	int diff_time; // Difference between 2 adjacent time-stamps.
 	int prev_diff; // Previous Difference between 2 adjacent time-stamps.
 	int phase_index; // Converts [BA] phase value into circular index [0, 1, 2, 3]
 	int prev_index; // previous circular phase index
 	ANG_INC_TYP phase_inc; // Raw No. of angular increments from phase values
 	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
 	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
-	ANG_INC_TYP ang_inc; // angular increment value
 	QEI_STATE_ETYP curr_state; // Current QEI state
 	QEI_STATE_ETYP prev_state; // Previous QEI state
 	int state_errs; // counter for invalid QEI state transistions
-	int status_errs; // counter for invalid QEI status errors
-	int pin_changes; // Counts pin changes during start-up phase
-	int orig_cnt; // Counts number of origin detections (revolutions) of motor
-	int tot_ang; // Counts total angular position of motor from time=0
 	int prev_ang; // Previous value of total angular position
 	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
 	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident Negative spin)
-	int prev_orig; // Previous origin flag
 	int half_qei; // Half QEI points per revolution (used for rounding)
-	int id; // Unique motor identifier
-	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
-
 	int filt_val; // filtered value
 	int coef_err; // Coefficient diffusion error
 	int scale_err; // Scaling diffusion error 
 	int speed_err; // Speed diffusion error  //MB~ depreciated
 	int veloc_err; // Velocity diffusion error 
+#endif //MB~
 
+	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
 	int dbg; // Debug
 
 	int tmp_raw; // Debug
