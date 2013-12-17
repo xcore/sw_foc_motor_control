@@ -102,6 +102,10 @@
 #define TICKS_PER_LOOP (TICKS_PER_SAMP << SAMP_LOOP_BITS) // 4080
 #define STAG_TICKS ((TICKS_PER_LOOP + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS) // 2040 NB Used to stagger servicing of port buffers
 
+// Require filter to decay from 1 to 1/2 after 5 samples. This is equivalent to filter coef of 0.1295 (~ 1/8)
+#define QEI_VELOC_BITS 3 // NB Equivalent to a filter coefficient of 1/8)
+#define QEI_HALF_VELOC (1 << (QEI_VELOC_BITS - 1)) 
+
 #define MAX_TIME_ERR 1 // Max. No of consecutive timing errors allowed 
 
 #define DBG_SIZ 384
@@ -176,7 +180,6 @@ typedef struct QEI_DATA_TAG //
 	unsigned prev_phases; // Previous phase values
 
 	unsigned prev_time; // Previous port time-stamp
-	int diff_time; // Difference between 2 adjacent time-stamps.
 	unsigned change_time; // Time-stamp when valid phase change detected
 	unsigned prev_change; // Previous valid phase change Time-stamp
 	int tot_ang; // Counts total angular position of motor from time=0
