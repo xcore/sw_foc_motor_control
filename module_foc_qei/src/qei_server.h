@@ -88,44 +88,6 @@
 
 #define MAX_QEI_STATUS_ERR 3 // 3 Maximum number of consecutive QEI status errors allowed
 
-#ifdef MB
-
-/* NB Confidence-level changes by 4, if a change of direction is detected. 
- * e.g. For MAX_CONFID = 11  3 consecutive estimates in the reverse direction are required to change spin 
- * 11 -> 7 -> 3 -> -1
- */
-#define MAX_CONFID 11 // Maximum confidence value NB Choose odd positive number
-
-#define QEI_CNT_LIMIT (QEI_PER_REV + HALF_QEI_CNT) // 540 degrees of rotation
-
-#define START_UP_CHANGES 3 // Must see this number of pin changes before calculating velocity
-
-#define QEI_COEF_BITS 8 // Used to generate filter coef divisor. coef_div = 1/2^n
-#define QEI_COEF_DIV (1 << QEI_COEF_BITS) // Coef divisor
-#define QEI_HALF_COEF (QEI_COEF_DIV >> 1) // Half of Coef divisor
-
-// WARNING: The noisier the input data the higher MAX_QEI_STATE_ERR has to be.
-#define MAX_QEI_STATE_ERR 128000 //MB~ 128 // 128 for 1 in 8 bit errors. Max. consecutive errors allowed.
-
-#define MIN_RPM 50 // In order to estimate the angular position, a minimum expected RPM has to be specified
-// Now we can calculate the maximum expected time difference (in ticks) between QEI phase changes
-#define MAX_TIME_DIFF (((MIN_RPM * TICKS_PER_SEC_PER_QEI) + (SECS_PER_MIN - 1)) / SECS_PER_MIN) // Round-up maximum expected time-diff (17-bits)
-
-// WARNING: Values used in test harness need to be less severe than these. e.g. 807 and 1300
-#define LO_QEI_SCALE 969 // 700 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
-#define HI_QEI_SCALE 1114 // 1500 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
-#define THIRD 341 // Scaling factor Used for calculating one third
-
-/** Define No. of Bits for Scaling Factor Divisor */
-#define SCALE_QEI_BITS 10 // No. of Bits for Scaling Factor Divisor
-#define HALF_QEI_SCALE (1 << (SCALE_QEI_BITS - 1)) // Half Scaling factor Used for Rounding
-
-#define INT16_BITS (sizeof(short) * BITS_IN_BYTE) // No. of bits in 16-bit integer
-#define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer
-#define INT64_BITS (sizeof(S64_T) * BITS_IN_BYTE) // No. of bits in signed 64-bit type!
-
-#endif //MB~
-
 /* HALF_PERIOD determines the clock frequency for port sampling. 
  * The sampling period must allow enough time (inbetween samples) for processing
  * Currently this is about 660..680 cycles per 32-bit buffer. 

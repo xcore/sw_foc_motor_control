@@ -31,16 +31,6 @@
 	#error Define. QEI_PER_REV in app_global.h
 #endif // QEI_PER_REV
 
-/* Calculate speed definitions, preserving precision and preventing overflow !-)
- * 
- * The time difference between changes in QEI data is measured in 'ticks'.
- * For a Platform Reference frequency of 100 MHz, there will be 6,000,000,000 ticks/minute
- * If there are 1024 different QEI points per revolution, then angular velocity (in RPM) is 
- * (60 * 100000000)/(1024 * Tick_Diff) or (TICKS_PER_MIN_PER_QEI / Tick_Diff) 
- */
-#define TICKS_PER_SEC_PER_QEI ((PLATFORM_REFERENCE_HZ + (QEI_PER_REV >> 1)) / QEI_PER_REV) // Ticks/sec/angular_position (rounded) // 18-bits
-#define TICKS_PER_MIN_PER_QEI (SECS_PER_MIN * TICKS_PER_SEC_PER_QEI) // Ticks/min/angular_position // 24 bits
-
 #define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK] 
 
 #define QEI_SAMP_BITS 4 // Size of QEI input port sample in bits
@@ -52,7 +42,15 @@
 
 #define QEI_PERIOD_LEN (QEI_PHASE_MASK + 1) // Number of different Phase combinations before a repeat. e.g [00 10 11 01]
 
-#define WAIT_TIME SECOND // Termination wait-time
+/* Calculate speed definitions, preserving precision and preventing overflow !-)
+ * 
+ * The time difference between changes in QEI data is measured in 'ticks'.
+ * For a Platform Reference frequency of 100 MHz, there will be 6,000,000,000 ticks/minute
+ * If there are 1024 different QEI points per revolution, then angular velocity (in RPM) is 
+ * (60 * 100000000)/(1024 * Tick_Diff) or (TICKS_PER_MIN_PER_QEI / Tick_Diff) 
+ */
+#define TICKS_PER_SEC_PER_QEI ((PLATFORM_REFERENCE_HZ + (QEI_PER_REV >> 1)) / QEI_PER_REV) // Ticks/sec/angular_position (rounded) // 18-bits
+#define TICKS_PER_MIN_PER_QEI (SECS_PER_MIN * TICKS_PER_SEC_PER_QEI) // Ticks/min/angular_position // 24 bits
 
 /** Different QEI Commands (Client --> Server) */
 typedef enum CMD_QEI_ETAG
@@ -74,11 +72,6 @@ typedef enum ERROR_QEI_ETAG
 /** Raw QEI data type (on input pins) */
 typedef unsigned long QEI_RAW_TYP;
 
-/** Type containing array of all QEI Phase combinations */
-typedef struct QEI_PERIOD_TAG // Structure containing Array of QEI Phase combinations
-{
-	int vals[QEI_PERIOD_LEN];	// Array of QEI Phase combinations (NB Increment for positive rotation)
-} QEI_PERIOD_TYP;
 
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_PARAM_TAG // 
