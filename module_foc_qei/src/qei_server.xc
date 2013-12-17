@@ -518,9 +518,6 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 		} // switch(inp_qei_s.phase_inc)
 	} // else !((1 < inp_qei_s.hi_inc) && (inp_qei_s.lo_inc < QEI_PHASE_MASK))
 
-inp_qei_s.tmp_s[2+inp_qei_s.curr_state]++; //MB~
-inp_qei_s.tmp_i[new_ang_inc]++; //MB~
-
 	return new_ang_inc; // Return estimate of angle increment
 } // estimate_angle_increment
 /*****************************************************************************/
@@ -718,6 +715,7 @@ static void update_et_phase_states( // Regular-Sampling: Update phase state
 	if (inp_qei_s.prev_phases != cur_phases)
 	{ // Update angular position
 		inp_qei_s.ang_inc = inp_qei_s.ang_lut.incs[inp_qei_s.prev_phases][cur_phases]; // Decode angular increment
+inp_qei_s.tmp_i[1 + inp_qei_s.ang_inc]++; //MB~
 
 		// Check for valid transition
 		if (0 != inp_qei_s.ang_inc)
@@ -1137,7 +1135,7 @@ void foc_qei_do_single( // Get QEI data from motor and send to client
 				// WARNING: H/W pin-change detector sometimes mis-fires, so also do check in S/W
 				if (tmp_pins == inp_pins)
 				{
-					chronometer :> buffer[write_off].time;	// Get new time stamp as soon as possible
+					chronometer :> buffer[write_off].time32;	// Get new time stamp as soon as possible
 
 					buffer[write_off].inp_pins = tmp_pins;
 					buffer[write_off].id = motor_id;	
@@ -1181,7 +1179,7 @@ void foc_qei_do_single( // Get QEI data from motor and send to client
 				{
 					motor_id = buffer[read_off].id;	
 
-					all_qei_s.curr_time = buffer[read_off].time;
+					all_qei_s.curr_time = buffer[read_off].time32;
 					service_input_pins( all_qei_s ,buffer[read_off].inp_pins );
 
 					read_cnt++; // Increment read counter. WARNING No overflow check
@@ -1215,7 +1213,6 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	QEI_BUF_TYP buffer[QEI_BUF_SIZ]; // Buffers raw QEI values
 	QEI_DATA_TYP all_qei_s[NUMBER_OF_MOTORS]; // Array of structures containing QEI parameters for all motor
 	QEI_RAW_TYP inp_pins[NUMBER_OF_MOTORS]; // Array of raw data values on input port pins
-	QEI_RAW_TYP prev_pins[NUMBER_OF_MOTORS]; // Array of previous input pin values
 	QEI_RAW_TYP tmp_pins; // temporary raw data value from input port pins
 	CMD_QEI_ENUM inp_cmd; // QEI command from Client
 	timer chronometer; // H/W timer
@@ -1260,7 +1257,6 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 
 	for (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; ++motor_cnt) 
 	{
-		prev_pins[motor_cnt] = 0;  // Clear previous pin data
 		inp_pins[motor_cnt] = 0xFF; // Set buffer for reading input pins to impossible value
 		init_qei_data( all_qei_s[motor_cnt] ,motor_cnt ); // Initialise QEI data for current motor
 
@@ -1288,13 +1284,9 @@ all_qei_s[motor_id].tmp_raw++;
 				{
 					// Build accurate 32-bit port time value ...
 					chronometer :> approx32_ticks; // Get approximate 32-bit timer value
-					low16_ticks = (PORT_TIME_TYP)(approx32_ticks & PORT_TIME_MASK); // Get lowest 16-bits of 32-bit timer
 
-					// Calculate timer correction. NB correctly handles wrapped timer values
-					corr16_ticks = (PORT_TIME_TYP)(low16_ticks - port16_ticks);
-					exact32_ticks = approx32_ticks - (unsigned)corr16_ticks; // Correct 32-bit timer value
-
-					buffer[write_off].time = exact32_ticks; // Store exact 32-bit timer value
+					buffer[write_off].time16 = port16_ticks; // Store exact 16-bit timer value
+					buffer[write_off].time32 = approx32_ticks; // Store approximate 32-bit timer value
 					buffer[write_off].inp_pins = tmp_pins;
 					buffer[write_off].id = motor_id;
 	
@@ -1303,7 +1295,6 @@ all_qei_s[motor_id].tmp_raw++;
 					write_off = write_cnt & QEI_BUF_MASK; // Wrap into buffer range
 	
 					assert( (write_cnt - read_cnt) < QEI_BUF_MASK); // Check for buffer overflow
-					prev_pins[motor_id] = tmp_pins; // Update previous pin values
 				} // if (tmp_pins == inp_pins[motor_id])
 			} // case
 			break;
@@ -1336,8 +1327,14 @@ all_qei_s[motor_id].tmp_raw++;
 				{
 					motor_id = buffer[read_off].id;	
 
-//MB~					all_qei_s[motor_id].curr_time = buffer[read_off].time;
-					service_et_input_pins( all_qei_s[motor_id] ,buffer[read_off].time ,buffer[read_off].inp_pins );
+					low16_ticks = (PORT_TIME_TYP)(buffer[read_off].time32 & PORT_TIME_MASK); // Get lowest 16-bits of 32-bit timer
+
+					// Calculate timer correction. NB correctly handles wrapped timer values
+					corr16_ticks = (PORT_TIME_TYP)(low16_ticks - buffer[read_off].time16);
+					buffer[read_off].time32 = buffer[read_off].time32 - (unsigned)corr16_ticks; // Correct 32-bit timer value
+
+//MB~					all_qei_s[motor_id].curr_time = buffer[read_off].time32;
+					service_et_input_pins( all_qei_s[motor_id] ,buffer[read_off].time32 ,buffer[read_off].inp_pins );
 
 					read_cnt++; // Increment read counter. WARNING No overflow check
 					read_off = read_cnt & QEI_BUF_MASK; // Wrap into buffer range

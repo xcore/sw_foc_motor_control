@@ -165,7 +165,8 @@ typedef struct QEI_BUF_TAG //
 {
 	QEI_RAW_TYP inp_pins; // Set of raw data values on input port pins
 	int id; // Motor Id
-	unsigned time; // Time when port-pins read
+	unsigned time32; // 32-bit Time-stamp for when port-pins read
+	PORT_TIME_TYP time16; // 16-bit Time-stamp for when port-pins read
 } QEI_BUF_TYP;
 
 #if (QEI_DBG)
