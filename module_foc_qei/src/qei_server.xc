@@ -707,34 +707,53 @@ static void update_phase_state( // Update phase state
 /*****************************************************************************/
 static void update_et_phase_states( // Regular-Sampling: Update phase state
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	unsigned samp_time, // sample time-stamp (32-bit value)
+	unsigned edge_time, // Phase-Edge time-stamp (32-bit value)
 	unsigned cur_phases // Current set of phase values
 )
 {
-	// Check for change in phase data
-	if (inp_qei_s.prev_phases != cur_phases)
-	{ // Update angular position
-		inp_qei_s.ang_inc = inp_qei_s.ang_lut.incs[inp_qei_s.prev_phases][cur_phases]; // Decode angular increment
-inp_qei_s.tmp_i[1 + inp_qei_s.ang_inc]++; //MB~
+	// Get new time stamp
+	inp_qei_s.diff_time = (int)((unsigned)(edge_time - inp_qei_s.prev_time));
 
-		// Check for valid transition
-		if (0 != inp_qei_s.ang_inc)
-		{
-			inp_qei_s.tot_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
+	// Check for sensible time
+	if (THR_TICKS_PER_QEI < inp_qei_s.diff_time)
+	{ // Sensible time!
+		// Check for change in phase data
+		if (inp_qei_s.prev_phases != cur_phases)
+		{ // Update angular position
+			inp_qei_s.ang_inc = inp_qei_s.ang_lut.incs[inp_qei_s.prev_phases][cur_phases]; // Decode angular increment
+	
+			// Check for valid transition
+			if (0 != inp_qei_s.ang_inc)
+			{
+				inp_qei_s.tot_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
+	
+				inp_qei_s.prev_change = inp_qei_s.change_time; // Store previous phase change time
+				inp_qei_s.change_time = edge_time; // Store time of filtered phase change
+	
+				inp_qei_s.prev_phases = cur_phases;
+			} //if (0 != inp_qei_s.ang_inc)
+	
+			inp_qei_s.tmp_i[0]++; //MB~
+		} // if (inp_qei_s.prev_phases != cur_phases)
+		else inp_qei_s.tmp_i[1]++; //MB~
+	} // if (THR_TICKS_PER_QEI < inp_qei_s.diff_time)
+	else
+	{
+		if (inp_qei_s.prev_phases != cur_phases)
+		{ // Update angular position
+			inp_qei_s.tmp_i[2]++; //MB~
+		} // if (inp_qei_s.prev_phases != cur_phases)
+		else inp_qei_s.tmp_i[3]++; //MB~
+	} // else !(THR_TICKS_PER_QEI < inp_qei_s.diff_time)
 
-			inp_qei_s.prev_change = inp_qei_s.change_time; // Store previous phase change time
-			inp_qei_s.change_time = samp_time; // Store time of filtered phase change
-
-			inp_qei_s.prev_phases = cur_phases;
-		} //if (0 != inp_qei_s.ang_inc)
-	} // if (inp_qei_s.prev_phases != cur_phases)
+	inp_qei_s.prev_time = edge_time; // Store time-stamp
 
 	return;
 } // update_et_phase_states
 /*****************************************************************************/
 static void service_et_input_pins( // Edge-Trigger: Service detected change on input pins
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	unsigned samp_time, // sample time-stamp (32-bit value)
+	unsigned edge_time, // Phase-Edge time-stamp (32-bit value)
 	QEI_RAW_TYP inp_pins // Set of raw data values on input port pins
 )
 {
@@ -760,7 +779,7 @@ static void service_et_input_pins( // Edge-Trigger: Service detected change on i
 	} // if (0 == inp_qei_s.pin_changes)
 	else
 	{ // NOT first data
-		update_et_phase_states( inp_qei_s ,samp_time ,cur_phases ); // update phase state
+		update_et_phase_states( inp_qei_s ,edge_time ,cur_phases ); // update phase state
 	
 		// Check for change in origin state
 		if (orig_flg != inp_qei_s.prev_orig)

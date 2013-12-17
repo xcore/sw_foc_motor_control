@@ -298,6 +298,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.filt_adc = START_VOLT_OPENLOOP; // Preset filtered value to something sensible
 
 	motor_s.req_veloc = REQ_VELOCITY;
+if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 	motor_s.prev_veloc = 0; // Previous measured velocity
 
@@ -1389,7 +1390,6 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	int diff_ang; // Difference angle
 	int rev_bits; // Bits of total angle count used for revolution count
 	signed char diff_revs; // Difference in LS bits of revolution counter
-	unsigned diff_time; // Difference time
 
 
 	// Request latest QEI data
