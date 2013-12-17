@@ -287,15 +287,5 @@ void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to c
 	buffered QEI_PORT in pb4_inp[NUMBER_OF_MOTORS] // Array of 32-bit buffered 4-bit input ports on which to receive test data
 );
 /*****************************************************************************/
-/** \brief Get QEI Sensor data from port (motor) and send to client
- * \param c_qei // channel connecting server & client
- * \param p4_qei // QEI data port for this motor
- */
-void foc_qei_do_single( // Get QEI Sensor data from port (motor) and send to client
-  int motor_id, // Unique Motor identifier	
-	streaming chanend c_qei, // Array of channels connecting server & client
-	buffered QEI_PORT in pb4_qei // Array of buffered QEI data ports for each motor
-);
-/*****************************************************************************/
 
 #endif // _QEI_SERVER_H_

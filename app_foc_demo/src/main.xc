@@ -144,8 +144,6 @@ int main ( void ) // Program Entry Point
 		
 					foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] 
 						,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] );
-
-//MB~			foc_qei_do_single( motor_cnt ,c_qei[motor_cnt] , pb4_qei[motor_cnt] );
 				} // par motor_cnt
 	
 				foc_qei_do_multiple( c_qei ,pb4_qei );
