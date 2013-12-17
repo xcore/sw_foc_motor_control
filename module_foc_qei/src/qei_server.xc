@@ -651,25 +651,11 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	unsigned write_off = 0; // wtite offset into buffer
 	int do_loop = 1;   // Flag set until loop-end condition found
 
+
 	acquire_lock(); 
 	printstrln("                                          QEI ET_Server Starts");
 	release_lock();
 
-{
-	unsigned pre_ticks; // Timer value
-	unsigned pst_ticks; // Timer value
-	unsigned prt_ticks; // Timer value
-
-	chronometer :> pre_ticks;
-	pb4_QEI[0] :> tmp_pins @ prt_ticks; // Re-sample to test for glitch
-	chronometer :> pst_ticks;
-
-	acquire_lock(); 
-	printstr(" PRE="); printhexln(pre_ticks ); 
-	printstr(" PRT="); printhexln(prt_ticks ); 
-	printstr(" PST="); printhexln(pst_ticks ); 
-	release_lock();
-}
 	// Check if we are running on the simulator
 	if(0 == _is_simulation())
 	{ // Running on real hardware
