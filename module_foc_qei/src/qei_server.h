@@ -128,8 +128,7 @@
  * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
  * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
  */
-#define HALF_PERIOD 90 // (Min 87)
-//MB~ #define HALF_PERIOD 96 // 192 Sample period) NB Number less than 256
+#define HALF_PERIOD 90 // (Min 87) // Use Slow clock for Regular-Sampling mode 
 #define TICKS_PER_SAMP (HALF_PERIOD << 1) // NB Max 510
 
 #define SAMP_LOOP_BITS 3
@@ -255,6 +254,10 @@ typedef struct QEI_DATA_TAG //
 	int veloc_err; // Velocity diffusion error 
 
 	int dbg; // Debug
+
+	int tmp_raw; // Debug
+	int tmp_s[5]; // Debug
+	int tmp_i[4]; // Debug
 } QEI_DATA_TYP;
 
 // Assign correct port type for sampling mode
@@ -264,7 +267,6 @@ typedef struct QEI_DATA_TAG //
 #define QEI_PORT port:4  // Use 4-bit buffering for Edge-Trigger mode 
 #endif // else !(1 == QEI_RS_MODE)
 
-// Regular-Sampling Mode used 32-bit buffering on 4-bit port
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client
  * \param p4_qei // Array of QEI data ports for each motor

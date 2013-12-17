@@ -93,6 +93,17 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.dbg_str[2] = 0; // String Terminator
 	inp_qei_s.dbg = 0;
 
+	inp_qei_s.tmp_raw = 0;
+	inp_qei_s.tmp_s[0] = 0; //MB~
+	inp_qei_s.tmp_s[1] = 0; //MB~
+	inp_qei_s.tmp_s[2] = 0; //MB~
+	inp_qei_s.tmp_s[3] = 0; //MB~
+	inp_qei_s.tmp_s[4] = 0; //MB~
+	inp_qei_s.tmp_i[0] = 0; //MB~
+	inp_qei_s.tmp_i[1] = 0; //MB~
+	inp_qei_s.tmp_i[2] = 0; //MB~
+	inp_qei_s.tmp_i[3] = 0; //MB~
+
 	// Check consistency of pre-defined QEI values
 	tmp_val = (1 << QEI_RES_BITS); // Build No. of QEI points from resolution bits
 	assert( QEI_PER_REV == tmp_val );
@@ -193,7 +204,7 @@ static void print_all_dbg( // MB~ Print all debug info.
 } // print_all_dbg
 #endif //(QEI_DBG)
 /*****************************************************************************/
-static void update_rs_origin_state( // Regular Sampling: Update origin state
+static void update_origin_state( // Update origin state
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	unsigned orig_flg // Flag set when motor at origin position 
 )
@@ -219,10 +230,10 @@ static void update_rs_origin_state( // Regular Sampling: Update origin state
 	} // if (orig_flg)
 
 	return;
-} // update_rs_origin_state
+} // update_origin_state
 /*****************************************************************************/
 #pragma unsafe arrays
-static void service_rs_client_data_request( // Regular-Sampling: Send processed QEI data to client
+static void service_client_data_request( // Send processed QEI data to client
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	streaming chanend c_qei // Data channel to client (carries processed QEI data)
 )
@@ -230,14 +241,12 @@ static void service_rs_client_data_request( // Regular-Sampling: Send processed 
 	inp_qei_s.params.tot_ang = inp_qei_s.tot_ang;
 	inp_qei_s.params.period = (inp_qei_s.change_time - inp_qei_s.prev_change); // Time taken to traverse previous QEI phase
 
-//MB~		inp_qei_s.params.orig_cnt = inp_qei_s.orig_cnt;
-//MB~		inp_qei_s.params.theta = inp_qei_s.tot_ang; //MB~ Depreciated
-//MB~		inp_qei_s.params.rev_cnt = inp_qei_s.orig_cnt; //MB~ Depreciated
-//MB~		inp_qei_s.params.rev_cnt = (inp_qei_s.tot_ang + inp_qei_s.half_qei) >> QEI_RES_BITS; 
-//MB~		inp_qei_s.params.theta = inp_qei_s.tot_ang - (inp_qei_s.params.rev_cnt << QEI_RES_BITS); 
+// xscope_int( (8+inp_qei_s.id) ,inp_qei_s.tmp_raw ); // MB~
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
-} // service_rs_client_data_request
+
+// xscope_int( (10+inp_qei_s.id) ,(inp_qei_s.tmp_raw - inp_qei_s.tmp_inc) ); // MB~
+} // service_client_data_request
 /*****************************************************************************/
 static unsigned update_one_phase( // Returns filtered phase value NB Only works on Binary data
 	QEI_PHASE_TYP &phase_s, // Reference to structure containing data for one QEI phase
@@ -354,7 +363,7 @@ static void service_rs_input_pins( // Regular-Sampling: Service detected change 
 		// Check for change in origin state
 		if (orig_flg != inp_qei_s.prev_orig)
 		{
-			update_rs_origin_state( inp_qei_s ,orig_flg ); // update origin state
+			update_origin_state( inp_qei_s ,orig_flg ); // update origin state
 	
 			inp_qei_s.prev_orig = orig_flg; // Store origin flag value
 		} // if (orig_flg != inp_qei_s.prev_orig)
@@ -508,6 +517,9 @@ static ANG_INC_TYP estimate_angle_increment( // Estimate angle increment and qei
 			break; // default
 		} // switch(inp_qei_s.phase_inc)
 	} // else !((1 < inp_qei_s.hi_inc) && (inp_qei_s.lo_inc < QEI_PHASE_MASK))
+
+inp_qei_s.tmp_s[2+inp_qei_s.curr_state]++; //MB~
+inp_qei_s.tmp_i[new_ang_inc]++; //MB~
 
 	return new_ang_inc; // Return estimate of angle increment
 } // estimate_angle_increment
@@ -669,8 +681,7 @@ static void update_phase_state( // Update phase state
 		if (QEI_HI_POSI == abs(inp_qei_s.curr_state))
 		{
 			unsigned abs_inc = abs(inp_qei_s.ang_inc); // Absolute angle increment
-//MB~			update_speed( inp_qei_s ); // Update speed value with new time difference
-{
+
 			inp_qei_s.change_time = inp_qei_s.curr_time; 						
 
 			switch(abs_inc)
@@ -687,7 +698,6 @@ static void update_phase_state( // Update phase state
 					assert(0 == 1); //ERROR: Unexpectedangle increment
 				break; // default
 			} // switch(abs_inc)
-} // MB~
 
 		} // if (QEI_BIT_ERR != inp_qei_s.curr_state)
 	
@@ -697,6 +707,81 @@ static void update_phase_state( // Update phase state
 
 	return;
 } // update_phase_state
+/*****************************************************************************/
+static void update_et_phase_states( // Regular-Sampling: Update phase state
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	unsigned samp_time, // sample time-stamp (32-bit value)
+	unsigned cur_phases // Current set of phase values
+)
+{
+	// Check for change in phase data
+	if (inp_qei_s.prev_phases != cur_phases)
+	{ // Update angular position
+		inp_qei_s.ang_inc = inp_qei_s.ang_lut.incs[inp_qei_s.prev_phases][cur_phases]; // Decode angular increment
+
+		// Check for valid transition
+		if (0 != inp_qei_s.ang_inc)
+		{
+			inp_qei_s.tot_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
+
+			inp_qei_s.prev_change = inp_qei_s.change_time; // Store previous phase change time
+			inp_qei_s.change_time = samp_time; // Store time of filtered phase change
+
+			inp_qei_s.prev_phases = cur_phases;
+		} //if (0 != inp_qei_s.ang_inc)
+	} // if (inp_qei_s.prev_phases != cur_phases)
+
+	return;
+} // update_et_phase_states
+/*****************************************************************************/
+static void service_et_input_pins( // Edge-Trigger: Service detected change on input pins
+	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
+	unsigned samp_time, // sample time-stamp (32-bit value)
+	QEI_RAW_TYP inp_pins // Set of raw data values on input port pins
+)
+{
+	unsigned cur_phases; // Current set of phase values
+	unsigned orig_flg; // Flag set when motor at origin position 
+	unsigned err_flg; // Flag set when Error condition detected
+
+
+	// NB Due to noise corrupting bit-values, flags may change, even though phase does NOT appear to have changed
+	cur_phases = inp_pins & QEI_PHASE_MASK; // Extract Phase bits from input pins
+	orig_flg = inp_pins & QEI_ORIG_MASK; 		// Extract origin flag 
+	err_flg = !(inp_pins & QEI_NERR_MASK); 	// NB Bit_3=0, and err_flg=1, if error detected, 
+
+
+	// Check for first data
+	if (0 == inp_qei_s.pin_changes)
+	{ // Initialise 'previous data'
+		inp_qei_s.prev_phases = cur_phases; // Store phase value
+		inp_qei_s.prev_orig = orig_flg; // Store origin flag value
+		inp_qei_s.params.err = err_flg;
+
+		inp_qei_s.pin_changes = 1; // Update number of pin-changes
+	} // if (0 == inp_qei_s.pin_changes)
+	else
+	{ // NOT first data
+		update_et_phase_states( inp_qei_s ,samp_time ,cur_phases ); // update phase state
+	
+		// Check for change in origin state
+		if (orig_flg != inp_qei_s.prev_orig)
+		{
+			update_origin_state( inp_qei_s ,orig_flg ); // update origin state
+	
+			inp_qei_s.prev_orig = orig_flg; // Store origin flag value
+		} // if (orig_flg != inp_qei_s.prev_orig)
+	
+		// Check for change in error state
+		if (err_flg != inp_qei_s.params.err)
+		{
+			// Update estimate of error status using new error flag
+			estimate_error_status( inp_qei_s ,err_flg ); // NB Updates inp_qei_s.params.err
+		} // if (err_flg != inp_qei_s.params.err)
+	} // else !(0 == inp_qei_s.pin_changes)
+
+	return;
+} // service_et_input_pins
 /*****************************************************************************/
 static void service_input_pins( // Service detected change on input pins
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
@@ -761,7 +846,7 @@ static void service_input_pins( // Service detected change on input pins
 		// Check for change in origin state
 		if (orig_flg != inp_qei_s.prev_orig)
 		{
-			update_rs_origin_state( inp_qei_s ,orig_flg ); // update origin state
+			update_origin_state( inp_qei_s ,orig_flg ); // update origin state
 		
 			inp_qei_s.prev_orig = orig_flg; // Store origin flag value
 		} // if (orig_flg != inp_qei_s.prev_orig)
@@ -927,7 +1012,7 @@ unsigned dbg_diff; // MB~
 					switch(inp_cmd)
 					{
 						case QEI_CMD_DATA_REQ : // Data Request
-							service_rs_client_data_request( all_qei_s[motor_cnt] ,c_qei[motor_cnt] );
+							service_client_data_request( all_qei_s[motor_cnt] ,c_qei[motor_cnt] );
 // xscope_int( (8+motor_cnt) ,(dbg_end - dbg_strt) ); //MB~
 						break; // case QEI_CMD_DATA_REQ
 	
@@ -1074,7 +1159,7 @@ void foc_qei_do_single( // Get QEI data from motor and send to client
 				switch(inp_cmd)
 				{
 					case QEI_CMD_DATA_REQ : // Data Request
-						service_rs_client_data_request( all_qei_s ,c_qei );
+						service_client_data_request( all_qei_s ,c_qei );
 					break; // case QEI_CMD_DATA_REQ
 
 					case QEI_CMD_LOOP_STOP : // Termination Command
@@ -1195,12 +1280,12 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pb4_QEI[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] @ port16_ticks:
 			{
+all_qei_s[motor_id].tmp_raw++;
 				pb4_QEI[motor_id] :> tmp_pins; // Re-sample to test for glitch
 
 				// WARNING: H/W pin-change detector sometimes mis-fires, so also do check in S/W
 				if (tmp_pins == inp_pins[motor_id])
 				{
-// xscope_char( motor_id ,(char)0); // MB~
 					// Build accurate 32-bit port time value ...
 					chronometer :> approx32_ticks; // Get approximate 32-bit timer value
 					low16_ticks = (PORT_TIME_TYP)(approx32_ticks & PORT_TIME_MASK); // Get lowest 16-bits of 32-bit timer
@@ -1229,7 +1314,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 				switch(inp_cmd)
 				{
 					case QEI_CMD_DATA_REQ : // Data Request
-						service_rs_client_data_request( all_qei_s[motor_id] ,c_qei[motor_id] );
+						service_client_data_request( all_qei_s[motor_id] ,c_qei[motor_id] );
 					break; // case QEI_CMD_DATA_REQ
 
 					case QEI_CMD_LOOP_STOP : // Termination Command
@@ -1251,8 +1336,8 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 				{
 					motor_id = buffer[read_off].id;	
 
-					all_qei_s[motor_id].curr_time = buffer[read_off].time;
-					service_input_pins( all_qei_s[motor_id] ,buffer[read_off].inp_pins );
+//MB~					all_qei_s[motor_id].curr_time = buffer[read_off].time;
+					service_et_input_pins( all_qei_s[motor_id] ,buffer[read_off].time ,buffer[read_off].inp_pins );
 
 					read_cnt++; // Increment read counter. WARNING No overflow check
 					read_off = read_cnt & QEI_BUF_MASK; // Wrap into buffer range
@@ -1264,6 +1349,31 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 #if (QEI_DBG)
 	print_all_dbg( all_qei_s[0] ); // MB~ Dbg
 #endif //(QEI_DBG)
+
+{ //MB~
+	int cc;
+	acquire_lock(); 
+
+	for (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; ++motor_cnt) 
+	{
+		printstr("M_");
+		printintln(motor_cnt);
+
+		for (cc=0; cc<5; cc++)
+		{
+			printstr(" ");
+			printint(all_qei_s[motor_cnt].tmp_s[cc]);
+		} // for cc
+		printstrln(" <S");
+	
+		for (cc=0; cc<4; cc++)
+		{
+			printstr(" ");
+			printint(all_qei_s[motor_cnt].tmp_i[cc]);
+		} // for cc
+		printstrln(" <I");
+	} // for motor_cnt
+} //MB~
 
 	acquire_lock(); 
 	printstrln("");

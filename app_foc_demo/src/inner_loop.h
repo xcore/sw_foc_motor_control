@@ -130,7 +130,7 @@
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
 
-#define REQ_VELOCITY 1000 // Requested motor speed
+#define REQ_VELOCITY 4000 // Requested motor speed
 #define SAFE_MAX_SPEED 5860 // This value is derived from the Optical Encoder Max. rate of 100kHz
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
