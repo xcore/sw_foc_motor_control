@@ -764,13 +764,6 @@ all_qei_s[motor_id].tmp_raw++;
 		printstr("M_");
 		printintln(motor_cnt);
 
-		for (cc=0; cc<5; cc++)
-		{
-			printstr(" ");
-			printint(all_qei_s[motor_cnt].tmp_s[cc]);
-		} // for cc
-		printstrln(" <S");
-	
 		for (cc=0; cc<4; cc++)
 		{
 			printstr(" ");

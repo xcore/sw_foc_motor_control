@@ -195,7 +195,6 @@ typedef struct QEI_DATA_TAG //
 	int dbg; // Debug
 
 	int tmp_raw; // Debug
-	int tmp_s[5]; // Debug
 	int tmp_i[4]; // Debug
 } QEI_DATA_TYP;
 

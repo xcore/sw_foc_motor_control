@@ -103,7 +103,7 @@
 #endif
 
 // Parameters for filtering to obtain the mean ADC values
-#define ADC_SCALE_BITS 16 // Used to generate 2^n scaling factor
+#define ADC_SCALE_BITS (16 - ADC_UPSCALE_BITS) // Used to generate 2^n scaling factor
 #define ADC_HALF_SCALE (1 << (ADC_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
 
 #define ADC_MAX_COEF_BITS 13 // Used to generate max. filter coef divisor. coef_div = 1/2^n

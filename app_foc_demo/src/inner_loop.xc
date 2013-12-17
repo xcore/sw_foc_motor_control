@@ -165,16 +165,13 @@ static void init_pid_data( // Initialise PID data
 	// Regular-Sampling mode 
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1600000 ,1000 ,0 ); // NB Kp assumes target Id=0
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
-	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,3 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
+	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,6 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
 #else // if (1 == QEI_RS_MODE)
 	// Edge-Trigger mode 
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1600000 ,1000 ,0 ); // NB Kp assumes target Id=0
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,6 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
 #endif // else !(1 == QEI_RS_MODE)
-
-
-
 
 // MB~ EXTREMA and VELOCITY need a re-tune
 	init_pid_consts( motor_s.pid_consts[EXTREMA][ID_PID] ,0 ,0 ,0 );
@@ -298,7 +295,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.filt_adc = START_VOLT_OPENLOOP; // Preset filtered value to something sensible
 
 	motor_s.req_veloc = REQ_VELOCITY;
-if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
+//MB~ if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 	motor_s.prev_veloc = 0; // Previous measured velocity
 
@@ -547,8 +544,8 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 		filter_current_component( motor_s.vect_data[comp_cnt] );
 	} // for comp_cnt
 
-// if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[D_ROTA].est_I );
-// if (motor_s.xscope) xscope_int( 3 ,motor_s.vect_data[Q_ROTA].est_I );
+if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I );
+if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I );
 
 { // MB~
 	int d_abs = abs(motor_s.vect_data[D_ROTA].est_I);
@@ -642,8 +639,8 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	motor_s.vect_data[D_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[D_ROTA] );
 	motor_s.vect_data[Q_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[Q_ROTA] );
 
-// if (motor_s.xscope) xscope_int( 5 ,motor_s.vect_data[D_ROTA].set_V ); //MB~
-// if (motor_s.xscope) xscope_int( 4 ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
+if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
 
 // if (motor_s.xscope) xscope_int( (2+motor_s.id) ,inp_theta ); //MB~
  
@@ -807,7 +804,7 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.est_veloc ,motor_s.req_veloc ,motor_s.est_veloc );
 	}; // if (motor_s.first_pid)
 
-#ifdef MB
+// #ifdef MB
 	if (motor_s.iters > 50000)
 	{ // Track est_Iq value
 		motor_s.temp++; 
@@ -815,10 +812,11 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 		if (100 == motor_s.temp)
 		{
 			motor_s.temp = 0; 
-			if (4000 > motor_s.req_veloc) motor_s.req_veloc++;
+//			if (4000 > motor_s.req_veloc) motor_s.req_veloc++;
+			if (0 < motor_s.req_veloc) motor_s.req_veloc--;
 		} // if (1024 == motor_s.temp)
 	} //if (motor_s.iters > 25000)
-#endif //MB~
+// #endif //MB~
 
 // if (motor_s.xscope) xscope_int( 3 ,motor_s.req_veloc);
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.req_veloc ,motor_s.est_veloc );
@@ -1515,6 +1513,15 @@ motor_s.dbg_tmr :> motor_s.dbg_end; //MB~
 
 	// Get ADC sensor data here, in gap between PWM trigger and ADC capture
 	foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
+
+if (motor_s.xscope) xscope_int( 0 ,motor_s.adc_params.vals[0] );
+if (ADC_UPSCALE_BITS > 0)
+{
+	motor_s.adc_params.vals[0] = (motor_s.adc_params.vals[0] + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS; // MB~
+	motor_s.adc_params.vals[1] = (motor_s.adc_params.vals[1] + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS; // MB~
+	motor_s.adc_params.vals[2] = (motor_s.adc_params.vals[2] + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS; // MB~
+} // if (ADC_UPSCALE_BITS > 0)
+if (motor_s.xscope) xscope_int( 2 ,motor_s.adc_params.vals[0] );
 
 #ifdef MB
 	unsigned dbg_diff = (unsigned)(motor_s.dbg_end - motor_s.dbg_strt);

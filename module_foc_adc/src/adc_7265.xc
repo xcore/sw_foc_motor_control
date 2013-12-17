@@ -189,7 +189,16 @@ static void get_adc_port_data( // Get ADC data from one port
 	tmp_val = bitrev( inp_val );	// Reverse bit order. WARNING. Machine dependent
 	tmp_val <<= ADC_SHIFT_BITS;		// Align active bits to MS 16-bit boundary
 	word_16 = (short)(tmp_val & ADC_MASK);	// Mask out active bits and convert to signed word
-	inp_int_32 = ((int)word_16) >> ADC_DIFF_BITS; // Convert to int and recover original magnitude
+//MB~	inp_int_32 = ((int)word_16) >> ADC_DIFF_BITS; // Convert to int and recover original magnitude
+
+if (ADC_UPSCALE_BITS > ADC_DIFF_BITS)
+{
+	inp_int_32 = ((int)word_16) << (ADC_UPSCALE_BITS - ADC_DIFF_BITS); // Convert to int and recover original magnitude
+} // if (ADC_UPSCALE_BITS > ADC_DIFF_BITS)
+else
+{
+	inp_int_32 = ((int)word_16) >> (ADC_DIFF_BITS - ADC_UPSCALE_BITS); // Convert to int and recover original magnitude
+} // else !(ADC_UPSCALE_BITS > ADC_DIFF_BITS)
 
 	out_val = inp_int_32; // Preset output to raw input value
 
@@ -211,10 +220,13 @@ static void get_adc_port_data( // Get ADC data from one port
 			corr_val = (out_val - prev_val); // compute correction to previous filtered value
 			corr_val += phase_data_s.rem; // Add in error diffusion remainder
 
-			out_val = (corr_val + ADC_HALF_FILT) >> ADC_FILT_BITS ; // 1st order filter (uncalibrated value)
+			out_val = (corr_val + ADC_HALF_FILT) >> ADC_FILT_BITS; // 1st order filter (uncalibrated value)
 			phase_data_s.rem = corr_val - (out_val << ADC_FILT_BITS); // Update remainder
 			out_val += prev_val; // Add filtered difference to previous value
 		} // if (0 < filt_cnt)
+		else
+		{
+		} // else !(0 < filt_cnt)
 	} // if (1 == ADC_FILTER)
 
 	phase_data_s.adc_val = out_val; // Update uncalibrated value
