@@ -79,27 +79,33 @@
 #define MIN_TICKS_PER_QEI (TICKS_PER_MIN_PER_QEI / MAX_SPEC_RPM) // Min. expected Ticks/QEI // 12 bits
 #define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
 
+#define QEI_SCALE_BITS 16 // Used to generate 2^n scaling factor
+#define QEI_HALF_SCALE (1 << (QEI_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
+
+#define QEI_BUF_BITS 5 // Use power-of-2 size to get all 1's mask
+#define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
+#define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
+
+#define MAX_QEI_STATUS_ERR 3 // 3 Maximum number of consecutive QEI status errors allowed
+
+#ifdef MB
+
 /* NB Confidence-level changes by 4, if a change of direction is detected. 
  * e.g. For MAX_CONFID = 11  3 consecutive estimates in the reverse direction are required to change spin 
  * 11 -> 7 -> 3 -> -1
  */
 #define MAX_CONFID 11 // Maximum confidence value NB Choose odd positive number
 
-// WARNING: The noisier the input data the higher MAX_QEI_STATE_ERR has to be.
-#define MAX_QEI_STATE_ERR 128000 //MB~ 128 // 128 for 1 in 8 bit errors. Max. consecutive errors allowed.
-
 #define QEI_CNT_LIMIT (QEI_PER_REV + HALF_QEI_CNT) // 540 degrees of rotation
 
 #define START_UP_CHANGES 3 // Must see this number of pin changes before calculating velocity
-
-#define QEI_SCALE_BITS 16 // Used to generate 2^n scaling factor
-#define QEI_HALF_SCALE (1 << (QEI_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
 
 #define QEI_COEF_BITS 8 // Used to generate filter coef divisor. coef_div = 1/2^n
 #define QEI_COEF_DIV (1 << QEI_COEF_BITS) // Coef divisor
 #define QEI_HALF_COEF (QEI_COEF_DIV >> 1) // Half of Coef divisor
 
-#define MAX_QEI_STATUS_ERR 3 // 3 Maximum number of consecutive QEI status errors allowed
+// WARNING: The noisier the input data the higher MAX_QEI_STATE_ERR has to be.
+#define MAX_QEI_STATE_ERR 128000 //MB~ 128 // 128 for 1 in 8 bit errors. Max. consecutive errors allowed.
 
 #define MIN_RPM 50 // In order to estimate the angular position, a minimum expected RPM has to be specified
 // Now we can calculate the maximum expected time difference (in ticks) between QEI phase changes
@@ -118,9 +124,7 @@
 #define INT32_BITS (sizeof(int) * BITS_IN_BYTE) // No. of bits in 32-bit integer
 #define INT64_BITS (sizeof(S64_T) * BITS_IN_BYTE) // No. of bits in signed 64-bit type!
 
-#define QEI_BUF_BITS 5 // Use power-of-2 size to get all 1's mask
-#define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
-#define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
+#endif //MB~
 
 /* HALF_PERIOD determines the clock frequency for port sampling. 
  * The sampling period must allow enough time (inbetween samples) for processing
@@ -147,17 +151,6 @@ typedef enum QEI_PHASE_ETAG
   QEI_PHASE_B,  // Phase_A identifier
 	NUM_QEI_PHASES // Number of different QEI Phase signals
 } QEI_PHASE_ETYP;
-
-// WARNING. Positive and Negative states must have same magnitude
-/** Different QEI decode states */
-typedef enum QEI_STATE_ETAG
-{
-  QEI_HI_NEGA = -2,	// High probability Negative-spin Phase change
-  QEI_LO_NEGA = -1,	// Low probability Negative-spin Phase change
-  QEI_BIT_ERR = 0,		// Detected one or more bit errors 
-  QEI_LO_POSI = 1, // Low probability Positive-spin Phase change
-  QEI_HI_POSI = 2 // High probability Positive-spin Phase change
-} QEI_STATE_ETYP;
 
 typedef signed char ANG_INC_TYP; // Angular Increment type
 
@@ -232,32 +225,6 @@ typedef struct QEI_DATA_TAG //
 	int status_errs; // counter for invalid QEI status errors
 	int pin_changes; // Counts pin changes during start-up phase
 	int id; // Unique motor identifier
-
-#ifdef MB
-	QEI_PERIOD_TYP inv_phase;	// Structure containing all inverse QEI phase values;
-	unsigned curr_time; // Time when port-pins read
-	unsigned t_dif_old; // oldest difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
-	unsigned t_dif_cur; // current difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap 
-	int t_dif_new; // newest difference between 2 adjacent time-stamps (down-scaled). NB Must be unsigned due to clock-wrap 
-	int prev_diff; // Previous Difference between 2 adjacent time-stamps.
-	int phase_index; // Converts [BA] phase value into circular index [0, 1, 2, 3]
-	int prev_index; // previous circular phase index
-	ANG_INC_TYP phase_inc; // Raw No. of angular increments from phase values
-	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
-	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
-	QEI_STATE_ETYP curr_state; // Current QEI state
-	QEI_STATE_ETYP prev_state; // Previous QEI state
-	int state_errs; // counter for invalid QEI state transistions
-	int prev_ang; // Previous value of total angular position
-	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
-	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident Negative spin)
-	int half_qei; // Half QEI points per revolution (used for rounding)
-	int filt_val; // filtered value
-	int coef_err; // Coefficient diffusion error
-	int scale_err; // Scaling diffusion error 
-	int speed_err; // Speed diffusion error  //MB~ depreciated
-	int veloc_err; // Velocity diffusion error 
-#endif //MB~
 
 	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
 	int dbg; // Debug
