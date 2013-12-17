@@ -31,8 +31,8 @@ void park_transform( int *Id, int *Iq, int I_alpha, int I_beta, unsigned theta )
 	int cos_val = cosine( theta );
 
 
-	assert( MAX_INP_VAL > I_alpha );
-	assert( MAX_INP_VAL > I_beta );
+	assert( MAX_PARK_VAL > I_alpha );
+	assert( MAX_PARK_VAL > I_beta );
 
 	tmp = (I_alpha * cos_val) + (I_beta * sin_val);
 	*Id = (tmp + HALF_SINE) >> SINE_RES_BITS;
@@ -51,8 +51,8 @@ void inverse_park_transform( int *I_alpha, int *I_beta, int Id, int Iq, unsigned
 	int cos_val = cosine( theta );
 
 
-	assert( MAX_INP_VAL > Id );
-	assert( MAX_INP_VAL > Iq );
+	assert( MAX_PARK_VAL > Id );
+	assert( MAX_PARK_VAL > Iq );
 
 	tmp = (Id * cos_val) - (Iq * sin_val);
 	*I_alpha = (tmp + HALF_SINE) >> SINE_RES_BITS;

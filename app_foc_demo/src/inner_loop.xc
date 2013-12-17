@@ -515,7 +515,7 @@ static void filter_current_component( // Filters estimated current component
 	vect_data_s.rem_I = corr_val - (filt_val << ROTA_FILT_BITS); // Update remainder
 
 	vect_data_s.est_I += filt_val; // Add filtered difference to previous value
-} // init_rotation_component
+} // filter_current_component
 /*****************************************************************************/
 static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using transforms. NB Required if requested Id is NON-zero
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
@@ -528,6 +528,7 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 #pragma xta label "foc_loop_clarke"
 
 	clarke_transform( motor_s.adc_params.vals[ADC_PHASE_A], motor_s.adc_params.vals[ADC_PHASE_B], motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
+
 // if (motor_s.xscope) xscope_int( 3 ,(-alpha_meas * 17) );
 // if (motor_s.xscope) xscope_int( 4 ,(-beta_meas * 17) );
 
@@ -893,7 +894,8 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 // if (motor_s.xscope) xscope_int( 7 ,motor_s.vect_data[D_ROTA].req_closed_V ); //MB~
 // if (motor_s.xscope) xscope_int( 8 ,motor_s.vect_data[Q_ROTA].req_closed_V ); //MB~
 
-	targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V + HALF_V2I) >> V2I_BITS) + V2I_OFF;
+targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V + HALF_V2I) >> V2I_BITS) + V2I_OFF;
+//MB~	targ_Iq = ((V2I_MUX * (motor_s.vect_data[Q_ROTA].req_closed_V << ADC_UPSCALE_BITS) + HALF_V2I) >> V2I_BITS) + V2I_OFF;
 
 	// Check if target Iq is too large
 	if (targ_Iq > IQ_LIM)
@@ -931,14 +933,18 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	// Check if PID's need presetting
 	if (motor_s.first_pid)
 	{
-		preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,motor_s.vect_data[D_ROTA].end_open_V ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
-		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
+//MB~	preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,(motor_s.vect_data[D_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
+//MB~	preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,(motor_s.vect_data[Q_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
+		preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,motor_s.vect_data[D_ROTA].end_open_V ,targ_Id ,(motor_s.vect_data[D_ROTA].est_I >> ADC_UPSCALE_BITS) );
+		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,(motor_s.vect_data[Q_ROTA].est_I >> ADC_UPSCALE_BITS) );
 	}; // if (motor_s.first_pid)
 
 // if (motor_s.xscope) xscope_int( 6 ,targ_Id );
 // if (motor_s.xscope) xscope_int( 9 ,targ_Iq );
-	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
-	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
+//MB~	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
+//MB~	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
+		corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,(motor_s.vect_data[D_ROTA].est_I >> ADC_UPSCALE_BITS) );
+		corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,(motor_s.vect_data[Q_ROTA].est_I >> ADC_UPSCALE_BITS) );
 
 // if (motor_s.xscope) xscope_int( 5 ,motor_s.pid_regs[ID_PID].sum_err  );
 
@@ -946,6 +952,8 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	{ // Proportional update
 		motor_s.pid_Id = corr_Id;
 		motor_s.pid_Iq = corr_Iq;
+//MB~	motor_s.pid_Id = (corr_Id + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS;
+//MB~	motor_s.pid_Iq = (corr_Iq + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS;
 	} // if (PROPORTIONAL)
 	else
 	{ // Offset update
@@ -957,6 +965,8 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	{ // Update set DQ values
 		motor_s.vect_data[D_ROTA].set_V  = motor_s.pid_Id;
 		motor_s.vect_data[Q_ROTA].set_V = motor_s.pid_Iq;
+//MB~	motor_s.vect_data[D_ROTA].set_V = (motor_s.pid_Id + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS;
+//MB~	motor_s.vect_data[Q_ROTA].set_V = (motor_s.pid_Iq + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS;
 
 // motor_s.vect_data[D_ROTA].set_V = motor_s.vect_data[D_ROTA].req_closed_V; // MB~
 // motor_s.vect_data[Q_ROTA].set_V = motor_s.vect_data[Q_ROTA].req_closed_V; // MB~
@@ -1514,6 +1524,7 @@ motor_s.dbg_tmr :> motor_s.dbg_end; //MB~
 	// Get ADC sensor data here, in gap between PWM trigger and ADC capture
 	foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
 
+#ifdef MB
 if (motor_s.xscope) xscope_int( 0 ,motor_s.adc_params.vals[0] );
 if (ADC_UPSCALE_BITS > 0)
 {
@@ -1522,6 +1533,7 @@ if (ADC_UPSCALE_BITS > 0)
 	motor_s.adc_params.vals[2] = (motor_s.adc_params.vals[2] + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS; // MB~
 } // if (ADC_UPSCALE_BITS > 0)
 if (motor_s.xscope) xscope_int( 2 ,motor_s.adc_params.vals[0] );
+#endif //MB~
 
 #ifdef MB
 	unsigned dbg_diff = (unsigned)(motor_s.dbg_end - motor_s.dbg_strt);

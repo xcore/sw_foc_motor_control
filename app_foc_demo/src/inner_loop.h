@@ -189,6 +189,7 @@
 #define HALF_SMOOTH_VOLT (SMOOTH_VOLT_INC >> 1)  // Half max. allowed increment
 
 // Defines for Field Weakening
+//MB~ #define IQ_LIM (55 << ADC_UPSCALE_BITS) // Maximum allowed target Iq value, before field weakening applied
 #define IQ_LIM 55 // Maximum allowed target Iq value, before field weakening applied
 #define IQ_ID_BITS 2 // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
 #define IQ_ID_RATIO (1 << IQ_ID_BITS) // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 

@@ -20,8 +20,8 @@
 
 #include <assert.h>
 
-#define MAX_RES_BITS (30 - SINE_RES_BITS) // Max. size of input values in bits 
-#define MAX_INP_VAL (1 << MAX_RES_BITS) // Max. allowed input value
+#define MAX_PARK_BITS (30 - SINE_RES_BITS) // Max. size of input values in bits 
+#define MAX_PARK_VAL (1 << MAX_PARK_BITS) // Max. allowed input value
 
 #ifdef __XC__
 
