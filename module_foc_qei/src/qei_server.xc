@@ -257,6 +257,15 @@ static unsigned update_one_phase( // Returns filtered phase value NB Only works 
 	return (unsigned)out_phase;
 } // update_one_phase
 /*****************************************************************************/
+static void update_first_phase( // Special case filter for 1st phase value
+	QEI_PHASE_TYP &phase_s, // Reference to structure containing data for one QEI phase
+	int inp_phase // Input raw phase value (Zero or One)
+)
+{
+	phase_s.up_filt = (inp_phase << QEI_SCALE_BITS);
+	phase_s.prev =  phase_s.up_filt;
+} // update_first_phase
+/*****************************************************************************/
 static void update_rs_phase_states( // Regular-Sampling: Update phase state
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	unsigned samp_time, // sample time-stamp (32-bit value)
@@ -293,15 +302,6 @@ static void update_rs_phase_states( // Regular-Sampling: Update phase state
 
 	return;
 } // update_rs_phase_states
-/*****************************************************************************/
-static void update_first_phase( // Special case filter for 1st phase value
-	QEI_PHASE_TYP &phase_s, // Reference to structure containing data for one QEI phase
-	int inp_phase // Input raw phase value (Zero or One)
-)
-{
-	phase_s.up_filt = (inp_phase << QEI_SCALE_BITS);
-	phase_s.prev =  phase_s.up_filt;
-} // update_first_phase
 /*****************************************************************************/
 static void update_et_phase_states( // Regular-Sampling: Update phase state
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
