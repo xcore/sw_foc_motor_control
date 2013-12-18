@@ -83,7 +83,6 @@
 // Timing definitions
 #define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
 #define ALIGN_PERIOD (24 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
-#define OPEN_LOOP_PERIOD (128 * MICRO_SEC) // 128us. Time between open-loop theta increments
 
 #define PWM_MIN_LIMIT (PWM_MAX_VALUE >> 4) // Min PWM value allowed (1/16th of max range)
 #define PWM_MAX_LIMIT (PWM_MAX_VALUE - PWM_MIN_LIMIT) // Max. PWM value allowed
@@ -173,10 +172,6 @@
 #define VOLT_DIFF_BITS 10 // NB 2^10 = 1024, Used to down-scale Voltage differences in blending function
 #define VOLT_DIFF_MASK ((1 << VOLT_DIFF_BITS ) - 1) // Used to mask out Voltage difference bits
 
-#define BLEND_BITS 8 // Number of bits used to up-scale blending weigths in 'TRANSIT state'
-#define BLEND_UP (1 << BLEND_BITS) // Up-scaling factor
-#define HALF_BLEND (1 << (BLEND_BITS - 1)) // Half Up-scaling factor. Used in rounding
-
 // A linear conversion is used to relate the PWM Voltage applied to the coil current produced  (I = m*V + c)
 #define V2I_BITS SHIFT_13 // No of bits in Voltage to current scaling factor 
 #define V2I_DENOM (1 << V2I_BITS)
@@ -222,6 +217,25 @@
 #else
 #define ROTA_HALF_FILT 0
 #endif
+
+#define QEI_UPSCALE_BITS 0
+#define QEI_UPSCALE_DENOM (1 << QEI_UPSCALE_BITS) // Factor for up-scaling QEI values
+#define QEI_HALF_UPSCALE (QEI_UPSCALE_DENOM >> 1) // Half QEI up-scaling Factor (used for rounding)
+#define UQ_PER_PAIR (QEI_PER_PAIR << QEI_UPSCALE_BITS) // No. of different Up-scaled QEI values per pole pair
+#define UQ_PER_REV (QEI_PER_REV << QEI_UPSCALE_BITS) // No. of different Up-scaled QEI values per revolution
+#define UQ_REV_MASK (UQ_PER_REV - 1) // (16-bit) Mask used to extract Up-scaled QEI bits
+
+#if (QEI_UPSCALE_BITS > 4)
+#error ERROR: QEI_UPSCALE_BITS Too Large 
+#endif // (QEI_UPSCALE_BITS > 7)
+
+#define BLEND_QEI_BITS (8 - (2*QEI_UPSCALE_BITS)) // Number of bits used to up-scale blending weigths in 'TRANSIT state'
+#define BLEND_QEI_DENOM (1 << BLEND_QEI_BITS) // Up-scaling factor
+#define BLEND_HALF_QEI (BLEND_QEI_DENOM >> 1) // Half Up-scaling factor. Used in rounding
+
+#define BLEND_VOLT_BITS 8 // Number of bits used to up-scale blending weigths in 'TRANSIT state'
+#define BLEND_VOLT_DENOM (1 << BLEND_VOLT_BITS) // Up-scaling factor
+#define BLEND_HALF_VOLT (BLEND_VOLT_DENOM >> 1) // Half Up-scaling factor. Used in rounding
 
 #pragma xta command "add exclusion foc_loop_motor_fault"
 #pragma xta command "add exclusion foc_loop_speed_comms"
@@ -316,7 +330,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int req_veloc;	// Requested (target) angular velocity set by the user/comms interface
 	int half_veloc;	// Half requested angular velocity
 	int prev_veloc;	// previous velocity
-	int pwm_period;	// Time between updates to PWM theta
+	int open_period;	// Time between updates PWM data during open-loop phase
+	int open_uq_inc;	// Increment to Upscaled theta value during open-loop phase
 	int pid_veloc;	// Output of angular velocity PID
 	int pid_Id;	// Output of 'radial' current PID
 	int pid_Iq;	// Output of 'tangential' current PID
