@@ -219,11 +219,7 @@ static void service_client_data_request( // Send processed QEI data to client
 	inp_qei_s.params.tot_ang = inp_qei_s.tot_ang;
 	inp_qei_s.params.period = (inp_qei_s.change_time - inp_qei_s.prev_change); // Time taken to traverse previous QEI phase
 
-// xscope_int( (8+inp_qei_s.id) ,inp_qei_s.tmp_raw ); // MB~
-
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
-
-// xscope_int( (10+inp_qei_s.id) ,(inp_qei_s.tmp_raw - inp_qei_s.tmp_inc) ); // MB~
 } // service_client_data_request
 /*****************************************************************************/
 static unsigned update_one_phase( // Returns filtered phase value NB Only works on Binary data
@@ -519,7 +515,6 @@ unsigned dbg_diff; // MB~
 			// Read 8 4-bit data samples from QEI port buffer
 			pb4_inp[motor_cnt] :> buf_data @ port16_cnt; // Get all buffer samples (8)
 			chronometer :> samp32_time; // Get 32-bit timer value to use as sample time-stamp
-// xscope_int( (8+motor_cnt) ,port16_cnt ); //MB~
 
 // chronometer :> dbg_strt; // MB~
 			// Check Timing has been met ...
@@ -529,7 +524,6 @@ unsigned dbg_diff; // MB~
 			if (diff16_ticks > SAMPS_PER_LOOP)
 			{
 				time_err++; // Increment error count
-// xscope_int( (8+motor_cnt) ,time_err ); //MB~
 				assert(time_err <= MAX_TIME_ERR); // ERROR: Too many Input QEI port samples dropped (Increase HALF_PERIOD)
 			} // if (diff16_ticks > SAMPS_PER_LOOP)
 			else
@@ -685,12 +679,12 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pb4_QEI[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] @ port16_ticks:
 			{
-all_qei_s[motor_id].tmp_raw++;
 				pb4_QEI[motor_id] :> tmp_pins; // Re-sample to test for glitch
 
 				// WARNING: H/W pin-change detector sometimes mis-fires, so also do check in S/W
 				if (tmp_pins == inp_pins[motor_id])
 				{
+// xscope_int( 6 ,tmp_pins ); // MB~
 					// Build accurate 32-bit port time value ...
 					chronometer :> approx32_ticks; // Get approximate 32-bit timer value
 
