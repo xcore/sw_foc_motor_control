@@ -279,7 +279,9 @@ static void init_motor( // initialise data structure for one motor
 
 	motor_s.tot_ang = 0;	// Total angle traversed (NB accounts for multiple revolutions)
 	motor_s.old_ang = 0;	// Old value of total angle
-	motor_s.prev_ang = 0;	// Previous value of
+	motor_s.prev_ang = 0;	// Previous value of total angle
+	motor_s.raw_ang = 0;	// Raw QEI total angle value
+	motor_s.diff_ang = 0;	// Difference between QEI angles
 	motor_s.est_theta = 0; // estimated theta value (from QEI data)
 	motor_s.set_theta = 0; // PWM theta value
 	motor_s.open_theta = 0; // Open-loop theta value
@@ -1170,7 +1172,12 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.est_veloc); release_loc
 		break; // case SEARCH 
 	
 		case FOC : // Normal FOC state
+	if (motor_s.diff_ang != 0)
+	{
+xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 			calc_foc_pwm( motor_s );
+xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
+	} // if (motor_s.diff_ang != 0)
 		break; // case FOC
 
 		case STALL : // state where motor stalled
@@ -1185,13 +1192,6 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.est_veloc); release_loc
 			assert(0 == 1); // Motor state not supported
     break;
 	} // switch( motor_s.state )
-
-#ifdef MB
-if (motor_s.xscope) xscope_int( 0 ,motor_s.open_theta ); //MB~
-if (motor_s.xscope) xscope_int( 2 ,motor_s.foc_theta ); //MB~
-if (motor_s.xscope) xscope_int( 4 ,motor_s.tot_ang ); //MB~
-if (motor_s.xscope) xscope_int( 6 ,motor_s.set_theta ); //MB~
-#endif //MB~
 
 	return;
 } // update_motor_state
@@ -1418,12 +1418,16 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	signed char diff_revs; // Difference in LS bits of revolution counter
 
 
-	// Request latest QEI data
 	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
+
+	motor_s.diff_ang = motor_s.qei_params.tot_ang - motor_s.raw_ang;
+	motor_s.raw_ang =  motor_s.qei_params.tot_ang; // Store raw angle velue
+// xscope_int( 0 ,motor_s.diff_ang );
 
 	// Check for changed data
 	if (motor_s.qei_params.period > 0)
 	{
+// xscope_int( 2 ,motor_s.qei_params.period );
 		// The theta value should be in the range:  -180 <= theta < 180 degrees ...
 		motor_s.tot_ang = motor_s.qei_params.tot_ang;	// Calculate total angle traversed
 		motor_s.old_ang = motor_s.qei_params.old_ang; // Invert old total angular value
@@ -1505,9 +1509,6 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 	// Regular-Sampling Mode
 
 	get_qei_data( motor_s ,c_qei );
-
-if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
-if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
 
 	motor_s.meas_speed = abs( motor_s.est_veloc ); // NB Used to spot stalling behaviour
 
