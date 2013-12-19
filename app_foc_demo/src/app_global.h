@@ -41,8 +41,11 @@
 
 #define LDO_MOTOR_SPIN 1 // Motor spins like an LDO Motor
 
+/** Define the No. Of Pole-Pair resolution bits */
+#define POLE_PAIR_BITS 2
+
 /** Define the number of pole-pairs in motor */
-#define NUM_POLE_PAIRS 4
+#define NUM_POLE_PAIRS (1 << POLE_PAIR_BITS)
 
 /** Define the number of different QEI sensor positions per pole-pair */
 #define QEI_PER_PAIR 256

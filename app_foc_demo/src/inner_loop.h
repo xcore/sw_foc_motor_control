@@ -199,7 +199,7 @@
 
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
-	#define DEMO_LIMIT 400000 // XSCOPE
+#define DEMO_LIMIT 400000 // XSCOPE
 #else // if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 4000000
 	#define DEMO_LIMIT 4000
@@ -218,20 +218,18 @@
 #define ROTA_HALF_FILT 0
 #endif
 
-#define QEI_UPSCALE_BITS 0
+#define RF_DIV_RPM_BITS 24 // Bit resolution for Reference_Freq/Start_Speed = (100 MHz)/(358 RPM/60) as power of 2
+
+#define BLEND_BITS (RF_DIV_RPM_BITS - PWM_RES_BITS - POLE_PAIR_BITS) // Bit resolution for Blending denominator
+#define BLEND_DENOM (1 << BLEND_BITS) // Up-scaling factor
+#define BLEND_HALF (BLEND_DENOM >> 1) // Half Up-scaling factor. Used in rounding
+
+#define QEI_UPSCALE_BITS 4
 #define QEI_UPSCALE_DENOM (1 << QEI_UPSCALE_BITS) // Factor for up-scaling QEI values
 #define QEI_HALF_UPSCALE (QEI_UPSCALE_DENOM >> 1) // Half QEI up-scaling Factor (used for rounding)
 #define UQ_PER_PAIR (QEI_PER_PAIR << QEI_UPSCALE_BITS) // No. of different Up-scaled QEI values per pole pair
 #define UQ_PER_REV (QEI_PER_REV << QEI_UPSCALE_BITS) // No. of different Up-scaled QEI values per revolution
 #define UQ_REV_MASK (UQ_PER_REV - 1) // (16-bit) Mask used to extract Up-scaled QEI bits
-
-#if (QEI_UPSCALE_BITS > 4)
-#error ERROR: QEI_UPSCALE_BITS Too Large 
-#endif // (QEI_UPSCALE_BITS > 7)
-
-#define BLEND_BITS (8 - (2*QEI_UPSCALE_BITS)) // Number of bits used to up-scale blending weigths in 'TRANSIT state'
-#define BLEND_DENOM (1 << BLEND_BITS) // Up-scaling factor
-#define BLEND_HALF (BLEND_DENOM >> 1) // Half Up-scaling factor. Used in rounding
 
 #pragma xta command "add exclusion foc_loop_motor_fault"
 #pragma xta command "add exclusion foc_loop_speed_comms"
@@ -346,9 +344,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int trans_theta;	// theta value at end of 'TRANSIT state'
 	int trans_cycles;	// Number of electrical cycles spent in 'TRANSIT state'
 	int trans_cnt;	// Incremented every time trans_theta is updated
-	int blend_bits;	// No of bits used to as 'quick' divisor in 'TRANSIT state' blending function
-	int blend_up;	// Up-scaling factor for 'TRANSIT state' blending function
-	int half_blend;	// Used for rounding in 'TRANSIT state' blending function
+	int blend_weight;	// Current value of blending weight
+	int blend_inc;	// Increment to blending weight
 
 	int iters; // Iterations of inner_loop
 	unsigned id; // Unique Motor identifier e.g. 0 or 1
