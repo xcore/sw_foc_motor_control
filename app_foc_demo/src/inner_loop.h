@@ -229,13 +229,9 @@
 #error ERROR: QEI_UPSCALE_BITS Too Large 
 #endif // (QEI_UPSCALE_BITS > 7)
 
-#define BLEND_QEI_BITS (8 - (2*QEI_UPSCALE_BITS)) // Number of bits used to up-scale blending weigths in 'TRANSIT state'
-#define BLEND_QEI_DENOM (1 << BLEND_QEI_BITS) // Up-scaling factor
-#define BLEND_HALF_QEI (BLEND_QEI_DENOM >> 1) // Half Up-scaling factor. Used in rounding
-
-#define BLEND_VOLT_BITS 8 // Number of bits used to up-scale blending weigths in 'TRANSIT state'
-#define BLEND_VOLT_DENOM (1 << BLEND_VOLT_BITS) // Up-scaling factor
-#define BLEND_HALF_VOLT (BLEND_VOLT_DENOM >> 1) // Half Up-scaling factor. Used in rounding
+#define BLEND_BITS (8 - (2*QEI_UPSCALE_BITS)) // Number of bits used to up-scale blending weigths in 'TRANSIT state'
+#define BLEND_DENOM (1 << BLEND_BITS) // Up-scaling factor
+#define BLEND_HALF (BLEND_DENOM >> 1) // Half Up-scaling factor. Used in rounding
 
 #pragma xta command "add exclusion foc_loop_motor_fault"
 #pragma xta command "add exclusion foc_loop_speed_comms"
@@ -337,6 +333,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int pid_Iq;	// Output of 'tangential' current PID
 	int prev_Id;	// previous target 'radial' current value
 	int tot_ang;	// Total angle traversed (NB accounts for multiple revolutions)
+	int old_ang;	// Old value of total angle
 	int prev_ang;	// Previous total angle traversed (NB accounts for multiple revolutions)
 	int est_theta;		// Estimated Angular position (from QEI data)
 	int est_revs;	// Estimated No of revolutions (No. of origin traversals) (from QEI data)

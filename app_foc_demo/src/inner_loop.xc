@@ -111,12 +111,12 @@ static void init_blend_data( // Initialise blending data for 'TRANSIT state'
 	motor_s.trans_cycles = (max_diff + VOLT_DIFF_MASK) >> VOLT_DIFF_BITS;
 	if (motor_s.trans_cycles < 1) motor_s.trans_cycles = 1; // Ensure at least one cycle
 
-//MB~Q	diff_theta = QEI_PER_PAIR * motor_s.trans_cycles; // No of QEI positions (theta)
+//MB~Q diff_theta = QEI_PER_PAIR * motor_s.trans_cycles; // No of QEI positions (theta)
 	diff_theta = UQ_PER_PAIR * motor_s.trans_cycles; // No of Upscaled QEI positions (theta)
 	motor_s.trans_theta = motor_s.search_theta + diff_theta; // theta at end of 'TRANSIT state'
 
 	// Calculate upscale value based on No. of electrical cycles
-	motor_s.blend_up = (BLEND_QEI_DENOM + (motor_s.trans_cycles >> 1)) / motor_s.trans_cycles;
+	motor_s.blend_up = (BLEND_DENOM + (motor_s.trans_cycles >> 1)) / motor_s.trans_cycles;
 
 	// Check bit precision ...
 
@@ -128,12 +128,19 @@ static void init_blend_data( // Initialise blending data for 'TRANSIT state'
 
 	assert(32 > numer_bits); // ERROR: Failed numeric overflow test
 
-	// Preset blend divisor-bits with bit resolution of QEI_PER_PAIR ...
-	motor_s.blend_bits = calc_bit_resolution(QEI_PER_PAIR - 1);
+	// Preset blend divisor-bits with bit resolution of UQ_PER_PAIR ...
+	motor_s.blend_bits = calc_bit_resolution(UQ_PER_PAIR - 1);
 
-	motor_s.blend_bits += BLEND_QEI_BITS; // Add bits for up-scaling factor
+	motor_s.blend_bits += BLEND_BITS; // Add bits for up-scaling factor
 
-	motor_s.half_blend = (1 << (motor_s.blend_bits -1)); // Used in rounding
+	motor_s.half_blend = ((1 << motor_s.blend_bits) >> 1); // Used in rounding
+acquire_lock();
+printstr(" BD="); printint(BLEND_DENOM);
+printstr(" BU="); printint(motor_s.blend_up);
+printstr(" NB="); printint(numer_bits);
+printstr(" BB="); printint(motor_s.blend_bits);
+printstr(" HB="); printintln(motor_s.half_blend);
+release_lock(); //MB~
 } // init_blend_data
 /*****************************************************************************/
 static void init_pid_data( // Initialise PID data
@@ -271,6 +278,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.prev_Id = 0;	// Initial target 'radial' current value
 
 	motor_s.tot_ang = 0;	// Total angle traversed (NB accounts for multiple revolutions)
+	motor_s.old_ang = 0;	// Old value of total angle
 	motor_s.prev_ang = 0;	// Previous value of
 	motor_s.est_theta = 0; // estimated theta value (from QEI data)
 	motor_s.set_theta = 0; // PWM theta value
@@ -293,7 +301,7 @@ static void init_motor( // initialise data structure for one motor
 	assert( QEI_PER_REV == tmp_val );
 
 
-	sum_bits = QEI_RES_BITS + QEI_UPSCALE_BITS + PWM_RES_BITS;
+	sum_bits = QEI_RES_BITS + QEI_UPSCALE_BITS + PWM_RES_BITS; // 28
 
 	// MB~ WARNING: Value of '21' Assumes Reference Freq of 100 MHz, and starting speed of 500 RPM
 	if (sum_bits > 21)
@@ -688,7 +696,7 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 
 
 	// Check if theta needs incrementing
-	if (motor_s.pwm_period < diff_time)
+	if (motor_s.open_period < diff_time)
 	{
 		if (motor_s.req_veloc < 0)
 		{
@@ -700,7 +708,7 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 		} // else !(motor_s.req_veloc < 0)
 
 		motor_s.prev_pwm_time = cur_time; // Update previous time
-	} // if (motor_s.pwm_period < diff_time)
+	} // if (motor_s.open_period < diff_time)
 
 	// NB QEI_REV_MASK correctly maps -ve values into +ve range 0 <= theta < QEI_PER_REV;
 //MB~	motor_s.set_theta = motor_s.open_theta & QEI_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
@@ -730,8 +738,8 @@ static int increment_voltage_component( // Returns incremented voltage for one v
 
 
 	upscaled_inc_V += vect_data_s.rem_V; // Add in remainder for error diffusion
- 	new_inc_V = (upscaled_inc_V + BLEND_HALF_VOLT) >> BLEND_VOLT_BITS; // Calculate new Voltage increment
-	vect_data_s.rem_V = upscaled_inc_V - (new_inc_V << BLEND_VOLT_BITS);  // Update remainder for error diffusion
+ 	new_inc_V = (upscaled_inc_V + BLEND_HALF) >> BLEND_BITS; // Calculate new Voltage increment
+	vect_data_s.rem_V = upscaled_inc_V - (new_inc_V << BLEND_BITS);  // Update remainder for error diffusion
 	out_V = vect_data_s.trans_V + new_inc_V; 
 
 	return out_V; // Return incremented demand voltage
@@ -754,7 +762,7 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 
 
 	// Check if theta needs incrementing
-	if (motor_s.pwm_period < diff_time)
+	if (motor_s.open_period < diff_time)
 	{
 		motor_s.prev_pwm_time = cur_time; // Update previous time
 
@@ -778,7 +786,7 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 			motor_s.vect_data[D_ROTA].trans_V = increment_voltage_component( motor_s.vect_data[D_ROTA] );
 			motor_s.vect_data[Q_ROTA].trans_V = increment_voltage_component( motor_s.vect_data[Q_ROTA] );
 		} // if (motor_s.trans_cycles == motor_s.trans_cnt)
-	} // if (motor_s.pwm_period < diff_time)
+	} // if (motor_s.open_period < diff_time)
 
 	// WARNING: Do NOT allow  motor_s.foc_theta or motor_s.open_theta to wrap otherwise weighting will NOT work
 
@@ -1000,8 +1008,7 @@ targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V + HALF_V2I) >> V2I_
 	} // else !(IQ_ID_CLOSED)
 
 	// Update 'demand' theta value for next dq_to_pwm iteration from QEI-angle
-//MB~Q 	motor_s.set_theta = calc_foc_angle( motor_s ,motor_s.est_theta );
-	motor_s.set_theta = calc_foc_angle( motor_s ,(motor_s.est_theta >> QEI_UPSCALE_BITS) );
+	motor_s.set_theta = calc_foc_angle( motor_s ,motor_s.est_theta );
 
 //MB~Q	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 	motor_s.set_theta &= UQ_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
@@ -1052,7 +1059,7 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 	// Update motor state based on new sensor data
 	switch( motor_s.state )
 	{
-		case ALIGN: // Align Motor coils opposite matgnets
+		case ALIGN: // Align Motor coils opposite magnets
 		{
 			unsigned ts1;	// timestamp
 			unsigned diff_time;	// time difference
@@ -1069,16 +1076,15 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 		} break; // case ALIGN
 	
 		case SEARCH : // Turn motor using theta steps (open-loop), and update motor state
-			// Check if end of SEACRH state
+			// Check if end of SEARCH state
 			if (motor_s.search_theta == abs(motor_s.open_theta))
 			{ /* Calculate QEI offset
 				 * In FOC state, theta will be based on angle returned from QEI sensor.
          * So recalibrate, to create smooth transition between SEARCH and FOC states.  
 				 */
-//MB~Q				motor_s.qei_offset = (motor_s.open_theta - motor_s.tot_ang); // Difference betweene Open-loop and QEI angle
-				motor_s.qei_offset = motor_s.open_theta - (motor_s.tot_ang << QEI_UPSCALE_BITS); // Difference betweene Open-loop and QEI angle
+				motor_s.qei_offset = (motor_s.open_theta - motor_s.tot_ang); // Difference betweene Open-loop and QEI angle
 acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
-				motor_state = TRANSIT; 
+				motor_state = TRANSIT;
 				motor_s.state = motor_state; // NB Required due to XC compiler rules
 			} // if (QEI_PER_PAIR == abs(motor_s.open_theta))
 		break; // case SEARCH 
@@ -1091,6 +1097,7 @@ acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
 				motor_s.vect_data[Q_ROTA].start_open_V = motor_s.vect_data[Q_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
 acquire_lock(); printstrln("FOC");release_lock(); //MB~
 				motor_state = FOC; 
+// motor_state = STOP; //MB~ 
 				motor_s.state = motor_state; // NB Required due to XC compiler rules
 			} // if ((QEI_PER_PAIR << 1) == abs(motor_s.open_theta))
 		break; // case TRANSIT
@@ -1198,6 +1205,10 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.est_veloc); release_loc
     break;
 	} // switch( motor_s.state )
 
+if (motor_s.xscope) xscope_int( 0 ,motor_s.open_theta ); //MB~
+if (motor_s.xscope) xscope_int( 2 ,motor_s.foc_theta ); //MB~
+if (motor_s.xscope) xscope_int( 4 ,motor_s.tot_ang ); //MB~
+if (motor_s.xscope) xscope_int( 6 ,motor_s.set_theta ); //MB~
 	return;
 } // update_motor_state
 /*****************************************************************************/
@@ -1329,8 +1340,7 @@ static void find_qei_origin( // Test QEI state for origin
  		// Check if we finished SEARCH state
 		if (SEARCH != motor_s.state)
 		{ // Re-calculate QEI offset, now QEI theta has done origin reset
-//MB~Q			motor_s.qei_offset += (motor_s.qei_params.old_ang - motor_s.tot_ang); // Add back old QEI, & subtract new
-			motor_s.qei_offset += ((motor_s.qei_params.old_ang - motor_s.tot_ang) << QEI_UPSCALE_BITS); // Add back old QEI, & subtract new
+			motor_s.qei_offset += (motor_s.old_ang - motor_s.tot_ang); // Add back old QEI, & subtract new
 		} // if (FOC == motor_s.state)
 
 		motor_s.qei_found = 1; // Set flag indicating QEI origin located
@@ -1432,16 +1442,20 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	{
 		// The theta value should be in the range:  -180 <= theta < 180 degrees ...
 		motor_s.tot_ang = motor_s.qei_params.tot_ang;	// Calculate total angle traversed
+		motor_s.old_ang = motor_s.qei_params.old_ang; // Invert old total angular value
 	
 #if (LDO_MOTOR_SPIN)
 		// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
-		motor_s.qei_params.old_ang = -motor_s.qei_params.old_ang; // Invert old total angular value
+		motor_s.old_ang = -motor_s.old_ang; // Invert old total angular value
 		motor_s.tot_ang = -motor_s.tot_ang; // Invert total angle
 #endif // (LDO_MOTOR_SPIN)
 
 		rev_bits = (motor_s.tot_ang + motor_s.half_qei) >> QEI_RES_BITS; // Get revoultion bits
 		motor_s.est_theta = motor_s.tot_ang - (rev_bits << QEI_RES_BITS); // Calculate remaining angular position [-512..+511]
+
 		motor_s.est_theta <<= QEI_UPSCALE_BITS; // Upscale QEI [-32768..+32767]
+		motor_s.old_ang <<= QEI_UPSCALE_BITS; // Upscale QEI [-32768..+32767]
+		motor_s.tot_ang <<= QEI_UPSCALE_BITS; // Upscale QEI [-32768..+32767]
 	
 		// Handle wrap-around ...
 		diff_revs = (signed char)(rev_bits - motor_s.est_revs); // Difference of Least Significant 8 bits
