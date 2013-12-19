@@ -224,7 +224,7 @@
 #define BLEND_DENOM (1 << BLEND_BITS) // Up-scaling factor
 #define BLEND_HALF (BLEND_DENOM >> 1) // Half Up-scaling factor. Used in rounding
 
-#define QEI_UPSCALE_BITS 4
+#define QEI_UPSCALE_BITS 2
 #define QEI_UPSCALE_DENOM (1 << QEI_UPSCALE_BITS) // Factor for up-scaling QEI values
 #define QEI_HALF_UPSCALE (QEI_UPSCALE_DENOM >> 1) // Half QEI up-scaling Factor (used for rounding)
 #define UQ_PER_PAIR (QEI_PER_PAIR << QEI_UPSCALE_BITS) // No. of different Up-scaled QEI values per pole pair
