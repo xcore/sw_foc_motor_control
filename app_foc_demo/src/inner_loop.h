@@ -128,12 +128,15 @@
 #define MAX_VQ_OPENLOOP 5800 // MB~ Max Vq value for open-loop tuning
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
-
 #define REQ_VELOCITY 400 // Requested motor speed
+
+#define MIN_SPEED 400 // This value is derived from experience
+#define SPEC_MAX_SPEED 4000 // This value is derived from the LDO Motor Max. spec. speed
 #define SAFE_MAX_SPEED 5860 // This value is derived from the Optical Encoder Max. rate of 100kHz
+#define SPEED_INC 100 // If speed change requested, this is the amount of change
 
 // Test definitions
-#define SPEED_INC 400 // If speed change requested, this is the amount of change
+#define SPEED_DIFF 400 // Speed change between test
 #define ITER_INC 50000 // No. of FOC iterations between speed increments
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
@@ -324,10 +327,14 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	ROTA_DATA_TYP vect_data[NUM_ROTA_COMPS]; // Array of structures holding data for each rotating vector component
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
 	MOTOR_STATE_ENUM state; // Current motor state
+	CMD_IO_ENUM cmd_id; // Speed Command
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int est_veloc;	// Estimated angular velocity (from QEI data)
-	int req_veloc;	// Requested (target) angular velocity set by the user/comms interface
+	int req_veloc;	// Internal requested (target) angular velocity
 	int half_veloc;	// Half requested angular velocity
+	int max_veloc;	// Maximum angular velocity
+	int min_veloc;	// Minimum angular velocity
+	int speed_inc; // Speed increment when commanded
 	int prev_veloc;	// previous velocity
 	int open_period;	// Time between updates PWM data during open-loop phase
 	int open_uq_inc;	// Increment to Upscaled theta value during open-loop phase
@@ -386,7 +393,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	// Speed change test
 	int tst_cnt;
-	int speed_inc;
+	int speed_diff;
 
 	int tmp; // MB~
 	int temp; // MB~ Dbg

@@ -85,7 +85,6 @@ static void init_blend_data( // Initialise blending data for 'TRANSIT state'
  */
 {
 	unsigned diff_theta; // blending period (measured as QEI angle positions)
-	unsigned numer_bits; // No of bits used to represent numerator of blending function
 	int Vd_diff; // Vd difference
 	int Vq_diff; // Vq difference
 	int max_diff; // Max Voltage difference
@@ -333,7 +332,12 @@ if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
 		req_gamma = -REQ_GAMMA_CLOSEDLOOP; 
 
 		motor_s.end_hall = NEGA_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
-		motor_s.speed_inc = SPEED_INC; // MB~
+
+		motor_s.speed_inc = -SPEED_INC; // Speed increment when commanded
+		motor_s.max_veloc = -SPEC_MAX_SPEED; // max. velocity
+		motor_s.min_veloc = -MIN_SPEED; // min. velocity
+
+		motor_s.speed_diff = SPEED_DIFF; // MB~ test
 	} // if (0 > motor_s.req_veloc)
 	else
 	{ // Positive spin direction
@@ -343,7 +347,12 @@ if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
 		req_gamma = REQ_GAMMA_CLOSEDLOOP; 
 	
 		motor_s.end_hall = POSI_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
-		motor_s.speed_inc = -SPEED_INC; // MB~
+
+		motor_s.speed_inc = SPEED_INC; // Speed increment when commanded
+		motor_s.max_veloc = SPEC_MAX_SPEED; // max. velocity
+		motor_s.min_veloc = MIN_SPEED; // min velocity
+
+		motor_s.speed_diff = -SPEED_DIFF; // MB~ test
 	} // else !(0 > motor_s.req_veloc)
 
 	// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
@@ -809,6 +818,7 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.est_veloc ,motor_s.req_veloc ,motor_s.est_veloc );
 	}; // if (motor_s.first_pid)
 
+#ifdef MB
 // Speed change test //MB~
 {
 	motor_s.tst_cnt++;
@@ -816,23 +826,24 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	{
 		motor_s.tst_cnt = 0;
 
-		if (4000 <= abs(motor_s.req_veloc))
+		if (SPEC_MAX_SPEED <= abs(motor_s.req_veloc))
 		{ // Decrease speed
-			motor_s.speed_inc = -motor_s.speed_inc;
-		} // if (4000 < motor_s.req_veloc)
+			motor_s.speed_diff = -motor_s.speed_diff;
+		} // if (SPEC_MAX_SPEED < motor_s.req_veloc)
 
-		if (400 >= abs(motor_s.req_veloc))
+		if (MIN_SPEED >= abs(motor_s.req_veloc))
 		{ // Decrease speed
-			motor_s.speed_inc = -motor_s.speed_inc;
-		} // if (400 > motor_s.req_veloc)
+			motor_s.speed_diff = -motor_s.speed_diff;
+		} // if (MIN_SPEED > motor_s.req_veloc)
 
-		motor_s.req_veloc += motor_s.speed_inc;
+		motor_s.req_veloc += motor_s.speed_diff;
 if (motor_s.id)
 {
 	acquire_lock(); printintln(motor_s.req_veloc); release_lock(); //MB~
 } // if (motor_s.id)
 	} // if (motor_s.tst_cnt > ITER_INC)
 } //MB~
+#endif //MB~
 
 // if (motor_s.xscope) xscope_int( 3 ,motor_s.req_veloc);
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.req_veloc ,motor_s.est_veloc );
@@ -1575,6 +1586,45 @@ if (ADC_UPSCALE_BITS > 0)
 } // collect_sensor_data
 /*****************************************************************************/
 #pragma unsafe arrays
+static void process_speed_command( // Decodes speed command, and implements changes
+	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
+	CMD_IO_ENUM cmd_id // Command identifier from control interface
+)
+{
+	switch(cmd_id)
+	{
+		case IO_CMD_INC_SPEED :
+			motor_s.req_veloc += motor_s.speed_inc;
+
+			if (SPEC_MAX_SPEED < abs(motor_s.req_veloc))
+			{ // Increase speed
+				motor_s.req_veloc = motor_s.max_veloc;
+			} // if (4000 < motor_s.req_veloc)
+		break; // case IO_CMD_INC_SPEED 
+	
+		case IO_CMD_DEC_SPEED :
+			motor_s.req_veloc -= motor_s.speed_inc;
+
+			if (MIN_SPEED > abs(motor_s.req_veloc))
+			{ // Increase speed
+				motor_s.req_veloc = motor_s.min_veloc;
+			} // if (4000 < motor_s.req_veloc)
+		break; // case IO_CMD_DEC_SPEED 
+	
+		case IO_CMD_FLIP_SPIN:
+			acquire_lock(); printint(motor_s.id); printstrln(": 'Flip Spin' NOT currently supported");	release_lock();
+		break; // case IO_CMD_FLIP_SPIN
+	
+    default: // Unsupported Speed command
+			assert(0 == 1); // cmd_id NOT supported
+    break; // default
+	} // switch(cmd_id)
+
+	motor_s.half_veloc = (motor_s.req_veloc >> 1);
+
+} // process_speed_command
+/*****************************************************************************/
+#pragma unsafe arrays
 static void use_motor ( // Start motor, and run step through different motor states
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
 	chanend c_pwm, 
@@ -1586,7 +1636,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 	chanend c_wd
 )
 {
-	unsigned command;	// Command received from the control interface
+	CMD_IO_ENUM cmd_id; // Command identifier from control interface
 
 
 	motor_s.tymer :> motor_s.prev_pwm_time; // Store time-stamp
@@ -1599,57 +1649,52 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 #pragma xta endpoint "foc_loop"
 		select
 		{
-		case c_speed :> command:		/* This case responds to speed control through shared I/O */
+		case c_speed :> cmd_id:		/* This case responds to speed control through shared I/O */
 #pragma xta label "foc_loop_speed_comms"
-			switch(command)
+			switch(cmd_id)
 			{
 				case IO_CMD_GET_IQ :
 					c_speed <: motor_s.est_veloc;
 					c_speed <: motor_s.req_veloc;
 				break; // case IO_CMD_GET_IQ
 	
-				case IO_CMD_SET_SPEED :
-					c_speed :> motor_s.req_veloc;
-					motor_s.half_veloc = (motor_s.req_veloc >> 1);
-				break; // case IO_CMD_SET_SPEED 
-	
 				case IO_CMD_GET_FAULT :
 					c_speed <: motor_s.err_data.err_flgs;
 				break; // case IO_CMD_GET_FAULT 
 	
 		    default: // Unsupported
-					assert(0 == 1); // command NOT supported
+					process_speed_command( motor_s ,cmd_id );
 		    break; // default
-			} // switch(command)
+			} // switch(cmd_id)
 
-		break; // case c_speed :> command:
+		break; // case c_speed :> cmd_id:
 
-		case c_commands :> command:		//This case responds to CAN or ETHERNET commands
+		case c_commands :> cmd_id:		//This case responds to CAN or ETHERNET commands
 #pragma xta label "foc_loop_shared_comms"
-			if(command == IO_CMD_GET_VALS)
+			switch(cmd_id)
 			{
-				c_commands <: motor_s.est_veloc;
-				c_commands <: motor_s.adc_params.vals[ADC_PHASE_A];
-				c_commands <: motor_s.adc_params.vals[ADC_PHASE_B];
-			}
-			else if(command == IO_CMD_GET_VALS2)
-			{
-				c_commands <: motor_s.adc_params.vals[ADC_PHASE_C];
-				c_commands <: motor_s.pid_veloc;
-				c_commands <: motor_s.pid_Id;
-				c_commands <: motor_s.pid_Iq;
-			}
-			else if (command == IO_CMD_SET_SPEED)
-			{
-				c_commands :> motor_s.req_veloc;
-				motor_s.half_veloc = (motor_s.req_veloc >> 1);
-			}
-			else if (command == IO_CMD_GET_FAULT)
-			{
-				c_commands <: motor_s.err_data.err_flgs;
-			}
-
-		break; // case c_commands :> command:
+				case IO_CMD_GET_VALS :
+					c_commands <: motor_s.est_veloc;
+					c_commands <: motor_s.adc_params.vals[ADC_PHASE_A];
+					c_commands <: motor_s.adc_params.vals[ADC_PHASE_B];
+				break; // case IO_CMD_GET_VALS
+	
+				case IO_CMD_GET_VALS2 :
+					c_commands <: motor_s.adc_params.vals[ADC_PHASE_C];
+					c_commands <: motor_s.pid_veloc;
+					c_commands <: motor_s.pid_Id;
+					c_commands <: motor_s.pid_Iq;
+				break; // case IO_CMD_GET_VALS2
+	
+				case IO_CMD_GET_FAULT :
+					c_commands <: motor_s.err_data.err_flgs;
+				break; // case IO_CMD_GET_FAULT 
+	
+		    default: // Unsupported
+					process_speed_command( motor_s ,cmd_id );
+		    break; // default
+			} // switch(cmd_id)
+		break; // case c_commands :> cmd_id:
 
 		default:	// This case updates the motor state
 // xscope_int( (8+motor_s.id) ,(8+motor_s.id) );
