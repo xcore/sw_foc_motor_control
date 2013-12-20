@@ -129,8 +129,12 @@
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
 
-#define REQ_VELOCITY 1000 // Requested motor speed
+#define REQ_VELOCITY 400 // Requested motor speed
 #define SAFE_MAX_SPEED 5860 // This value is derived from the Optical Encoder Max. rate of 100kHz
+
+// Test definitions
+#define SPEED_INC 400 // If speed change requested, this is the amount of change
+#define ITER_INC 50000 // No. of FOC iterations between speed increments
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
 #define VELOC_FILT 1
@@ -199,7 +203,8 @@
 
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
-#define DEMO_LIMIT 400000 // XSCOPE
+//MB~	#define DEMO_LIMIT 400000 // XSCOPE
+#define DEMO_LIMIT 8000000 // XSCOPE
 #else // if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 4000000
 	#define DEMO_LIMIT 4000
@@ -378,6 +383,10 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int coef_vel_err; // Coefficient diffusion error
 	int scale_vel_err; // Velocity Scaling diffusion error 
 	int veloc_err; // Velocity diffusion error 
+
+	// Speed change test
+	int tst_cnt;
+	int speed_inc;
 
 	int tmp; // MB~
 	int temp; // MB~ Dbg

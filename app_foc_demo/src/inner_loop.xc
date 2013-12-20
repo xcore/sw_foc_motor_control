@@ -104,7 +104,7 @@ static void init_blend_data( // Initialise blending data for 'TRANSIT state'
 	{ // Update 
 		blend_bits = RF_DIV_RPM_BITS - sum_bits; // Bit resolution of blending increment
 		motor_s.open_period = (1 << (PWM_RES_BITS - sum_bits));	// NB Forces update after a No. of PWM periods
-		motor_s.open_uq_inc = 1; // Single increment to Upscaled theta value during open-loop phase
+
 	} // if (sum_bits < RF_DIV_RPM_BITS )
 	else
 	{
@@ -112,6 +112,11 @@ static void init_blend_data( // Initialise blending data for 'TRANSIT state'
 		motor_s.open_period = 0;	// NB Forces update every PWM period
 		motor_s.open_uq_inc = (1 << (sum_bits - RF_DIV_RPM_BITS)); // Increment to Upscaled theta value during open-loop phase
 	} // else !(sum_bits < RF_DIV_RPM_BITS )
+
+	if (0 > motor_s.req_veloc)
+	{ // Negative spin direction
+		motor_s.open_uq_inc = -motor_s.open_uq_inc; // Spin in Negative direction
+	} // if (0 > motor_s.req_veloc)
 
 	motor_s.blend_inc = (1 << blend_bits); // Blending weight increment for during TRANSIT state
 
@@ -257,6 +262,7 @@ static void init_motor( // initialise data structure for one motor
 
 	motor_s.id = motor_id; // Unique Motor identifier e.g. 0 or 1
 	motor_s.iters = 0;
+	motor_s.tst_cnt = 0; // MB~
 	motor_s.cnts[ALIGN] = 0;
 	motor_s.cnts[SEARCH] = 0;
 	motor_s.state = ALIGN;
@@ -306,7 +312,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.filt_adc = START_VOLT_OPENLOOP; // Preset filtered value to something sensible
 
 	motor_s.req_veloc = REQ_VELOCITY;
-//MB~ if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
+if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 	motor_s.prev_veloc = 0; // Previous measured velocity
 
@@ -327,6 +333,7 @@ static void init_motor( // initialise data structure for one motor
 		req_gamma = -REQ_GAMMA_CLOSEDLOOP; 
 
 		motor_s.end_hall = NEGA_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
+		motor_s.speed_inc = SPEED_INC; // MB~
 	} // if (0 > motor_s.req_veloc)
 	else
 	{ // Positive spin direction
@@ -336,6 +343,7 @@ static void init_motor( // initialise data structure for one motor
 		req_gamma = REQ_GAMMA_CLOSEDLOOP; 
 	
 		motor_s.end_hall = POSI_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
+		motor_s.speed_inc = -SPEED_INC; // MB~
 	} // else !(0 > motor_s.req_veloc)
 
 	// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
@@ -557,8 +565,8 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 		filter_current_component( motor_s.vect_data[comp_cnt] );
 	} // for comp_cnt
 
-if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I );
-if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I );
+// if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I );
+// if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I );
 
 { // MB~
 	int d_abs = abs(motor_s.vect_data[D_ROTA].est_I);
@@ -686,15 +694,7 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 	// Check if theta needs incrementing
 	if (motor_s.open_period < diff_time)
 	{
-		if (motor_s.req_veloc < 0)
-		{
-			motor_s.open_theta -= motor_s.open_uq_inc; // Decrement demand theta value
-		} // if (motor_s.req_veloc < 0)
-		else
-		{
-			motor_s.open_theta += motor_s.open_uq_inc; // Increment demand theta value
-		} // else !(motor_s.req_veloc < 0)
-
+		motor_s.open_theta += motor_s.open_uq_inc; // Increment demand theta value
 		motor_s.prev_pwm_time = cur_time; // Update previous time
 	} // if (motor_s.open_period < diff_time)
 
@@ -753,14 +753,7 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 	{
 		motor_s.prev_pwm_time = cur_time; // Update previous time
 
-		if (motor_s.req_veloc < 0)
-		{
-			motor_s.open_theta -= motor_s.open_uq_inc; // Decrement demand theta value
-		} // if (motor_s.req_veloc < 0)
-		else
-		{
-			motor_s.open_theta += motor_s.open_uq_inc; // Increment demand theta value
-		} // else !(motor_s.req_veloc < 0)
+		motor_s.open_theta += motor_s.open_uq_inc; // Increment demand theta value
 
 		motor_s.trans_cnt++; // Increment No of transition cycles
 
@@ -816,19 +809,30 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.est_veloc ,motor_s.req_veloc ,motor_s.est_veloc );
 	}; // if (motor_s.first_pid)
 
-// #ifdef MB
-	if (motor_s.iters > 50000)
-	{ // Track est_Iq value
-		motor_s.temp++; 
-	
-		if (100 == motor_s.temp)
-		{
-			motor_s.temp = 0; 
-//			if (4000 > motor_s.req_veloc) motor_s.req_veloc++;
-			if (0 < motor_s.req_veloc) motor_s.req_veloc--;
-		} // if (1024 == motor_s.temp)
-	} //if (motor_s.iters > 25000)
-// #endif //MB~
+// Speed change test //MB~
+{
+	motor_s.tst_cnt++;
+	if (motor_s.tst_cnt > ITER_INC)
+	{
+		motor_s.tst_cnt = 0;
+
+		if (4000 <= abs(motor_s.req_veloc))
+		{ // Decrease speed
+			motor_s.speed_inc = -motor_s.speed_inc;
+		} // if (4000 < motor_s.req_veloc)
+
+		if (400 >= abs(motor_s.req_veloc))
+		{ // Decrease speed
+			motor_s.speed_inc = -motor_s.speed_inc;
+		} // if (400 > motor_s.req_veloc)
+
+		motor_s.req_veloc += motor_s.speed_inc;
+if (motor_s.id)
+{
+	acquire_lock(); printintln(motor_s.req_veloc); release_lock(); //MB~
+} // if (motor_s.id)
+	} // if (motor_s.tst_cnt > ITER_INC)
+} //MB~
 
 // if (motor_s.xscope) xscope_int( 3 ,motor_s.req_veloc);
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.req_veloc ,motor_s.est_veloc );
@@ -1172,12 +1176,13 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.est_veloc); release_loc
 		break; // case SEARCH 
 	
 		case FOC : // Normal FOC state
-	if (motor_s.diff_ang != 0)
-	{
-xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
-			calc_foc_pwm( motor_s );
-xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
-	} // if (motor_s.diff_ang != 0)
+			// Check if QEI data changed since previous update
+			if (motor_s.diff_ang != 0)
+			{
+if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
+				calc_foc_pwm( motor_s );
+// if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
+			} // if (motor_s.diff_ang != 0)
 		break; // case FOC
 
 		case STALL : // state where motor stalled
@@ -1651,7 +1656,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			motor_s.iters++; // Increment No. of iterations 
 
 			// NB There is not enough band-width to probe all xscope data
-			if (motor_s.iters & 7) // probe every 8th value
+			if (motor_s.iters & 15) // probe every 8th value
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
