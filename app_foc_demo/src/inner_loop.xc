@@ -287,6 +287,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.prev_ang = 0;	// Previous value of total angle
 	motor_s.raw_ang = 0;	// Raw QEI total angle value
 	motor_s.diff_ang = 0;	// Difference between QEI angles
+	motor_s.prev_diff = 0;	// Previous difference between QEI angles
 	motor_s.est_theta = 0; // estimated theta value (from QEI data)
 	motor_s.set_theta = 0; // PWM theta value
 	motor_s.open_theta = 0; // Open-loop theta value
@@ -307,6 +308,8 @@ static void init_motor( // initialise data structure for one motor
 	tmp_val = (1 << QEI_RES_BITS); // Build No. of QEI points from resolution bits
 	assert( QEI_PER_REV == tmp_val );
 
+	motor_s.est_period = PWM_MAX_VALUE; // Initial value for estimated QEI period
+	motor_s.prev_period = PWM_MAX_VALUE; // Initialise previous value for QEI period
 
 	motor_s.filt_adc = START_VOLT_OPENLOOP; // Preset filtered value to something sensible
 
@@ -574,9 +577,6 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 		filter_current_component( motor_s.vect_data[comp_cnt] );
 	} // for comp_cnt
 
-// if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I );
-// if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I );
-
 { // MB~
 	int d_abs = abs(motor_s.vect_data[D_ROTA].est_I);
 	int q_abs = abs(motor_s.vect_data[Q_ROTA].est_I);
@@ -792,7 +792,7 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 	motor_s.vect_data[Q_ROTA].set_V = motor_s.vect_data[Q_ROTA].trans_V; 
 } // calc_transit_pwm
 /*****************************************************************************/
-static void calc_foc_pwm( // Calculate FOC PWM output values
+static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 /* The estimated tangential coil current (Iq), is much less than the requested value (Iq)
@@ -844,6 +844,19 @@ if (motor_s.id)
 	} // if (motor_s.tst_cnt > ITER_INC)
 } //MB~
 #endif //MB~
+
+//#ifdef MB
+	if (motor_s.iters > 50000)
+	{ // Track est_Iq value
+		motor_s.temp++; 
+	
+		if (64 == motor_s.temp)
+		{
+			motor_s.temp = 0; 
+			if (90 < motor_s.req_veloc) motor_s.req_veloc--;
+		} // if (1024 == motor_s.temp)
+	} //if (motor_s.iters > 25000)
+// #endif //MB~
 
 // if (motor_s.xscope) xscope_int( 3 ,motor_s.req_veloc);
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.req_veloc ,motor_s.est_veloc );
@@ -1005,13 +1018,18 @@ targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V + HALF_V2I) >> V2I_
 		calc_open_loop_pwm( motor_s );
 	} // else !(IQ_ID_CLOSED)
 
+	motor_s.first_pid = 0; // Clear 'first PID' flag
+
+} // update_foc_voltage
+/*****************************************************************************/
+static void update_foc_angle( // Update FOC PWM angular postion
+	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
+)
+{
 	// Update 'demand' theta value for next dq_to_pwm iteration from QEI-angle
 	motor_s.set_theta = calc_foc_angle( motor_s ,motor_s.est_theta );
 
-//MB~Q	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 	motor_s.set_theta &= UQ_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
-
-	motor_s.first_pid = 0; // Clear 'first PID' flag
 
 #if  (1 == GAMMA_SWEEP)
 { //MB~
@@ -1034,7 +1052,19 @@ targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V + HALF_V2I) >> V2I_
 } //MB~
 #endif //(1 == GAMMA_SWEEP)
 
+} // update_foc_angle
+/*****************************************************************************/
+static void calc_foc_pwm( // Calculate FOC PWM output values
+	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
+)
+{
+	// Check if QEI data changed since previous update
+	if (motor_s.diff_ang != 0)
+	{
+		update_foc_voltage( motor_s );
+	} // if (motor_s.diff_ang != 0)
 
+	update_foc_angle( motor_s );
 } // calc_foc_pwm
 /*****************************************S************************************/
 static void update_motor_state( // Update state of motor based on motor sensor data
@@ -1187,13 +1217,7 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.est_veloc); release_loc
 		break; // case SEARCH 
 	
 		case FOC : // Normal FOC state
-			// Check if QEI data changed since previous update
-			if (motor_s.diff_ang != 0)
-			{
-if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
-				calc_foc_pwm( motor_s );
-// if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
-			} // if (motor_s.diff_ang != 0)
+			calc_foc_pwm( motor_s );
 		break; // case FOC
 
 		case STALL : // state where motor stalled
@@ -1432,6 +1456,7 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	int diff_ang; // Difference angle
 	int rev_bits; // Bits of total angle count used for revolution count
 	signed char diff_revs; // Difference in LS bits of revolution counter
+	unsigned qei_period; // QEI period: input (unsigned) ticks per QEI position (in Reference Frequency Cycles)
 
 
 	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
@@ -1469,12 +1494,31 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	
 		// Check if velocity update required
 		if (diff_ang != 0)
-		{
-			motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,motor_s.qei_params.period ); // Update velocity estimate
-	
+		{ // Angular position change detected
+			motor_s.est_period = PWM_MAX_VALUE; // Reset value for estimated QEI period
+			qei_period = motor_s.qei_params.period; // Assign measured QEI period
+
+			motor_s.prev_period = qei_period; // Store QEI period for next iteration
 			motor_s.prev_ang = motor_s.tot_ang; // Store total angular position for next iteration
+			motor_s.prev_diff = diff_ang; // Store angular change
 		} // if (diff_ang != 0)
+		else
+		{ // No Angular position change QEI. so use estimate
+			motor_s.est_period += PWM_MAX_VALUE; // Extend estimated QEI period
+			diff_ang = motor_s.prev_diff; // use previous non-zero difference angle
+
+			if (motor_s.est_period > motor_s.prev_period)
+			{ // Use estimated QEI period
+				qei_period = motor_s.est_period; // Assign estimated QEI period
+			} // if (motor_s.est_period > motor_s.prev_period)
+			else
+			{ // Use previous QEI period
+				qei_period = motor_s.prev_period; // Assign previous QEI period
+			} // if (motor_s.est_period > motor_s.prev_period)
+		} // else !(diff_ang != 0)
 	
+		motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,qei_period ); // Update velocity estimate
+
 #if (1 == VELOC_FILT) 
 		// Filter velocity. MB~ Need to investigate why velocity spikes occur
 	
@@ -1492,6 +1536,9 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	
 		motor_s.prev_veloc = motor_s.est_veloc; // Update previous velocity
 #endif // VELOC_FILT
+
+if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
+// if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
 	} // if (motor_s.qei_params.period > 0)
 } // get_qei_data
 /*****************************************************************************/
@@ -1723,7 +1770,10 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 
 		}	// select
 
+if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[D_ROTA].est_I );
 		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
+if (motor_s.xscope) xscope_int( 3 ,motor_s.vect_data[Q_ROTA].est_I );
+
 	}	// while (STOP != motor_s.state)
 
 	// Set PWM values to stop motor

@@ -128,7 +128,7 @@
 #define MAX_VQ_OPENLOOP 5800 // MB~ Max Vq value for open-loop tuning
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
-#define REQ_VELOCITY 400 // Requested motor speed
+#define REQ_VELOCITY 1000 // Requested motor speed
 
 #define MIN_SPEED 400 // This value is derived from experience
 #define SPEC_MAX_SPEED 4000 // This value is derived from the LDO Motor Max. spec. speed
@@ -336,6 +336,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int min_veloc;	// Minimum angular velocity
 	int speed_inc; // Speed increment when commanded
 	int prev_veloc;	// previous velocity
+	int est_period;	// Estimate of QEI period
+	int prev_period;	// previous value of QEI period
 	int open_period;	// Time between updates PWM data during open-loop phase
 	int open_uq_inc;	// Increment to Upscaled theta value during open-loop phase
 	int pid_veloc;	// Output of angular velocity PID
@@ -347,6 +349,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int raw_ang;	// Raw total angle delivered by QEI Client
 	int prev_ang;	// Previous total angle traversed (NB accounts for multiple revolutions)
 	int diff_ang;	// Difference angle QEI between updates
+	int prev_diff;	// Previous Non-zero Difference angle QEI between updates
 	int est_theta;		// Estimated Angular position (from QEI data)
 	int est_revs;	// Estimated No of revolutions (No. of origin traversals) (from QEI data)
 	int prev_revs;	// Previous No of revolutions
