@@ -1081,6 +1081,8 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 		} break; // case ALIGN
 	
 		case SEARCH : // Turn motor using theta steps (open-loop), and update motor state
+ 			calc_open_loop_pwm( motor_s );
+
 			// Check if end of SEARCH state
 			if (motor_s.search_theta == abs(motor_s.open_theta))
 			{ /* Calculate QEI offset
@@ -1095,7 +1097,9 @@ acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
 		break; // case SEARCH 
 	
 		case TRANSIT : // Transit between open-loop and FOC, and update motor state
-			// Check if end of SEACRH state
+ 			calc_transit_pwm( motor_s );
+
+			// Check if end of TRANSIT state
 			if (motor_s.trans_theta == abs(motor_s.open_theta))
 			{
 				motor_s.vect_data[D_ROTA].start_open_V = motor_s.vect_data[D_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
@@ -1108,6 +1112,12 @@ acquire_lock(); printstrln("FOC");release_lock(); //MB~
 		break; // case TRANSIT
 	
 		case FOC : // Normal FOC state
+			// Check if QEI data changed since previous update
+			if (motor_s.diff_ang != 0)
+			{
+				calc_foc_pwm( motor_s );
+			} // if (motor_s.diff_ang != 0)
+
 			// Check for a stall
 #ifdef MB
 			// check for correct spin direction
@@ -1145,6 +1155,8 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.est_veloc); release_loc
 		break; // case FOC
 	
 		case STALL : // state where motor stalled
+			calc_foc_pwm( motor_s );
+
 			// Check if still stalled
 #ifdef MB
 			if (motor_s.meas_speed < STALL_SPEED) 
@@ -1176,43 +1188,6 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.est_veloc); release_loc
 	} // switch( motor_s.state )
 
 	motor_s.cnts[motor_s.state]++; // Update counter for new motor state 
-
-	// Select correct method of calculating DQ values
-#pragma fallthrough
-	switch( motor_s.state )
-	{
-		case ALIGN : // Turn motor until Aligned
-			// Nothing to do
-		break; // case ALIGN
-	
-		case SEARCH : // Turn motor until FOC start condition found
- 			calc_open_loop_pwm( motor_s );
-		break; // case SEARCH 
-	
-		case TRANSIT : // Smoothly transit from open-loop to FOC
- 			calc_transit_pwm( motor_s );
-		break; // case SEARCH 
-	
-		case FOC : // Normal FOC state
-			// Check if QEI data changed since previous update
-			if (motor_s.diff_ang != 0)
-			{
-				calc_foc_pwm( motor_s );
-			} // if (motor_s.diff_ang != 0)
-		break; // case FOC
-
-		case STALL : // state where motor stalled
-			calc_foc_pwm( motor_s );
-		break; // case STALL
-
-		case STOP : // Error state where motor stopped
-			// Nothing to do
-		break; // case STOP
-	
-    default: // Unsupported
-			assert(0 == 1); // Motor state not supported
-    break;
-	} // switch( motor_s.state )
 
 	return;
 } // update_motor_state
