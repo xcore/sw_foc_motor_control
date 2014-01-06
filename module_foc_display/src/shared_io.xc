@@ -14,19 +14,22 @@
 
 #include "shared_io.h"
 
+#define ASJ 1
 
+/*****************************************************************************/
 
-#include "print.h"
+#if (1 == ASJ) // Start-of Andrew_SJ's test-code
+
+#include <stdlib.h>
+
+/*****************************************************************************/
 static void wait(unsigned millis){
     timer t;
     unsigned time;
     t:> time;
     t when timerafter(time+millis*100000) :> int;
 }
-
-#include <stdlib.h>
-#include <print.h>
-
+/*****************************************************************************/
 static void stop(chanend c_speed[]){
         c_speed[0] <: IO_CMD_SET_SPEED;
         c_speed[0] <: 0;
@@ -35,16 +38,14 @@ static void stop(chanend c_speed[]){
 
         wait(100);
 }
+/*****************************************************************************/
 static void set_both_motors_speed(chanend c_speed[], int rpm){
         c_speed[0] <: IO_CMD_SET_SPEED;
         c_speed[0] <: rpm;
         c_speed[1] <: IO_CMD_SET_SPEED;
         c_speed[1] <: rpm;
 }
-
-
-
-
+/*****************************************************************************/
 static void test_motor(chanend c_speed[]){
 #define MIN_TEST_RPM 400
 #define EASY_SPEED 1000
@@ -156,29 +157,9 @@ static void test_motor(chanend c_speed[]){
 
     stop(c_speed);
 }
+/*****************************************************************************/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif // ( 1 == ASJ) End-of Andrew_SJ's test-code
 
 /*****************************************************************************/
 static void update_speed_control( // Updates the speed control loop
@@ -349,11 +330,12 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 					leds <: 0;
 				} // else !(btns_val)
 			break; // case !btn_en => btns when pinsneq(btns_val) :> btns_val:
-//MB~
+
+#if (1 == ASJ) // Call Andrew_SJ's test-code
 			default :
 				test_motor( c_speed );
 			break; // case !btn_en => btns when pinsneq(btns_val) :> btns_val:
-//MB~
+#endif // ( 1 == ASJ)
 		} // select
 	} // while (1)
 } // display_shared_io_manager
