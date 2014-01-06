@@ -24,7 +24,48 @@
 #include "pid_regulator.h"
 
 /*****************************************************************************/
-void init_pid_consts( // Initialise a set of PID Constants
+int init_one_pid_const( // Convert one floating point PID Constant to fixed point
+	float inp_Ke, // Input Error constant
+	int scale_factor // Ratio of Output Fixed-Point value to Input Floating-Point value
+) // Return fixed point (integer) value
+{
+	int out_int; // returned output integer value
+
+
+	if (inp_Ke == 0 )
+	{
+		return 0; // Return zero
+	} // if (inp_Ke < 0 )
+
+	if (inp_Ke < 0 )
+	{
+		assert(1 == 0); // ERROR: Negative values NOT supported
+	} // if (inp_Ke < 0 )
+
+	out_int = (int)(inp_Ke * (float)scale_factor + (float)0.5); // Scale-up floating-point to fixed-point
+
+	assert( out_int > 16 ); // WARNING: Loss of precision
+
+	return out_int; // Return rounded value
+} // init_one_pid_const
+/*****************************************************************************/
+void init_all_pid_consts( // Initialise a set of floating point PID Constants
+	PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
+	float inp_K_p, // Input Proportional Error constant
+	float inp_K_i, // Input Integral Error constant
+	float inp_K_d // Input Differential Error constant
+)
+{
+	pid_const_p->K_p = init_one_pid_const( inp_K_p ,(1 << PID_CONST_RES) );
+	pid_const_p->K_d = init_one_pid_const( inp_K_d ,(1 << PID_CONST_RES) );
+	pid_const_p->K_i = init_one_pid_const( inp_K_i ,(1 << PID_CONST_RES) );
+
+	// Preset resolution for sum-of-errors to NO down-scaling
+	pid_const_p->sum_res = 0;
+	pid_const_p->half_scale = 0;
+} // init_all_pid_consts
+/*****************************************************************************/
+void init_int_pid_consts( // Initialise a set of integer PID Constants
 	PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
 	int inp_K_p, // Input Proportional Error constant
 	int inp_K_i, // Input Integral Error constant
@@ -38,7 +79,7 @@ void init_pid_consts( // Initialise a set of PID Constants
 	// Preset resolution for sum-of-errors to NO down-scaling
 	pid_const_p->sum_res = 0;
 	pid_const_p->half_scale = 0;
-} // init_pid_consts
+} // init_int_pid_consts
 /*****************************************************************************/
 void initialise_pid( // Initialise PID regulator 
 	PID_REGULATOR_TYP * pid_regul_p // Pointer to PID regulator data structure

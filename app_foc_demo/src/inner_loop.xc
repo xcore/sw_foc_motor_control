@@ -161,39 +161,25 @@ static void init_pid_data( // Initialise PID data
 	 * The Error Sum is held at a reduced precision:  Sum_Err /  2^PID_CONST_RES
 	 * Therefore in the init_pid_consts interface K_i is upscaled by 2^PID_CONST_RES to compensate
 	 */
-//MB~			init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,0 ,0 ,0 );
-//MB~			init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID]		,580000 ,384 ,0 );
-//MB~			init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID]		,19000 ,4000	,0 );
-//MB~			init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID]		,(1 << (PID_CONST_RES - 1)) ,4000 ,0 ); // NB Kp assumes target Id=0
-//MB~			init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID]		,19000 ,1000	,0 );
-//MB~			init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,472000 ,100	,0 );
-//MB~			init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,193000 ,100	,0 );
-//MB~ 		init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,(1 << (PID_CONST_RES - 1) ,100 ,0 ); // NB Kp assumes target Id=0
-
-//MB~	init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1600000 ,4000 ,0 ); // NB Kp assumes target Id=0
-//MB~	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
-//MB~	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,6 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
-
-#if (1 == QEI_RS_MODE)
 	// Regular-Sampling mode 
+#ifdef MB // Depreciated
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1600000 ,1000 ,0 ); // NB Kp assumes target Id=0
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
 	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,6 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
-#else // if (1 == QEI_RS_MODE)
-	// Edge-Trigger mode 
-	init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1600000 ,1000 ,0 ); // NB Kp assumes target Id=0
-	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
-	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,6 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
-#endif // else !(1 == QEI_RS_MODE)
+#endif //MB~
+
+	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,48.8281 ,0.0305177 ,0.0 ); // NB Kp assumes target Id=0
+	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,33.5693 ,0.0610352	,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,0.668335 ,0.000183105 ,0.0 ); // NB Tuned to give correct Velocity -> Iq conversion
 
 // MB~ EXTREMA and VELOCITY need a re-tune
-	init_pid_consts( motor_s.pid_consts[EXTREMA][ID_PID] ,0 ,0 ,0 );
-	init_pid_consts( motor_s.pid_consts[EXTREMA][IQ_PID]		,400000 ,256 ,0 );
-	init_pid_consts( motor_s.pid_consts[EXTREMA][SPEED_PID]	,20000	,3 ,0 );
+	init_int_pid_consts( motor_s.pid_consts[EXTREMA][ID_PID] ,0 ,0 ,0 );
+	init_int_pid_consts( motor_s.pid_consts[EXTREMA][IQ_PID]		,400000 ,256 ,0 );
+	init_int_pid_consts( motor_s.pid_consts[EXTREMA][SPEED_PID]	,20000	,3 ,0 );
 
-	init_pid_consts( motor_s.pid_consts[VELOCITY][ID_PID] ,0 ,0 ,0 );
-	init_pid_consts( motor_s.pid_consts[VELOCITY][IQ_PID]		,12000 ,8 ,0 );
-	init_pid_consts( motor_s.pid_consts[VELOCITY][SPEED_PID]	,11200 ,8 ,0 );
+	init_int_pid_consts( motor_s.pid_consts[VELOCITY][ID_PID] ,0 ,0 ,0 );
+	init_int_pid_consts( motor_s.pid_consts[VELOCITY][IQ_PID]		,12000 ,8 ,0 );
+	init_int_pid_consts( motor_s.pid_consts[VELOCITY][SPEED_PID]	,11200 ,8 ,0 );
 
 	// Initialise PID regulators
 	for (pid_cnt = 0; pid_cnt < NUM_PIDS; pid_cnt++)
@@ -289,7 +275,7 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.diff_ang = 0;	// Difference between QEI angles
 	motor_s.prev_diff = 0;	// Previous difference between QEI angles
 	motor_s.est_theta = 0; // estimated theta value (from QEI data)
-	motor_s.set_theta = 0; // PWM theta value
+	motor_s.set_theta = 0; // Set PWM theta value
 	motor_s.open_theta = 0; // Open-loop theta value
 	motor_s.foc_theta = 0; // FOC theta value
 	motor_s.est_revs = 0; // Estimated No. of revolutions (from QEI data)
@@ -300,9 +286,8 @@ static void init_motor( // initialise data structure for one motor
 
 	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
 	motor_s.filt_veloc = 0; // filtered value
-	motor_s.coef_vel_err = 0; // Coefficient diffusion error
-	motor_s.scale_vel_err = 0; // Scaling diffusion error 
-	motor_s.veloc_err = 0; // Speed diffusion error 
+	motor_s.coef_vel_err = 0; // Velocity filter coefficient diffusion error
+	motor_s.scale_vel_err = 0; // Velocity scaling diffusion error 
 
 	// Check consistency of pre-defined QEI values
 	tmp_val = (1 << QEI_RES_BITS); // Build No. of QEI points from resolution bits
@@ -560,9 +545,6 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 
 	clarke_transform( motor_s.adc_params.vals[ADC_PHASE_A], motor_s.adc_params.vals[ADC_PHASE_B], motor_s.adc_params.vals[ADC_PHASE_C], alpha_meas, beta_meas );
 
-// if (motor_s.xscope) xscope_int( 3 ,(-alpha_meas * 17) );
-// if (motor_s.xscope) xscope_int( 4 ,(-beta_meas * 17) );
-
 #pragma xta label "foc_loop_park"
 
 	// Estimate coil currents (Id & Iq) using park transform
@@ -593,7 +575,6 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 		h_abs = q_abs + (d_abs >> 1);
 	} // else (d_abs > q_abs)
 
-//	if (motor_s.xscope) xscope_int( 5 ,h_abs );
 	if (h_abs > 0)
 	{
 		eficny = (motor_s.est_veloc + (h_abs >> 1)) / h_abs;  
@@ -602,7 +583,6 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 	{
 		eficny = 0;
 	} // if (h_abs > 0)
-// if (motor_s.xscope) xscope_int( 4 ,eficny );
 } // MB~
 
 } // estimate_Iq_using_transforms
@@ -666,20 +646,22 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	int phase_cnt; // phase counter
 
 
+// if (motor_s.xscope) xscope_int( 5 ,inp_theta ); //MB~
 	motor_s.vect_data[D_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[D_ROTA] );
 	motor_s.vect_data[Q_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[Q_ROTA] );
+// if (motor_s.xscope) xscope_int( 6 ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
 
-// if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
-// if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
-
-// if (motor_s.xscope) xscope_int( (2+motor_s.id) ,inp_theta ); //MB~
- 
 	// Inverse park  [d, q, theta] --> [alpha, beta]
 	inverse_park_transform( alpha_set ,beta_set ,motor_s.vect_data[D_ROTA].set_V ,motor_s.vect_data[Q_ROTA].set_V 
 		,((inp_theta + QEI_HALF_UPSCALE) >> QEI_UPSCALE_BITS) );
+// if (motor_s.xscope) xscope_int( 8 ,alpha_set ); //MB~
+// if (motor_s.xscope) xscope_int( 9 ,beta_set ); //MB~
 
 	// Final voltages applied: 
 	inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
+if (motor_s.xscope) xscope_int( 1 ,volts[PWM_PHASE_A] ); //MB~
+if (motor_s.xscope) xscope_int( 8 ,volts[PWM_PHASE_B] ); //MB~
+if (motor_s.xscope) xscope_int( 9 ,volts[PWM_PHASE_C] ); //MB~
 
 	/* Scale to 12bit unsigned for PWM output */
 	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
@@ -845,7 +827,7 @@ if (motor_s.id)
 } //MB~
 #endif //MB~
 
-//#ifdef MB
+#ifdef MB
 	if (motor_s.iters > 50000)
 	{ // Track est_Iq value
 		motor_s.temp++; 
@@ -856,11 +838,12 @@ if (motor_s.id)
 			if (90 < motor_s.req_veloc) motor_s.req_veloc--;
 		} // if (1024 == motor_s.temp)
 	} //if (motor_s.iters > 25000)
-// #endif //MB~
+#endif //MB~
 
-// if (motor_s.xscope) xscope_int( 3 ,motor_s.req_veloc);
+// if (motor_s.xscope) xscope_int( 8 ,(motor_s.req_veloc - motor_s.est_veloc) ); //MB~
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.req_veloc ,motor_s.est_veloc );
-// if (motor_s.xscope) xscope_int( 6 ,corr_veloc );
+// if (motor_s.xscope) xscope_int( 11 ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
+// if (motor_s.xscope) xscope_int( 14 ,corr_veloc ); //MB~
 
 	// Calculate velocity PID output
 	if (PROPORTIONAL)
@@ -872,8 +855,6 @@ if (motor_s.id)
 		motor_s.pid_veloc = motor_s.vect_data[Q_ROTA].req_closed_V + corr_veloc;
 	} // else !(PROPORTIONAL)
 
-// if (motor_s.xscope) xscope_int( 9 ,motor_s.pid_regs[SPEED_PID].sum_err  );
-// if (motor_s.xscope) xscope_int( 7 ,motor_s.pid_veloc );
 	if (VELOC_CLOSED)
 	{ // Evaluate requested IQ from velocity PID
 		motor_s.vect_data[Q_ROTA].req_closed_V = 415 + (abs(motor_s.pid_veloc) >> 1);
@@ -930,11 +911,9 @@ if (motor_s.id)
 	 * Also, each time targ_Id is changed, Iq takes about 1 second to stabilise 
    */
 
-// if (motor_s.xscope) xscope_int( 7 ,motor_s.vect_data[D_ROTA].req_closed_V ); //MB~
-// if (motor_s.xscope) xscope_int( 8 ,motor_s.vect_data[Q_ROTA].req_closed_V ); //MB~
-
-targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V + HALF_V2I) >> V2I_BITS) + V2I_OFF;
-//MB~	targ_Iq = ((V2I_MUX * (motor_s.vect_data[Q_ROTA].req_closed_V << ADC_UPSCALE_BITS) + HALF_V2I) >> V2I_BITS) + V2I_OFF;
+// if (motor_s.xscope) xscope_int( 12 ,motor_s.vect_data[Q_ROTA].req_closed_V ); //MB~ 
+	targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V + HALF_V2I) >> V2I_BITS) + V2I_OFF;
+// if (motor_s.xscope) xscope_int( 14 ,targ_Iq ); //MB~ 
 
 	// Check if target Iq is too large
 	if (targ_Iq > IQ_LIM)
@@ -978,14 +957,17 @@ targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V + HALF_V2I) >> V2I_
 		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,(motor_s.vect_data[Q_ROTA].est_I >> ADC_UPSCALE_BITS) );
 	}; // if (motor_s.first_pid)
 
-// if (motor_s.xscope) xscope_int( 6 ,targ_Id );
-// if (motor_s.xscope) xscope_int( 9 ,targ_Iq );
 //MB~	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
 //MB~	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
-		corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,(motor_s.vect_data[D_ROTA].est_I >> ADC_UPSCALE_BITS) );
-		corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,(motor_s.vect_data[Q_ROTA].est_I >> ADC_UPSCALE_BITS) );
 
-// if (motor_s.xscope) xscope_int( 5 ,motor_s.pid_regs[ID_PID].sum_err  );
+// if (motor_s.xscope) xscope_int( 6 ,(targ_Id -((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~ 
+		corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) );
+// if (motor_s.xscope) xscope_int( 9 ,motor_s.pid_regs[ID_PID].sum_err  ); //MB~ 
+// if (motor_s.xscope) xscope_int( 12 ,corr_Id ); //MB~ 
+// if (motor_s.xscope) xscope_int( 7 ,(targ_Iq -((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~ 
+		corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) );
+// if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[IQ_PID].sum_err  ); //MB~ 
+// if (motor_s.xscope) xscope_int( 13 ,corr_Iq ); //MB~ 
 
 	if (PROPORTIONAL)
 	{ // Proportional update
@@ -1031,7 +1013,7 @@ static void update_foc_angle( // Update FOC PWM angular postion
 
 	motor_s.set_theta &= UQ_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
 
-#if  (1 == GAMMA_SWEEP)
+#if (1 == GAMMA_SWEEP)
 { //MB~
 	int tmp_theta;
 
@@ -1048,7 +1030,6 @@ static void update_foc_angle( // Update FOC PWM angular postion
 
 	park_transform( motor_s.vect_data[D_ROTA].set_V ,motor_s.vect_data[Q_ROTA].set_V ,0 ,END_VOLT_OPENLOOP ,tmp_theta ); //MB~
 
-// if (motor_s.xscope) xscope_int( 6 ,tmp_theta );
 } //MB~
 #endif //(1 == GAMMA_SWEEP)
 
@@ -1058,11 +1039,7 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	// Check if QEI data changed since previous update
-	if (motor_s.diff_ang != 0)
-	{
-		update_foc_voltage( motor_s );
-	} // if (motor_s.diff_ang != 0)
+	update_foc_voltage( motor_s );
 
 	update_foc_angle( motor_s );
 } // calc_foc_pwm
@@ -1217,7 +1194,11 @@ acquire_lock(); printstr("BAD VEL="); printintln(motor_s.est_veloc); release_loc
 		break; // case SEARCH 
 	
 		case FOC : // Normal FOC state
-			calc_foc_pwm( motor_s );
+			// Check if QEI data changed since previous update
+			if (motor_s.diff_ang != 0)
+			{
+				calc_foc_pwm( motor_s );
+			} // if (motor_s.diff_ang != 0)
 		break; // case FOC
 
 		case STALL : // state where motor stalled
@@ -1372,6 +1353,32 @@ static void find_qei_origin( // Test QEI state for origin
 
 } // find_qei_origin
 /*****************************************************************************/
+static unsigned filter_period( // Smoothes QEI period using low-pass filter
+	MOTOR_DATA_TYP &motor_s, // Reference to structure containing motor data
+	unsigned inp_period // Input QEI period: ticks per QEI position (in Reference Frequency Cycles)
+) // Returns filtered output value
+/* This is a 1st order IIR filter, it is configured as a low-pass filter, 
+ * Error diffusion is used to keep control of systematic quantisation errors.
+ */
+{
+	int diff_val; // Difference between input and filtered output
+	int increment; // new increment to filtered output value
+	unsigned out_period; // filtered output period
+
+
+	// Form difference with previous filter output
+	diff_val = inp_period - motor_s.filt_period;
+
+	// Multiply difference by filter coefficient (alpha)
+	diff_val += motor_s.period_coef_err; // Add in diffusion error;
+	increment = (diff_val + PERIOD_HALF_COEF) >> PERIOD_COEF_BITS; // Multiply by filter coef (with rounding)
+	motor_s.period_coef_err = diff_val - (increment << PERIOD_COEF_BITS); // Evaluate new quantisation error value 
+
+	out_period = motor_s.filt_period + increment; // Form filtered output value
+
+	return out_period; // return filtered output value
+} // filter_period
+/*****************************************************************************/
 static int filter_velocity( // Smooths velocity estimate using low-pass filter
 	MOTOR_DATA_TYP &motor_s, // Reference to structure containing motor data
 	int meas_veloc // Angular velocity of motor measured in Ticks/angle_position
@@ -1423,17 +1430,17 @@ static int get_velocity( // Returns updated velocity estimate from time period. 
 	// Account for sign: to get correct rounding
 	if (0 < ang_inc)
 	{
-		ticks_rpm = motor_s.veloc_err + ticks_rpm; // Add in diffusion error
+		ticks_rpm = motor_s.veloc_calc_err + ticks_rpm; // Add in diffusion error
 	} // if (0 < ang_inc)
 	else
 	{
-		ticks_rpm = motor_s.veloc_err - ticks_rpm; // Add in diffusion error
+		ticks_rpm = motor_s.veloc_calc_err - ticks_rpm; // Add in diffusion error
 	} // else !(0 < ang_inc)
 
 	assert(int_period != 0); // ERROR: Division by zero trap
 
 	meas_veloc = (ticks_rpm / int_period); // Evaluate (signed) angular_velocity of motor in RPM
-	motor_s.veloc_err = ticks_rpm - (meas_veloc * int_period); // Evaluate new remainder value 
+	motor_s.veloc_calc_err = ticks_rpm - (meas_veloc * int_period); // Evaluate new remainder value 
 
 	// Check if filter selected
 	if (QEI_FILTER)
@@ -1463,12 +1470,10 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 
 	motor_s.diff_ang = motor_s.qei_params.tot_ang - motor_s.raw_ang;
 	motor_s.raw_ang =  motor_s.qei_params.tot_ang; // Store raw angle velue
-// xscope_int( 0 ,motor_s.diff_ang );
 
 	// Check for changed data
 	if (motor_s.qei_params.period > 0)
 	{
-// xscope_int( 2 ,motor_s.qei_params.period );
 		// The theta value should be in the range:  -180 <= theta < 180 degrees ...
 		motor_s.tot_ang = motor_s.qei_params.tot_ang;	// Calculate total angle traversed
 		motor_s.old_ang = motor_s.qei_params.old_ang; // Invert old total angular value
@@ -1517,7 +1522,9 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 			} // if (motor_s.est_period > motor_s.prev_period)
 		} // else !(diff_ang != 0)
 	
-		motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,qei_period ); // Update velocity estimate
+		motor_s.filt_period = filter_period( motor_s ,qei_period ); // Filter QEI period
+
+		motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,motor_s.filt_period ); // Update velocity estimate
 
 #if (1 == VELOC_FILT) 
 		// Filter velocity. MB~ Need to investigate why velocity spikes occur
@@ -1592,15 +1599,11 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 		find_qei_origin( motor_s );
 	} // if (0 == motor_s.qei_found)
 
-
 motor_s.dbg_tmr :> motor_s.dbg_strt; //MB~
 	update_motor_state( motor_s );
 motor_s.dbg_tmr :> motor_s.dbg_end; //MB~
 
-	// Convert new set DQ values to PWM values
-// if (motor_s.xscope) xscope_int( 6 ,motor_s.vect_data[D_ROTA].set_V  );
-// if (motor_s.xscope) xscope_int( 4 ,motor_s.vect_data[Q_ROTA].set_V );
-	dq_to_pwm( motor_s ); // Convert Output DQ values to PWM values
+	dq_to_pwm( motor_s ); // Convert DQ values to PWM values
 
 	foc_pwm_put_parameters( motor_s.pwm_comms ,c_pwm ); // Update the PWM values
 
@@ -1608,7 +1611,6 @@ motor_s.dbg_tmr :> motor_s.dbg_end; //MB~
 	foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
 
 #ifdef MB
-if (motor_s.xscope) xscope_int( 0 ,motor_s.adc_params.vals[0] );
 if (ADC_UPSCALE_BITS > 0)
 {
 	motor_s.adc_params.vals[0] = (motor_s.adc_params.vals[0] + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS; // MB~
@@ -1616,7 +1618,6 @@ if (ADC_UPSCALE_BITS > 0)
 	motor_s.adc_params.vals[2] = (motor_s.adc_params.vals[2] + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS; // MB~
 } // if (ADC_UPSCALE_BITS > 0)
 #endif //MB~
-// if (motor_s.xscope) xscope_int( 2 ,motor_s.adc_params.vals[0] );
 
 #ifdef MB
 	unsigned dbg_diff = (unsigned)(motor_s.dbg_end - motor_s.dbg_strt);
@@ -1627,7 +1628,6 @@ if (ADC_UPSCALE_BITS > 0)
 
 	motor_s.dbg_sum += dbg_filt;
 
-//	if (motor_s.id) xscope_int( (8+motor_s.id) ,motor_s.dbg_sum ); //MB~
 #endif //MB~
 
 } // collect_sensor_data
@@ -1744,7 +1744,6 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 		break; // case c_commands :> cmd_id:
 
 		default:	// This case updates the motor state
-// xscope_int( (8+motor_s.id) ,(8+motor_s.id) );
 			motor_s.iters++; // Increment No. of iterations 
 
 			// NB There is not enough band-width to probe all xscope data

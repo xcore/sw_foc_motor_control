@@ -204,10 +204,14 @@
 #define VEL_COEF_DIV (1 << VEL_COEF_BITS) // Coef divisor
 #define VEL_HALF_COEF (VEL_COEF_DIV >> 1) // Half of Coef divisor
 
+#define PERIOD_COEF_BITS 6 // Used to generate filter coef divisor. coef_div = 1/2^n
+#define PERIOD_COEF_DIV (1 << PERIOD_COEF_BITS) // Coef divisor
+#define PERIOD_HALF_COEF (PERIOD_COEF_DIV >> 1) // Half of Coef divisor
+
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
-//MB~	#define DEMO_LIMIT 400000 // XSCOPE
-#define DEMO_LIMIT 8000000 // XSCOPE
+#define DEMO_LIMIT 400000 // XSCOPE
+//MB~	#define DEMO_LIMIT 800000 // XSCOPE
 #else // if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 4000000
 	#define DEMO_LIMIT 4000
@@ -336,7 +340,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int min_veloc;	// Minimum angular velocity
 	int speed_inc; // Speed increment when commanded
 	int prev_veloc;	// previous velocity
-	int est_period;	// Estimate of QEI period
+	unsigned est_period;	// Estimate of QEI period: ticks per QEI position (in Reference Frequency Cycles)
+	unsigned filt_period; // Filtered QEI period
 	int prev_period;	// previous value of QEI period
 	int open_period;	// Time between updates PWM data during open-loop phase
 	int open_uq_inc;	// Increment to Upscaled theta value during open-loop phase
@@ -390,9 +395,11 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	int half_qei; // Half QEI points per revolution (used for rounding)
 	int filt_veloc; // filtered velocity value
-	int coef_vel_err; // Coefficient diffusion error
-	int scale_vel_err; // Velocity Scaling diffusion error 
-	int veloc_err; // Velocity diffusion error 
+	int period_coef_err; // QEI-Period filter coefficient diffusion error
+	int period_scale_err; // QEI-Period scaling diffusion error 
+	int coef_vel_err; // velocity filter coefficient diffusion error
+	int scale_vel_err; // Velocity scaling diffusion error 
+	int veloc_calc_err; // Velocity calculation diffusion error 
 
 	// Speed change test
 	int tst_cnt;
@@ -400,6 +407,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	int tmp; // MB~
 	int temp; // MB~ Dbg
+	int tmp_I; // MB~
 
 timer dbg_tmr; // MB~
 unsigned dbg_orig; // MB~

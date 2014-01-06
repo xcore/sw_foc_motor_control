@@ -42,10 +42,10 @@
 #endif
 
 #ifndef PID_CONST_RES
-#define PID_CONST_RES 15 // Bit resolution of PID constants
+#define PID_CONST_RES 17 // Bit resolution of PID constants
 #endif
 
-#define PID_HALF_SCALE (1 << (PID_CONST_RES - 1)) // Half PID constant scaling-factor, NB used for rounding
+#define PID_HALF_SCALE ((1 << PID_CONST_RES) >> 1) // Half PID constant scaling-factor, NB used for rounding
 #define MAX_ERR_SUM (1 << 30) // Max. value of error-sum before re-scaling occurs
 
 /** Different PID Regulators */
@@ -78,7 +78,14 @@ typedef struct PID_REGULATOR_TAG
 #ifdef __XC__
 // XC Version
 /*****************************************************************************/
-void init_pid_consts( // Initialise a set of PID Constants
+void init_all_pid_consts( // Initialise a set of floating point PID Constants
+	PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
+	float inp_K_p, // Input Proportional Error constant
+	float inp_K_i, // Input Integral Error constant
+	float inp_K_d // Input Differential Error constant
+);
+/*****************************************************************************/
+void init_int_pid_consts( // Initialise a set of integer PID Constants
 	PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
 	int inp_K_p, // Input Proportional Error constant
 	int inp_K_i, // Input Integral Error constant

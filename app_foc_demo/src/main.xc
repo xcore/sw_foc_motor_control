@@ -50,20 +50,24 @@ on tile[INTERFACE_TILE]: out port p2_i2c_wd = PORT_WATCHDOG; // 2-bit port used 
 /*****************************************************************************/
 void xscope_user_init()
 {
-	xscope_register( 12
+	xscope_register( 14
 		,XSCOPE_CONTINUOUS, "QEI_0", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "QEI_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "pwm_A", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "mId_0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "mIq_0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Vel_0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Vel_1", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "old_P", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "The_1", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "rVd_0", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "rVd_1", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "rVq_0", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "rVq_1", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "sV_Q", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Q_err", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "pwm_B", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "pwm_C", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "Q_sum", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "inp_T", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "qei_P", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "filtP", XSCOPE_INT , "n"
 /*
+		,XSCOPE_CONTINUOUS, "per_Q", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "per_F", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "Eficny", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "set_Vd", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "est_Ih", XSCOPE_INT , "n"
