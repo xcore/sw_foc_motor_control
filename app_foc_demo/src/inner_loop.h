@@ -335,6 +335,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int est_veloc;	// Estimated angular velocity (from QEI data)
 	int req_veloc;	// Internal requested (target) angular velocity
+	int cmd_veloc;	// External command (target) angular velocity
 	int half_veloc;	// Half requested angular velocity
 	int max_veloc;	// Maximum angular velocity
 	int min_veloc;	// Minimum angular velocity

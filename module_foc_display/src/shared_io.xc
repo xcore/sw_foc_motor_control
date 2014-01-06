@@ -14,6 +14,172 @@
 
 #include "shared_io.h"
 
+
+
+#include "print.h"
+static void wait(unsigned millis){
+    timer t;
+    unsigned time;
+    t:> time;
+    t when timerafter(time+millis*100000) :> int;
+}
+
+#include <stdlib.h>
+#include <print.h>
+
+static void stop(chanend c_speed[]){
+        c_speed[0] <: IO_CMD_SET_SPEED;
+        c_speed[0] <: 0;
+        c_speed[1] <: IO_CMD_SET_SPEED;
+        c_speed[1] <: 0;
+
+        wait(100);
+}
+static void set_both_motors_speed(chanend c_speed[], int rpm){
+        c_speed[0] <: IO_CMD_SET_SPEED;
+        c_speed[0] <: rpm;
+        c_speed[1] <: IO_CMD_SET_SPEED;
+        c_speed[1] <: rpm;
+}
+
+
+
+
+static void test_motor(chanend c_speed[]){
+#define MIN_TEST_RPM 400
+#define EASY_SPEED 1000
+#define MAX_TEST_RPM 4000
+    wait(3000);
+    set_both_motors_speed(c_speed, 0);
+    wait(6000);
+    printstrln("Test 1: LDO_MOTOR_STARTUP_PLUS (10s)");
+    set_both_motors_speed(c_speed, EASY_SPEED);
+    wait(11000);
+    printstrln("End of Test 1");
+
+    stop(c_speed);
+
+    printstrln("Test 2: LDO_MOTOR_STARTUP_MINUS (10s)");
+    set_both_motors_speed(c_speed, -EASY_SPEED);
+    wait(10000);
+    printstrln("End of Test 2");
+
+    stop(c_speed);
+
+    printstrln("Test 3: LDO_RPM_PLUS_400 (15s)");
+    set_both_motors_speed(c_speed, EASY_SPEED);
+    wait(3000);
+    for(unsigned speed = EASY_SPEED; speed != MIN_TEST_RPM;speed -= 50){
+      set_both_motors_speed(c_speed, speed);
+      wait(1000);
+    }
+    printstrln("End of Test 3");
+
+    stop(c_speed);
+
+    printstrln("Test 4: LDO_RPM_MINUS_400 (15s)");
+    set_both_motors_speed(c_speed, -EASY_SPEED);
+    wait(3000);
+    for(unsigned speed = -EASY_SPEED; speed != -MIN_TEST_RPM;speed += 50){
+      set_both_motors_speed(c_speed, speed);
+      wait(1000);
+    }
+    printstrln("End of Test 4");
+
+    stop(c_speed);
+
+    printstrln("Test 5: LDO_RPM_PLUS_4000 (15s)");
+    set_both_motors_speed(c_speed, EASY_SPEED);
+    wait(3000);
+    for(unsigned speed = EASY_SPEED; speed != MAX_TEST_RPM;speed += 100){
+      set_both_motors_speed(c_speed, speed);
+      wait(1000);
+    }
+    printstrln("End of Test 5");
+
+    stop(c_speed);
+
+    printstrln("Test 6: LDO_RPM_MINUS_4000 (15s)");
+    set_both_motors_speed(c_speed, -EASY_SPEED);
+    wait(3000);
+    for(unsigned speed = -EASY_SPEED; speed != -MAX_TEST_RPM;speed -= 100){
+      set_both_motors_speed(c_speed, speed);
+      wait(1000);
+    }
+    printstrln("End of Test 6");
+
+    stop(c_speed);
+
+    printstrln("Test 7: LDO_RPM_PLUS_400_STARTUP (8s)");
+    set_both_motors_speed(c_speed, MIN_TEST_RPM);
+    wait(8000);
+    printstrln("End of Test 7");
+
+    stop(c_speed);
+
+    printstrln("Test 8: LDO_RPM_MINUS_400_STARTUP (8s)");
+    set_both_motors_speed(c_speed, -MIN_TEST_RPM);
+    wait(8000);
+    printstrln("End of Test 8");
+
+    stop(c_speed);
+
+    printstrln("Test 9: LDO_RPM_PLUS_4000_STARTUP (8s)");
+    set_both_motors_speed(c_speed, MAX_TEST_RPM);
+    wait(8000);
+    printstrln("End of Test 9");
+
+    stop(c_speed);
+
+    printstrln("Test 10: LDO_RPM_MINUS_4000_STARTUP (8s)");
+    set_both_motors_speed(c_speed, -MAX_TEST_RPM);
+    wait(8000);
+    printstrln("End of Test 10");
+
+    stop(c_speed);
+
+    printstrln("Test 11: LDO_CHANGE_DIRECTION_POSTIVE (16s)");
+    set_both_motors_speed(c_speed, MAX_TEST_RPM);
+    wait(8000);
+    set_both_motors_speed(c_speed, -MAX_TEST_RPM);
+    wait(8000);
+    printstrln("End of Test 11");
+
+    stop(c_speed);
+
+    printstrln("Test 12: LDO_RPM_MINUS_4000_STARTUP (8s)");
+    set_both_motors_speed(c_speed, -MAX_TEST_RPM);
+    wait(8000);
+    set_both_motors_speed(c_speed, MAX_TEST_RPM);
+    wait(8000);
+    printstrln("End of Test 12");
+
+    stop(c_speed);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*****************************************************************************/
 static void update_speed_control( // Updates the speed control loop
 	chanend c_speed[], // speed channel
@@ -182,13 +348,12 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 					err_cnt = 0; // Valid button value so clear error count
 					leds <: 0;
 				} // else !(btns_val)
-
 			break; // case !btn_en => btns when pinsneq(btns_val) :> btns_val:
-
-/* JMB 21-NOV-2012  NOT required: Also improves response to push buttons!-)
- *		default:
- *		break;
- */
+//MB~
+			default :
+				test_motor( c_speed );
+			break; // case !btn_en => btns when pinsneq(btns_val) :> btns_val:
+//MB~
 		} // select
 	} // while (1)
 } // display_shared_io_manager

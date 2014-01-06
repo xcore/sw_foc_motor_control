@@ -216,6 +216,67 @@ static void init_rotation_component( // Initialise data for one component of rot
 	motor_s.vect_data[comp_id].rem_I = 0; // Initialise remainder used in error diffusion
 } // init_rotation_component
 /*****************************************************************************/
+static void update_velocity_data( // Update velocity dependent data
+	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
+)
+{
+	int start_gamma; // Gamma value at start
+	int end_gamma; // Gamma value end of open-loop state
+	int req_gamma; // Initial requested Gamma value for closed-loop state
+	int start_D; // Vd value at start of open-loop state
+	int start_Q; // Vq value at start of open-loop state
+	int end_D; // Vd value at end of open-loop state
+	int end_Q; // Vq value at end of open-loop state
+	int req_D; // Initial requested closed-loop Vd value
+	int req_Q; // Initial requested closed-loop Vq value
+
+
+	// Initialise angle variables dependant on spin direction
+	if (0 > motor_s.req_veloc)
+	{ // Negative spin direction
+		motor_s.gamma_off = -motor_s.gamma_off;
+		motor_s.gamma_grad = -motor_s.gamma_grad;
+
+		start_gamma = -START_GAMMA_OPENLOOP; 
+		end_gamma = -END_GAMMA_OPENLOOP; 
+		req_gamma = -REQ_GAMMA_CLOSEDLOOP; 
+
+		motor_s.end_hall = NEGA_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
+
+		motor_s.speed_inc = -SPEED_INC; // Speed increment when commanded
+		motor_s.max_veloc = -SPEC_MAX_SPEED; // max. velocity
+		motor_s.min_veloc = -MIN_SPEED; // min. velocity
+
+		motor_s.speed_diff = SPEED_DIFF; // MB~ test
+	} // if (0 > motor_s.req_veloc)
+	else
+	{ // Positive spin direction
+		// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
+		start_gamma = START_GAMMA_OPENLOOP; 
+		end_gamma = END_GAMMA_OPENLOOP; 
+		req_gamma = REQ_GAMMA_CLOSEDLOOP; 
+	
+		motor_s.end_hall = POSI_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
+
+		motor_s.speed_inc = SPEED_INC; // Speed increment when commanded
+		motor_s.max_veloc = SPEC_MAX_SPEED; // max. velocity
+		motor_s.min_veloc = MIN_SPEED; // min velocity
+
+		motor_s.speed_diff = -SPEED_DIFF; // MB~ test
+	} // else !(0 > motor_s.req_veloc)
+
+	// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
+	park_transform( start_D ,start_Q ,0 ,START_VOLT_OPENLOOP ,start_gamma );
+	park_transform( end_D ,end_Q ,0 ,END_VOLT_OPENLOOP ,end_gamma );
+	park_transform( req_D ,req_Q ,0 ,REQ_VOLT_CLOSEDLOOP ,req_gamma );
+	
+	// Initialise each component of rotating vector
+	init_rotation_component( motor_s ,D_ROTA ,start_D ,end_D ,req_D );
+	init_rotation_component( motor_s ,Q_ROTA ,start_Q ,end_Q ,req_Q );
+	init_blend_data( motor_s );	// Initialise blending data for 'TRANSIT state'
+
+} // update_velocity_data
+/*****************************************************************************/
 static void init_motor( // initialise data structure for one motor
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
 	unsigned motor_id // Unique Motor identifier e.g. 0 or 1
@@ -223,15 +284,6 @@ static void init_motor( // initialise data structure for one motor
 {
 	int phase_cnt; // phase counter
 	int tmp_val; // temporary manipulation value
-	int start_D; // Vd value at start of open-loop state
-	int start_Q; // Vq value at start of open-loop state
-	int end_D; // Vd value at end of open-loop state
-	int end_Q; // Vq value at end of open-loop state
-	int req_D; // Initial requested closed-loop Vd value
-	int req_Q; // Initial requested closed-loop Vq value
-	int start_gamma; // Gamma value at start
-	int end_gamma; // Gamma value end of open-loop state
-	int req_gamma; // Initial requested Gamma value for closed-loop state
 
 
 	init_error_data( motor_s.err_data );
@@ -299,8 +351,9 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.filt_adc = START_VOLT_OPENLOOP; // Preset filtered value to something sensible
 
 	motor_s.req_veloc = REQ_VELOCITY;
-if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
+// if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.req_veloc >> 1);
+	motor_s.cmd_veloc = motor_s.req_veloc;
 	motor_s.prev_veloc = 0; // Previous measured velocity
 
 	// NB Display will require following variables, before we have measured them! ...
@@ -308,50 +361,7 @@ if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
 	motor_s.meas_speed = abs(motor_s.req_veloc);
 	motor_s.est_veloc = 0; // Initial value for Estimated angular velocity (from QEI data)
 
-
-	// Initialise angle variables dependant on spin direction
-	if (0 > motor_s.req_veloc)
-	{ // Negative spin direction
-		motor_s.gamma_off = -motor_s.gamma_off;
-		motor_s.gamma_grad = -motor_s.gamma_grad;
-
-		start_gamma = -START_GAMMA_OPENLOOP; 
-		end_gamma = -END_GAMMA_OPENLOOP; 
-		req_gamma = -REQ_GAMMA_CLOSEDLOOP; 
-
-		motor_s.end_hall = NEGA_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
-
-		motor_s.speed_inc = -SPEED_INC; // Speed increment when commanded
-		motor_s.max_veloc = -SPEC_MAX_SPEED; // max. velocity
-		motor_s.min_veloc = -MIN_SPEED; // min. velocity
-
-		motor_s.speed_diff = SPEED_DIFF; // MB~ test
-	} // if (0 > motor_s.req_veloc)
-	else
-	{ // Positive spin direction
-		// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
-		start_gamma = START_GAMMA_OPENLOOP; 
-		end_gamma = END_GAMMA_OPENLOOP; 
-		req_gamma = REQ_GAMMA_CLOSEDLOOP; 
-	
-		motor_s.end_hall = POSI_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
-
-		motor_s.speed_inc = SPEED_INC; // Speed increment when commanded
-		motor_s.max_veloc = SPEC_MAX_SPEED; // max. velocity
-		motor_s.min_veloc = MIN_SPEED; // min velocity
-
-		motor_s.speed_diff = -SPEED_DIFF; // MB~ test
-	} // else !(0 > motor_s.req_veloc)
-
-	// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
-	park_transform( start_D ,start_Q ,0 ,START_VOLT_OPENLOOP ,start_gamma );
-	park_transform( end_D ,end_Q ,0 ,END_VOLT_OPENLOOP ,end_gamma );
-	park_transform( req_D ,req_Q ,0 ,REQ_VOLT_CLOSEDLOOP ,req_gamma );
-	
-	// Initialise each component of rotating vector
-	init_rotation_component( motor_s ,D_ROTA ,start_D ,end_D ,req_D );
-	init_rotation_component( motor_s ,Q_ROTA ,start_Q ,end_Q ,req_Q );
-	init_blend_data( motor_s );	// Initialise blending data for 'TRANSIT state'
+	update_velocity_data( motor_s ); // Update velocity dependent data	
 
 	motor_s.tmp = 0; // MB~ Dbg
 	motor_s.temp = 0; // MB~ Dbg
@@ -659,9 +669,6 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 
 	// Final voltages applied: 
 	inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
-if (motor_s.xscope) xscope_int( 1 ,volts[PWM_PHASE_A] ); //MB~
-if (motor_s.xscope) xscope_int( 8 ,volts[PWM_PHASE_B] ); //MB~
-if (motor_s.xscope) xscope_int( 9 ,volts[PWM_PHASE_C] ); //MB~
 
 	/* Scale to 12bit unsigned for PWM output */
 	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
@@ -959,15 +966,8 @@ if (motor_s.id)
 
 //MB~	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
 //MB~	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
-
-// if (motor_s.xscope) xscope_int( 6 ,(targ_Id -((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~ 
 		corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) );
-// if (motor_s.xscope) xscope_int( 9 ,motor_s.pid_regs[ID_PID].sum_err  ); //MB~ 
-// if (motor_s.xscope) xscope_int( 12 ,corr_Id ); //MB~ 
-// if (motor_s.xscope) xscope_int( 7 ,(targ_Iq -((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~ 
 		corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) );
-// if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[IQ_PID].sum_err  ); //MB~ 
-// if (motor_s.xscope) xscope_int( 13 ,corr_Iq ); //MB~ 
 
 	if (PROPORTIONAL)
 	{ // Proportional update
@@ -1635,28 +1635,23 @@ if (ADC_UPSCALE_BITS > 0)
 #pragma unsafe arrays
 static void process_speed_command( // Decodes speed command, and implements changes
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
+	chanend c_speed, // Channel between Motor_Control and IO_Display module
 	CMD_IO_ENUM cmd_id // Command identifier from control interface
 )
 {
 	switch(cmd_id)
 	{
 		case IO_CMD_INC_SPEED :
-			motor_s.req_veloc += motor_s.speed_inc;
-
-			if (SPEC_MAX_SPEED < abs(motor_s.req_veloc))
-			{ // Increase speed
-				motor_s.req_veloc = motor_s.max_veloc;
-			} // if (4000 < motor_s.req_veloc)
+			motor_s.cmd_veloc = motor_s.req_veloc + motor_s.speed_inc;
 		break; // case IO_CMD_INC_SPEED 
 	
 		case IO_CMD_DEC_SPEED :
-			motor_s.req_veloc -= motor_s.speed_inc;
-
-			if (MIN_SPEED > abs(motor_s.req_veloc))
-			{ // Increase speed
-				motor_s.req_veloc = motor_s.min_veloc;
-			} // if (4000 < motor_s.req_veloc)
+			motor_s.cmd_veloc = motor_s.req_veloc - motor_s.speed_inc;
 		break; // case IO_CMD_DEC_SPEED 
+	
+		case IO_CMD_SET_SPEED :
+			c_speed :> motor_s.cmd_veloc; // get command velocity
+		break; // case IO_CMD_INC_SPEED 
 	
 		case IO_CMD_FLIP_SPIN:
 			acquire_lock(); printint(motor_s.id); printstrln(": 'Flip Spin' NOT currently supported");	release_lock();
@@ -1667,8 +1662,47 @@ static void process_speed_command( // Decodes speed command, and implements chan
     break; // default
 	} // switch(cmd_id)
 
-	motor_s.half_veloc = (motor_s.req_veloc >> 1);
 
+	// If necessary, clip command-speed into specified range
+
+	if (motor_s.cmd_veloc < 0)
+	{
+		if (motor_s.cmd_veloc < -SPEC_MAX_SPEED)
+		{ // Increase speed
+			motor_s.cmd_veloc = -SPEC_MAX_SPEED;
+		} // if (motor_s.cmd_veloc < -SPEC_MAX_SPEED)
+		else
+		{ // Increase speed
+			if (motor_s.cmd_veloc > -MIN_SPEED)
+			{ // Increase speed
+				motor_s.cmd_veloc = -MIN_SPEED;
+			} // if (motor_s.cmd_veloc > -MIN_SPEED)
+		} // else !(motor_s.cmd_veloc < -SPEC_MAX_SPEED)
+	} // if (motor_s.cmd_veloc < 0)
+	else
+	{
+		if (motor_s.cmd_veloc > SPEC_MAX_SPEED)
+		{ // Increase speed
+			motor_s.cmd_veloc = SPEC_MAX_SPEED;
+		} // if (motor_s.cmd_veloc > SPEC_MAX_SPEED)
+		else
+		{ // Increase speed
+			if (motor_s.cmd_veloc < MIN_SPEED)
+			{ // Increase speed
+				motor_s.cmd_veloc = MIN_SPEED;
+			} // if (motor_s.cmd_veloc < MIN_SPEED)
+		} // else !(motor_s.cmd_veloc > SPEC_MAX_SPEED)
+	} // else !(motor_s.cmd_veloc < 0)
+
+{ //MB~
+	acquire_lock(); 
+	printint(motor_s.id); 
+	printstr(": Vel=");	
+	printintln(motor_s.cmd_veloc); 
+	release_lock();
+} //MB~
+
+xscope_int( (6+motor_s.id) ,motor_s.cmd_veloc ); //MB~
 } // process_speed_command
 /*****************************************************************************/
 #pragma unsafe arrays
@@ -1710,7 +1744,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 				break; // case IO_CMD_GET_FAULT 
 	
 		    default: // Unsupported
-					process_speed_command( motor_s ,cmd_id );
+					process_speed_command( motor_s ,c_speed ,cmd_id );
 		    break; // default
 			} // switch(cmd_id)
 
@@ -1738,7 +1772,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 				break; // case IO_CMD_GET_FAULT 
 	
 		    default: // Unsupported
-					process_speed_command( motor_s ,cmd_id );
+					process_speed_command( motor_s ,c_speed ,cmd_id );
 		    break; // default
 			} // switch(cmd_id)
 		break; // case c_commands :> cmd_id:
@@ -1757,13 +1791,41 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
 // motor_s.xscope = 1; // MB~ Crude Switch
 
+			// Check if requested velocity needs updating
+			if (motor_s.req_veloc < motor_s.cmd_veloc)
+			{
+				motor_s.req_veloc++;
+				motor_s.half_veloc = (motor_s.req_veloc >> 1);
+
+				// Check for change in spin direction
+				if (1 == motor_s.req_veloc)
+				{
+					update_velocity_data( motor_s ); // Update velocity dependent data
+				} // if
+			} // if (motor_s.req_veloc < motor_s.cmd_veloc)
+			else
+			{
+				if (motor_s.req_veloc > motor_s.cmd_veloc)
+				{
+					motor_s.req_veloc--;
+					motor_s.half_veloc = (motor_s.req_veloc >> 1);
+
+					// Check for change in spin direction
+					if ((-1) == motor_s.req_veloc)
+					{
+						update_velocity_data( motor_s ); // Update velocity dependent data
+					} // if (0 > (old_veloc * motor_s.req_veloc))
+				} // if (motor_s.req_veloc > motor_s.cmd_veloc)
+			} // else (motor_s.req_veloc < motor_s.cmd_veloc)
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.req_veloc ); //MB~
+
 			collect_sensor_data( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
 
 			// Check if it is time to stop demo
 			if (motor_s.iters > DEMO_LIMIT)
 			{
-				motor_s.state = STOP; // Switch to stop state
-				motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
+//MB~		motor_s.state = STOP; // Switch to stop state
+//MB~		motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 			} // if (motor_s.iters > DEMO_LIMIT)
 		break; // default:
 
