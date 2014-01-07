@@ -26,7 +26,7 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 	 * and a total of 2 motors prrotected
 	 */
 	WD_GUARD_TYP guard_prot_s = { { 1 ,1 } ,2 }; // Structure of guard data, contains motor protection data
-//MB~ WD_GUARD_TYP guard_prot_s = { { 1 ,0 } ,1 }; // Structure of guard data, contains motor protection data
+//MB~ 	WD_GUARD_TYP guard_prot_s = { { 1 ,0 } ,1 }; // Structure of guard data, contains motor protection data
 	WD_GUARD_TYP guard_init_s; // Structure of guard data, used to check all motors are initialised
 	unsigned cmd; // WatchDog command from Client
 	unsigned pulse_width; // width of pulse in clock ticks

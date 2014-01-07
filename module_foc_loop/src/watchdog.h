@@ -41,7 +41,7 @@ The WatchDog ignores the behaviour of 'ticks' from UN-selected motors.
 #include "app_global.h"
 
 #define ALL_MOTOR_FLAGS ((1 << NUMBER_OF_MOTORS) - 1) // Set of motor flags e.g. 0b11 for 2 motors
-#define MAX_WD_TICKS 10 // No. of ticks before tick count reset
+#define MAX_WD_TICKS 20 // No. of ticks before tick count reset
 
 #define ENABLE_MASK 1 // WatchDog Enable is Bit_0 on WD port
 #define TICK_MASK 2 // WatchDog Tick is Bit_1 on WD port

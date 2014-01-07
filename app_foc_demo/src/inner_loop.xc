@@ -112,10 +112,11 @@ static void init_blend_data( // Initialise blending data for 'TRANSIT state'
 		motor_s.open_uq_inc = (1 << (sum_bits - RF_DIV_RPM_BITS)); // Increment to Upscaled theta value during open-loop phase
 	} // else !(sum_bits < RF_DIV_RPM_BITS )
 
-	if (0 > motor_s.req_veloc)
+	// Check for -ve spin
+	if (0 > motor_s.targ_vel)
 	{ // Negative spin direction
 		motor_s.open_uq_inc = -motor_s.open_uq_inc; // Spin in Negative direction
-	} // if (0 > motor_s.req_veloc)
+	} // if (0 > motor_s.targ_vel)
 
 	motor_s.blend_inc = (1 << blend_bits); // Blending weight increment for during TRANSIT state
 
@@ -232,7 +233,7 @@ static void update_velocity_data( // Update velocity dependent data
 
 
 	// Initialise angle variables dependant on spin direction
-	if (0 > motor_s.req_veloc)
+	if (0 > motor_s.targ_vel)
 	{ // Negative spin direction
 		motor_s.gamma_off = -motor_s.gamma_off;
 		motor_s.gamma_grad = -motor_s.gamma_grad;
@@ -248,7 +249,7 @@ static void update_velocity_data( // Update velocity dependent data
 		motor_s.min_veloc = -MIN_SPEED; // min. velocity
 
 		motor_s.speed_diff = SPEED_DIFF; // MB~ test
-	} // if (0 > motor_s.req_veloc)
+	} // if (0 > motor_s.targ_vel)
 	else
 	{ // Positive spin direction
 		// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
@@ -263,7 +264,7 @@ static void update_velocity_data( // Update velocity dependent data
 		motor_s.min_veloc = MIN_SPEED; // min velocity
 
 		motor_s.speed_diff = -SPEED_DIFF; // MB~ test
-	} // else !(0 > motor_s.req_veloc)
+	} // else !(0 > motor_s.targ_vel)
 
 	// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
 	park_transform( start_D ,start_Q ,0 ,START_VOLT_OPENLOOP ,start_gamma );
@@ -277,9 +278,8 @@ static void update_velocity_data( // Update velocity dependent data
 
 } // update_velocity_data
 /*****************************************************************************/
-static void init_motor( // initialise data structure for one motor
-	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
-	unsigned motor_id // Unique Motor identifier e.g. 0 or 1
+static void reset_motor( // Reset motor data after motor stops/stalls
+	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
 	int phase_cnt; // phase counter
@@ -297,12 +297,12 @@ static void init_motor( // initialise data structure for one motor
 		motor_s.adc_params.vals[phase_cnt] = -1;
 	} // for phase_cnt
 
-	motor_s.id = motor_id; // Unique Motor identifier e.g. 0 or 1
 	motor_s.iters = 0;
 	motor_s.tst_cnt = 0; // MB~
+	motor_s.cnts[WAIT] = 0;
 	motor_s.cnts[ALIGN] = 0;
 	motor_s.cnts[SEARCH] = 0;
-	motor_s.state = ALIGN;
+	motor_s.state = WAIT;
 	motor_s.hall_params.hall_val = HALL_NERR_MASK; // Initialise to 'No Errors'
 	motor_s.prev_hall = (!HALL_NERR_MASK); // Arbitary value different to above
 
@@ -350,15 +350,12 @@ static void init_motor( // initialise data structure for one motor
 
 	motor_s.filt_adc = START_VOLT_OPENLOOP; // Preset filtered value to something sensible
 
-	motor_s.req_veloc = REQ_VELOCITY;
-// if (motor_s.id) motor_s.req_veloc = -REQ_VELOCITY;
-	motor_s.half_veloc = (motor_s.req_veloc >> 1);
-	motor_s.cmd_veloc = motor_s.req_veloc;
 	motor_s.prev_veloc = 0; // Previous measured velocity
 
 	// NB Display will require following variables, before we have measured them! ...
-	motor_s.est_veloc = motor_s.req_veloc;
-	motor_s.meas_speed = abs(motor_s.req_veloc);
+	motor_s.est_veloc = motor_s.targ_vel;
+	motor_s.meas_speed = abs(motor_s.targ_vel);
+	motor_s.stall_speed = (MIN_SPEED >> 3); // Speed below which motor is assumed to have stalled
 	motor_s.est_veloc = 0; // Initial value for Estimated angular velocity (from QEI data)
 
 	update_velocity_data( motor_s ); // Update velocity dependent data	
@@ -370,6 +367,22 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.dbg_err = 0; // MB~
 	motor_s.dbg_prev = QEI_REV_MASK; // MB~
 	motor_s.dbg_diff = 1; // MB~
+
+} // reset_motor
+/*****************************************************************************/
+static void init_motor( // initialise data structure for one motor
+	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
+	unsigned motor_id // Unique Motor identifier e.g. 0 or 1
+)
+{
+	motor_s.id = motor_id; // Unique Motor identifier e.g. 0 or 1
+
+	motor_s.targ_vel = REQ_VELOCITY;
+// if (motor_s.id) motor_s.targ_vel = -REQ_VELOCITY;
+	motor_s.half_veloc = (motor_s.targ_vel >> 1);
+	motor_s.req_veloc = motor_s.targ_vel; // Preset requested velocity to start-up target velocity 
+
+	reset_motor( motor_s );
 
 } // init_motor
 /*****************************************************************************/
@@ -490,14 +503,14 @@ static void estimate_Iq_from_ADC_extrema( // Estimate Iq value from ADC signals.
 	int out_val; // Measured Iq output value
 
 
-	if (0 > motor_s.req_veloc)
+	if (0 > motor_s.targ_vel)
 	{ // Iq is negative for negative velocity
 		out_val = smooth_adc_minima( motor_s );
-	} // if (0 > motor_s.req_veloc)
+	} // if (0 > motor_s.targ_vel)
 	else
 	{ // Iq is positive for positive velocity
 		out_val = smooth_adc_maxima( motor_s );
-	} // if (0 > motor_s.req_veloc)
+	} // if (0 > motor_s.targ_vel)
 
 	motor_s.vect_data[Q_ROTA].est_I = out_val;
 	motor_s.vect_data[D_ROTA].est_I = 0;
@@ -781,6 +794,46 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 	motor_s.vect_data[Q_ROTA].set_V = motor_s.vect_data[Q_ROTA].trans_V; 
 } // calc_transit_pwm
 /*****************************************************************************/
+static int update_target_velocity( // If necessary, update target velocity
+	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
+) // Returns updated target velocity
+/* This routine smoothes out changes in the requested velocity,
+ * by allowing the target velocity to move towards the requested velocity, incrementally.
+ */
+{
+	int out_veloc = motor_s.targ_vel; // preset to current target velocity
+
+
+	// Check if target velocity needs updating
+	if (out_veloc < motor_s.req_veloc)
+	{
+		out_veloc++;
+		motor_s.half_veloc = (out_veloc >> 1);
+
+		// Check for change in spin direction
+		if (1 == out_veloc)
+		{
+			update_velocity_data( motor_s ); // Update velocity dependent data
+		} // if
+	} // if (out_veloc < motor_s.req_veloc)
+	else
+	{
+		if (out_veloc > motor_s.req_veloc)
+		{
+			out_veloc--;
+			motor_s.half_veloc = (out_veloc >> 1);
+
+			// Check for change in spin direction
+			if ((-1) == out_veloc)
+			{
+				update_velocity_data( motor_s ); // Update velocity dependent data
+			} // if (0 > (old_veloc * out_veloc))
+		} // if (out_veloc > motor_s.req_veloc)
+	} // else (out_veloc < motor_s.req_veloc)
+
+	return out_veloc; // Return updated output velocity
+} // update_target_velocity
+/*****************************************************************************/
 static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
@@ -804,7 +857,7 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	// Check if PID's need presetting
 	if (motor_s.first_pid)
 	{
-		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.est_veloc ,motor_s.req_veloc ,motor_s.est_veloc );
+		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.est_veloc ,motor_s.targ_vel ,motor_s.est_veloc );
 	}; // if (motor_s.first_pid)
 
 #ifdef MB
@@ -815,20 +868,20 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	{
 		motor_s.tst_cnt = 0;
 
-		if (SPEC_MAX_SPEED <= abs(motor_s.req_veloc))
+		if (SPEC_MAX_SPEED <= abs(motor_s.targ_vel))
 		{ // Decrease speed
 			motor_s.speed_diff = -motor_s.speed_diff;
-		} // if (SPEC_MAX_SPEED < motor_s.req_veloc)
+		} // if (SPEC_MAX_SPEED < motor_s.targ_vel)
 
-		if (MIN_SPEED >= abs(motor_s.req_veloc))
+		if (MIN_SPEED >= abs(motor_s.targ_vel))
 		{ // Decrease speed
 			motor_s.speed_diff = -motor_s.speed_diff;
-		} // if (MIN_SPEED > motor_s.req_veloc)
+		} // if (MIN_SPEED > motor_s.targ_vel)
 
-		motor_s.req_veloc += motor_s.speed_diff;
+		motor_s.targ_vel += motor_s.speed_diff;
 if (motor_s.id)
 {
-	acquire_lock(); printintln(motor_s.req_veloc); release_lock(); //MB~
+	acquire_lock(); printintln(motor_s.targ_vel); release_lock(); //MB~
 } // if (motor_s.id)
 	} // if (motor_s.tst_cnt > ITER_INC)
 } //MB~
@@ -842,13 +895,23 @@ if (motor_s.id)
 		if (64 == motor_s.temp)
 		{
 			motor_s.temp = 0; 
-			if (90 < motor_s.req_veloc) motor_s.req_veloc--;
+			if (90 < abs(motor_s.req_veloc))
+			{ 
+				if (0 > motor_s.req_veloc)
+				{
+					motor_s.req_veloc++;
+				} // if (0 > motor_s.req_veloc)
+				else
+				{
+					motor_s.req_veloc--;
+				} // else !(0 > motor_s.req_veloc)
+			} // if (90 < abs(motor_s.req_veloc))
 		} // if (1024 == motor_s.temp)
 	} //if (motor_s.iters > 25000)
 #endif //MB~
 
-// if (motor_s.xscope) xscope_int( 8 ,(motor_s.req_veloc - motor_s.est_veloc) ); //MB~
-	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.req_veloc ,motor_s.est_veloc );
+// if (motor_s.xscope) xscope_int( 8 ,(motor_s.targ_vel - motor_s.est_veloc) ); //MB~
+	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc );
 // if (motor_s.xscope) xscope_int( 11 ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
 // if (motor_s.xscope) xscope_int( 14 ,corr_veloc ); //MB~
 
@@ -939,10 +1002,11 @@ if (motor_s.id)
 			if (targ_Id < (abs_Id - 1)) targ_Id = abs_Id - 1; 
 		} // else !(targ_Id > (abs_Id + 1))
 
-		if (0 > motor_s.req_veloc)
+		// Check spin direction
+		if (0 > motor_s.targ_vel)
 		{ // Negative spin direction
 			targ_Id = -targ_Id; // targ_Id must be -ve for -ve spin
-		} // if (0 > motor_s.req_veloc)
+		} // if (0 > motor_s.targ_vel)
 
 		targ_Iq = IQ_LIM; // Limit target Iq value
 	} // if ((targ_Iq > IQ_LIM)
@@ -1004,14 +1068,39 @@ if (motor_s.id)
 
 } // update_foc_voltage
 /*****************************************************************************/
-static void update_foc_angle( // Update FOC PWM angular postion
+static int update_foc_angle( // Update FOC PWM angular postion
+	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
+) // Returns PWM angular position
+{
+	int out_theta;	// PWM theta value
+
+
+	// Update 'demand' theta value for next dq_to_pwm iteration from QEI-angle
+	out_theta = calc_foc_angle( motor_s ,motor_s.est_theta );
+	out_theta &= UQ_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
+
+	return out_theta;  // Return new PWM angular position
+} // update_foc_angle
+/*****************************************************************************/
+static void calc_foc_pwm( // Calculate FOC PWM output values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	// Update 'demand' theta value for next dq_to_pwm iteration from QEI-angle
-	motor_s.set_theta = calc_foc_angle( motor_s ,motor_s.est_theta );
+	motor_s.targ_vel = update_target_velocity( motor_s );
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.targ_vel ); //MB~
 
-	motor_s.set_theta &= UQ_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
+	// Check for PAUSE state
+	if (motor_s.state == PAUSE)
+	{ // Switch off coil currents
+		motor_s.vect_data[D_ROTA].set_V = 0;
+		motor_s.vect_data[Q_ROTA].set_V = 0;
+	} // if (motor_s.state == PAUSE)
+	else
+	{
+		update_foc_voltage( motor_s );
+	} // else !(motor_s.state == PAUSE)
+
+	motor_s.set_theta = update_foc_angle( motor_s );
 
 #if (1 == GAMMA_SWEEP)
 { //MB~
@@ -1033,15 +1122,6 @@ static void update_foc_angle( // Update FOC PWM angular postion
 } //MB~
 #endif //(1 == GAMMA_SWEEP)
 
-} // update_foc_angle
-/*****************************************************************************/
-static void calc_foc_pwm( // Calculate FOC PWM output values
-	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
-)
-{
-	update_foc_voltage( motor_s );
-
-	update_foc_angle( motor_s );
 } // calc_foc_pwm
 /*****************************************S************************************/
 static void update_motor_state( // Update state of motor based on motor sensor data
@@ -1051,19 +1131,30 @@ static void update_motor_state( // Update state of motor based on motor sensor d
  *	SEARCH: Warm-up state where the motor is turned until the FOC start condition is found
  *	FOC: 		Normal FOC state
  *	STALL:	Motor has stalled, 
- *	STOP:		Error state: Destination state if error conditions are detected
+ *	POWER_OFF:		Error state: Destination state if error conditions are detected
  *
  * During the SEARCH state, the motor runs in open loop, monitoring both Hall sensor and QEI responses,
  * then when synchronisation has been achieved the motor switches to the FOC state, which uses the main FOC algorithm.
  * If too long a time is spent in the STALL state, this becomes an error and the motor is stopped.
  */
 {
-	MOTOR_STATE_ENUM motor_state; // local motor state
+	int wrong_spin; // Flag set if wrong spin direction
 
 
 	// Update motor state based on new sensor data
 	switch( motor_s.state )
 	{
+		case WAIT : // Wat for non-zero requested speed
+		{
+			if (MIN_SPEED < abs(motor_s.req_veloc))
+			{
+				reset_motor( motor_s );
+
+acquire_lock(); printstrln("ALIGN"); release_lock(); //MB~
+				motor_s.state = ALIGN;
+			} // if 
+		} break; // case WAIT
+	
 		case ALIGN: // Align Motor coils opposite magnets
 		{
 			unsigned ts1;	// timestamp
@@ -1075,8 +1166,9 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 			if (ALIGN_PERIOD < diff_time)
 			{
 				motor_s.prev_pwm_time = ts1; // Store time-stamp
-				motor_state = SEARCH; 
-				motor_s.state = motor_state; // NB Required due to XC compiler rules
+
+acquire_lock(); printstrln("SEARCH"); release_lock(); //MB~
+				motor_s.state = SEARCH;
 			} // if 
 		} break; // case ALIGN
 	
@@ -1090,9 +1182,9 @@ static void update_motor_state( // Update state of motor based on motor sensor d
          * So recalibrate, to create smooth transition between SEARCH and FOC states.  
 				 */
 				motor_s.qei_offset = (motor_s.open_theta - motor_s.tot_ang); // Difference betweene Open-loop and QEI angle
+
 acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
-				motor_state = TRANSIT;
-				motor_s.state = motor_state; // NB Required due to XC compiler rules
+				motor_s.state = TRANSIT;
 			} // if (QEI_PER_PAIR == abs(motor_s.open_theta))
 		break; // case SEARCH 
 	
@@ -1104,10 +1196,9 @@ acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
 			{
 				motor_s.vect_data[D_ROTA].start_open_V = motor_s.vect_data[D_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
 				motor_s.vect_data[Q_ROTA].start_open_V = motor_s.vect_data[Q_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
+
 acquire_lock(); printstrln("FOC");release_lock(); //MB~
-				motor_state = FOC; 
-// motor_state = STOP; //MB~ 
-				motor_s.state = motor_state; // NB Required due to XC compiler rules
+				motor_s.state = FOC; 
 			} // if ((QEI_PER_PAIR << 1) == abs(motor_s.open_theta))
 		break; // case TRANSIT
 	
@@ -1119,68 +1210,95 @@ acquire_lock(); printstrln("FOC");release_lock(); //MB~
 			} // if (motor_s.diff_ang != 0)
 
 			// Check for a stall
-#ifdef MB
+			wrong_spin = 0; // preset flag to NOT wrong spin direction 
+// #ifdef MB
 			// check for correct spin direction
       if (0 > motor_s.half_veloc)
 			{
 				if (motor_s.est_veloc > -motor_s.half_veloc)
 				{	// Spinning in wrong direction
-					motor_s.err_data.err_flgs |= (1 << DIRECTION_ERR);
-					motor_s.err_data.line[DIRECTION_ERR] = __LINE__;
-					motor_s.state = STOP; // Switch to stop state
-					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
+					wrong_spin = 1;  // Set flag to wrong spin direction 
 				} // if (motor_s.est_veloc > -motor_s.half_veloc)
       } // if (0 > motor_s.half_veloc)
 			else
 			{
-				if (motor_s.est_veloc < -motor_s.half_veloc)
-				{	// Spinning in wrong direction
-					motor_s.err_data.err_flgs |= (1 << DIRECTION_ERR);
-					motor_s.err_data.line[DIRECTION_ERR] = __LINE__;
-					motor_s.state = STOP; // Switch to stop state
-					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
-				} // if (motor_s.est_veloc < -motor_s.half_veloc)
-if (motor_s.state == STOP)
-{
-acquire_lock(); printstr("BAD VEL="); printintln(motor_s.est_veloc); release_lock(); //MB~
-}
+	      if (0 < motor_s.half_veloc)
+				{
+					if (motor_s.est_veloc < -motor_s.half_veloc)
+					{	// Spinning in wrong direction
+						wrong_spin = 1;  // Set flag to wrong spin direction 
+					} // if (motor_s.est_veloc < -motor_s.half_veloc)
+	      } // if (0 < motor_s.half_veloc)
       } // if (0 > motor_s.half_veloc)
-#endif //MB~
 
-			if (motor_s.meas_speed < STALL_SPEED) 
+			if (1 == wrong_spin)
 			{
-				motor_s.state = STALL; // Switch to stall state
+				motor_s.err_data.err_flgs |= (1 << DIRECTION_ERR);
+				motor_s.err_data.line[DIRECTION_ERR] = __LINE__;
+				motor_s.cnts[POWER_OFF] = 0; // Initialise stop-state counter 
+	
+acquire_lock(); 
+printstr(" EV="); printintln(motor_s.est_veloc); 
+printstr(" HV="); printintln(motor_s.half_veloc); 
+release_lock(); //MB~
+acquire_lock(); printstr("POWER_OFF VEL="); printintln(motor_s.est_veloc); release_lock(); //MB~
+				motor_s.state = POWER_OFF; // Switch to stop state
+			} // if (1 == wrong_spin)
+// #endif //MB~
+
+			if (motor_s.meas_speed < motor_s.stall_speed) 
+			{
 				motor_s.cnts[STALL] = 0; // Initialise stall-state counter 
-			} // if (motor_s.meas_speed < STALL_SPEED)
+
+				motor_s.state = STALL; // Switch to stall state
+			} // if (motor_s.meas_speed < motor_s.stall_speed) 
 		break; // case FOC
 	
 		case STALL : // state where motor stalled
 			calc_foc_pwm( motor_s );
 
 			// Check if still stalled
-#ifdef MB
-			if (motor_s.meas_speed < STALL_SPEED) 
+			if (motor_s.meas_speed < motor_s.stall_speed) 
 			{
 				// Check if too many stalled states
 				if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
 				{
 					motor_s.err_data.err_flgs |= (1 << STALL);
-					motor_s.err_data.line[STALL] = __LINE__;
-					motor_s.state = STOP; // Switch to stop state
-					motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
+					motor_s.err_data.line[STALLED_ERR] = __LINE__;
+					motor_s.cnts[WAIT] = 0; // Initialise stop-state counter 
+
+acquire_lock(); printstr("WAIT CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
+					motor_s.state = WAIT; // Switch to stop state
 				} // if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
-			} // if (motor_s.meas_speed < STALL_SPEED) 
+			} // if (motor_s.meas_speed < motor_s.stall_speed) 
 			else
-#endif //MB~
 			{ // No longer stalled
-				motor_s.state = FOC; // Switch to main FOC state
 				motor_s.cnts[FOC] = 0; // Initialise FOC-state counter 
-			} // else !(motor_s.meas_speed < STALL_SPEED) 
+
+				motor_s.state = FOC; // Switch to main FOC state
+			} // else !(motor_s.meas_speed < motor_s.stall_speed) 
 		break; // case STALL
 	
-		case STOP : // Error state where motor stopped
+		case PAUSE : // State where Coil current switched off
+			// Check if still stalled
+			if (motor_s.meas_speed < motor_s.stall_speed) 
+			{
+				// Check if too many stalled states
+				if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
+				{
+					motor_s.err_data.err_flgs |= (1 << STALL);
+					motor_s.err_data.line[STALLED_ERR] = __LINE__;
+					motor_s.cnts[WAIT] = 0; // Initialise stop-state counter 
+
+acquire_lock(); printstr("STALL CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
+					motor_s.state = WAIT; // Switch to stop state
+				} // if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
+			} // if (motor_s.meas_speed < motor_s.stall_speed) 
+		break; // case PAUSE
+	
+		case POWER_OFF : // Error state where motor stopped
 			// Absorbing state. Nothing to do
-		break; // case STOP
+		break; // case POWER_OFF
 	
     default: // Unsupported
 			assert(0 == 1); // Motor state not supported
@@ -1540,8 +1658,8 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 	{
 		motor_s.err_data.err_flgs |= (1 << OVERCURRENT_ERR);
 		motor_s.err_data.line[OVERCURRENT_ERR] = __LINE__;
-		motor_s.state = STOP; // Switch to stop state
-		motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
+		motor_s.cnts[POWER_OFF] = 0; // Initialise power-down state counter 
+		motor_s.state = POWER_OFF; // Switch to power-down state
 
 		return;
 	} // if (motor_s.hall_params.err)
@@ -1559,13 +1677,12 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 
 	if (SAFE_MAX_SPEED < motor_s.meas_speed) // Safety
 	{
-		printstr("AngVel:"); printintln( motor_s.est_veloc );
-
 		motor_s.err_data.err_flgs |= (1 << SPEED_ERR);
 		motor_s.err_data.line[SPEED_ERR] = __LINE__;
-		motor_s.state = STOP; // Switch to stop state
-		motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
 
+acquire_lock(); printstr("PAUSE AngVel="); printintln(motor_s.est_veloc); release_lock(); //MB~
+		motor_s.cnts[PAUSE] = 0; // Initialise stop-state counter 
+		motor_s.state = PAUSE; // Switch to pause state
 		return;
 	} // if (4100 < motor_s.est_veloc)
 
@@ -1617,15 +1734,15 @@ static void process_speed_command( // Decodes speed command, and implements chan
 	switch(cmd_id)
 	{
 		case IO_CMD_INC_SPEED :
-			motor_s.cmd_veloc = motor_s.req_veloc + motor_s.speed_inc;
+			motor_s.req_veloc += motor_s.speed_inc;
 		break; // case IO_CMD_INC_SPEED 
 	
 		case IO_CMD_DEC_SPEED :
-			motor_s.cmd_veloc = motor_s.req_veloc - motor_s.speed_inc;
+			motor_s.req_veloc -= motor_s.speed_inc;
 		break; // case IO_CMD_DEC_SPEED 
 	
 		case IO_CMD_SET_SPEED :
-			c_speed :> motor_s.cmd_veloc; // get command velocity
+			c_speed :> motor_s.req_veloc; // get command velocity
 		break; // case IO_CMD_INC_SPEED 
 	
 		case IO_CMD_FLIP_SPIN:
@@ -1640,44 +1757,25 @@ static void process_speed_command( // Decodes speed command, and implements chan
 
 	// If necessary, clip command-speed into specified range
 
-	if (motor_s.cmd_veloc < 0)
-	{
-		if (motor_s.cmd_veloc < -SPEC_MAX_SPEED)
-		{ // Increase speed
-			motor_s.cmd_veloc = -SPEC_MAX_SPEED;
-		} // if (motor_s.cmd_veloc < -SPEC_MAX_SPEED)
-		else
-		{ // Increase speed
-			if (motor_s.cmd_veloc > -MIN_SPEED)
-			{ // Increase speed
-				motor_s.cmd_veloc = -MIN_SPEED;
-			} // if (motor_s.cmd_veloc > -MIN_SPEED)
-		} // else !(motor_s.cmd_veloc < -SPEC_MAX_SPEED)
-	} // if (motor_s.cmd_veloc < 0)
+	if (motor_s.req_veloc < -SPEC_MAX_SPEED)
+	{ // Increase speed
+		motor_s.req_veloc = -SPEC_MAX_SPEED;
+	} // if (motor_s.req_veloc < -SPEC_MAX_SPEED)
 	else
 	{
-		if (motor_s.cmd_veloc > SPEC_MAX_SPEED)
+		if (motor_s.req_veloc > SPEC_MAX_SPEED)
 		{ // Increase speed
-			motor_s.cmd_veloc = SPEC_MAX_SPEED;
-		} // if (motor_s.cmd_veloc > SPEC_MAX_SPEED)
-		else
-		{ // Increase speed
-			if (motor_s.cmd_veloc < MIN_SPEED)
-			{ // Increase speed
-				motor_s.cmd_veloc = MIN_SPEED;
-			} // if (motor_s.cmd_veloc < MIN_SPEED)
-		} // else !(motor_s.cmd_veloc > SPEC_MAX_SPEED)
-	} // else !(motor_s.cmd_veloc < 0)
+			motor_s.req_veloc = SPEC_MAX_SPEED;
+		} // if (motor_s.req_veloc > SPEC_MAX_SPEED)
+	} // else !(motor_s.req_veloc < 0)
 
 { //MB~
 	acquire_lock(); 
 	printint(motor_s.id); 
 	printstr(": Vel=");	
-	printintln(motor_s.cmd_veloc); 
+	printintln(motor_s.req_veloc); 
 	release_lock();
 } //MB~
-
-xscope_int( (6+motor_s.id) ,motor_s.cmd_veloc ); //MB~
 } // process_speed_command
 /*****************************************************************************/
 #pragma unsafe arrays
@@ -1700,7 +1798,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 
 	/* Main loop */
-	while (STOP != motor_s.state)
+	while (POWER_OFF != motor_s.state)
 	{
 #pragma xta endpoint "foc_loop"
 		select
@@ -1711,7 +1809,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			{
 				case IO_CMD_GET_IQ :
 					c_speed <: motor_s.est_veloc;
-					c_speed <: motor_s.req_veloc;
+					c_speed <: motor_s.targ_vel;
 				break; // case IO_CMD_GET_IQ
 	
 				case IO_CMD_GET_FAULT :
@@ -1766,51 +1864,27 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
 // motor_s.xscope = 1; // MB~ Crude Switch
 
-			// Check if requested velocity needs updating
-			if (motor_s.req_veloc < motor_s.cmd_veloc)
-			{
-				motor_s.req_veloc++;
-				motor_s.half_veloc = (motor_s.req_veloc >> 1);
-
-				// Check for change in spin direction
-				if (1 == motor_s.req_veloc)
-				{
-					update_velocity_data( motor_s ); // Update velocity dependent data
-				} // if
-			} // if (motor_s.req_veloc < motor_s.cmd_veloc)
-			else
-			{
-				if (motor_s.req_veloc > motor_s.cmd_veloc)
-				{
-					motor_s.req_veloc--;
-					motor_s.half_veloc = (motor_s.req_veloc >> 1);
-
-					// Check for change in spin direction
-					if ((-1) == motor_s.req_veloc)
-					{
-						update_velocity_data( motor_s ); // Update velocity dependent data
-					} // if (0 > (old_veloc * motor_s.req_veloc))
-				} // if (motor_s.req_veloc > motor_s.cmd_veloc)
-			} // else (motor_s.req_veloc < motor_s.cmd_veloc)
-if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.req_veloc ); //MB~
-
 			collect_sensor_data( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
 
 			// Check if it is time to stop demo
-			if (motor_s.iters > DEMO_LIMIT)
+//MB~			if (motor_s.iters > DEMO_LIMIT)
+			if (motor_s.iters < -DEMO_LIMIT)
 			{
-//MB~		motor_s.state = STOP; // Switch to stop state
-//MB~		motor_s.cnts[STOP] = 0; // Initialise stop-state counter 
+				motor_s.state = POWER_OFF; // Switch to stop state
+				motor_s.cnts[POWER_OFF] = 0; // Initialise stop-state counter 
+acquire_lock(); printstrln("STOP DEMO"); release_lock(); //MB~
 			} // if (motor_s.iters > DEMO_LIMIT)
 		break; // default:
 
 		}	// select
 
 if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[D_ROTA].est_I );
+// acquire_lock(); printint(motor_s.id); printstr(": MS="); printintln(motor_s.state); release_lock(); //MB~
 		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
 if (motor_s.xscope) xscope_int( 3 ,motor_s.vect_data[Q_ROTA].est_I );
+if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.req_veloc ); //MB~
 
-	}	// while (STOP != motor_s.state)
+	}	// while (POWER_OFF != motor_s.state)
 
 	// Set PWM values to stop motor
 	error_pwm_values( motor_s.pwm_comms.params.widths );

@@ -33,36 +33,36 @@ static void wait(unsigned millis){
 static void stop(chanend c_speed[]){
         c_speed[0] <: IO_CMD_SET_SPEED;
         c_speed[0] <: 0;
-        c_speed[1] <: IO_CMD_SET_SPEED;
-        c_speed[1] <: 0;
+				c_speed[1] <: IO_CMD_SET_SPEED;
+				c_speed[1] <: 0;
 
-        wait(100);
+        wait(2000);
 }
 /*****************************************************************************/
 static void set_both_motors_speed(chanend c_speed[], int rpm){
         c_speed[0] <: IO_CMD_SET_SPEED;
         c_speed[0] <: rpm;
-        c_speed[1] <: IO_CMD_SET_SPEED;
-        c_speed[1] <: rpm;
+				c_speed[1] <: IO_CMD_SET_SPEED;
+				c_speed[1] <: rpm;
 }
 /*****************************************************************************/
 static void test_motor(chanend c_speed[]){
 #define MIN_TEST_RPM 400
 #define EASY_SPEED 1000
 #define MAX_TEST_RPM 4000
-    wait(3000);
-    set_both_motors_speed(c_speed, 0);
     wait(6000);
+    stop(c_speed);
+
     printstrln("Test 1: LDO_MOTOR_STARTUP_PLUS (10s)");
     set_both_motors_speed(c_speed, EASY_SPEED);
-    wait(11000);
+    wait(4 * EASY_SPEED);
     printstrln("End of Test 1");
 
     stop(c_speed);
 
     printstrln("Test 2: LDO_MOTOR_STARTUP_MINUS (10s)");
     set_both_motors_speed(c_speed, -EASY_SPEED);
-    wait(10000);
+    wait(4 * EASY_SPEED);
     printstrln("End of Test 2");
 
     stop(c_speed);

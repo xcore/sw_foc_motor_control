@@ -99,7 +99,6 @@
 #define HALF_VOLT_TO_PWM (1 << (VOLT_TO_PWM_BITS - 1)) // Used for rounding
 #define VOLT_OFFSET (VOLT_MAX_MAG + HALF_VOLT_TO_PWM) // Offset required to make PWM pulse-width +ve
 
-#define STALL_SPEED 100
 #define STALL_TRIP_COUNT 5000
 
 #define FIRST_HALL_STATE 0b001 // [CBA] 1st Hall state of 6-state cycle
@@ -128,9 +127,9 @@
 #define MAX_VQ_OPENLOOP 5800 // MB~ Max Vq value for open-loop tuning
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
-#define REQ_VELOCITY 1000 // Requested motor speed
+#define REQ_VELOCITY 400 // Requested motor speed
 
-#define MIN_SPEED 400 // This value is derived from experience
+#define MIN_SPEED 200 // This value is derived from experience
 #define SPEC_MAX_SPEED 4000 // This value is derived from the LDO Motor Max. spec. speed
 #define SAFE_MAX_SPEED 5860 // This value is derived from the Optical Encoder Max. rate of 100kHz
 #define SPEED_INC 100 // If speed change requested, this is the amount of change
@@ -262,12 +261,14 @@ typedef enum IQ_EST_TAG
 /** Different Motor Phases */
 typedef enum MOTOR_STATE_ETAG
 {
-  ALIGN = 0, // Align Coils opposite magnet
+  WAIT = 0, // Wait for non-zero speed
+  ALIGN, // Align Coils opposite magnet
   SEARCH, // Turn motor until FOC start conditions found
-  TRANSIT,	// transit stage
+  TRANSIT,	// Transit state
   FOC,		  // Normal FOC state
-	STALL,		// state where motor stalled
-	STOP,			// Error state where motor stopped
+	STALL,		// State where motor stalled
+	PAUSE,		// Pause until motor stalls
+	POWER_OFF, // Error state where motor powered off
   NUM_MOTOR_STATES	// Handy Value!-)
 } MOTOR_STATE_ENUM;
 
@@ -333,9 +334,10 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	MOTOR_STATE_ENUM state; // Current motor state
 	CMD_IO_ENUM cmd_id; // Speed Command
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
+	int stall_speed;	// Speed below which motor is assumed to have stalled
+	int req_veloc;	// (External) Requested angular velocity
+	int targ_vel;	// (Internal) Target angular velocity
 	int est_veloc;	// Estimated angular velocity (from QEI data)
-	int req_veloc;	// Internal requested (target) angular velocity
-	int cmd_veloc;	// External command (target) angular velocity
 	int half_veloc;	// Half requested angular velocity
 	int max_veloc;	// Maximum angular velocity
 	int min_veloc;	// Minimum angular velocity
