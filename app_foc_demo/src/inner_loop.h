@@ -261,13 +261,13 @@ typedef enum IQ_EST_TAG
 /** Different Motor Phases */
 typedef enum MOTOR_STATE_ETAG
 {
-  WAIT = 0, // Wait for non-zero speed
+  WAIT_START = 0, // Wait for motor to start (receives non-zero request velocity)
   ALIGN, // Align Coils opposite magnet
   SEARCH, // Turn motor until FOC start conditions found
   TRANSIT,	// Transit state
   FOC,		  // Normal FOC state
 	STALL,		// State where motor stalled
-	PAUSE,		// Pause until motor stalls
+	WAIT_STOP, // Wait for motor to stop (measures small velocity)
 	POWER_OFF, // Error state where motor powered off
   NUM_MOTOR_STATES	// Handy Value!-)
 } MOTOR_STATE_ENUM;

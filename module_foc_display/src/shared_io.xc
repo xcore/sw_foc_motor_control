@@ -36,7 +36,7 @@ static void stop(chanend c_speed[]){
 				c_speed[1] <: IO_CMD_SET_SPEED;
 				c_speed[1] <: 0;
 
-        wait(2000);
+        wait(300);
 }
 /*****************************************************************************/
 static void set_both_motors_speed(chanend c_speed[], int rpm){
@@ -54,14 +54,14 @@ static void test_motor(chanend c_speed[]){
     stop(c_speed);
 
     printstrln("Test 1: LDO_MOTOR_STARTUP_PLUS (10s)");
-    set_both_motors_speed(c_speed, EASY_SPEED);
+		set_both_motors_speed(c_speed, EASY_SPEED);
     wait(4 * EASY_SPEED);
     printstrln("End of Test 1");
 
     stop(c_speed);
 
     printstrln("Test 2: LDO_MOTOR_STARTUP_MINUS (10s)");
-    set_both_motors_speed(c_speed, -EASY_SPEED);
+		set_both_motors_speed(c_speed, -EASY_SPEED);
     wait(4 * EASY_SPEED);
     printstrln("End of Test 2");
 

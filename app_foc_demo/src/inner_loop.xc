@@ -283,7 +283,6 @@ static void reset_motor( // Reset motor data after motor stops/stalls
 )
 {
 	int phase_cnt; // phase counter
-	int tmp_val; // temporary manipulation value
 
 
 	init_error_data( motor_s.err_data );
@@ -299,20 +298,19 @@ static void reset_motor( // Reset motor data after motor stops/stalls
 
 	motor_s.iters = 0;
 	motor_s.tst_cnt = 0; // MB~
-	motor_s.cnts[WAIT] = 0;
 	motor_s.cnts[ALIGN] = 0;
 	motor_s.cnts[SEARCH] = 0;
-	motor_s.state = WAIT;
+	motor_s.cnts[STALL] = 0;
+	motor_s.cnts[WAIT_START] = 0;
+	motor_s.state = WAIT_START;
 	motor_s.hall_params.hall_val = HALL_NERR_MASK; // Initialise to 'No Errors'
 	motor_s.prev_hall = (!HALL_NERR_MASK); // Arbitary value different to above
 
-	motor_s.Iq_alg = TRANSFORM; // [TRANSFORM VELOCITY EXTREMA] Assign algorithm used to estimate coil current Iq (and Id)
 	motor_s.first_pid = 1; // Set flag until first set of PID's completed
 	motor_s.hall_offset = 0;	// Phase difference between the Hall sensor origin and PWM theta origin
 	motor_s.qei_offset = 0;	// Phase difference between the QEI origin and PWM theta origin
 	motor_s.hall_found = 0;	// Set flag to Hall origin NOT found
 	motor_s.qei_found = 0;	// Set flag to QEI origin NOT found
-	motor_s.xscope = 1; 	// Switch on xscope print flag
 	motor_s.prev_pwm_time = 0; 	// previous open-loop time stamp
 	motor_s.prev_qei_time = 0; 	// previous open-loop time stamp
 	motor_s.coef_err = 0; // Clear Extrema Coef. diffusion error
@@ -333,17 +331,11 @@ static void reset_motor( // Reset motor data after motor stops/stalls
 	motor_s.est_revs = 0; // Estimated No. of revolutions (from QEI data)
 	motor_s.prev_revs = 0; // Previous No. of revolutions
 
-	motor_s.trans_cycles = 1; // Default number of electrical cycles spent in TRANSIT state
 	motor_s.trans_cnt = 0; // Counts trans_theta updates
 
-	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
 	motor_s.filt_veloc = 0; // filtered value
 	motor_s.coef_vel_err = 0; // Velocity filter coefficient diffusion error
 	motor_s.scale_vel_err = 0; // Velocity scaling diffusion error 
-
-	// Check consistency of pre-defined QEI values
-	tmp_val = (1 << QEI_RES_BITS); // Build No. of QEI points from resolution bits
-	assert( QEI_PER_REV == tmp_val );
 
 	motor_s.est_period = PWM_MAX_VALUE; // Initial value for estimated QEI period
 	motor_s.prev_period = PWM_MAX_VALUE; // Initialise previous value for QEI period
@@ -375,14 +367,33 @@ static void init_motor( // initialise data structure for one motor
 	unsigned motor_id // Unique Motor identifier e.g. 0 or 1
 )
 {
+	int tmp_val; // temporary manipulation value
+
+
 	motor_s.id = motor_id; // Unique Motor identifier e.g. 0 or 1
+
+	motor_s.Iq_alg = TRANSFORM; // [TRANSFORM VELOCITY EXTREMA] Assign algorithm used to estimate coil current Iq (and Id)
+	motor_s.xscope = 1; 	// Switch on xscope print flag
+	motor_s.trans_cycles = 1; // Default number of electrical cycles spent in TRANSIT state
+	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
+
+	// Check consistency of pre-defined QEI values
+	tmp_val = (1 << QEI_RES_BITS); // Build No. of QEI points from resolution bits
+	assert( QEI_PER_REV == tmp_val );
+
+	motor_s.stall_speed = (MIN_SPEED >> 3); // Speed below which motor is assumed to have stalled
+	motor_s.meas_speed = 0; // Starting speed is zero
+	motor_s.est_veloc = 0;
 
 	motor_s.targ_vel = REQ_VELOCITY;
 // if (motor_s.id) motor_s.targ_vel = -REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.targ_vel >> 1);
 	motor_s.req_veloc = motor_s.targ_vel; // Preset requested velocity to start-up target velocity 
 
-	reset_motor( motor_s );
+	motor_s.cnts[WAIT_START] = 0;
+	motor_s.state = WAIT_START;
+
+//MB~	reset_motor( motor_s ); //MB~ Remove
 
 } // init_motor
 /*****************************************************************************/
@@ -1086,19 +1097,21 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	motor_s.targ_vel = update_target_velocity( motor_s );
-if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.targ_vel ); //MB~
 
-	// Check for PAUSE state
-	if (motor_s.state == PAUSE)
+	// Check for WAIT_STOP state
+	if (motor_s.state == WAIT_STOP)
 	{ // Switch off coil currents
+		motor_s.targ_vel = 0;
+
 		motor_s.vect_data[D_ROTA].set_V = 0;
 		motor_s.vect_data[Q_ROTA].set_V = 0;
-	} // if (motor_s.state == PAUSE)
+	} // if (motor_s.state == WAIT_STOP)
 	else
 	{
+		motor_s.targ_vel = update_target_velocity( motor_s );
+
 		update_foc_voltage( motor_s );
-	} // else !(motor_s.state == PAUSE)
+	} // else !(motor_s.state == WAIT_STOP)
 
 	motor_s.set_theta = update_foc_angle( motor_s );
 
@@ -1144,16 +1157,19 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 	// Update motor state based on new sensor data
 	switch( motor_s.state )
 	{
-		case WAIT : // Wat for non-zero requested speed
+		case WAIT_START : // Wat for non-zero requested speed
 		{
 			if (MIN_SPEED < abs(motor_s.req_veloc))
 			{
+				motor_s.targ_vel = motor_s.req_veloc;
+				motor_s.half_veloc = (motor_s.targ_vel >> 1);
+
 				reset_motor( motor_s );
 
 acquire_lock(); printstrln("ALIGN"); release_lock(); //MB~
 				motor_s.state = ALIGN;
 			} // if 
-		} break; // case WAIT
+		} break; // case WAIT_START
 	
 		case ALIGN: // Align Motor coils opposite magnets
 		{
@@ -1265,10 +1281,10 @@ acquire_lock(); printstr("POWER_OFF VEL="); printintln(motor_s.est_veloc); relea
 				{
 					motor_s.err_data.err_flgs |= (1 << STALL);
 					motor_s.err_data.line[STALLED_ERR] = __LINE__;
-					motor_s.cnts[WAIT] = 0; // Initialise stop-state counter 
+					motor_s.cnts[WAIT_START] = 0; // Initialise stop-state counter 
 
-acquire_lock(); printstr("WAIT CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
-					motor_s.state = WAIT; // Switch to stop state
+acquire_lock(); printstr("WAIT_START CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
+					motor_s.state = WAIT_START; // Switch to stop state
 				} // if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
 			} // if (motor_s.meas_speed < motor_s.stall_speed) 
 			else
@@ -1279,22 +1295,16 @@ acquire_lock(); printstr("WAIT CNTS="); printintln(motor_s.cnts[STALL]); release
 			} // else !(motor_s.meas_speed < motor_s.stall_speed) 
 		break; // case STALL
 	
-		case PAUSE : // State where Coil current switched off
+		case WAIT_STOP : // State where Coil current switched off
+			calc_foc_pwm( motor_s );
+
 			// Check if still stalled
 			if (motor_s.meas_speed < motor_s.stall_speed) 
 			{
-				// Check if too many stalled states
-				if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
-				{
-					motor_s.err_data.err_flgs |= (1 << STALL);
-					motor_s.err_data.line[STALLED_ERR] = __LINE__;
-					motor_s.cnts[WAIT] = 0; // Initialise stop-state counter 
-
-acquire_lock(); printstr("STALL CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
-					motor_s.state = WAIT; // Switch to stop state
-				} // if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
+acquire_lock(); printstr("WAIT_STOP CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
+				motor_s.state = WAIT_START; // Switch to stop state
 			} // if (motor_s.meas_speed < motor_s.stall_speed) 
-		break; // case PAUSE
+		break; // case WAIT_STOP
 	
 		case POWER_OFF : // Error state where motor stopped
 			// Absorbing state. Nothing to do
@@ -1680,9 +1690,9 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 		motor_s.err_data.err_flgs |= (1 << SPEED_ERR);
 		motor_s.err_data.line[SPEED_ERR] = __LINE__;
 
-acquire_lock(); printstr("PAUSE AngVel="); printintln(motor_s.est_veloc); release_lock(); //MB~
-		motor_s.cnts[PAUSE] = 0; // Initialise stop-state counter 
-		motor_s.state = PAUSE; // Switch to pause state
+acquire_lock(); printstr("WAIT_STOP: Max.Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
+		motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
+		motor_s.state = WAIT_STOP; // Switch to pause state
 		return;
 	} // if (4100 < motor_s.est_veloc)
 
@@ -1769,6 +1779,17 @@ static void process_speed_command( // Decodes speed command, and implements chan
 		} // if (motor_s.req_veloc > SPEC_MAX_SPEED)
 	} // else !(motor_s.req_veloc < 0)
 
+	if (MIN_SPEED > abs(motor_s.req_veloc))
+	{ 
+		motor_s.targ_vel = 0;
+
+		motor_s.vect_data[D_ROTA].set_V = 0;
+		motor_s.vect_data[Q_ROTA].set_V = 0;
+
+acquire_lock(); printstr("WAIT_STOP: Min.Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
+		motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
+		motor_s.state = WAIT_STOP; // Switch to pause state
+	} // if (MIN_SPEED > abs(motor_s.req_veloc)
 { //MB~
 	acquire_lock(); 
 	printint(motor_s.id); 
@@ -1879,9 +1900,10 @@ acquire_lock(); printstrln("STOP DEMO"); release_lock(); //MB~
 		}	// select
 
 if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[D_ROTA].est_I );
+if (motor_s.xscope) xscope_int( 3 ,motor_s.vect_data[Q_ROTA].est_I );
 // acquire_lock(); printint(motor_s.id); printstr(": MS="); printintln(motor_s.state); release_lock(); //MB~
 		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
-if (motor_s.xscope) xscope_int( 3 ,motor_s.vect_data[Q_ROTA].est_I );
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.targ_vel ); //MB~
 if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.req_veloc ); //MB~
 
 	}	// while (POWER_OFF != motor_s.state)
