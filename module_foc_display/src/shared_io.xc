@@ -54,14 +54,18 @@ static void test_motor(chanend c_speed[]){
     stop(c_speed);
 
     printstrln("Test 1: LDO_MOTOR_STARTUP_PLUS (10s)");
-		set_both_motors_speed(c_speed, EASY_SPEED);
-    wait(4 * EASY_SPEED);
+//MB~		set_both_motors_speed(c_speed, EASY_SPEED);
+//MB~		    wait(4 * EASY_SPEED);
+    set_both_motors_speed(c_speed, MAX_TEST_RPM);
+    wait(3000);
+
     printstrln("End of Test 1");
 
-    stop(c_speed);
+//MB~		        stop(c_speed);
 
     printstrln("Test 2: LDO_MOTOR_STARTUP_MINUS (10s)");
-		set_both_motors_speed(c_speed, -EASY_SPEED);
+//MB~	set_both_motors_speed(c_speed, -EASY_SPEED);
+		set_both_motors_speed(c_speed, (MIN_TEST_RPM << 1) );
     wait(4 * EASY_SPEED);
     printstrln("End of Test 2");
 
@@ -127,15 +131,17 @@ static void test_motor(chanend c_speed[]){
 
     printstrln("Test 9: LDO_RPM_PLUS_4000_STARTUP (8s)");
     set_both_motors_speed(c_speed, MAX_TEST_RPM);
-    wait(8000);
+    wait(3000);
     printstrln("End of Test 9");
 
     stop(c_speed);
 
     printstrln("Test 10: LDO_RPM_MINUS_4000_STARTUP (8s)");
     set_both_motors_speed(c_speed, -MAX_TEST_RPM);
-    wait(8000);
+    wait(3000);
     printstrln("End of Test 10");
+
+return; //MB~
 
     stop(c_speed);
 

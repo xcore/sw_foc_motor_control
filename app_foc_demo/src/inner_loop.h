@@ -364,7 +364,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
 	int foc_theta;	// FOC theta value
-	int first_pid; // Flag set until first set of PID's completed
+	int preset_pid; // Flag set if PID needs presetting
 	int search_theta;	// theta value at end of 'SEARCH state'
 	int trans_theta;	// theta value at end of 'TRANSIT state'
 	int trans_cycles;	// Number of electrical cycles spent in 'TRANSIT state'
