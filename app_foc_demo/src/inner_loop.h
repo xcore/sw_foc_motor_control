@@ -336,6 +336,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int stall_speed;	// Speed below which motor is assumed to have stalled
 	int req_veloc;	// (External) Requested angular velocity
+	int old_veloc;	// Old Requested angular velocity
 	int targ_vel;	// (Internal) Target angular velocity
 	int est_veloc;	// Estimated angular velocity (from QEI data)
 	int half_veloc;	// Half requested angular velocity
@@ -364,7 +365,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
 	int foc_theta;	// FOC theta value
-	int preset_pid; // Flag set if PID needs presetting
+	int pid_preset; // Flag set if PID needs presetting
 	int search_theta;	// theta value at end of 'SEARCH state'
 	int trans_theta;	// theta value at end of 'TRANSIT state'
 	int trans_cycles;	// Number of electrical cycles spent in 'TRANSIT state'

@@ -285,27 +285,27 @@ static void speed_change_reset( // Reset motor data after large speed change
 		initialise_pid( motor_s.pid_regs[pid_cnt] );
 	} // for pid_cnt
 
-	motor_s.preset_pid = 1; // Force PID preset with new velocity data
+	motor_s.pid_preset = 0; // MB~ Force PID preset with new velocity data
 
-	motor_s.targ_vel = motor_s.req_veloc;
-	motor_s.half_veloc = (motor_s.targ_vel >> 1);
+//MB~	motor_s.targ_vel = motor_s.req_veloc;
+//MB~	motor_s.half_veloc = (motor_s.targ_vel >> 1);
 
-	motor_s.est_veloc = motor_s.targ_vel; // Initial value for Estimated angular velocity (from QEI data)
-	motor_s.prev_veloc = motor_s.est_veloc; // Previous measured velocity
+//MB~	motor_s.est_veloc = motor_s.targ_vel; // Initial value for Estimated angular velocity (from QEI data)
+//MB~	motor_s.prev_veloc = motor_s.est_veloc; // Previous measured velocity
 
 	motor_s.coef_err = 0; // Clear Extrema Coef. diffusion error
 	motor_s.scale_err = 0; // Clear Extrema Scaling diffusion error
 	motor_s.Iq_err = 0; // Clear Error diffusion value for measured Iq
 	motor_s.prev_Id = 0;	// Initial target 'radial' current value
 
-	motor_s.filt_veloc = 0; // filtered value
+	motor_s.filt_veloc = (motor_s.est_veloc << VEL_SCALE_BITS); // Upscaled Estimated velocity
 	motor_s.coef_vel_err = 0; // Velocity filter coefficient diffusion error
 	motor_s.scale_vel_err = 0; // Velocity scaling diffusion error 
 
 	update_velocity_data( motor_s ); // Update velocity dependent data	
 } // speed_change_reset
 /*****************************************************************************/
-static void reset_motor( // Reset motor data after motor stops/stalls
+static void start_motor_reset( // Reset motor data ready for re-start
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
@@ -352,10 +352,18 @@ static void reset_motor( // Reset motor data after motor stops/stalls
 	motor_s.foc_theta = 0; // FOC theta value
 	motor_s.est_revs = 0; // Estimated No. of revolutions (from QEI data)
 	motor_s.prev_revs = 0; // Previous No. of revolutions
+	motor_s.filt_period = MILLI_SEC; // Preset QEI period to large value for start-up
 
 	motor_s.trans_cnt = 0; // Counts trans_theta updates
 
+	motor_s.targ_vel = motor_s.req_veloc;
+	motor_s.half_veloc = (motor_s.targ_vel >> 1);
+
+	motor_s.est_veloc = motor_s.stall_speed; // Initial value for Estimated angular velocity (from QEI data)
+	motor_s.prev_veloc = motor_s.est_veloc; // Previous measured velocity
+
 	speed_change_reset( motor_s );
+	motor_s.pid_preset = 1; // Force PID preset with new velocity data
 
 	motor_s.tmp = 0; // MB~ Dbg
 	motor_s.temp = 0; // MB~ Dbg
@@ -365,7 +373,7 @@ static void reset_motor( // Reset motor data after motor stops/stalls
 	motor_s.dbg_prev = QEI_REV_MASK; // MB~
 	motor_s.dbg_diff = 1; // MB~
 
-} // reset_motor
+} // start_motor_reset
 /*****************************************************************************/
 static void init_motor( // initialise data structure for one motor
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
@@ -394,6 +402,7 @@ static void init_motor( // initialise data structure for one motor
 // if (motor_s.id) motor_s.targ_vel = -REQ_VELOCITY;
 	motor_s.half_veloc = (motor_s.targ_vel >> 1);
 	motor_s.req_veloc = motor_s.targ_vel; // Preset requested velocity to start-up target velocity 
+	motor_s.old_veloc = motor_s.targ_vel; // Preset old requested velocity to start-up target velocity 
 
 	motor_s.cnts[WAIT_START] = 0;
 	motor_s.state = WAIT_START;
@@ -869,10 +878,11 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	// Applying Speed PID.
 
 	// Check if PID's need presetting
-	if (motor_s.preset_pid)
+	if (motor_s.pid_preset)
 	{
-		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.est_veloc ,motor_s.targ_vel ,motor_s.est_veloc );
-	}; // if (motor_s.preset_pid)
+acquire_lock(); printintln(motor_s.targ_vel); release_lock(); //MB~
+		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.old_veloc ,motor_s.targ_vel ,motor_s.est_veloc );
+	}; // if (motor_s.pid_preset)
 
 #ifdef MB
 // Speed change test //MB~
@@ -1034,13 +1044,13 @@ if (motor_s.id)
 	// Apply PID control to Iq and Id
 
 	// Check if PID's need presetting
-	if (motor_s.preset_pid)
+	if (motor_s.pid_preset)
 	{
 //MB~	preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,(motor_s.vect_data[D_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
 //MB~	preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,(motor_s.vect_data[Q_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
 		preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,motor_s.vect_data[D_ROTA].end_open_V ,targ_Id ,(motor_s.vect_data[D_ROTA].est_I >> ADC_UPSCALE_BITS) );
 		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,(motor_s.vect_data[Q_ROTA].est_I >> ADC_UPSCALE_BITS) );
-	}; // if (motor_s.preset_pid)
+	}; // if (motor_s.pid_preset)
 
 //MB~	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
 //MB~	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
@@ -1078,7 +1088,7 @@ if (motor_s.id)
 		calc_open_loop_pwm( motor_s );
 	} // else !(IQ_ID_CLOSED)
 
-	motor_s.preset_pid = 0; // Clear 'Preset PID' flag
+	motor_s.pid_preset = 0; // Clear 'Preset PID' flag
 
 } // update_foc_voltage
 /*****************************************************************************/
@@ -1111,6 +1121,7 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	} // if (motor_s.state == WAIT_STOP)
 	else
 	{
+		motor_s.old_veloc =  motor_s.targ_vel; // Store previous target velocity
 		motor_s.targ_vel = update_target_velocity( motor_s );
 
 		update_foc_voltage( motor_s );
@@ -1164,10 +1175,11 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 		{
 			if (MIN_SPEED < abs(motor_s.req_veloc))
 			{
+				motor_s.old_veloc =  motor_s.targ_vel; // Store previous target velocity
 				motor_s.targ_vel = motor_s.req_veloc;
 				motor_s.half_veloc = (motor_s.targ_vel >> 1);
 
-				reset_motor( motor_s );
+				start_motor_reset( motor_s );
 
 acquire_lock(); printstrln("ALIGN"); release_lock(); //MB~
 				motor_s.state = ALIGN;
@@ -1469,18 +1481,23 @@ static unsigned filter_period( // Smoothes QEI period using low-pass filter
 {
 	int diff_val; // Difference between input and filtered output
 	int increment; // new increment to filtered output value
-	unsigned out_period; // filtered output period
+	unsigned out_period = inp_period; // preset output to input value
 
 
-	// Form difference with previous filter output
-	diff_val = inp_period - motor_s.filt_period;
-
-	// Multiply difference by filter coefficient (alpha)
-	diff_val += motor_s.period_coef_err; // Add in diffusion error;
-	increment = (diff_val + PERIOD_HALF_COEF) >> PERIOD_COEF_BITS; // Multiply by filter coef (with rounding)
-	motor_s.period_coef_err = diff_val - (increment << PERIOD_COEF_BITS); // Evaluate new quantisation error value 
-
-	out_period = motor_s.filt_period + increment; // Form filtered output value
+	// Check for sensible value
+	if (inp_period < ALIGN_PERIOD)
+	{
+		// Form difference with previous filter output
+		diff_val = inp_period - motor_s.filt_period;
+	
+		// Multiply difference by filter coefficient (alpha)
+		diff_val += motor_s.period_coef_err; // Add in diffusion error;
+		increment = (diff_val + PERIOD_HALF_COEF) >> PERIOD_COEF_BITS; // Multiply by filter coef (with rounding)
+		motor_s.period_coef_err = diff_val - (increment << PERIOD_COEF_BITS); // Evaluate new quantisation error value 
+	
+		motor_s.filt_period += increment; // Form new filtered value
+		out_period = motor_s.filt_period; // Output new filtered value
+	} // if (inp_period < ALIGN_PERIOD)
 
 	return out_period; // return filtered output value
 } // filter_period
@@ -1498,25 +1515,29 @@ static int filter_velocity( // Smooths velocity estimate using low-pass filter
 	int scaled_inp = (meas_veloc << VEL_SCALE_BITS); // Upscaled QEI input value
 	int diff_val; // Difference between input and filtered output
 	int increment; // new increment to filtered output value
-	int out_val; // filtered output value
+	int out_veloc = meas_veloc; // preset output to input value
 
 
-	// Form difference with previous filter output
-	diff_val = scaled_inp - motor_s.filt_veloc;
+	// Check for sensible value
+	if ((abs(meas_veloc) > motor_s.stall_speed)	&& (abs(meas_veloc) < SAFE_MAX_SPEED))
+	{
+		// Form difference with previous filter output
+		diff_val = scaled_inp - motor_s.filt_veloc;
+	
+		// Multiply difference by filter coefficient (alpha)
+		diff_val += motor_s.coef_vel_err; // Add in diffusion error;
+		increment = (diff_val + VEL_HALF_COEF) >> VEL_COEF_BITS ; // Multiply by filter coef (with rounding)
+		motor_s.coef_vel_err = diff_val - (increment << VEL_COEF_BITS); // Evaluate new quantisation error value 
+	
+		motor_s.filt_veloc += increment; // Update (up-scaled) filtered output value
+	
+		// Update mean value by down-scaling filtered output value
+		motor_s.filt_veloc += motor_s.scale_vel_err; // Add in diffusion error;
+		out_veloc = (motor_s.filt_veloc + VEL_HALF_SCALE) >> VEL_SCALE_BITS; // Down-scale
+		motor_s.scale_vel_err = motor_s.filt_veloc - (out_veloc << VEL_SCALE_BITS); // Evaluate new remainder value 
+	} // if ((abs(meas_veloc) > motor_s.stall_speed)	&& (abs(meas_veloc) < SAFE_MAX_SPEED))
 
-	// Multiply difference by filter coefficient (alpha)
-	diff_val += motor_s.coef_vel_err; // Add in diffusion error;
-	increment = (diff_val + VEL_HALF_COEF) >> VEL_COEF_BITS ; // Multiply by filter coef (with rounding)
-	motor_s.coef_vel_err = diff_val - (increment << VEL_COEF_BITS); // Evaluate new quantisation error value 
-
-	motor_s.filt_veloc += increment; // Update (up-scaled) filtered output value
-
-	// Update mean value by down-scaling filtered output value
-	motor_s.filt_veloc += motor_s.scale_vel_err; // Add in diffusion error;
-	out_val = (motor_s.filt_veloc + VEL_HALF_SCALE) >> VEL_SCALE_BITS; // Down-scale
-	motor_s.scale_vel_err = motor_s.filt_veloc - (out_val << VEL_SCALE_BITS); // Evaluate new remainder value 
-
-	return out_val; // return filtered output value
+	return out_veloc; // return filtered output value
 } // filter_velocity
 /*****************************************************************************/
 static int get_velocity( // Returns updated velocity estimate from time period. (Angular_speed in RPM) 
@@ -1628,9 +1649,9 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 			} // if (motor_s.est_period > motor_s.prev_period)
 		} // else !(diff_ang != 0)
 	
-		motor_s.filt_period = filter_period( motor_s ,qei_period ); // Filter QEI period
+		qei_period = filter_period( motor_s ,qei_period ); // Filter QEI period
 
-		motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,motor_s.filt_period ); // Update velocity estimate
+		motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,qei_period ); // Update velocity estimate
 
 #if (1 == VELOC_FILT) 
 		// Filter velocity. MB~ Need to investigate why velocity spikes occur
@@ -1791,12 +1812,13 @@ static void process_speed_command( // Decodes speed command, and implements chan
 	
 		if (MIN_SPEED > abs(new_veloc))
 		{ 
+			motor_s.old_veloc =  motor_s.targ_vel; // Store previous target velocity
 			motor_s.targ_vel = 0;
 	
 			motor_s.vect_data[D_ROTA].set_V = 0;
 			motor_s.vect_data[Q_ROTA].set_V = 0;
 	
-	acquire_lock(); printstr("WAIT_STOP: Min.Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
+acquire_lock(); printstr("WAIT_STOP: Min.Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
 			motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
 			motor_s.state = WAIT_STOP; // Switch to pause state
 		} // if (MIN_SPEED > abs(new_veloc)
