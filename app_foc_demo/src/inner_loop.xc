@@ -1800,7 +1800,7 @@ static void process_speed_command( // Decodes speed command, and implements chan
 		break; // case IO_CMD_INC_SPEED 
 	
 		case IO_CMD_FLIP_SPIN:
-			acquire_lock(); printint(motor_s.id); printstrln(": 'Flip Spin' NOT currently supported");	release_lock();
+			new_veloc = -motor_s.req_veloc; // Flip sign of velocity
 		break; // case IO_CMD_FLIP_SPIN
 	
     default: // Unsupported Speed command
