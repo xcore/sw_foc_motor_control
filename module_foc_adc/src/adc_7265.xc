@@ -170,6 +170,7 @@ static void get_adc_port_data( // Get ADC data from one port
 	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing data for this phase of one ADC trigger
 	in buffered port:32 inp_data_port, // ADC input data port for one phase
 	int filt_cnt, // Counter used in filter
+	int mux_id, // Mux input identifier
 	int port_id // port identifier
 )
 {
@@ -189,16 +190,15 @@ static void get_adc_port_data( // Get ADC data from one port
 	tmp_val = bitrev( inp_val );	// Reverse bit order. WARNING. Machine dependent
 	tmp_val <<= ADC_SHIFT_BITS;		// Align active bits to MS 16-bit boundary
 	word_16 = (short)(tmp_val & ADC_MASK);	// Mask out active bits and convert to signed word
-//MB~	inp_int_32 = ((int)word_16) >> ADC_DIFF_BITS; // Convert to int and recover original magnitude
 
-if (ADC_UPSCALE_BITS > ADC_DIFF_BITS)
-{
-	inp_int_32 = ((int)word_16) << (ADC_UPSCALE_BITS - ADC_DIFF_BITS); // Convert to int and recover original magnitude
-} // if (ADC_UPSCALE_BITS > ADC_DIFF_BITS)
-else
-{
-	inp_int_32 = ((int)word_16) >> (ADC_DIFF_BITS - ADC_UPSCALE_BITS); // Convert to int and recover original magnitude
-} // else !(ADC_UPSCALE_BITS > ADC_DIFF_BITS)
+	if (ADC_UPSCALE_BITS > ADC_DIFF_BITS)
+	{
+		inp_int_32 = ((int)word_16) << (ADC_UPSCALE_BITS - ADC_DIFF_BITS); // Convert to int and recover original magnitude
+	} // if (ADC_UPSCALE_BITS > ADC_DIFF_BITS)
+	else
+	{
+		inp_int_32 = ((int)word_16) >> (ADC_DIFF_BITS - ADC_UPSCALE_BITS); // Convert to int and recover original magnitude
+	} // else !(ADC_UPSCALE_BITS > ADC_DIFF_BITS)
 
 	out_val = inp_int_32; // Preset output to raw input value
 
@@ -264,7 +264,7 @@ static void get_trigger_data_7265(
 
 	for (port_cnt=0; port_cnt<NUM_ADC_DATA_PORTS; port_cnt++)
 	{
-		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] ,adc_data_s.filt_cnt ,port_cnt );
+		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] ,adc_data_s.filt_cnt ,adc_data_s.mux_id ,port_cnt );
 	} // for port_cnt
 
 } // get_trigger_data_7265

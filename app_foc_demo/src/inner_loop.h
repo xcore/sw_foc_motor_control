@@ -127,7 +127,8 @@
 #define MAX_VQ_OPENLOOP 5800 // MB~ Max Vq value for open-loop tuning
 #define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
 
-#define REQ_VELOCITY 400 // Requested motor speed
+#define START_SPEED 800 // Speed used to start motor
+#define INIT_SPEED 400 // Initial motor speed, before external request received
 
 #define MIN_SPEED 200 // This value is derived from experience
 #define SPEC_MAX_SPEED 4000 // This value is derived from the LDO Motor Max. spec. speed
@@ -365,7 +366,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
 	int foc_theta;	// FOC theta value
-	int pid_preset; // Flag set if PID needs presetting
+	int pid_preset; // Flag set if PID needs preseting
+	int pid_clear; // Flag set if PID sum needs clearing
 	int search_theta;	// theta value at end of 'SEARCH state'
 	int trans_theta;	// theta value at end of 'TRANSIT state'
 	int trans_cycles;	// Number of electrical cycles spent in 'TRANSIT state'

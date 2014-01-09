@@ -186,6 +186,14 @@ static void init_pid_data( // Initialise PID data
 	motor_s.pid_Iq = 0;	// Output from tangential current PID
 	motor_s.pid_veloc = 0;	// Output from velocity PID
 
+	motor_s.pid_preset = 1; // Force preset of PID values after restart
+
+	// Initialise PID regulators. NB Clears PID sum
+	for (pid_cnt = 0; pid_cnt < NUM_PIDS; pid_cnt++)
+	{ 
+		initialise_pid( motor_s.pid_regs[pid_cnt] );
+	} // for pid_cnt
+
 } // init_pid_data
 /*****************************************************************************/
 static void init_rotation_component( // Initialise data for one component of rotation vector
@@ -211,13 +219,10 @@ static void init_rotation_component( // Initialise data for one component of rot
 	motor_s.vect_data[comp_id].rem_I = 0; // Initialise remainder used in error diffusion
 } // init_rotation_component
 /*****************************************************************************/
-static void update_velocity_data( // Update velocity dependent data
+static void init_velocity_data( // Initialise velocity dependent data
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	int start_gamma; // Gamma value at start
-	int end_gamma; // Gamma value end of open-loop state
-	int req_gamma; // Initial requested Gamma value for closed-loop state
 	int start_D; // Vd value at start of open-loop state
 	int start_Q; // Vq value at start of open-loop state
 	int end_D; // Vd value at end of open-loop state
@@ -226,15 +231,37 @@ static void update_velocity_data( // Update velocity dependent data
 	int req_Q; // Initial requested closed-loop Vq value
 
 
+	// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
+
+	if (0 > motor_s.targ_vel)
+	{ // Negative spin direction
+		park_transform( start_D ,start_Q ,0 ,START_VOLT_OPENLOOP ,(-START_GAMMA_OPENLOOP) );
+		park_transform( end_D ,end_Q ,0 ,END_VOLT_OPENLOOP ,(-END_GAMMA_OPENLOOP) );
+		park_transform( req_D ,req_Q ,0 ,REQ_VOLT_CLOSEDLOOP ,(-REQ_GAMMA_CLOSEDLOOP) );	
+	} // if (0 > motor_s.targ_vel)
+	else
+	{ // Positive spin direction
+		park_transform( start_D ,start_Q ,0 ,START_VOLT_OPENLOOP ,START_GAMMA_OPENLOOP );
+		park_transform( end_D ,end_Q ,0 ,END_VOLT_OPENLOOP ,END_GAMMA_OPENLOOP );
+		park_transform( req_D ,req_Q ,0 ,REQ_VOLT_CLOSEDLOOP ,REQ_GAMMA_CLOSEDLOOP );	
+	} // else !(0 > motor_s.targ_vel)
+
+	// Initialise each component of rotating vector
+	init_rotation_component( motor_s ,D_ROTA ,start_D ,end_D ,req_D );
+	init_rotation_component( motor_s ,Q_ROTA ,start_Q ,end_Q ,req_Q );
+	init_blend_data( motor_s );	// Initialise blending data for 'TRANSIT state'
+
+} // initialise_velocity_data
+/*****************************************************************************/
+static void update_velocity_data( // Update velocity dependent data
+	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
+)
+{
 	// Initialise angle variables dependant on spin direction
 	if (0 > motor_s.targ_vel)
 	{ // Negative spin direction
-		motor_s.gamma_off = -motor_s.gamma_off;
-		motor_s.gamma_grad = -motor_s.gamma_grad;
-
-		start_gamma = -START_GAMMA_OPENLOOP; 
-		end_gamma = -END_GAMMA_OPENLOOP; 
-		req_gamma = -REQ_GAMMA_CLOSEDLOOP; 
+		motor_s.gamma_off = -abs(motor_s.gamma_off);
+		motor_s.gamma_grad = -abs(motor_s.gamma_grad);
 
 		motor_s.end_hall = NEGA_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
 
@@ -246,11 +273,9 @@ static void update_velocity_data( // Update velocity dependent data
 	} // if (0 > motor_s.targ_vel)
 	else
 	{ // Positive spin direction
-		// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
-		start_gamma = START_GAMMA_OPENLOOP; 
-		end_gamma = END_GAMMA_OPENLOOP; 
-		req_gamma = REQ_GAMMA_CLOSEDLOOP; 
-	
+		motor_s.gamma_off = abs(motor_s.gamma_off);
+		motor_s.gamma_grad = abs(motor_s.gamma_grad);
+
 		motor_s.end_hall = POSI_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
 
 		motor_s.speed_inc = SPEED_INC; // Speed increment when commanded
@@ -259,40 +284,12 @@ static void update_velocity_data( // Update velocity dependent data
 
 		motor_s.speed_diff = -SPEED_DIFF; // MB~ test
 	} // else !(0 > motor_s.targ_vel)
-
-	// Use Park Transform to convert Absolute-Voltage & Angle, to equivalent 2-D vector components (Vd, Vq)
-	park_transform( start_D ,start_Q ,0 ,START_VOLT_OPENLOOP ,start_gamma );
-	park_transform( end_D ,end_Q ,0 ,END_VOLT_OPENLOOP ,end_gamma );
-	park_transform( req_D ,req_Q ,0 ,REQ_VOLT_CLOSEDLOOP ,req_gamma );
-	
-	// Initialise each component of rotating vector
-	init_rotation_component( motor_s ,D_ROTA ,start_D ,end_D ,req_D );
-	init_rotation_component( motor_s ,Q_ROTA ,start_Q ,end_Q ,req_Q );
-	init_blend_data( motor_s );	// Initialise blending data for 'TRANSIT state'
-
 } // update_velocity_data
 /*****************************************************************************/
 static void speed_change_reset( // Reset motor data after large speed change
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
-	int pid_cnt; // PID counter
-
-
-	// Initialise PID regulators
-	for (pid_cnt = 0; pid_cnt < NUM_PIDS; pid_cnt++)
-	{ 
-		initialise_pid( motor_s.pid_regs[pid_cnt] );
-	} // for pid_cnt
-
-	motor_s.pid_preset = 0; // MB~ Force PID preset with new velocity data
-
-//MB~	motor_s.targ_vel = motor_s.req_veloc;
-//MB~	motor_s.half_veloc = (motor_s.targ_vel >> 1);
-
-//MB~	motor_s.est_veloc = motor_s.targ_vel; // Initial value for Estimated angular velocity (from QEI data)
-//MB~	motor_s.prev_veloc = motor_s.est_veloc; // Previous measured velocity
-
 	motor_s.coef_err = 0; // Clear Extrema Coef. diffusion error
 	motor_s.scale_err = 0; // Clear Extrema Scaling diffusion error
 	motor_s.Iq_err = 0; // Clear Error diffusion value for measured Iq
@@ -356,14 +353,25 @@ static void start_motor_reset( // Reset motor data ready for re-start
 
 	motor_s.trans_cnt = 0; // Counts trans_theta updates
 
-	motor_s.targ_vel = motor_s.req_veloc;
+	// Determine spin direction
+	if (0 > motor_s.req_veloc)
+	{
+		motor_s.targ_vel = -START_SPEED;
+	} // if (0 > motor_s.req_vel)
+	else
+	{
+		motor_s.targ_vel = START_SPEED;
+	} // if (0 > motor_s.req_veloc)
+
 	motor_s.half_veloc = (motor_s.targ_vel >> 1);
+	motor_s.old_veloc = motor_s.targ_vel; // Preset old requested velocity to start-up target velocity 
 
 	motor_s.est_veloc = motor_s.stall_speed; // Initial value for Estimated angular velocity (from QEI data)
 	motor_s.prev_veloc = motor_s.est_veloc; // Previous measured velocity
 
 	speed_change_reset( motor_s );
-	motor_s.pid_preset = 1; // Force PID preset with new velocity data
+
+	init_velocity_data( motor_s ); // Initialise velocity dependent data	
 
 	motor_s.tmp = 0; // MB~ Dbg
 	motor_s.temp = 0; // MB~ Dbg
@@ -374,6 +382,18 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	motor_s.dbg_diff = 1; // MB~
 
 } // start_motor_reset
+/*****************************************************************************/
+static void stop_pwm( // Stops motor by switching off PWM
+	MOTOR_DATA_TYP &motor_s	// Reference to structure containing motor data
+)
+{
+	motor_s.vect_data[D_ROTA].set_V = 0;
+	motor_s.vect_data[Q_ROTA].set_V = 0;
+	motor_s.vect_data[D_ROTA].prev_V = 0;
+	motor_s.vect_data[Q_ROTA].prev_V = 0;
+	
+	return;
+} // stop_pwm 
 /*****************************************************************************/
 static void init_motor( // initialise data structure for one motor
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
@@ -395,18 +415,25 @@ static void init_motor( // initialise data structure for one motor
 	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
 	motor_s.stall_speed = (MIN_SPEED >> 3); // Speed below which motor is assumed to have stalled
 
+	// NB Display needs these values before motor is started
 	motor_s.meas_speed = 0; // Starting speed is zero
 	motor_s.est_veloc = 0;
 
-	motor_s.targ_vel = REQ_VELOCITY;
-// if (motor_s.id) motor_s.targ_vel = -REQ_VELOCITY;
-	motor_s.half_veloc = (motor_s.targ_vel >> 1);
-	motor_s.req_veloc = motor_s.targ_vel; // Preset requested velocity to start-up target velocity 
-	motor_s.old_veloc = motor_s.targ_vel; // Preset old requested velocity to start-up target velocity 
+  // Set arbitrary initial motor velocity, while waiting for external request
+	if (motor_s.id)
+	{
+		motor_s.req_veloc = INIT_SPEED;
+	} // if (0 > motor_s.req_vel)
+	else
+	{
+		motor_s.req_veloc = -INIT_SPEED;
+	} // if (0 > motor_s.req_veloc)
 
+	// Place motor in stationary state
 	motor_s.cnts[WAIT_START] = 0;
 	motor_s.state = WAIT_START;
 
+	stop_pwm(motor_s); // Switch off PWM
 } // init_motor
 /*****************************************************************************/
 static void init_pwm( // Initialise PWM parameters for one motor
@@ -880,7 +907,6 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	// Check if PID's need presetting
 	if (motor_s.pid_preset)
 	{
-acquire_lock(); printintln(motor_s.targ_vel); release_lock(); //MB~
 		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.old_veloc ,motor_s.targ_vel ,motor_s.est_veloc );
 	}; // if (motor_s.pid_preset)
 
@@ -1110,22 +1136,10 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
+	motor_s.old_veloc =  motor_s.targ_vel; // Store previous target velocity
+	motor_s.targ_vel = update_target_velocity( motor_s );
 
-	// Check for WAIT_STOP state
-	if (motor_s.state == WAIT_STOP)
-	{ // Switch off coil currents
-		motor_s.targ_vel = 0;
-
-		motor_s.vect_data[D_ROTA].set_V = 0;
-		motor_s.vect_data[Q_ROTA].set_V = 0;
-	} // if (motor_s.state == WAIT_STOP)
-	else
-	{
-		motor_s.old_veloc =  motor_s.targ_vel; // Store previous target velocity
-		motor_s.targ_vel = update_target_velocity( motor_s );
-
-		update_foc_voltage( motor_s );
-	} // else !(motor_s.state == WAIT_STOP)
+	update_foc_voltage( motor_s );
 
 	motor_s.set_theta = update_foc_angle( motor_s );
 
@@ -1171,21 +1185,19 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 	// Update motor state based on new sensor data
 	switch( motor_s.state )
 	{
-		case WAIT_START : // Wat for non-zero requested speed
+		case WAIT_START : // Wait for non-zero requested speed
 		{
+			stop_pwm( motor_s ); // Swicth off PWM
+
 			if (MIN_SPEED < abs(motor_s.req_veloc))
 			{
-				motor_s.old_veloc =  motor_s.targ_vel; // Store previous target velocity
-				motor_s.targ_vel = motor_s.req_veloc;
-				motor_s.half_veloc = (motor_s.targ_vel >> 1);
-
 				start_motor_reset( motor_s );
 
-acquire_lock(); printstrln("ALIGN"); release_lock(); //MB~
+//MB~ acquire_lock(); printstrln("ALIGN"); release_lock(); //MB~
 				motor_s.state = ALIGN;
 			} // if 
 		} break; // case WAIT_START
-	
+
 		case ALIGN: // Align Motor coils opposite magnets
 		{
 			unsigned ts1;	// timestamp
@@ -1198,7 +1210,7 @@ acquire_lock(); printstrln("ALIGN"); release_lock(); //MB~
 			{
 				motor_s.prev_pwm_time = ts1; // Store time-stamp
 
-acquire_lock(); printstrln("SEARCH"); release_lock(); //MB~
+//MB~ acquire_lock(); printstrln("SEARCH"); release_lock(); //MB~
 				motor_s.state = SEARCH;
 			} // if 
 		} break; // case ALIGN
@@ -1214,7 +1226,7 @@ acquire_lock(); printstrln("SEARCH"); release_lock(); //MB~
 				 */
 				motor_s.qei_offset = (motor_s.open_theta - motor_s.tot_ang); // Difference betweene Open-loop and QEI angle
 
-acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
+//MB~ acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
 				motor_s.state = TRANSIT;
 			} // if (QEI_PER_PAIR == abs(motor_s.open_theta))
 		break; // case SEARCH 
@@ -1228,7 +1240,7 @@ acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
 				motor_s.vect_data[D_ROTA].start_open_V = motor_s.vect_data[D_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
 				motor_s.vect_data[Q_ROTA].start_open_V = motor_s.vect_data[Q_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
 
-acquire_lock(); printstrln("FOC");release_lock(); //MB~
+//MB~ acquire_lock(); printstrln("FOC"); release_lock(); //MB~
 				motor_s.state = FOC; 
 			} // if ((QEI_PER_PAIR << 1) == abs(motor_s.open_theta))
 		break; // case TRANSIT
@@ -1242,7 +1254,7 @@ acquire_lock(); printstrln("FOC");release_lock(); //MB~
 
 			// Check for a stall
 			wrong_spin = 0; // preset flag to NOT wrong spin direction 
-// #ifdef MB
+
 			// check for correct spin direction
       if (0 > motor_s.half_veloc)
 			{
@@ -1266,16 +1278,15 @@ acquire_lock(); printstrln("FOC");release_lock(); //MB~
 			{
 				motor_s.err_data.err_flgs |= (1 << DIRECTION_ERR);
 				motor_s.err_data.line[DIRECTION_ERR] = __LINE__;
-				motor_s.cnts[POWER_OFF] = 0; // Initialise stop-state counter 
+				motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
 	
 acquire_lock(); 
 printstr(" EV="); printintln(motor_s.est_veloc); 
 printstr(" HV="); printintln(motor_s.half_veloc); 
 release_lock(); //MB~
-acquire_lock(); printstr("POWER_OFF VEL="); printintln(motor_s.est_veloc); release_lock(); //MB~
-				motor_s.state = POWER_OFF; // Switch to stop state
+acquire_lock(); printstr("WAIT_STOP: Spin="); printintln(motor_s.est_veloc); release_lock(); //MB~
+				motor_s.state = WAIT_STOP; // Switch to stop state
 			} // if (1 == wrong_spin)
-// #endif //MB~
 
 			if (motor_s.meas_speed < motor_s.stall_speed) 
 			{
@@ -1311,12 +1322,16 @@ acquire_lock(); printstr("WAIT_START CNTS="); printintln(motor_s.cnts[STALL]); r
 		break; // case STALL
 	
 		case WAIT_STOP : // State where Coil current switched off
+			motor_s.targ_vel = 0;
+
 			calc_foc_pwm( motor_s );
+
+			stop_pwm( motor_s ); // Swicth off PWM
 
 			// Check if still stalled
 			if (motor_s.meas_speed < motor_s.stall_speed) 
 			{
-acquire_lock(); printstr("WAIT_STOP CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
+//MB~ acquire_lock(); printstr("WAIT_STOP CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
 				motor_s.state = WAIT_START; // Switch to stop state
 			} // if (motor_s.meas_speed < motor_s.stall_speed) 
 		break; // case WAIT_STOP
@@ -1811,14 +1826,10 @@ static void process_speed_command( // Decodes speed command, and implements chan
 		} // else !(new_veloc < 0)
 	
 		if (MIN_SPEED > abs(new_veloc))
-		{ 
-			motor_s.old_veloc =  motor_s.targ_vel; // Store previous target velocity
-			motor_s.targ_vel = 0;
-	
-			motor_s.vect_data[D_ROTA].set_V = 0;
-			motor_s.vect_data[Q_ROTA].set_V = 0;
-	
-acquire_lock(); printstr("WAIT_STOP: Min.Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
+		{
+			stop_pwm( motor_s );
+
+//MB~ acquire_lock(); printstr("WAIT_STOP: Min.Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
 			motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
 			motor_s.state = WAIT_STOP; // Switch to pause state
 		} // if (MIN_SPEED > abs(new_veloc)
@@ -1828,21 +1839,16 @@ acquire_lock(); printstr("WAIT_STOP: Min.Vel="); printintln(motor_s.est_veloc); 
 			if (100 < abs_diff)
 			{
 				motor_s.req_veloc = new_veloc;
-
-				speed_change_reset( motor_s );
 			} // if (100 < abs_diff)
 		} // if (MIN_SPEED > abs(new_veloc)
 
 		motor_s.req_veloc = new_veloc;
+if (motor_s.id)
+{
+//MB~ acquire_lock(); printstr(" rVel=");	printintln(motor_s.req_veloc); release_lock();
+} // if (motor_s.id)
 	} // if (abs_diff)
 
-{ //MB~
-	acquire_lock(); 
-	printint(motor_s.id); 
-	printstr(": Vel=");	
-	printintln(motor_s.req_veloc); 
-	release_lock();
-} //MB~
 } // process_speed_command
 /*****************************************************************************/
 #pragma unsafe arrays
@@ -1945,8 +1951,8 @@ acquire_lock(); printstrln("STOP DEMO"); release_lock(); //MB~
 
 		}	// select
 
-if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[D_ROTA].est_I );
-if (motor_s.xscope) xscope_int( 3 ,motor_s.vect_data[Q_ROTA].est_I );
+if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.vect_data[D_ROTA].est_I );
+if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I );
 // acquire_lock(); printint(motor_s.id); printstr(": MS="); printintln(motor_s.state); release_lock(); //MB~
 		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
 if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.targ_vel ); //MB~
