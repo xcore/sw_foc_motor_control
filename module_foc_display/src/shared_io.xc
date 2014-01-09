@@ -181,6 +181,8 @@ static void test_motor(chanend c_speed[])
 		print_speed( c_speed );
     printstrln("End of Test 10");
 
+    stop(c_speed);
+
 		// Set back to Easy Speed before exit
 		set_both_motors_speed(c_speed, EASY_SPEED);
     wait(3000);
