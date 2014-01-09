@@ -192,6 +192,7 @@
 
 // Defines for Field Weakening
 //MB~ #define IQ_LIM (55 << ADC_UPSCALE_BITS) // Maximum allowed target Iq value, before field weakening applied
+#define FW_SPEED ((3*SPEC_MAX_SPEED + 2) >> 2) // Only use field-weakening if above 3/4 of SPEC_MAX_SPEED
 #define IQ_LIM 55 // Maximum allowed target Iq value, before field weakening applied
 #define IQ_ID_BITS 2 // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
 #define IQ_ID_RATIO (1 << IQ_ID_BITS) // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 

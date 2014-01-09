@@ -31,7 +31,7 @@
 #define QEI_FILTER 1
 
 /**  Default QEI Sampling Mode  0 == Edge-Triggered, 1 == Regularly-Sampled */
-#define QEI_RS_MODE 0
+#define QEI_RS_MODE 1
 
 /** Define the number of motors */
 #define NUMBER_OF_MOTORS 2

@@ -1035,7 +1035,11 @@ if (motor_s.id)
 	targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V + HALF_V2I) >> V2I_BITS) + V2I_OFF;
 // if (motor_s.xscope) xscope_int( 14 ,targ_Iq ); //MB~ 
 
-	// Check if target Iq is too large
+	// Clamp to sensible value
+	if (targ_Iq > (IQ_LIM << 1)) targ_Iq = (IQ_LIM << 1);
+
+	targ_Id = 0; // Preset target Id value to 'NO field-weakening'
+
 	if (targ_Iq > IQ_LIM)
 	{ // Apply field weakening
 		int abs_Id = (targ_Iq - IQ_LIM + IQ_ID_HALF) >> IQ_ID_BITS; // Calculate new absolute Id value, NB divide by IQ_ID_RATIO 
@@ -1059,10 +1063,6 @@ if (motor_s.id)
 		} // if (0 > motor_s.targ_vel)
 
 		targ_Iq = IQ_LIM; // Limit target Iq value
-	} // if ((targ_Iq > IQ_LIM)
-	else
-	{ // NO field-weakening
-		targ_Id = 0;
 	} // if ((targ_Iq > IQ_LIM)
 
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
@@ -1663,7 +1663,11 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 				qei_period = motor_s.prev_period; // Assign previous QEI period
 			} // if (motor_s.est_period > motor_s.prev_period)
 		} // else !(diff_ang != 0)
-	
+
+if (qei_period < 1000000)
+{
+// if (0 == motor_s.id) xscope_int( 1 ,qei_period ); // MB~
+} // if (qei_period < 1000000)
 		qei_period = filter_period( motor_s ,qei_period ); // Filter QEI period
 
 		motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,qei_period ); // Update velocity estimate
@@ -1947,7 +1951,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			{
 				motor_s.xscope = 1; // Switch ON xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
-// motor_s.xscope = 1; // MB~ Crude Switch
+motor_s.xscope = 0; // MB~ Crude Switch
 
 			collect_sensor_data( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
 

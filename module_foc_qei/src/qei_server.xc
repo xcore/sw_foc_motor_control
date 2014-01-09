@@ -684,7 +684,6 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 				// WARNING: H/W pin-change detector sometimes mis-fires, so also do check in S/W
 				if (tmp_pins == inp_pins[motor_id])
 				{
-if (0 == motor_id) xscope_int( motor_id ,tmp_pins ); // MB~
 					// Build accurate 32-bit port time value ...
 					chronometer :> approx32_ticks; // Get approximate 32-bit timer value
 
@@ -730,6 +729,7 @@ if (0 == motor_id) xscope_int( motor_id ,tmp_pins ); // MB~
 				{
 					motor_id = buffer[read_off].id;	
 
+// if (0 == motor_id) xscope_int( 0 ,buffer[read_off].inp_pins ); // MB~
 					low16_ticks = (PORT_TIME_TYP)(buffer[read_off].time32 & PORT_TIME_MASK); // Get lowest 16-bits of 32-bit timer
 
 					// Calculate timer correction. NB correctly handles wrapped timer values
