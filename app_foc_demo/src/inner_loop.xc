@@ -1189,7 +1189,7 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 		{
 			stop_pwm( motor_s ); // Swicth off PWM
 
-			if (MIN_SPEED < abs(motor_s.req_veloc))
+			if (MIN_SPEED <= abs(motor_s.req_veloc))
 			{
 				start_motor_reset( motor_s );
 
@@ -1281,10 +1281,10 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 				motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
 	
 acquire_lock(); 
-printstr(" EV="); printintln(motor_s.est_veloc); 
+printstr(" EV="); printint(motor_s.est_veloc); 
 printstr(" HV="); printintln(motor_s.half_veloc); 
 release_lock(); //MB~
-acquire_lock(); printstr("WAIT_STOP: Spin="); printintln(motor_s.est_veloc); release_lock(); //MB~
+acquire_lock(); printint(motor_s.id); printstr(": WAIT_STOP: Spin="); printintln(motor_s.est_veloc); release_lock(); //MB~
 				motor_s.state = WAIT_STOP; // Switch to stop state
 			} // if (1 == wrong_spin)
 
@@ -1309,7 +1309,7 @@ acquire_lock(); printstr("WAIT_STOP: Spin="); printintln(motor_s.est_veloc); rel
 					motor_s.err_data.line[STALLED_ERR] = __LINE__;
 					motor_s.cnts[WAIT_START] = 0; // Initialise stop-state counter 
 
-acquire_lock(); printstr("WAIT_START CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
+acquire_lock(); printint(motor_s.id); printstr(": WAIT_START CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
 					motor_s.state = WAIT_START; // Switch to stop state
 				} // if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
 			} // if (motor_s.meas_speed < motor_s.stall_speed) 
@@ -1733,7 +1733,7 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 		motor_s.err_data.err_flgs |= (1 << SPEED_ERR);
 		motor_s.err_data.line[SPEED_ERR] = __LINE__;
 
-acquire_lock(); printstr("WAIT_STOP: Max.Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
+acquire_lock(); printint(motor_s.id); printstr(": WAIT_STOP: Max.Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
 		motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
 		motor_s.state = WAIT_STOP; // Switch to pause state
 		return;
@@ -1818,35 +1818,42 @@ static void process_speed_command( // Decodes speed command, and implements chan
 	if (abs_diff)
 	{
 		// If necessary, clip command-speed into specified range	
-		if (new_veloc < -SPEC_MAX_SPEED)
-		{ // Increase speed
-			new_veloc = -SPEC_MAX_SPEED;
-		} // if (new_veloc < -SPEC_MAX_SPEED)
+		if (new_veloc < 0)
+		{ // Negative Spin direction
+			if (new_veloc < -SPEC_MAX_SPEED)
+			{ // Increase speed
+				new_veloc = -SPEC_MAX_SPEED;
+			} // if (new_veloc < -SPEC_MAX_SPEED)
+			else
+			{
+				if (new_veloc > -MIN_SPEED)
+				{ // Increase speed
+					new_veloc = -MIN_SPEED;
+				} // if (new_veloc > SPEC_MAX_SPEED)
+			} // else !(new_veloc > -MIN_SPEED)
+		} // if (new_veloc < 0)
 		else
-		{
+		{ // Positive Spin direction
 			if (new_veloc > SPEC_MAX_SPEED)
 			{ // Increase speed
 				new_veloc = SPEC_MAX_SPEED;
 			} // if (new_veloc > SPEC_MAX_SPEED)
-		} // else !(new_veloc < 0)
-
-		// Check for stalling speed	
-		if (MIN_SPEED > abs(new_veloc))
-		{
-			stop_motor = 1; // Set stop_motor flag
-
-			// NB Motor will NOT restart because requested velocity < MIN_SPEED
-		} // if (MIN_SPEED > abs(new_veloc))
-		else
-		{
-			// Check for change of direction
-			if ((new_veloc * motor_s.req_veloc) < 0)
+			else
 			{
-				stop_motor = 1; // Set stop_motor flag. 
+				if (new_veloc < MIN_SPEED)
+				{ // Increase speed
+					new_veloc = MIN_SPEED;
+				} // if (new_veloc < MIN_SPEED)
+			} // else !(new_veloc > SPEC_MAX_SPEED) 
+		} // esle !(new_veloc < 0)
+
+		// Check for change of direction
+		if ((new_veloc * motor_s.req_veloc) < 0)
+		{	// Handle change of direction by a 'stop' and a 're-start'
+			stop_motor = 1; // Set stop_motor flag. 
 	
-				// NB Motor will automatically restart with requested velocity
-			} //if ((new_veloc * motor_s.req_veloc) < 0)
-		} // if (MIN_SPEED > abs(new_veloc))
+			// NB Motor will automatically restart if Requested_Velocity >= MIN_SPEED
+		} //if ((new_veloc * motor_s.req_veloc) < 0)
 
 		if (stop_motor)
 		{
@@ -1961,7 +1968,7 @@ motor_s.xscope = 0; // MB~ Crude Switch
 			{
 				motor_s.state = POWER_OFF; // Switch to stop state
 				motor_s.cnts[POWER_OFF] = 0; // Initialise stop-state counter 
-acquire_lock(); printstrln("STOP DEMO"); release_lock(); //MB~
+acquire_lock(); printint(motor_s.id); printstrln(": STOP DEMO"); release_lock(); //MB~
 			} // if (motor_s.iters > DEMO_LIMIT)
 		break; // default:
 
