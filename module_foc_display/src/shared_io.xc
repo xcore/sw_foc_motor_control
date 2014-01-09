@@ -183,33 +183,31 @@ static void test_motor(chanend c_speed[])
 
     stop(c_speed);
 
+    printstrln("Test 11: LDO_CHANGE_DIRECTION_POS2NEG(6s)");
+    set_both_motors_speed(c_speed, MAX_TEST_RPM);
+    wait(3000);
+		print_speed( c_speed );
+    set_both_motors_speed(c_speed, -MAX_TEST_RPM);
+    wait(3000);
+		print_speed( c_speed );
+    printstrln("End of Test 11");
+
+    printstrln("Test 12: LDO_CHANGE_DIRECTION_NEG2POS (6s)");
+    set_both_motors_speed(c_speed, MAX_TEST_RPM);
+    wait(3000);
+		print_speed( c_speed );
+    printstrln("End of Test 12");
+
+    stop(c_speed);
+
 		// Set back to Easy Speed before exit
 		set_both_motors_speed(c_speed, EASY_SPEED);
     wait(3000);
 
     printstrln(" ");
     printstrln("End Of Motor Tests");
-return; //MB~
 
-    stop(c_speed);
-
-    printstrln("Test 11: LDO_CHANGE_DIRECTION_POSTIVE (16s)");
-    set_both_motors_speed(c_speed, MAX_TEST_RPM);
-    wait(8000);
-    set_both_motors_speed(c_speed, -MAX_TEST_RPM);
-    wait(8000);
-    printstrln("End of Test 11");
-
-    stop(c_speed);
-
-    printstrln("Test 12: LDO_RPM_MINUS_4000_STARTUP (8s)");
-    set_both_motors_speed(c_speed, -MAX_TEST_RPM);
-    wait(8000);
-    set_both_motors_speed(c_speed, MAX_TEST_RPM);
-    wait(8000);
-    printstrln("End of Test 12");
-
-    stop(c_speed);
+	return;
 }
 /*****************************************************************************/
 

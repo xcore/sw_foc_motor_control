@@ -1193,7 +1193,7 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 			{
 				start_motor_reset( motor_s );
 
-//MB~ acquire_lock(); printstrln("ALIGN"); release_lock(); //MB~
+//MB~ acquire_lock(); printint(motor_s.id); printstrln(": ALIGN"); release_lock(); //MB~
 				motor_s.state = ALIGN;
 			} // if 
 		} break; // case WAIT_START
@@ -1782,6 +1782,7 @@ static void process_speed_command( // Decodes speed command, and implements chan
 {
 	int new_veloc;	// New Requested angular velocity
 	int abs_diff;	// Absolute difference between old & new velocities
+	int stop_motor = 0;	// Preset flag to motor does NOT need stopping
 
 
 	switch(cmd_id)
@@ -1824,28 +1825,39 @@ static void process_speed_command( // Decodes speed command, and implements chan
 				new_veloc = SPEC_MAX_SPEED;
 			} // if (new_veloc > SPEC_MAX_SPEED)
 		} // else !(new_veloc < 0)
-	
+
+		// Check for stalling speed	
 		if (MIN_SPEED > abs(new_veloc))
+		{
+			stop_motor = 1; // Set stop_motor flag
+
+			// NB Motor will NOT restart because requested velocity < MIN_SPEED
+		} // if (MIN_SPEED > abs(new_veloc))
+		else
+		{
+			// Check for change of direction
+			if ((new_veloc * motor_s.req_veloc) < 0)
+			{
+				stop_motor = 1; // Set stop_motor flag. 
+	
+				// NB Motor will automatically restart with requested velocity
+			} //if ((new_veloc * motor_s.req_veloc) < 0)
+		} // if (MIN_SPEED > abs(new_veloc))
+
+		if (stop_motor)
 		{
 			stop_pwm( motor_s );
 
-//MB~ acquire_lock(); printstr("WAIT_STOP: Min.Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
+// acquire_lock(); printstr("WAIT_STOP: nVel="); nV="); printintln(new_veloc); release_lock(); //MB~
 			motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
 			motor_s.state = WAIT_STOP; // Switch to pause state
-		} // if (MIN_SPEED > abs(new_veloc)
-		else
-		{
-			// Check for large speed change
-			if (100 < abs_diff)
-			{
-				motor_s.req_veloc = new_veloc;
-			} // if (100 < abs_diff)
-		} // if (MIN_SPEED > abs(new_veloc)
+		} // if (stop_motor)
 
 		motor_s.req_veloc = new_veloc;
+
 if (motor_s.id)
 {
-//MB~ acquire_lock(); printstr(" rVel=");	printintln(motor_s.req_veloc); release_lock();
+// acquire_lock(); printstr(" rVel=");	printintln(motor_s.req_veloc); release_lock(); //MB~
 } // if (motor_s.id)
 	} // if (abs_diff)
 
@@ -1927,7 +1939,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			motor_s.iters++; // Increment No. of iterations 
 
 			// NB There is not enough band-width to probe all xscope data
-			if (motor_s.iters & 15) // probe every 8th value
+			if (motor_s.iters & 31) // probe every 32nd value
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
