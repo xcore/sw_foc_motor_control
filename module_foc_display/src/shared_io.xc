@@ -238,22 +238,16 @@ static void dbg_motor(
 	stop(c_speed);
 
 	cur_speed = EASY_SPEED;
+	cur_speed = MAX_TEST_RPM;
 	printstr("CmdSpeed="); printintln(cur_speed);
 	set_both_motors_speed(c_speed ,cur_speed);
 	wait(3000);
 	print_speed( c_speed );
 
-	cur_speed = MAX_TEST_RPM;
+	cur_speed = MIN_TEST_RPM;
 	printstr("CmdSpeed="); printintln(cur_speed);
 	set_both_motors_speed(c_speed ,cur_speed);
-	wait(9000);
-	print_speed( c_speed );
-
-
-	cur_speed = 2000;
-	printstr("CmdSpeed="); printintln(cur_speed);
-	set_both_motors_speed(c_speed ,cur_speed);
-	wait(19000);
+	wait(200000);
 	print_speed( c_speed );
 
 return;

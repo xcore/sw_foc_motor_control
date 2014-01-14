@@ -88,8 +88,7 @@ void initialise_pid( // Initialise PID regulator
 	// Initialise variables
 	pid_regul_p->sum_err = 0;
 	pid_regul_p->prev_err = 0;
-	pid_regul_p->xtra_err = 0;
-	pid_regul_p->low_err = 0;
+	pid_regul_p->qnt_err = 0;
 	pid_regul_p->rem = 0;
 } // initialise_pid
 /*****************************************************************************/
@@ -130,13 +129,14 @@ int get_pid_regulator_correction( // Computes new PID correction based on input 
 	int diff_err; // Compute difference error
 	int corr_err; // corrected error, by adding in diffusion remainder
 	int down_err; // down-scaled error
-	S64_T res_l_64 = 0; // Partial result at Low resolution (Kp) at 64-bit precision
-	S64_T res_h_64 = 0; // Partial result at High resolution (Ki & Kd) at 64-bit precision
+	S64_T res_l_64; // Partial result at Low resolution (Kp) at 64-bit precision
+	S64_T res_h_64; // Result at High resolution (Ki & Kd) at 64-bit precision
 	int res_32; // Result at 32-bit precision
 
 
 	// Build 64-bit result
 	res_l_64 = (S64_T)pid_const_p->K_p * (S64_T)inp_err;
+	res_h_64 = (res_l_64 << PID_CONST_XTRA_RES); // Up-scale Low-Res to Hi-Res
 
 	// Check if Integral Error used
 	if (pid_const_p->K_i)
@@ -180,17 +180,11 @@ printf("PID Re-scale\n"); //MB~
 
 pid_regul_p->prev_err = inp_err; // MB~ Dbg
  
-	// Convert to High Resolution terms to Low resolution ...
-
-	res_h_64 += (S64_T)pid_regul_p->xtra_err; // Add-in previous quantisation (diffusion) error
-	res_l_64 += ((res_h_64 + (S64_T)PID_HALF_XTRA_SCALE) >> (S64_T)PID_CONST_XTRA_RES); // Add in down-scaled result
-	pid_regul_p->xtra_err = (int)(res_h_64 - (res_l_64 << (S64_T)PID_CONST_XTRA_RES)); // Update diffusion error
-
 	// Convert to 32-bit result ...
 
-	res_l_64 += (S64_T)pid_regul_p->low_err; // Add-in previous quantisation (diffusion) error
-	res_32 = (int)((res_l_64 + (S64_T)PID_HALF_LO_SCALE) >> (S64_T)PID_CONST_LO_RES); // Down-scale result
-	pid_regul_p->low_err = (int)(res_l_64 - ((S64_T)res_32 << (S64_T)PID_CONST_LO_RES)); // Update diffusion error
+	res_h_64 += (S64_T)pid_regul_p->qnt_err; // Add-in previous quantisation (diffusion) error
+	res_32 = (int)((res_h_64 + (S64_T)PID_HALF_HI_SCALE) >> (S64_T)PID_CONST_HI_RES); // Down-scale result
+	pid_regul_p->qnt_err = (int)(res_h_64 - ((S64_T)res_32 << (S64_T)PID_CONST_HI_RES)); // Update diffusion error
 
 	return res_32;
 } // get_pid_regulator_correction 

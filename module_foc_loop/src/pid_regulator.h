@@ -45,14 +45,12 @@
 #define PID_CONST_RES 15 // Bit resolution of PID constants
 #endif
 
-#define PID_CONST_XTRA_RES 6 // Extra resolution required for Sum and Diff terms
+#define PID_CONST_XTRA_RES 8 // Extra resolution required for Sum and Diff terms
 
 #define PID_CONST_LO_RES PID_CONST_RES // Resolution of Proportional (Kp) Terms
 #define PID_CONST_HI_RES (PID_CONST_RES + PID_CONST_XTRA_RES) // Resolution of Other Terms (Ki & Kd) 
 
-#define PID_HALF_LO_SCALE ((1 << PID_CONST_LO_RES) >> 1) // Half Lo-Res PID constant scaling-factor, NB used for rounding
 #define PID_HALF_HI_SCALE ((1 << PID_CONST_HI_RES) >> 1) // Half Hi-Res PID constant scaling-factor, NB used for rounding
-#define PID_HALF_XTRA_SCALE ((1 << PID_CONST_XTRA_RES) >> 1) // Half Extra PID constant scaling-factor, NB used for rounding
 
 #define MAX_ERR_SUM (1 << 30) // Max. value of error-sum before re-scaling occurs
 
@@ -80,8 +78,6 @@ typedef struct PID_REGULATOR_TAG
 	int prev_err; // Previous error
 	int sum_err; // Sum of errors
 	int rem; // Remainder
-	int low_err; // Quantisation Error due to Low Resolution Down-scaling
-	int xtra_err; // Quantisation Error due to Extra Resolution Down-scaling
 	int qnt_err; // Quantisation Error
 } PID_REGULATOR_TYP;
 

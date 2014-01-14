@@ -172,9 +172,9 @@ static void init_pid_data( // Initialise PID data
 	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,33.5693 ,0.0610352	,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,0.668335 ,0.000183105 ,0.0 ); // NB Tuned to give correct Velocity -> Iq conversion
 #endif //MB~
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,64.0 ,0.02 ,0.0 ); // NB Kp assumes target Id=0
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,15.5 ,0.024	,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,0.2 ,0.00001 ,0.0 ); // NB Tuned to give correct Velocity -> Iq conversion
+	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,2.0 ,0.0049 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,16.0 ,0.017 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,0.8 ,0.00003 ,0.0 ); // NB Tuned to give correct Velocity -> Iq conversion
 
 // MB~ EXTREMA and VELOCITY need a re-tune
 	init_int_pid_consts( motor_s.pid_consts[EXTREMA][ID_PID] ,0 ,0 ,0 );
@@ -995,7 +995,7 @@ if (motor_s.xscope) xscope_int( 6 ,motor_s.pid_veloc ); // MB~
 		motor_s.vect_data[Q_ROTA].req_closed_V = abs(motor_s.pid_veloc >> 1) + MIN_IQ;
 #endif //MB~
 
-// #ifdef MB
+#ifdef MB
 #define MERGE_BITS 8 // Bit resolution of Merge region
 #define MERGE_LEN (1 << MERGE_BITS)
 #define HALF_MERGE (MERGE_LEN >> 1)
@@ -1024,17 +1024,22 @@ if (motor_s.xscope) xscope_int( 6 ,motor_s.pid_veloc ); // MB~
 				motor_s.vect_data[Q_ROTA].req_closed_V = (motor_s.vect_data[Q_ROTA].req_closed_V + HALF_MERGE) >> MERGE_BITS;
 			} // else !(speed > (LO_S << 1))
 		} // else !(speed < LO_S)
-// #endif //MB~
+#endif //MB~
 
-		motor_s.vect_data[Q_ROTA].req_closed_V = abs(motor_s.pid_veloc >> 1) + MIN_IQ;
+		motor_s.vect_data[Q_ROTA].req_closed_V = (motor_s.pid_veloc >> 1);
+//MB~		motor_s.vect_data[Q_ROTA].req_closed_V = abs(motor_s.pid_veloc >> 1) + MIN_IQ;
 	} // if (VELOC_CLOSED)
 
 // if (motor_s.vect_data[Q_ROTA].req_closed_V < 0) motor_s.vect_data[Q_ROTA].req_closed_V = 0;
 
 #ifdef MB
-	if (motor_s.iters > 75000)
+	if (motor_s.iters > 100000)
 	{ // Track est_Iq value
 		motor_s.vect_data[Q_ROTA].req_closed_V = 760;
+	} //if (motor_s.iters > 75000)
+	else
+	{ // Track est_Iq value
+		motor_s.vect_data[Q_ROTA].req_closed_V = 2674;
 	} //if (motor_s.iters > 75000)
 #endif //MB~
 
@@ -1112,9 +1117,14 @@ if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[Q_ROTA].req_closed_V ); // 
 	} // if ((targ_Iq > IQ_LIM)
 	else
 	{
-		if (targ_Iq < 9)
+		if ((targ_Iq >= 0) && (targ_Iq < 9))
 		{
 			targ_Iq = 9;
+		} // if (targ_Iq < 9)
+
+		if ((targ_Iq < 0) && (targ_Iq > -9))
+		{
+			targ_Iq = -9;
 		} // if (targ_Iq < 9)
 	} // else !((targ_Iq > IQ_LIM)
 
@@ -1122,7 +1132,7 @@ if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[Q_ROTA].req_closed_V ); // 
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
 
 if (motor_s.xscope) xscope_int( 4 ,targ_Iq ); // MB~
-// if (motor_s.xscope) xscope_int( 4 ,targ_Id ); // MB~
+if (motor_s.xscope) xscope_int( 0 ,targ_Id ); // MB~
 	// Apply PID control to Iq and Id
 
 	// Check if PID's need presetting
@@ -1140,7 +1150,8 @@ if (motor_s.xscope) xscope_int( 4 ,targ_Iq ); // MB~
 //MB~	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I ,abs(motor_s.diff_ang) );
 		corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
 		corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
-// if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[IQ_PID].sum_err  ); //MB~
+
+// if (motor_s.xscope) xscope_int( 0 ,motor_s.pid_regs[IQ_PID].sum_err  ); //MB~
 // if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[ID_PID].sum_err  ); //MB~
 
 	if (PROPORTIONAL)
@@ -1156,8 +1167,8 @@ if (motor_s.xscope) xscope_int( 4 ,targ_Iq ); // MB~
 		motor_s.pid_Iq = targ_Iq + corr_Iq;
 	} // else !(PROPORTIONAL)
 
-// if (motor_s.xscope) xscope_int( 6 ,motor_s.pid_Id ); // MB~
-// if (motor_s.xscope) xscope_int( 6 ,motor_s.pid_Iq ); // MB~
+// if (motor_s.xscope) xscope_int( 8 ,motor_s.pid_Id ); // MB~
+// if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_Iq ); // MB~
 
 	if (IQ_ID_CLOSED)
 	{ // Update set DQ values
