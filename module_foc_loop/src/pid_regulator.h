@@ -42,10 +42,18 @@
 #endif
 
 #ifndef PID_CONST_RES
-#define PID_CONST_RES 17 // Bit resolution of PID constants
+#define PID_CONST_RES 15 // Bit resolution of PID constants
 #endif
 
-#define PID_HALF_SCALE ((1 << PID_CONST_RES) >> 1) // Half PID constant scaling-factor, NB used for rounding
+#define PID_CONST_XTRA_RES 6 // Extra resolution required for Sum and Diff terms
+
+#define PID_CONST_LO_RES PID_CONST_RES // Resolution of Proportional (Kp) Terms
+#define PID_CONST_HI_RES (PID_CONST_RES + PID_CONST_XTRA_RES) // Resolution of Other Terms (Ki & Kd) 
+
+#define PID_HALF_LO_SCALE ((1 << PID_CONST_LO_RES) >> 1) // Half Lo-Res PID constant scaling-factor, NB used for rounding
+#define PID_HALF_HI_SCALE ((1 << PID_CONST_HI_RES) >> 1) // Half Hi-Res PID constant scaling-factor, NB used for rounding
+#define PID_HALF_XTRA_SCALE ((1 << PID_CONST_XTRA_RES) >> 1) // Half Extra PID constant scaling-factor, NB used for rounding
+
 #define MAX_ERR_SUM (1 << 30) // Max. value of error-sum before re-scaling occurs
 
 /** Different PID Regulators */
@@ -72,6 +80,8 @@ typedef struct PID_REGULATOR_TAG
 	int prev_err; // Previous error
 	int sum_err; // Sum of errors
 	int rem; // Remainder
+	int low_err; // Quantisation Error due to Low Resolution Down-scaling
+	int xtra_err; // Quantisation Error due to Extra Resolution Down-scaling
 	int qnt_err; // Quantisation Error
 } PID_REGULATOR_TYP;
 
@@ -110,7 +120,8 @@ int get_pid_regulator_correction( // Computes new PID correction based on input 
 	PID_REGULATOR_TYP &pid_regul_s, // Reference to PID regulator data structure
 	PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
 	int requ_val, // request value
-	int meas_val // measured value
+	int meas_val, // measured value
+	int num_vals // Number of updates to perform
 );
 /*****************************************************************************/
 #else // ifdef __XC__
@@ -141,7 +152,8 @@ int get_pid_regulator_correction( // Computes new PID correction based on input 
 	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
 	PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
 	int requ_val, // request value
-	int meas_val // measured value
+	int meas_val, // measured value
+	int num_vals // Number of updates to perform
 );
 /*****************************************************************************/
 #endif // else !__XC__

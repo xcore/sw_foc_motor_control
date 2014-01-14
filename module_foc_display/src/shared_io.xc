@@ -22,6 +22,14 @@
 
 #include <stdlib.h>
 
+#define MAX_TEST_RPM 4000
+#define MIN_TEST_RPM 400
+#define EASY_SPEED 1000
+#define LO_SPEED_INC 50
+#define HI_SPEED_INC 100
+
+#define START_MOTOR 1
+
 /*****************************************************************************/
 static void wait(unsigned millis){
     timer t;
@@ -31,184 +39,249 @@ static void wait(unsigned millis){
 }
 /*****************************************************************************/
 static void stop(chanend c_speed[]){
-        c_speed[0] <: IO_CMD_SET_SPEED;
-        c_speed[0] <: 0;
-				c_speed[1] <: IO_CMD_SET_SPEED;
-				c_speed[1] <: 0;
 
-        wait(300);
+	int motor_cnt;
+
+
+	for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_SET_SPEED;
+		c_speed[motor_cnt] <: 0;
+	} // for motor_cnt
+
+	wait(300);
 }
 /*****************************************************************************/
 static void set_both_motors_speed(chanend c_speed[], int rpm){
-        c_speed[0] <: IO_CMD_SET_SPEED;
-        c_speed[0] <: rpm;
-				c_speed[1] <: IO_CMD_SET_SPEED;
-				c_speed[1] <: rpm;
+
+	int motor_cnt;
+
+
+	for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_SET_SPEED;
+		c_speed[motor_cnt] <: rpm;
+	} // for motor_cnt
 }
 /*****************************************************************************/
 static void print_speed(chanend c_speed[])
 {
-	int vel_0; // Measured velocity of Motor_0 
-	int vel_1; // Measured velocity of Motor_1
+	int meas_vel; // Measured velocity
 	int req_vel; // Requested velocity
+	int motor_cnt;
 
 
-	c_speed[0] <: IO_CMD_GET_IQ;
-	c_speed[0] :> vel_0;
-	c_speed[0] :> req_vel;
+	for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_GET_IQ;
+		c_speed[motor_cnt] :> meas_vel;
+		c_speed[motor_cnt] :> req_vel;
 
-	c_speed[1] <: IO_CMD_GET_IQ;
-	c_speed[1] :> vel_1;
-	c_speed[1] :> req_vel;
+		printint(motor_cnt); printstr(":"); printint(meas_vel);
+	} // for motor_cnt
 
-	printstr("0:"); printint(vel_0);	printstr("  1:"); printintln(vel_1);
+	printstrln(" ");
 }
 /*****************************************************************************/
-#define MAX_TEST_RPM 4000
-#define MIN_TEST_RPM 400
-#define EASY_SPEED 1000
-#define LO_SPEED_INC 50
-#define HI_SPEED_INC 100
-
-static void test_motor(chanend c_speed[])
+static void test_motor( chanend c_speed[])
 {
-    printstrln("Start Motor Tests");
-    wait(3000);
-    stop(c_speed);
-    printstrln("Test 1: LDO_MOTOR_STARTUP_PLUS (10s)");
+	printstrln("Start Motor Tests");
+	wait(3000);
+	stop(c_speed);
+	printstrln("Test 1: LDO_MOTOR_STARTUP_PLUS (10s)");
 		set_both_motors_speed(c_speed, EASY_SPEED);
-    wait(3000);
+	wait(3000);
 		print_speed( c_speed );
 
-    set_both_motors_speed(c_speed, MAX_TEST_RPM);
-    wait(3000);
+
+
+	set_both_motors_speed(c_speed, MAX_TEST_RPM);
+	wait(3000);
 		print_speed( c_speed );
-    printstrln("End of Test 1");
+	printstrln("End of Test 1");
 
 		stop(c_speed);
 
-    printstrln("Test 2: LDO_MOTOR_STARTUP_MINUS (10s)");
+	printstrln("Test 2: LDO_MOTOR_STARTUP_MINUS (10s)");
 		set_both_motors_speed(c_speed, -EASY_SPEED);
-    wait(3000);
+	wait(3000);
 		print_speed( c_speed );
-    printstrln("End of Test 2");
+	printstrln("End of Test 2");
 
-    stop(c_speed);
+	stop(c_speed);
 
-    printstrln("Test 3: LDO_RPM_PLUS_400 (15s)");
-    set_both_motors_speed(c_speed, EASY_SPEED);
-    wait(3000);
+	printstrln("Test 3: LDO_RPM_PLUS_400 (15s)");
+	set_both_motors_speed(c_speed, EASY_SPEED);
+	wait(3000);
 		print_speed( c_speed );
-    for(unsigned speed = (EASY_SPEED - LO_SPEED_INC); speed >= MIN_TEST_RPM; speed -= LO_SPEED_INC)
+	for(unsigned speed = (EASY_SPEED - LO_SPEED_INC); speed >= MIN_TEST_RPM; speed -= LO_SPEED_INC)
 		{
-      set_both_motors_speed(c_speed, speed);
-      wait(1000);
+	  set_both_motors_speed(c_speed, speed);
+	  wait(1000);
 			print_speed( c_speed );
-    }
-    printstrln("End of Test 3");
+	}
+	printstrln("End of Test 3");
 
-    stop(c_speed);
+	stop(c_speed);
 
-    printstrln("Test 4: LDO_RPM_MINUS_400 (15s)");
-    set_both_motors_speed(c_speed, -EASY_SPEED);
-    wait(3000);
+	printstrln("Test 4: LDO_RPM_MINUS_400 (15s)");
+	set_both_motors_speed(c_speed, -EASY_SPEED);
+	wait(3000);
 		print_speed( c_speed );
-    for(unsigned speed = (LO_SPEED_INC - EASY_SPEED); speed <= MIN_TEST_RPM; speed += LO_SPEED_INC)
+	for(unsigned speed = (LO_SPEED_INC - EASY_SPEED); speed <= MIN_TEST_RPM; speed += LO_SPEED_INC)
 		{
-      set_both_motors_speed(c_speed, speed);
-      wait(1000);
+	  set_both_motors_speed(c_speed, speed);
+	  wait(1000);
 			print_speed( c_speed );
-    }
-    printstrln("End of Test 4");
+	}
+	printstrln("End of Test 4");
 
-    stop(c_speed);
+	stop(c_speed);
 
-    printstrln("Test 5: LDO_RPM_PLUS_4000 (15s)");
-    set_both_motors_speed(c_speed, EASY_SPEED);
-    wait(3000);
+	printstrln("Test 5: LDO_RPM_PLUS_4000 (15s)");
+	set_both_motors_speed(c_speed, EASY_SPEED);
+	wait(3000);
 		print_speed( c_speed );
-    for(unsigned speed = (EASY_SPEED + HI_SPEED_INC); speed <= MAX_TEST_RPM;speed += HI_SPEED_INC)
+	for(unsigned speed = (EASY_SPEED + HI_SPEED_INC); speed <= MAX_TEST_RPM;speed += HI_SPEED_INC)
 		{
-      set_both_motors_speed(c_speed, speed);
-      wait(1000);
+	  set_both_motors_speed(c_speed, speed);
+	  wait(1000);
 			print_speed( c_speed );
-    }
-    printstrln("End of Test 5");
+	}
+	printstrln("End of Test 5");
 
-    stop(c_speed);
+	stop(c_speed);
 
-    printstrln("Test 6: LDO_RPM_MINUS_4000 (15s)");
-    set_both_motors_speed(c_speed, -EASY_SPEED);
-    wait(3000);
+	printstrln("Test 6: LDO_RPM_MINUS_4000 (15s)");
+	set_both_motors_speed(c_speed, -EASY_SPEED);
+	wait(3000);
 		print_speed( c_speed );
-    for(unsigned speed = (-EASY_SPEED - HI_SPEED_INC); speed >= -MAX_TEST_RPM; speed -= HI_SPEED_INC)
+	for(unsigned speed = (-EASY_SPEED - HI_SPEED_INC); speed >= -MAX_TEST_RPM; speed -= HI_SPEED_INC)
 		{
-      set_both_motors_speed(c_speed, speed);
-      wait(1000);
+	  set_both_motors_speed(c_speed, speed);
+	  wait(1000);
 			print_speed( c_speed );
-    }
-    printstrln("End of Test 6");
+	}
+	printstrln("End of Test 6");
 
-    stop(c_speed);
+	stop(c_speed);
 
-    printstrln("Test 7: LDO_RPM_PLUS_400_STARTUP (8s)");
-    set_both_motors_speed(c_speed, MIN_TEST_RPM);
-    wait(8000);
+	printstrln("Test 7: LDO_RPM_PLUS_400_STARTUP (8s)");
+	set_both_motors_speed(c_speed, MIN_TEST_RPM);
+	wait(8000);
 		print_speed( c_speed );
-    printstrln("End of Test 7");
+	printstrln("End of Test 7");
 
-    stop(c_speed);
+	stop(c_speed);
 
-    printstrln("Test 8: LDO_RPM_MINUS_400_STARTUP (8s)");
-    set_both_motors_speed(c_speed, -MIN_TEST_RPM);
-    wait(8000);
+	printstrln("Test 8: LDO_RPM_MINUS_400_STARTUP (8s)");
+	set_both_motors_speed(c_speed, -MIN_TEST_RPM);
+	wait(8000);
 		print_speed( c_speed );
-    printstrln("End of Test 8");
+	printstrln("End of Test 8");
 
-    stop(c_speed);
+	stop(c_speed);
 
-    printstrln("Test 9: LDO_RPM_PLUS_4000_STARTUP (8s)");
-    set_both_motors_speed(c_speed, MAX_TEST_RPM);
-    wait(3000);
+	printstrln("Test 9: LDO_RPM_PLUS_4000_STARTUP (8s)");
+	set_both_motors_speed(c_speed, MAX_TEST_RPM);
+	wait(3000);
 		print_speed( c_speed );
-    printstrln("End of Test 9");
+	printstrln("End of Test 9");
 
-    stop(c_speed);
+	stop(c_speed);
 
-    printstrln("Test 10: LDO_RPM_MINUS_4000_STARTUP (8s)");
-    set_both_motors_speed(c_speed, -MAX_TEST_RPM);
-    wait(3000);
+	printstrln("Test 10: LDO_RPM_MINUS_4000_STARTUP (8s)");
+	set_both_motors_speed(c_speed, -MAX_TEST_RPM);
+	wait(3000);
 		print_speed( c_speed );
-    printstrln("End of Test 10");
+	printstrln("End of Test 10");
 
-    stop(c_speed);
+	stop(c_speed);
 
-    printstrln("Test 11: LDO_CHANGE_DIRECTION_POS2NEG(6s)");
-    set_both_motors_speed(c_speed, MAX_TEST_RPM);
-    wait(3000);
+	printstrln("Test 11: LDO_CHANGE_DIRECTION_POS2NEG(6s)");
+	set_both_motors_speed(c_speed, MAX_TEST_RPM);
+	wait(3000);
 		print_speed( c_speed );
-    set_both_motors_speed(c_speed, -MAX_TEST_RPM);
-    wait(3000);
+	set_both_motors_speed(c_speed, -MAX_TEST_RPM);
+	wait(3000);
 		print_speed( c_speed );
-    printstrln("End of Test 11");
+	printstrln("End of Test 11");
 
-    printstrln("Test 12: LDO_CHANGE_DIRECTION_NEG2POS (6s)");
-    set_both_motors_speed(c_speed, MAX_TEST_RPM);
-    wait(3000);
+	printstrln("Test 12: LDO_CHANGE_DIRECTION_NEG2POS (6s)");
+	set_both_motors_speed(c_speed, MAX_TEST_RPM);
+	wait(3000);
 		print_speed( c_speed );
-    printstrln("End of Test 12");
+	printstrln("End of Test 12");
 
-    stop(c_speed);
+	stop(c_speed);
 
 		// Set back to Easy Speed before exit
 		set_both_motors_speed(c_speed, EASY_SPEED);
-    wait(3000);
+	wait(3000);
 
-    printstrln(" ");
-    printstrln("End Of Motor Tests");
+	printstrln(" ");
+	printstrln("End Of Motor Tests");
 
 	return;
-}
+} // test_motor 
+/*****************************************************************************/
+static void dbg_motor(
+	chanend c_speed[NUMBER_OF_MOTORS]
+)
+{
+	int cur_speed; // Current Speed
+
+
+	printstrln("Debug Motor Tests");
+
+	wait(3000);
+	stop(c_speed);
+
+	cur_speed = EASY_SPEED;
+	printstr("CmdSpeed="); printintln(cur_speed);
+	set_both_motors_speed(c_speed ,cur_speed);
+	wait(3000);
+	print_speed( c_speed );
+
+	cur_speed = MAX_TEST_RPM;
+	printstr("CmdSpeed="); printintln(cur_speed);
+	set_both_motors_speed(c_speed ,cur_speed);
+	wait(9000);
+	print_speed( c_speed );
+
+
+	cur_speed = 2000;
+	printstr("CmdSpeed="); printintln(cur_speed);
+	set_both_motors_speed(c_speed ,cur_speed);
+	wait(19000);
+	print_speed( c_speed );
+
+return;
+	// Set back to Easy Speed before exit
+	set_both_motors_speed(c_speed, -EASY_SPEED);
+	wait(3000);
+
+	cur_speed = -MAX_TEST_RPM;
+	printstr("CmdSpeed="); printintln(cur_speed);
+	set_both_motors_speed(c_speed ,cur_speed);
+	wait(3000);
+	print_speed( c_speed );
+
+	cur_speed = -MIN_TEST_RPM;
+	printstr("CmdSpeed="); printintln(cur_speed);
+	set_both_motors_speed(c_speed ,cur_speed);
+	wait(6000);
+	print_speed( c_speed );
+
+	// Set back to Easy Speed before exit
+	set_both_motors_speed(c_speed, EASY_SPEED);
+	wait(3000);
+
+ printstrln(" ");
+ printstrln("End Of Motor Debug");
+
+	return;
+} // dbg_motor
 /*****************************************************************************/
 
 #endif // ( 1 == ASJ) End-of Andrew_SJ's test-code
@@ -221,8 +294,9 @@ static void update_speed_control( // Updates the speed control loop
 {
 	int motor_cnt; // motor counter
 
+
 	// Loop through motors
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+	for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
 	{
 		c_speed[motor_cnt] <: cmd_id;
 	} // for motor_cnt
@@ -243,22 +317,16 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 	int old_req_speed[NUMBER_OF_MOTORS] = { 1000 ,-1000 }; // old requested speed
 	int speed_change; // flag set when new speed parameters differ from old
 	unsigned int btn_en = 0; // button debounce counter
-	int motor_cnt; // motor counter
+	int motor_cnt = -1; // motor counter
 	unsigned btns_val; // value that encodes state of buttons
 	int err_cnt; // error counter
 
 	timer timer_10Hz; // 10Hz timer
 	unsigned int time_10Hz_val; // 10Hz timer value
 
-#ifdef MB
-	int cur_speed; // current speed
-	int toggle = 1; // indicates motor spin direction 
-	timer timer_30ms; // 30ms timer
-	unsigned int time_30ms_val; // 30ms timer value
-#endif //MB~
 
 	// Initialise array of old measured speeds
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{
 		old_meas_speed[motor_cnt]=0;
 	} // for motor_cnt
@@ -285,7 +353,7 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 				speed_change = 0; // Preset to speed change
 
 				/* Get the motor speeds from channels. NB Do this as quickly as possible */
-				for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+				for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
 				{
 					c_speed[motor_cnt] <: IO_CMD_GET_IQ;
 					c_speed[motor_cnt] :> new_meas_speed[motor_cnt];
@@ -367,7 +435,8 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 3;
 			
-							test_motor( c_speed );
+//MB~					test_motor( c_speed );
+							dbg_motor( c_speed );
 						break; // case 4
 #endif // ( 1 == ASJ)
 	

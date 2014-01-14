@@ -132,7 +132,7 @@
 
 #define MIN_SPEED 300 // This value is derived from experience
 #define SPEC_MAX_SPEED 4000 // This value is derived from the LDO Motor Max. spec. speed
-#define SAFE_MAX_SPEED 5860 // This value is derived from the Optical Encoder Max. rate of 100kHz
+#define SAFE_MAX_SPEED 5800 // This value is derived from the Optical Encoder Max. rate of 100kHz (gives 5860)
 #define SPEED_INC 100 // If speed change requested, this is the amount of change
 
 // Test definitions
@@ -185,6 +185,8 @@
 #define HALF_V2I (V2I_DENOM >> 1)
 #define V2I_MUX 205 // Voltage multiplier. NB 1/40 ~= 205/2^13 
 #define V2I_OFF (-10)  // Voltage Offset
+//MB~ #define V2I_MUX 153 // Voltage multiplier. NB 1/30 ~= 153/2^13 
+//MB~ #define V2I_OFF (-4)  // Voltage Offset
 
 // Used to smooth demand Voltage
 #define SMOOTH_VOLT_INC 2 // Maximum allowed increment in demand voltage
