@@ -137,21 +137,11 @@
 #define SPEED_INC 100 // If speed change requested, this is the amount of change
 
 // Test definitions
-#define SPEED_DIFF 400 // Speed change between test
 #define ITER_INC 50000 // No. of FOC iterations between speed increments
 
 // MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
 #define VELOC_FILT 1
 #define MAX_VELOC_INC 1 // MB~ Maximum allowed velocity increment.
-
-// Definitions for Gamma value, (amount that PWM leads QEI angle)
-
-#define GAMMA_BITS 16 // No of bits used to generate Gamma up-scaliing factor
-#define GAMMA_SCALE (1 << 16) // Gamma up-scaliing factor
-#define HALF_GAMMA (GAMMA_SCALE >> 1) // Half Gamma scaliing factor
-
-#define MIN_GAMMA 32 // Gamma value at low speed (and start-up)
-#define MAX_GAMMA 96 // Gamma value at max speed
 
 // Set-up defines for scaling ...
 #define SHIFT_20 20
@@ -180,23 +170,22 @@
 #define VOLT_DIFF_BITS 10 // NB 2^10 = 1024, Used to down-scale Voltage differences in blending function
 #define VOLT_DIFF_MASK ((1 << VOLT_DIFF_BITS ) - 1) // Used to mask out Voltage difference bits
 
-// A linear conversion is used to relate the PWM Voltage applied to the coil current produced  (I = m*V + c)
-#define V2I_BITS SHIFT_13 // No of bits in Voltage to current scaling factor 
-#define V2I_DENOM (1 << V2I_BITS)
-#define HALF_V2I (V2I_DENOM >> 1)
-#define V2I_MUX 205 // Voltage multiplier. NB 1/40 ~= 205/2^13 
+// Linear conversion are used to relate 2 parameters. E.G. PWM Voltage applied to the coil current produced  (I = m*V + c)
+#define LIN_BITS SHIFT_16 // No of bits in Voltage to current scaling factor 
+
+#define LIN_DENOM (1 << LIN_BITS)
+#define HALF_LIN (LIN_DENOM >> 1)
+#define S2V_MUX 41198 // Speed multiplier. NB 0.6286 ~= 41198/2^16 
+#define V2I_MUX 1341 // Voltage multiplier. NB 0.02045 ~= 1341/2^16 
 #define V2I_OFF (-10)  // Voltage Offset
-//MB~ #define V2I_MUX 153 // Voltage multiplier. NB 1/30 ~= 153/2^13 
-//MB~ #define V2I_OFF (-4)  // Voltage Offset
 
 // Used to smooth demand Voltage
 #define SMOOTH_VOLT_INC 2 // Maximum allowed increment in demand voltage
 #define HALF_SMOOTH_VOLT (SMOOTH_VOLT_INC >> 1)  // Half max. allowed increment
 
 // Defines for Field Weakening
-//MB~ #define IQ_LIM (55 << ADC_UPSCALE_BITS) // Maximum allowed target Iq value, before field weakening applied
 #define FW_SPEED ((3*SPEC_MAX_SPEED + 2) >> 2) // Only use field-weakening if above 3/4 of SPEC_MAX_SPEED
-#define IQ_LIM 55 // Maximum allowed target Iq value, before field weakening applied
+#define IQ_LIM 55 // 55 Maximum allowed target Iq value, before field weakening applied
 #define IQ_ID_BITS 2 // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
 #define IQ_ID_RATIO (1 << IQ_ID_BITS) // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
 #define IQ_ID_HALF (IQ_ID_RATIO >> 1) // Quantisation error is half IQ_ID_RATIO 
@@ -304,6 +293,7 @@ typedef struct ROTA_DATA_TAG // Structure containing data for one rotating vecto
 	int trans_V;	// voltage during TRANSIT state
 	int req_closed_V;	// Requested closed-loop voltage (to generate magnetic field).
 	int set_V;	// Demand voltage set by control loop
+	int err_V;	// Set Voltage remainder, used in error diffusion
 	int prev_V;	// Previous Demand voltage
 	int diff_V;	// Difference between Start and Requested Voltage
 	int rem_V;	// Voltage remainder, used in error diffusion
@@ -345,8 +335,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int targ_vel;	// (Internal) Target angular velocity
 	int est_veloc;	// Estimated angular velocity (from QEI data)
 	int half_veloc;	// Half requested angular velocity
-	int max_veloc;	// Maximum angular velocity
-	int min_veloc;	// Minimum angular velocity
 	int speed_inc; // Speed increment when commanded
 	int prev_veloc;	// previous velocity
 	unsigned est_period;	// Estimate of QEI period: ticks per QEI position (in Reference Frequency Cycles)
@@ -390,8 +378,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int hall_offset;	// Phase difference between the Hall sensor origin and PWM theta origin
 	int qei_found;	// Flag set when Hall orign found
 	int hall_found;	// Flag set when QEI orign found
-	int gamma_grad;	// Multiplier used to generate Gamma values from speed
-	int gamma_off;	// Offset used to generate Gamma values from speed
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter
 
@@ -411,13 +397,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int scale_vel_err; // Velocity scaling diffusion error 
 	int veloc_calc_err; // Velocity calculation diffusion error 
 
-	// Speed change test
-	int tst_cnt;
-	int speed_diff;
-
 	int tmp; // MB~
 	int temp; // MB~ Dbg
-	int tmp_I; // MB~
 
 timer dbg_tmr; // MB~
 unsigned dbg_orig; // MB~

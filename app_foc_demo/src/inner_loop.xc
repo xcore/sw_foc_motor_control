@@ -55,27 +55,6 @@ static unsigned calc_bit_resolution( // Calculate No of bits required to represe
 	return out_bits; // Return No. of resolution bits
 } // calc_bit_resolution
 /*****************************************************************************/
-static void init_gamma_data( // Initialise Gamma data for leading angle
-	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
-)
-{
-	int speed_rng = (MAX_SPEC_RPM - MIN_STALL_RPM); // Speed range
-	int gamma_rng = (MAX_GAMMA - MIN_GAMMA); // Gamma range
-	int tmp_val; // Temporary manipulation variable;
-
-
-	tmp_val = (gamma_rng << GAMMA_BITS); // Up-scale Gamma range
-
-	// Calculate up-scaled Gamma gradient
-	motor_s.gamma_grad = (tmp_val + (speed_rng >> 1)) / speed_rng; 
-
-	tmp_val = (MIN_GAMMA << GAMMA_BITS); // Up-scale Minimum Gamma
-
-	// Calculate up-scaled Gamma offset
-	motor_s.gamma_off = 24; //MB~ 24
-
-} // init_gamma_data
-/*****************************************************************************/
 static void init_blend_data( // Initialise blending data for 'TRANSIT state'
 	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
 )
@@ -163,15 +142,6 @@ static void init_pid_data( // Initialise PID data
 	 * Therefore in the init_pid_consts interface K_i is upscaled by 2^PID_CONST_RES to compensate
 	 */
 	// Regular-Sampling mode 
-#ifdef MB // Depreciated
-	init_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1600000 ,1000 ,0 ); // NB Kp assumes target Id=0
-	init_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,1100000 ,2000	,0 );
-	init_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,21900 ,6 ,0 ); // NB Tuned to give correct Velocity -> Iq conversion
-
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,48.8281 ,0.0305177 ,0.0 ); // NB Kp assumes target Id=0
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,33.5693 ,0.0610352	,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,0.668335 ,0.000183105 ,0.0 ); // NB Tuned to give correct Velocity -> Iq conversion
-#endif //MB~
 	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,2.0 ,0.0049 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,16.0 ,0.017 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,0.8 ,0.00003 ,0.0 ); // NB Tuned to give correct Velocity -> Iq conversion
@@ -215,6 +185,7 @@ static void init_rotation_component( // Initialise data for one component of rot
 	motor_s.vect_data[comp_id].prev_V = start_V_openloop;  // Preset previously used demand voltage value
 	motor_s.vect_data[comp_id].diff_V = 0; // Difference between Start and Requested Voltage
 	motor_s.vect_data[comp_id].rem_V = 0; // Voltage remainder, used in error diffusion
+	motor_s.vect_data[comp_id].err_V = 0; // Set Voltage remainder, used in error diffusion
 
 	motor_s.vect_data[comp_id].inp_I = 0; // Initialise input estimated current
 	motor_s.vect_data[comp_id].est_I = 0; // Initialise (possibly filtered) output estimated current
@@ -263,29 +234,13 @@ static void update_velocity_data( // Update velocity dependent data
 	// Initialise angle variables dependant on spin direction
 	if (0 > motor_s.targ_vel)
 	{ // Negative spin direction
-		motor_s.gamma_off = -abs(motor_s.gamma_off);
-		motor_s.gamma_grad = -abs(motor_s.gamma_grad);
-
 		motor_s.end_hall = NEGA_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
-
 		motor_s.speed_inc = -SPEED_INC; // Speed increment when commanded
-		motor_s.max_veloc = -SPEC_MAX_SPEED; // max. velocity
-		motor_s.min_veloc = -MIN_SPEED; // min. velocity
-
-		motor_s.speed_diff = SPEED_DIFF; // MB~ test
 	} // if (0 > motor_s.targ_vel)
 	else
 	{ // Positive spin direction
-		motor_s.gamma_off = abs(motor_s.gamma_off);
-		motor_s.gamma_grad = abs(motor_s.gamma_grad);
-
 		motor_s.end_hall = POSI_LAST_HALL_STATE; // Choose last Hall state of 6-state cycle
-
 		motor_s.speed_inc = SPEED_INC; // Speed increment when commanded
-		motor_s.max_veloc = SPEC_MAX_SPEED; // max. velocity
-		motor_s.min_veloc = MIN_SPEED; // min velocity
-
-		motor_s.speed_diff = -SPEED_DIFF; // MB~ test
 	} // else !(0 > motor_s.targ_vel)
 } // update_velocity_data
 /*****************************************************************************/
@@ -314,8 +269,6 @@ static void start_motor_reset( // Reset motor data ready for re-start
 
 	init_error_data( motor_s.err_data );
 
-	init_gamma_data( motor_s );
-
 	init_pid_data( motor_s );
 
 	for (phase_cnt = 0; phase_cnt < NUM_PWM_PHASES; phase_cnt++)
@@ -324,7 +277,6 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	} // for phase_cnt
 
 	motor_s.iters = 0;
-	motor_s.tst_cnt = 0; // MB~
 	motor_s.cnts[ALIGN] = 0;
 	motor_s.cnts[SEARCH] = 0;
 	motor_s.cnts[STALL] = 0;
@@ -637,6 +589,7 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 		filter_current_component( motor_s.vect_data[comp_cnt] );
 	} // for comp_cnt
 
+#ifdef MB
 { // MB~
 	int d_abs = abs(motor_s.vect_data[D_ROTA].est_I);
 	int q_abs = abs(motor_s.vect_data[Q_ROTA].est_I);
@@ -662,6 +615,7 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 		eficny = 0;
 	} // if (h_abs > 0)
 } // MB~
+#endif //MB~
 
 } // estimate_Iq_using_transforms
 /*****************************************************************************/
@@ -727,7 +681,8 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 // if (motor_s.xscope) xscope_int( 5 ,inp_theta ); //MB~
 	motor_s.vect_data[D_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[D_ROTA] );
 	motor_s.vect_data[Q_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[Q_ROTA] );
-// if (motor_s.xscope) xscope_int( 6 ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
+if (motor_s.xscope) xscope_int( 1 ,motor_s.vect_data[D_ROTA].set_V ); //MB~
+if (motor_s.xscope) xscope_int( 9 ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
 
 	// Inverse park  [d, q, theta] --> [alpha, beta]
 	inverse_park_transform( alpha_set ,beta_set ,motor_s.vect_data[D_ROTA].set_V ,motor_s.vect_data[Q_ROTA].set_V 
@@ -765,7 +720,6 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 	} // if (motor_s.open_period < diff_time)
 
 	// NB QEI_REV_MASK correctly maps -ve values into +ve range 0 <= theta < QEI_PER_REV;
-//MB~	motor_s.set_theta = motor_s.open_theta & QEI_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
 	motor_s.set_theta = motor_s.open_theta & UQ_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
 
 } // calc_open_loop_pwm
@@ -916,33 +870,6 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	}; // if (motor_s.pid_preset)
 
 #ifdef MB
-// Speed change test //MB~
-{
-	motor_s.tst_cnt++;
-	if (motor_s.tst_cnt > ITER_INC)
-	{
-		motor_s.tst_cnt = 0;
-
-		if (SPEC_MAX_SPEED <= abs(motor_s.targ_vel))
-		{ // Decrease speed
-			motor_s.speed_diff = -motor_s.speed_diff;
-		} // if (SPEC_MAX_SPEED < motor_s.targ_vel)
-
-		if (MIN_SPEED >= abs(motor_s.targ_vel))
-		{ // Decrease speed
-			motor_s.speed_diff = -motor_s.speed_diff;
-		} // if (MIN_SPEED > motor_s.targ_vel)
-
-		motor_s.targ_vel += motor_s.speed_diff;
-if (motor_s.id)
-{
-	acquire_lock(); printintln(motor_s.targ_vel); release_lock(); //MB~
-} // if (motor_s.id)
-	} // if (motor_s.tst_cnt > ITER_INC)
-} //MB~
-#endif //MB~
-
-#ifdef MB
 	if (motor_s.iters > 50000)
 	{ // Track est_Iq value
 		motor_s.temp++; 
@@ -965,8 +892,8 @@ if (motor_s.id)
 	} //if (motor_s.iters > 25000)
 #endif //MB~
 
-if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.diff_ang ); //MB~
-if (motor_s.xscope) xscope_int( 8 ,(motor_s.targ_vel - motor_s.est_veloc) ); //MB~
+// if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.diff_ang ); //MB~
+// if (motor_s.xscope) xscope_int( 8 ,(motor_s.targ_vel - motor_s.est_veloc) ); //MB~
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
 if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
 
@@ -984,50 +911,13 @@ if (motor_s.xscope) xscope_int( 6 ,motor_s.pid_veloc ); // MB~
 
 	if (VELOC_CLOSED)
 	{ // Evaluate requested IQ from velocity PID
-#define MIN_IQ 415
+		motor_s.vect_data[Q_ROTA].req_closed_V = ((S2V_MUX * motor_s.pid_veloc) + HALF_LIN) >> LIN_BITS;
 
-#ifdef MB
-		if ((motor_s.req_veloc * motor_s.pid_veloc) < 0)
-		{
-			motor_s.pid_veloc = 0;
-		}
-
-		motor_s.vect_data[Q_ROTA].req_closed_V = abs(motor_s.pid_veloc >> 1) + MIN_IQ;
-#endif //MB~
-
-#ifdef MB
-#define MERGE_BITS 8 // Bit resolution of Merge region
-#define MERGE_LEN (1 << MERGE_BITS)
-#define HALF_MERGE (MERGE_LEN >> 1)
-#define LO_S 0
-#define HI_S (LO_S + MERGE_LEN)
-
-		int speed = abs(motor_s.est_veloc);
-		int fast_Iq = (motor_s.pid_veloc >> 1); 
-		int slow_Iq = abs(fast_Iq) + MIN_IQ;
-
-
-		if (speed < LO_S)
-		{
-			motor_s.vect_data[Q_ROTA].req_closed_V = slow_Iq;
-		} // if (speed < LO_S)
-		else
-		{
-			if (speed > HI_S)
-			{
-				motor_s.vect_data[Q_ROTA].req_closed_V = fast_Iq;
-			} // if (speed > (LO_S << 1))
-			else
-			{
-				motor_s.vect_data[Q_ROTA].req_closed_V = (HI_S * slow_Iq) - (LO_S * fast_Iq);
-				motor_s.vect_data[Q_ROTA].req_closed_V += speed * (fast_Iq - slow_Iq);
-				motor_s.vect_data[Q_ROTA].req_closed_V = (motor_s.vect_data[Q_ROTA].req_closed_V + HALF_MERGE) >> MERGE_BITS;
-			} // else !(speed > (LO_S << 1))
-		} // else !(speed < LO_S)
-#endif //MB~
-
-		motor_s.vect_data[Q_ROTA].req_closed_V = (motor_s.pid_veloc >> 1);
-//MB~		motor_s.vect_data[Q_ROTA].req_closed_V = abs(motor_s.pid_veloc >> 1) + MIN_IQ;
+		// Check for Negative spin direction
+		if (0 > motor_s.targ_vel)
+		{ // Reverse sense of req_Vq
+			motor_s.vect_data[Q_ROTA].req_closed_V = -motor_s.vect_data[Q_ROTA].req_closed_V;
+		} // if (0 > motor_s.targ_vel)
 	} // if (VELOC_CLOSED)
 
 // if (motor_s.vect_data[Q_ROTA].req_closed_V < 0) motor_s.vect_data[Q_ROTA].req_closed_V = 0;
@@ -1083,8 +973,9 @@ if (motor_s.xscope) xscope_int( 6 ,motor_s.pid_veloc ); // MB~
 
 // if (motor_s.xscope) xscope_int( 12 ,motor_s.vect_data[Q_ROTA].req_closed_V ); //MB~ 
 if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[Q_ROTA].req_closed_V ); // MB~
-	targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V + HALF_V2I) >> V2I_BITS) + V2I_OFF;
+	targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V) + HALF_LIN) >> LIN_BITS;
 // if (motor_s.xscope) xscope_int( 14 ,targ_Iq ); //MB~ 
+if (motor_s.xscope) xscope_int( 4 ,targ_Iq ); //MB~
 
 	// Clamp to sensible value
 	if (targ_Iq > (IQ_LIM << 1)) targ_Iq = (IQ_LIM << 1);
@@ -1115,23 +1006,11 @@ if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[Q_ROTA].req_closed_V ); // 
 
 		targ_Iq = IQ_LIM; // Limit target Iq value
 	} // if ((targ_Iq > IQ_LIM)
-	else
-	{
-		if ((targ_Iq >= 0) && (targ_Iq < 9))
-		{
-			targ_Iq = 9;
-		} // if (targ_Iq < 9)
-
-		if ((targ_Iq < 0) && (targ_Iq > -9))
-		{
-			targ_Iq = -9;
-		} // if (targ_Iq < 9)
-	} // else !((targ_Iq > IQ_LIM)
 
 // targ_Id = 0; // MB~
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
 
-if (motor_s.xscope) xscope_int( 4 ,targ_Iq ); // MB~
+if (motor_s.xscope) xscope_int( 8 ,targ_Iq ); //MB~
 if (motor_s.xscope) xscope_int( 0 ,targ_Id ); // MB~
 	// Apply PID control to Iq and Id
 
@@ -1187,6 +1066,14 @@ if (motor_s.xscope) xscope_int( 0 ,targ_Id ); // MB~
 
 		calc_open_loop_pwm( motor_s );
 	} // else !(IQ_ID_CLOSED)
+
+#ifdef MB
+	// Clip set_Vq to set_Vd
+	if (motor_s.vect_data[Q_ROTA].set_V < abs(motor_s.vect_data[D_ROTA].set_V))
+	{
+		motor_s.vect_data[Q_ROTA].set_V = abs(motor_s.vect_data[D_ROTA].set_V);
+	} // if (motor_s.vect_data[Q_ROTA].set_V < abs(motor_s.vect_data[D_ROTA].set_V))
+#endif //MB~
 
 	motor_s.pid_preset = 0; // Clear 'Preset PID' flag
 
@@ -1738,10 +1625,6 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 			} // if (motor_s.est_period > motor_s.prev_period)
 		} // else !(diff_ang != 0)
 
-if (qei_period < 1000000)
-{
-// if (0 == motor_s.id) xscope_int( 1 ,qei_period ); // MB~
-} // if (qei_period < 1000000)
 		qei_period = filter_period( motor_s ,qei_period ); // Filter QEI period
 
 		motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,qei_period ); // Update velocity estimate
@@ -1891,43 +1774,49 @@ static void process_speed_command( // Decodes speed command, and implements chan
 	// Check for valid speed change
 	if (abs_diff)
 	{
-		// If necessary, clip command-speed into specified range	
-		if (new_veloc < 0)
-		{ // Negative Spin direction
+		if (0 != new_veloc)
+		{ // Non-zero Speed
+			// If necessary, clip command-speed into specified range	
 			if (new_veloc < -SPEC_MAX_SPEED)
-			{ // Increase speed
+			{ // Too Negative
 				new_veloc = -SPEC_MAX_SPEED;
 			} // if (new_veloc < -SPEC_MAX_SPEED)
 			else
 			{
-				if (new_veloc > -MIN_SPEED)
-				{ // Increase speed
-					new_veloc = -MIN_SPEED;
+				if (new_veloc > SPEC_MAX_SPEED)
+				{ // Too Positive
+					new_veloc = SPEC_MAX_SPEED;
 				} // if (new_veloc > SPEC_MAX_SPEED)
-			} // else !(new_veloc > -MIN_SPEED)
-		} // if (new_veloc < 0)
-		else
-		{ // Positive Spin direction
-			if (new_veloc > SPEC_MAX_SPEED)
-			{ // Increase speed
-				new_veloc = SPEC_MAX_SPEED;
-			} // if (new_veloc > SPEC_MAX_SPEED)
-			else
-			{
-				if (new_veloc < MIN_SPEED)
-				{ // Increase speed
-					new_veloc = MIN_SPEED;
-				} // if (new_veloc < MIN_SPEED)
-			} // else !(new_veloc > SPEC_MAX_SPEED) 
-		} // esle !(new_veloc < 0)
+				else
+				{
+					if ((-MIN_SPEED < new_veloc) && (new_veloc < 0))
+					{ // NOT Negative enough
+						new_veloc = -MIN_SPEED;
+					} // if ((-MIN_SPEED < new_veloc) && (new_veloc < 0))
+					else
+					{
+						if ((0 < new_veloc) && (new_veloc < MIN_SPEED))
+						{ // NOT Positive enough
+							new_veloc = MIN_SPEED;
+						} // if ((0 < new_veloc) && (new_veloc < MIN_SPEED))
+					} // else !((-MIN_SPEED < new_veloc) && (new_veloc < 0))
+				} // else !(new_veloc > SPEC_MAX_SPEED)
+			} // else !(new_veloc < -SPEC_MAX_SPEED)
 
-		// Check for change of direction
-		if ((new_veloc * motor_s.req_veloc) < 0)
-		{	// Handle change of direction by a 'stop' and a 're-start'
+			// Check for change of direction
+			if ((new_veloc * motor_s.req_veloc) < 0)
+			{	// Handle change of direction by a 'stop' and a 're-start'
+				stop_motor = 1; // Set stop_motor flag. 
+		
+				// NB Motor will automatically restart if Requested_Velocity >= MIN_SPEED
+			} //if ((new_veloc * motor_s.req_veloc) < 0)
+		} // if (0 != new_veloc)
+		else
+		{ // Zero Speed request
 			stop_motor = 1; // Set stop_motor flag. 
 	
-			// NB Motor will automatically restart if Requested_Velocity >= MIN_SPEED
-		} //if ((new_veloc * motor_s.req_veloc) < 0)
+			// NB Motor will automatically restart when next received Requested_Velocity >= MIN_SPEED
+		} // else (0 != new_veloc)
 
 		if (stop_motor)
 		{
@@ -2052,7 +1941,7 @@ if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.vect_data[D_ROTA].est_I
 if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I );
 // acquire_lock(); printint(motor_s.id); printstr(": MS="); printintln(motor_s.state); release_lock(); //MB~
 		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
-if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.targ_vel ); //MB~
+// if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.targ_vel ); //MB~
 if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.req_veloc ); //MB~
 
 	}	// while (POWER_OFF != motor_s.state)

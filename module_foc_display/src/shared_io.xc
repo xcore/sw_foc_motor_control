@@ -234,23 +234,22 @@ static void dbg_motor(
 
 	printstrln("Debug Motor Tests");
 
+	// Set to Easy Speed
+	set_both_motors_speed(c_speed, EASY_SPEED);
 	wait(3000);
-	stop(c_speed);
 
-	cur_speed = EASY_SPEED;
 	cur_speed = MAX_TEST_RPM;
 	printstr("CmdSpeed="); printintln(cur_speed);
 	set_both_motors_speed(c_speed ,cur_speed);
-	wait(3000);
+	wait(9000);
 	print_speed( c_speed );
 
 	cur_speed = MIN_TEST_RPM;
 	printstr("CmdSpeed="); printintln(cur_speed);
 	set_both_motors_speed(c_speed ,cur_speed);
-	wait(200000);
+	wait(18000);
 	print_speed( c_speed );
 
-return;
 	// Set back to Easy Speed before exit
 	set_both_motors_speed(c_speed, -EASY_SPEED);
 	wait(3000);
@@ -258,21 +257,17 @@ return;
 	cur_speed = -MAX_TEST_RPM;
 	printstr("CmdSpeed="); printintln(cur_speed);
 	set_both_motors_speed(c_speed ,cur_speed);
-	wait(3000);
+	wait(9000);
 	print_speed( c_speed );
 
 	cur_speed = -MIN_TEST_RPM;
 	printstr("CmdSpeed="); printintln(cur_speed);
 	set_both_motors_speed(c_speed ,cur_speed);
-	wait(6000);
+	wait(18000);
 	print_speed( c_speed );
 
-	// Set back to Easy Speed before exit
-	set_both_motors_speed(c_speed, EASY_SPEED);
-	wait(3000);
-
- printstrln(" ");
- printstrln("End Of Motor Debug");
+	printstrln(" ");
+	printstrln("End Of Motor Debug");
 
 	return;
 } // dbg_motor
