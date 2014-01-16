@@ -234,10 +234,6 @@ static void dbg_motor(
 
 	printstrln("Debug Motor Tests");
 
-	// Set to Easy Speed
-	set_both_motors_speed(c_speed, EASY_SPEED);
-	wait(3000);
-
 	cur_speed = MAX_TEST_RPM;
 	printstr("CmdSpeed="); printintln(cur_speed);
 	set_both_motors_speed(c_speed ,cur_speed);
@@ -250,6 +246,8 @@ static void dbg_motor(
 	wait(18000);
 	print_speed( c_speed );
 
+while(1);
+return;
 	// Set back to Easy Speed before exit
 	set_both_motors_speed(c_speed, -EASY_SPEED);
 	wait(3000);

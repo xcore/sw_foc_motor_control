@@ -142,9 +142,9 @@ static void init_pid_data( // Initialise PID data
 	 * Therefore in the init_pid_consts interface K_i is upscaled by 2^PID_CONST_RES to compensate
 	 */
 	// Regular-Sampling mode 
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,2.0 ,0.0049 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,16.0 ,0.017 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,0.8 ,0.00003 ,0.0 ); // NB Tuned to give correct Velocity -> Iq conversion
+	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1.0 ,0.0058 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,8.0 ,0.017 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,4.0 ,0.00012 ,0.0 );
 
 // MB~ EXTREMA and VELOCITY need a re-tune
 	init_int_pid_consts( motor_s.pid_consts[EXTREMA][ID_PID] ,0 ,0 ,0 );
@@ -328,7 +328,7 @@ static void start_motor_reset( // Reset motor data ready for re-start
 
 	init_velocity_data( motor_s ); // Initialise velocity dependent data	
 
-	motor_s.tmp = 0; // MB~ Dbg
+	motor_s.tmp = 400; // MB~ Dbg
 	motor_s.temp = 0; // MB~ Dbg
 
 	motor_s.dbg_sum = 0; // MB~
@@ -922,17 +922,6 @@ if (motor_s.xscope) xscope_int( 6 ,motor_s.pid_veloc ); // MB~
 
 // if (motor_s.vect_data[Q_ROTA].req_closed_V < 0) motor_s.vect_data[Q_ROTA].req_closed_V = 0;
 
-#ifdef MB
-	if (motor_s.iters > 100000)
-	{ // Track est_Iq value
-		motor_s.vect_data[Q_ROTA].req_closed_V = 760;
-	} //if (motor_s.iters > 75000)
-	else
-	{ // Track est_Iq value
-		motor_s.vect_data[Q_ROTA].req_closed_V = 2674;
-	} //if (motor_s.iters > 75000)
-#endif //MB~
-
 #pragma xta label "foc_loop_id_iq_pid"
 
 	// Select algorithm for estimateing coil current Iq (and Id)
@@ -975,7 +964,6 @@ if (motor_s.xscope) xscope_int( 6 ,motor_s.pid_veloc ); // MB~
 if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[Q_ROTA].req_closed_V ); // MB~
 	targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V) + HALF_LIN) >> LIN_BITS;
 // if (motor_s.xscope) xscope_int( 14 ,targ_Iq ); //MB~ 
-if (motor_s.xscope) xscope_int( 4 ,targ_Iq ); //MB~
 
 	// Clamp to sensible value
 	if (targ_Iq > (IQ_LIM << 1)) targ_Iq = (IQ_LIM << 1);
@@ -1007,9 +995,35 @@ if (motor_s.xscope) xscope_int( 4 ,targ_Iq ); //MB~
 		targ_Iq = IQ_LIM; // Limit target Iq value
 	} // if ((targ_Iq > IQ_LIM)
 
-// targ_Id = 0; // MB~
+#ifdef MB // Iq PID tuning
+	if (motor_s.iters > 60000)
+	{ // Track est_Iq value
+		targ_Iq = 9;
+	} //if (motor_s.iters > 75000)
+	else
+	{ // Track est_Iq value
+		targ_Iq = 54;
+	} //if (motor_s.iters > 75000)
+
+	targ_Id = 0;
+#endif //MB~
+
+#ifdef MB // Id PID tuning
+	if (motor_s.iters > 200000)
+	{ // Track est_Iq value
+		targ_Id = -8;
+	} //if (motor_s.iters > 75000)
+	else
+	{ // Track est_Iq value
+		targ_Id = 8;
+	} //if (motor_s.iters > 75000)
+
+	targ_Iq = 18;
+#endif //MB~
+
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
 
+if (motor_s.xscope) xscope_int( 4 ,760 ); //MB~
 if (motor_s.xscope) xscope_int( 8 ,targ_Iq ); //MB~
 if (motor_s.xscope) xscope_int( 0 ,targ_Id ); // MB~
 	// Apply PID control to Iq and Id
@@ -1647,7 +1661,15 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 		motor_s.prev_veloc = motor_s.est_veloc; // Update previous velocity
 #endif // VELOC_FILT
 
-if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
+if (motor_s.xscope)
+{
+if ((motor_s.tmp > abs(motor_s.est_veloc)) && (motor_s.iters > 100000))
+{
+	motor_s.tmp = abs(motor_s.est_veloc);
+	acquire_lock(); printstr("el="); printintln(motor_s.est_veloc); release_lock(); //MB~
+}
+ xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
+}
 // if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
 	} // if (motor_s.qei_params.period > 0)
 } // get_qei_data
