@@ -1661,6 +1661,9 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 		motor_s.prev_veloc = motor_s.est_veloc; // Update previous velocity
 #endif // VELOC_FILT
 
+if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
+
+#ifdef MB
 if (motor_s.xscope)
 {
 if ((motor_s.tmp > abs(motor_s.est_veloc)) && (motor_s.iters > 100000))
@@ -1670,6 +1673,8 @@ if ((motor_s.tmp > abs(motor_s.est_veloc)) && (motor_s.iters > 100000))
 }
  xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 }
+#endif //MB~
+
 // if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
 	} // if (motor_s.qei_params.period > 0)
 } // get_qei_data
