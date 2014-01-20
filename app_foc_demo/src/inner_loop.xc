@@ -252,6 +252,7 @@ static void speed_change_reset( // Reset motor data after large speed change
 	motor_s.scale_err = 0; // Clear Extrema Scaling diffusion error
 	motor_s.Iq_err = 0; // Clear Error diffusion value for measured Iq
 	motor_s.prev_Id = 0;	// Initial target 'radial' current value
+	motor_s.fw_on = 0;	// Reset flag to NO Field Weakening 
 
 	motor_s.filt_veloc = (motor_s.est_veloc << VEL_SCALE_BITS); // Upscaled Estimated velocity
 	motor_s.coef_vel_err = 0; // Velocity filter coefficient diffusion error
@@ -991,6 +992,16 @@ if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[Q_ROTA].req_closed_V ); // 
 		} // if (0 > motor_s.targ_vel)
 
 		targ_Iq = IQ_LIM; // Limit target Iq value
+
+		// Check if first time Field-Weakening Applied
+		if (0 == motor_s.fw_on)
+		{
+			acquire_lock(); 
+			printint(motor_s.id); printstrln(": FW Required");
+			release_lock(); //MB~
+
+			motor_s.fw_on = 1;	// Set flag to Field Weakening On
+		} // if (0 == motor_s.fw_on)
 	} // if ((targ_Iq > IQ_LIM)
 
 #ifdef MB // Iq PID tuning
@@ -1267,6 +1278,7 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 					motor_s.vect_data[Q_ROTA].start_open_V = motor_s.vect_data[Q_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
 	
 	//MB~ acquire_lock(); printstrln("FOC"); release_lock(); //MB~
+					motor_s.fw_on = 0;	// Reset flag to NO Field Weakening 
 					motor_s.state = FOC; 
 				} // if ((QEI_PER_PAIR << 1) == abs(motor_s.open_theta))
 			} // if (WAIT_STOP != motor_s.state)
@@ -1313,6 +1325,7 @@ acquire_lock(); printint(motor_s.id); printstr(": WAIT_START CNTS="); printintln
 			{ // No longer stalled
 				motor_s.cnts[FOC] = 0; // Initialise FOC-state counter 
 
+				motor_s.fw_on = 0;	// Reset flag to NO Field Weakening 
 				motor_s.state = FOC; // Switch to main FOC state
 			} // else !(motor_s.meas_speed < motor_s.stall_speed) 
 		break; // case STALL

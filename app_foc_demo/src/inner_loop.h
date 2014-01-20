@@ -358,13 +358,13 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int open_theta;	// Open-loop theta value
 	int foc_theta;	// FOC theta value
 	int pid_preset; // Flag set if PID needs preseting
-	int pid_clear; // Flag set if PID sum needs clearing
 	int search_theta;	// theta value at end of 'SEARCH state'
 	int trans_theta;	// theta value at end of 'TRANSIT state'
 	int trans_cycles;	// Number of electrical cycles spent in 'TRANSIT state'
 	int trans_cnt;	// Incremented every time trans_theta is updated
 	int blend_weight;	// Current value of blending weight
 	int blend_inc;	// Increment to blending weight
+	int fw_on; // Flag set if Field Weakening required
 
 	int iters; // Iterations of inner_loop
 	unsigned id; // Unique Motor identifier e.g. 0 or 1
