@@ -1188,9 +1188,7 @@ static void check_for_correct_spin( // Check motor is spinning in correct direct
 		{
 			acquire_lock(); 
 			printint(motor_s.id); 
-			printstr(": Start-Up Spin ="); printint(motor_s.est_veloc); 
-			printstr(" tVel "); printint(motor_s.targ_vel); 
-			printstr(" StallSpeed "); printintln(motor_s.stall_speed); 
+			printstr(": Start-Up Spin ="); printintln(motor_s.est_veloc); 
 			release_lock(); //MB~
 		} // else !(FOC == motor_s.state)
 
@@ -1317,7 +1315,7 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 					motor_s.err_data.line[STALLED_ERR] = __LINE__;
 					motor_s.cnts[WAIT_START] = 0; // Initialise stop-state counter 
 
-acquire_lock(); printint(motor_s.id); printstr(": WAIT_START CNTS="); printintln(motor_s.cnts[STALL]); release_lock(); //MB~
+acquire_lock(); printint(motor_s.id); printstr(": WARNING Stalled Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
 					motor_s.state = WAIT_START; // Switch to stop state
 				} // if (motor_s.cnts[STALL] > STALL_TRIP_COUNT) 
 			} // if (motor_s.meas_speed < motor_s.stall_speed) 
@@ -1982,7 +1980,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			{
 				motor_s.xscope = 1; // Switch ON xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
-// motor_s.xscope = 0; // MB~ Crude Switch
+motor_s.xscope = 0; // MB~ Crude Switch
 
 			collect_sensor_data( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
 
