@@ -28,7 +28,7 @@
 #define LO_SPEED_INC 50
 #define HI_SPEED_INC 100
 
-#define START_MOTOR 0
+#define START_MOTOR 0 //MB~
 
 /*****************************************************************************/
 static void wait(unsigned millis){
@@ -235,25 +235,22 @@ static void dbg_motor(
 	wait(3000);
 	stop(c_speed);
 
-	printstrln("Test 1: LDO_MOTOR_STARTUP_PLUS (10s)");
+while(1)
+{
+	printstrln("Positive Start");
 	set_both_motors_speed(c_speed, EASY_SPEED);
 	wait(3000);
 	print_speed( c_speed );
 
-	set_both_motors_speed(c_speed, MAX_TEST_RPM);
-	wait(3000);
-	print_speed( c_speed );
-	printstrln("End of Test 1");
-
 	stop(c_speed);
 
-	printstrln("Test 2: LDO_MOTOR_STARTUP_MINUS (10s)");
+	printstrln("Negative Start");
 	set_both_motors_speed(c_speed, -EASY_SPEED);
 	wait(3000);
 	print_speed( c_speed );
-	printstrln("End of Test 2");
 
-	while(1);
+	stop(c_speed);
+} // while
 
 	return;
 } // dbg_motor
@@ -410,7 +407,7 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 3;
 
-test_motor( c_speed );
+test_motor( c_speed ); //MB~
 //	dbg_motor( c_speed ); //MB~
 						break; // case 4
 #endif // ( 1 == ASJ)

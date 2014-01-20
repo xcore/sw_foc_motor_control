@@ -114,7 +114,7 @@
 #define INIT_THETA 0 // Initial start-up angle
 
 
-#define START_VOLT_OPENLOOP 3000 // Voltage (Vh) magnitude for start of open-loop state
+#define START_VOLT_OPENLOOP 2000 // Voltage (Vh) magnitude for start of open-loop state
 #define START_GAMMA_OPENLOOP 64  // Voltage angle for start of open-loop state (ie Vq = Vh.cos(angle)
 
 #define END_VOLT_OPENLOOP 3000 // 3000  Voltage (Vh) magnitude for end of open-loop state

@@ -960,10 +960,8 @@ if (motor_s.xscope) xscope_int( 6 ,motor_s.pid_veloc ); // MB~
 	 * Also, each time targ_Id is changed, Iq takes about 1 second to stabilise 
    */
 
-// if (motor_s.xscope) xscope_int( 12 ,motor_s.vect_data[Q_ROTA].req_closed_V ); //MB~ 
 if (motor_s.xscope) xscope_int( 2 ,motor_s.vect_data[Q_ROTA].req_closed_V ); // MB~
 	targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V) + HALF_LIN) >> LIN_BITS;
-// if (motor_s.xscope) xscope_int( 14 ,targ_Iq ); //MB~ 
 
 	// Clamp to sensible value
 	if (targ_Iq > (IQ_LIM << 1)) targ_Iq = (IQ_LIM << 1);
@@ -1139,6 +1137,56 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 #endif //(1 == GAMMA_SWEEP)
 
 } // calc_foc_pwm
+/*****************************************************************************/
+static void check_for_correct_spin( // Check motor is spinning in correct direction
+	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
+)
+{
+	int wrong_spin = 0; // Preset flag to NOT wrong spin direction 
+
+
+	// check for correct spin direction
+	if (0 > motor_s.targ_vel)
+	{ // Should be spinning in negative direction
+		if (MIN_SPEED < motor_s.est_veloc)
+		{	// Spinning in wrong direction
+			wrong_spin = 1;  // Set flag to wrong spin direction 
+		} // if (motor_s.stall_speed < motor_s.est_veloc)
+	} // if (0 > motor_s.targ_vel)
+	else
+	{ // Should be spinning in positive direction 
+		if (MIN_SPEED < -motor_s.est_veloc)
+		{	// Spinning in wrong direction
+			wrong_spin = 1;  // Set flag to wrong spin direction 
+		} // if (motor_s.stall_speed < -motor_s.est_veloc)
+	} // else !(0 > motor_s.targ_vel)
+
+	if (1 == wrong_spin)
+	{
+		motor_s.err_data.err_flgs |= (1 << DIRECTION_ERR);
+		motor_s.err_data.line[DIRECTION_ERR] = __LINE__;
+		motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
+	
+		if (FOC == motor_s.state)
+		{
+			acquire_lock(); 
+			printint(motor_s.id); printstr(": WARNING: Wrong FOC Spin ="); printintln(motor_s.est_veloc); 
+			release_lock(); //MB~
+		} // if (FOC == motor_s.state)
+		else
+		{
+			acquire_lock(); 
+			printint(motor_s.id); 
+			printstr(": Start-Up Spin ="); printint(motor_s.est_veloc); 
+			printstr(" tVel "); printint(motor_s.targ_vel); 
+			printstr(" StallSpeed "); printintln(motor_s.stall_speed); 
+			release_lock(); //MB~
+		} // else !(FOC == motor_s.state)
+
+		motor_s.state = WAIT_STOP; // Switch to stop state
+	} // if (1 == wrong_spin)
+
+} // check_for_correct_spin
 /*****************************************S************************************/
 static void update_motor_state( // Update state of motor based on motor sensor data
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
@@ -1154,9 +1202,6 @@ static void update_motor_state( // Update state of motor based on motor sensor d
  * If too long a time is spent in the STALL state, this becomes an error and the motor is stopped.
  */
 {
-	int wrong_spin; // Flag set if wrong spin direction
-
-
 	// Update motor state based on new sensor data
 	switch( motor_s.state )
 	{
@@ -1203,21 +1248,28 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 
 //MB~ acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
 				motor_s.state = TRANSIT;
+
+				check_for_correct_spin( motor_s );
 			} // if (QEI_PER_PAIR == abs(motor_s.open_theta))
 		break; // case SEARCH 
 	
 		case TRANSIT : // Transit between open-loop and FOC, and update motor state
  			calc_transit_pwm( motor_s );
 
-			// Check if end of TRANSIT state
-			if (motor_s.trans_theta == abs(motor_s.open_theta))
-			{
-				motor_s.vect_data[D_ROTA].start_open_V = motor_s.vect_data[D_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
-				motor_s.vect_data[Q_ROTA].start_open_V = motor_s.vect_data[Q_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
+			check_for_correct_spin( motor_s );
 
-//MB~ acquire_lock(); printstrln("FOC"); release_lock(); //MB~
-				motor_s.state = FOC; 
-			} // if ((QEI_PER_PAIR << 1) == abs(motor_s.open_theta))
+			// Check if end of TRANSIT state
+			if (WAIT_STOP != motor_s.state)
+			{
+				if (motor_s.trans_theta == abs(motor_s.open_theta))
+				{
+					motor_s.vect_data[D_ROTA].start_open_V = motor_s.vect_data[D_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
+					motor_s.vect_data[Q_ROTA].start_open_V = motor_s.vect_data[Q_ROTA].end_open_V; // NB Correct for any rounding inaccuracy from TRANSIT state
+	
+	//MB~ acquire_lock(); printstrln("FOC"); release_lock(); //MB~
+					motor_s.state = FOC; 
+				} // if ((QEI_PER_PAIR << 1) == abs(motor_s.open_theta))
+			} // if (WAIT_STOP != motor_s.state)
 		break; // case TRANSIT
 	
 		case FOC : // Normal FOC state
@@ -1227,48 +1279,17 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 				calc_foc_pwm( motor_s );
 			} // if (motor_s.diff_ang != 0)
 
-			// Check for a stall
-			wrong_spin = 0; // preset flag to NOT wrong spin direction 
+			check_for_correct_spin( motor_s );
 
-			// check for correct spin direction
-      if (0 > motor_s.half_veloc)
+			if (WAIT_STOP != motor_s.state)
 			{
-				if (motor_s.est_veloc > -motor_s.half_veloc)
-				{	// Spinning in wrong direction
-					wrong_spin = 1;  // Set flag to wrong spin direction 
-				} // if (motor_s.est_veloc > -motor_s.half_veloc)
-      } // if (0 > motor_s.half_veloc)
-			else
-			{
-	      if (0 < motor_s.half_veloc)
+				if (motor_s.meas_speed < motor_s.stall_speed) 
 				{
-					if (motor_s.est_veloc < -motor_s.half_veloc)
-					{	// Spinning in wrong direction
-						wrong_spin = 1;  // Set flag to wrong spin direction 
-					} // if (motor_s.est_veloc < -motor_s.half_veloc)
-	      } // if (0 < motor_s.half_veloc)
-      } // if (0 > motor_s.half_veloc)
+					motor_s.cnts[STALL] = 0; // Initialise stall-state counter 
 
-			if (1 == wrong_spin)
-			{
-				motor_s.err_data.err_flgs |= (1 << DIRECTION_ERR);
-				motor_s.err_data.line[DIRECTION_ERR] = __LINE__;
-				motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
-	
-acquire_lock(); 
-printstr(" EV="); printint(motor_s.est_veloc); 
-printstr(" HV="); printintln(motor_s.half_veloc); 
-release_lock(); //MB~
-acquire_lock(); printint(motor_s.id); printstr(": WAIT_STOP: Spin="); printintln(motor_s.est_veloc); release_lock(); //MB~
-				motor_s.state = WAIT_STOP; // Switch to stop state
-			} // if (1 == wrong_spin)
-
-			if (motor_s.meas_speed < motor_s.stall_speed) 
-			{
-				motor_s.cnts[STALL] = 0; // Initialise stall-state counter 
-
-				motor_s.state = STALL; // Switch to stall state
-			} // if (motor_s.meas_speed < motor_s.stall_speed) 
+					motor_s.state = STALL; // Switch to stall state
+				} // if (motor_s.meas_speed < motor_s.stall_speed) 
+			} // if (WAIT_STOP != motor_s.state)
 		break; // case FOC
 	
 		case STALL : // state where motor stalled
@@ -1717,7 +1738,7 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 		motor_s.err_data.err_flgs |= (1 << SPEED_ERR);
 		motor_s.err_data.line[SPEED_ERR] = __LINE__;
 
-acquire_lock(); printint(motor_s.id); printstr(": WAIT_STOP: Max.Vel="); printintln(motor_s.est_veloc); release_lock(); //MB~
+acquire_lock(); printint(motor_s.id); printstr("WARNING: Safe Speed Exceeded="); printintln(motor_s.est_veloc); release_lock(); //MB~
 		motor_s.cnts[WAIT_STOP] = 0; // Initialise stop-state counter 
 		motor_s.state = WAIT_STOP; // Switch to pause state
 		return;
