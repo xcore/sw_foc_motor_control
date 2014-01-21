@@ -30,7 +30,7 @@
 #define HI_SPEED_INC 100
 
 #define FIRST_MOTOR 0 //MB~
-#define LAST_MOTOR 1 //MB~
+#define LAST_MOTOR 0 //MB~
 
 /*****************************************************************************/
 static void wait(unsigned millis){

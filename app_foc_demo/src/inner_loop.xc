@@ -504,6 +504,8 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 } // MB~
 #endif //MB~
 
+if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.vect_data[D_ROTA].est_I ); //MB~
+if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I ); //MB~
 } // estimate_Iq_using_transforms
 /*****************************************************************************/
 static unsigned convert_volts_to_pwm_width( // Converted voltages to PWM pulse-widths
@@ -807,8 +809,6 @@ if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
 // if (motor_s.vect_data[Q_ROTA].req_closed_V < 0) motor_s.vect_data[Q_ROTA].req_closed_V = 0;
 
 #pragma xta label "foc_loop_id_iq_pid"
-
-	estimate_Iq_using_transforms( motor_s );
 
 	// WARNING: Dividing by a larger amount, may switch the sign of the PID error, and cause instability
 	targ_Iq = (motor_s.vect_data[Q_ROTA].req_closed_V + 4) >> 3; // Scale requested value to be of same order as estimated value
@@ -1686,6 +1686,9 @@ motor_s.dbg_tmr :> motor_s.dbg_end; //MB~
 	// Get ADC sensor data here, in gap between PWM trigger and ADC capture
 	foc_adc_get_parameters( motor_s.adc_params ,c_adc_cntrl );
 
+	// Estimate Id and Iq from ADC sensor data
+	estimate_Iq_using_transforms( motor_s );
+
 #ifdef MB
 if (ADC_UPSCALE_BITS > 0)
 {
@@ -1911,8 +1914,6 @@ acquire_lock(); printint(motor_s.id); printstrln(": STOP DEMO"); release_lock();
 
 		}	// select
 
-if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.vect_data[D_ROTA].est_I );
-if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I );
 // acquire_lock(); printint(motor_s.id); printstr(": MS="); printintln(motor_s.state); release_lock(); //MB~
 		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
 if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.req_veloc ); //MB~
