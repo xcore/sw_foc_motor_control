@@ -142,18 +142,9 @@ static void init_pid_data( // Initialise PID data
 	 * Therefore in the init_pid_consts interface K_i is upscaled by 2^PID_CONST_RES to compensate
 	 */
 	// Regular-Sampling mode 
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][ID_PID] ,1.0 ,0.0058 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][IQ_PID] ,8.0 ,0.017 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[TRANSFORM][SPEED_PID]	,4.0 ,0.00012 ,0.0 );
-
-// MB~ EXTREMA and VELOCITY need a re-tune
-	init_int_pid_consts( motor_s.pid_consts[EXTREMA][ID_PID] ,0 ,0 ,0 );
-	init_int_pid_consts( motor_s.pid_consts[EXTREMA][IQ_PID]		,400000 ,256 ,0 );
-	init_int_pid_consts( motor_s.pid_consts[EXTREMA][SPEED_PID]	,20000	,3 ,0 );
-
-	init_int_pid_consts( motor_s.pid_consts[VELOCITY][ID_PID] ,0 ,0 ,0 );
-	init_int_pid_consts( motor_s.pid_consts[VELOCITY][IQ_PID]		,12000 ,8 ,0 );
-	init_int_pid_consts( motor_s.pid_consts[VELOCITY][SPEED_PID]	,11200 ,8 ,0 );
+	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,1.0 ,0.0058 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,8.0 ,0.017 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,4.0 ,0.00012 ,0.0 );
 
 	motor_s.pid_Id = 0;	// Output from radial current PID
 	motor_s.pid_Iq = 0;	// Output from tangential current PID
@@ -368,7 +359,6 @@ static void init_motor( // initialise data structure for one motor
 
 	motor_s.id = motor_id; // Unique Motor identifier e.g. 0 or 1
 
-	motor_s.Iq_alg = TRANSFORM; // [TRANSFORM VELOCITY EXTREMA] Assign algorithm used to estimate coil current Iq (and Id)
 	motor_s.xscope = 1; 	// Switch on xscope print flag
 	motor_s.trans_cycles = 1; // Default number of electrical cycles spent in TRANSIT state
 	motor_s.half_qei = (QEI_PER_REV >> 1); // Half No. of QEI points per revolution
@@ -434,119 +424,6 @@ static void error_pwm_values( // Set PWM values to error condition
 		pwm_vals[phase_cnt] = -1;
 	} // for phase_cnt
 } // error_pwm_values
-/*****************************************************************************/
-static int filter_adc_extrema( 		// Smooths adc extrema values using low-pass filter
-	MOTOR_DATA_TYP &motor_s,	// reference to structure containing motor data
-	ADC_TYP extreme_val						// Either a minimum or maximum ADC value
-) // Returns filtered output value
-/* This is a 1st order IIR filter, it is configured as a low-pass filter, 
- * The input value is up-scaled, to allow integer arithmetic to be used.
- * The output mean value is down-scaled by the same amount.
- * Error diffusion is used to keep control of systematic quantisation errors.
- */
-{
-	int scaled_inp = (extreme_val << XTR_SCALE_BITS); // Upscaled QEI input value
-	int diff_val; // Difference between input and filtered output
-	int increment; // new increment to filtered output value
-	ADC_TYP out_val; // filtered output value
-
-
-	// Form difference with previous filter output
-	diff_val = scaled_inp - motor_s.filt_adc;
-
-	// Multiply difference by filter coefficient (alpha)
-	diff_val += motor_s.coef_err; // Add in diffusion error;
-	increment = (diff_val + XTR_HALF_COEF) >> XTR_COEF_BITS ; // Multiply by filter coef (with rounding)
-	motor_s.coef_err = diff_val - (increment << XTR_COEF_BITS); // Evaluate new quantisation error value 
-
-	motor_s.filt_adc += increment; // Update (up-scaled) filtered output value
-
-	// Update mean value by down-scaling filtered output value
-	motor_s.filt_adc += motor_s.scale_err; // Add in diffusion error;
-	out_val = (motor_s.filt_adc + XTR_HALF_SCALE) >> XTR_SCALE_BITS; // Down-scale
-	motor_s.scale_err = motor_s.filt_adc - (out_val << XTR_SCALE_BITS); // Evaluate new remainder value 
-
-	return out_val; // return filtered output value
-} // filter_adc_extrema
-/*****************************************************************************/
-static ADC_TYP smooth_adc_maxima( // Smooths maximum ADC values
-	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
-)
-{
-	ADC_TYP max_val = motor_s.adc_params.vals[0]; // Initialise maximum to first phase
-	ADC_TYP out_val; // filtered output value
-	int phase_cnt; // phase counter
-
-
-	for (phase_cnt = 1; phase_cnt < NUM_ADC_PHASES; phase_cnt++)
-	{ 
-		if (max_val < motor_s.adc_params.vals[phase_cnt]) max_val = motor_s.adc_params.vals[phase_cnt]; // Update maximum
-	} // for phase_cnt
-
-	out_val = filter_adc_extrema( motor_s ,max_val );
-
-	return out_val;
-} // smooth_adc_maxima
-/*****************************************************************************/
-static ADC_TYP smooth_adc_minima( // Smooths minimum ADC values
-	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
-)
-{
-	ADC_TYP min_val = motor_s.adc_params.vals[0]; // Initialise minimum to first phase
-	ADC_TYP out_val; // filtered output value
-	int phase_cnt; // phase counter
-
-
-	for (phase_cnt = 1; phase_cnt < NUM_ADC_PHASES; phase_cnt++)
-	{ 
-		if (min_val > motor_s.adc_params.vals[phase_cnt]) min_val = motor_s.adc_params.vals[phase_cnt]; // Update minimum
-	} // for phase_cnt
-
-	out_val = filter_adc_extrema( motor_s ,min_val );
-
-	return out_val;
-} // smooth_adc_minima
-/*****************************************************************************/
-static void estimate_Iq_from_ADC_extrema( // Estimate Iq value from ADC signals. NB Assumes requested Id is Zero
-	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
-)
-{
-	int out_val; // Measured Iq output value
-
-
-	if (0 > motor_s.targ_vel)
-	{ // Iq is negative for negative velocity
-		out_val = smooth_adc_minima( motor_s );
-	} // if (0 > motor_s.targ_vel)
-	else
-	{ // Iq is positive for positive velocity
-		out_val = smooth_adc_maxima( motor_s );
-	} // if (0 > motor_s.targ_vel)
-
-	motor_s.vect_data[Q_ROTA].est_I = out_val;
-	motor_s.vect_data[D_ROTA].est_I = 0;
-} // estimate_Iq_from_ADC_extrema
-/*****************************************************************************/
-static void estimate_Iq_from_velocity( // Estimates tangential coil current from measured velocity
-	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
-)
-/* This function uses the following relationship
- * est_Iq = GRAD * sqrt( meas_veloc )   where GRAD was found by experiment.
- * WARNING: GRAD will be different for different motors.
- */
-{
-	int scaled_vel = VEL_GRAD * motor_s.est_veloc; // scaled angular velocity
-
-
-	if (0 > motor_s.est_veloc)
-	{
-		motor_s.vect_data[Q_ROTA].est_I = -sqrtuint( -scaled_vel );
-	} // if (0 > motor_s.est_veloc)
-	else
-	{
-		motor_s.vect_data[Q_ROTA].est_I = sqrtuint( scaled_vel );
-	} // if (0 > motor_s.est_veloc)
-} // estimate_Iq_from_velocity
 /*****************************************************************************/
 static void filter_current_component( // Filters estimated current component
 	ROTA_DATA_TYP &vect_data_s // Reference to structure containing data for one rotational vector component
@@ -873,7 +750,7 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	// Check if PID's need presetting
 	if (motor_s.pid_preset)
 	{
-		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.old_veloc ,motor_s.targ_vel ,motor_s.est_veloc );
+		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.old_veloc ,motor_s.targ_vel ,motor_s.est_veloc );
 	}; // if (motor_s.pid_preset)
 
 #ifdef MB
@@ -901,7 +778,7 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 
 if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.diff_ang ); //MB~
 // if (motor_s.xscope) xscope_int( (5-motor_s.id) ,(motor_s.targ_vel - motor_s.est_veloc) ); //MB~
-	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[motor_s.Iq_alg][SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
+	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
 if (motor_s.xscope) xscope_int( (11-motor_s.id) ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
 
 	// Calculate velocity PID output
@@ -931,33 +808,10 @@ if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
 
 #pragma xta label "foc_loop_id_iq_pid"
 
-	// Select algorithm for estimateing coil current Iq (and Id)
-	// WARNING: Changing algorithm will require re-tuning of PID values
-	switch ( motor_s.Iq_alg )
-	{
-		case TRANSFORM : // Use Park/Clarke transforms
-			estimate_Iq_using_transforms( motor_s );
+	estimate_Iq_using_transforms( motor_s );
 
-			// WARNING: Dividing by a larger amount, may switch the sign of the PID error, and cause instability
-			targ_Iq = (motor_s.vect_data[Q_ROTA].req_closed_V + 4) >> 3; // Scale requested value to be of same order as estimated value
-		break; // case TRANSFORM
-	
-		case EXTREMA : // Use Extrema of measured ADC values
-			estimate_Iq_from_ADC_extrema( motor_s );
-			targ_Iq = (motor_s.vect_data[Q_ROTA].req_closed_V + 16) >> 5; // Scale requested value to be of same order as estimated value
-		break; // case EXTREMA 
-	
-		case VELOCITY : // Use measured velocity
-			estimate_Iq_from_velocity( motor_s );
-			targ_Iq = motor_s.vect_data[Q_ROTA].req_closed_V; // NB No scaling required
-		break; // case VELOCITY 
-	
-    default: // Unsupported
-			printstr("ERROR: Unsupported Iq Estimation algorithm > "); 
-			printintln( motor_s.Iq_alg );
-			assert(0 == 1);
-    break;
-	} // switch (motor_s.Iq_alg)
+	// WARNING: Dividing by a larger amount, may switch the sign of the PID error, and cause instability
+	targ_Iq = (motor_s.vect_data[Q_ROTA].req_closed_V + 4) >> 3; // Scale requested value to be of same order as estimated value
 
 	/* Here we would like to set targ_Id = 0, for max. efficiency.
 	 * However, some motors can NOT reach 4000 RPM, no matter how much Vq is increased.
@@ -1049,18 +903,18 @@ if (motor_s.xscope) xscope_int( 0 ,targ_Id ); // MB~
 	// Check if PID's need presetting
 	if (motor_s.pid_preset)
 	{
-//MB~	preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,(motor_s.vect_data[D_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
-//MB~	preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,(motor_s.vect_data[Q_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
-		preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,motor_s.vect_data[D_ROTA].end_open_V ,targ_Id ,(motor_s.vect_data[D_ROTA].est_I >> ADC_UPSCALE_BITS) );
-		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,(motor_s.vect_data[Q_ROTA].est_I >> ADC_UPSCALE_BITS) );
+//MB~	preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,(motor_s.vect_data[D_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
+//MB~	preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,(motor_s.vect_data[Q_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
+		preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,motor_s.vect_data[D_ROTA].end_open_V ,targ_Id ,(motor_s.vect_data[D_ROTA].est_I >> ADC_UPSCALE_BITS) );
+		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,(motor_s.vect_data[Q_ROTA].est_I >> ADC_UPSCALE_BITS) );
 	}; // if (motor_s.pid_preset)
 
 // if (motor_s.xscope) xscope_int( 8 ,(targ_Iq - ((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~
 // if (motor_s.xscope) xscope_int( 8 ,(targ_Id - ((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~
-//MB~	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I ,abs(motor_s.diff_ang) );
-//MB~	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I ,abs(motor_s.diff_ang) );
-		corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[motor_s.Iq_alg][ID_PID] ,targ_Id ,((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
-		corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[motor_s.Iq_alg][IQ_PID] ,targ_Iq ,((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
+//MB~	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I ,abs(motor_s.diff_ang) );
+//MB~	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I ,abs(motor_s.diff_ang) );
+		corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,targ_Id ,((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
+		corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
 
 // if (motor_s.xscope) xscope_int( 0 ,motor_s.pid_regs[IQ_PID].sum_err  ); //MB~
 // if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[ID_PID].sum_err  ); //MB~
@@ -1361,7 +1215,7 @@ if (motor_s.ws_cnt > 0)
 				} // if ((QEI_PER_PAIR << 1) == abs(motor_s.open_theta))
 			} // if (WAIT_STOP != motor_s.state)
 		break; // case TRANSIT
-	
+
 		case FOC : // Normal FOC state
 			// Check if QEI data changed since previous update
 			if (motor_s.diff_ang != 0)

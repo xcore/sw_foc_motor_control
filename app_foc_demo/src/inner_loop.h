@@ -242,15 +242,6 @@
 #pragma xta command "analyze loop foc_loop"
 #pragma xta command "set required - 40 us"
 
-/** Different Estimation algorithms for coil currents Iq (and Id)*/
-typedef enum IQ_EST_TAG
-{
-  TRANSFORM = 0,	// Uses Park/Clarke transforms on measured ADC coil currents
-  EXTREMA,				// Uses Extrema of measured ADC coil currents
-  VELOCITY,				// Uses measured velocity
-  NUM_IQ_ESTIMATES    // Handy Value!-)
-} IQ_EST_TYP;
-
 /** Different Motor Phases */
 typedef enum MOTOR_STATE_ETAG
 {
@@ -320,7 +311,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	HALL_PARAM_TYP hall_params; // Structure containing measured data from Hall sensors
 	PWM_COMMS_TYP pwm_comms; // Structure containing PWM communication data between Client/Server.
 	QEI_PARAM_TYP qei_params; // Structure containing measured data from QEI sensors
-	PID_CONST_TYP pid_consts[NUM_IQ_ESTIMATES][NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
+	PID_CONST_TYP pid_consts[NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
 	ERR_DATA_TYP err_data; // Structure containing data for error-handling
 	ROTA_DATA_TYP vect_data[NUM_ROTA_COMPS]; // Array of structures holding data for each rotating vector component
@@ -372,7 +363,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	unsigned id; // Unique Motor identifier e.g. 0 or 1
 	unsigned prev_hall; // previous hall state value
 	unsigned end_hall; // hall state at end of cycle. I.e. next value is first value of cycle (001)
-	int Iq_alg;	// Algorithm used to estimate coil current Iq (and Id)
 	unsigned xscope;	// Flag set when xscope output required
 
 	int qei_offset;	// Phase difference between the QEI origin and PWM theta origin
