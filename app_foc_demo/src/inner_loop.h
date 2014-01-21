@@ -338,6 +338,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int prev_veloc;	// previous velocity
 	unsigned est_period;	// Estimate of QEI period: ticks per QEI position (in Reference Frequency Cycles)
 	unsigned filt_period; // Filtered QEI period
+	unsigned restart_time; // Re-start time-stamp
 	int prev_period;	// previous value of QEI period
 	int open_period;	// Time between updates PWM data during open-loop phase
 	int open_uq_inc;	// Increment to Upscaled theta value during open-loop phase
@@ -365,6 +366,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int blend_weight;	// Current value of blending weight
 	int blend_inc;	// Increment to blending weight
 	int fw_on; // Flag set if Field Weakening required
+	int ws_cnt; // Wrong-Spin count //MB~
 
 	int iters; // Iterations of inner_loop
 	unsigned id; // Unique Motor identifier e.g. 0 or 1

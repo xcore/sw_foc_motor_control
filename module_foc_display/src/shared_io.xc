@@ -24,11 +24,13 @@
 
 #define MAX_TEST_RPM 4000
 #define MIN_TEST_RPM 400
+#define SPEED_2000 2000
 #define EASY_SPEED 1000
 #define LO_SPEED_INC 50
 #define HI_SPEED_INC 100
 
-#define START_MOTOR 0 //MB~
+#define FIRST_MOTOR 0 //MB~
+#define LAST_MOTOR 1 //MB~
 
 /*****************************************************************************/
 static void wait(unsigned millis){
@@ -43,7 +45,7 @@ static void stop(chanend c_speed[]){
 	int motor_cnt;
 
 
-	for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
 	{
 		c_speed[motor_cnt] <: IO_CMD_SET_SPEED;
 		c_speed[motor_cnt] <: 0;
@@ -57,7 +59,7 @@ static void set_both_motors_speed(chanend c_speed[], int rpm){
 	int motor_cnt;
 
 
-	for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
 	{
 		c_speed[motor_cnt] <: IO_CMD_SET_SPEED;
 		c_speed[motor_cnt] <: rpm;
@@ -71,7 +73,7 @@ static void print_speed(chanend c_speed[])
 	int motor_cnt;
 
 
-	for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
 	{
 		c_speed[motor_cnt] <: IO_CMD_GET_IQ;
 		c_speed[motor_cnt] :> meas_vel;
@@ -238,14 +240,14 @@ static void dbg_motor(
 while(1)
 {
 	printstrln("Positive Start");
-	set_both_motors_speed(c_speed, EASY_SPEED);
+	set_both_motors_speed(c_speed ,MAX_TEST_RPM );
 	wait(3000);
 	print_speed( c_speed );
 
 	stop(c_speed);
 
 	printstrln("Negative Start");
-	set_both_motors_speed(c_speed, -EASY_SPEED);
+	set_both_motors_speed(c_speed ,-MAX_TEST_RPM );
 	wait(3000);
 	print_speed( c_speed );
 
@@ -268,7 +270,7 @@ static void update_speed_control( // Updates the speed control loop
 
 
 	// Loop through motors
-	for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++) 
 	{
 		c_speed[motor_cnt] <: cmd_id;
 	} // for motor_cnt
@@ -298,7 +300,7 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 
 
 	// Initialise array of old measured speeds
-	for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
 	{
 		old_meas_speed[motor_cnt]=0;
 	} // for motor_cnt
@@ -325,7 +327,7 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 				speed_change = 0; // Preset to speed change
 
 				/* Get the motor speeds from channels. NB Do this as quickly as possible */
-				for (motor_cnt=START_MOTOR; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+				for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++) 
 				{
 					c_speed[motor_cnt] <: IO_CMD_GET_IQ;
 					c_speed[motor_cnt] :> new_meas_speed[motor_cnt];
