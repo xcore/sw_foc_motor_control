@@ -67,6 +67,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.pin_changes = 0; // NB Initially this is used to count input-pin changes
 	inp_qei_s.id = inp_id; // Assign unique motor identifier
 	inp_qei_s.orig_cnt = 0; // Reset origin counter
+	inp_qei_s.period = QEI_PER_REV; // Preset No. of QEI phases changes between each origin detection
 	inp_qei_s.tot_ang = 0; // Reset counter indicating total angular position of motor (since time=0)
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
 	inp_qei_s.status_errs = 0; // Initialise counter for QEI status errors
@@ -189,8 +190,52 @@ static void update_origin_state( // Update origin state
 {
 	if (orig_flg)
 	{ // Reset position ( 'orig_flg' transition  0 --> 1 )
-		inp_qei_s.params.old_ang = inp_qei_s.tot_ang; // Store uncorrected total-angle
-		inp_qei_s.params.calib = 1; // Set flag indicating angular position is calibrated
+		int diff_ang = inp_qei_s.params.tot_ang - inp_qei_s.params.old_ang; // Calculate change in angle since last origin
+		int abs_diff = abs(diff_ang); // Magnitude of angle change since last origin
+
+
+		// Check if first origin
+		if (QEI_UNCALIBRATED == inp_qei_s.params.calib)
+		{
+			inp_qei_s.params.calib = QEI_CALIB_1ST; // Set flag indicating 1st Origin found
+		} // if (0 == inp_qei_s.params.calib)
+
+if (0 == inp_qei_s.id) xscope_int( 9 ,inp_qei_s.period ); // MB~
+
+		// Check for valid origin
+		if (PERIOD_DELTA_LIM < abs(abs_diff - inp_qei_s.period))
+		{
+			// Check if Conscutive origin
+			if (inp_qei_s.params.calib == QEI_CALIB_1ST)
+			{ // Not yet fully calibrated
+				inp_qei_s.params.old_ang = inp_qei_s.tot_ang; // Store new total-angle for next iteration
+			} // if (inp_qei_s.params.calib == QEI_CALIB_1ST)
+
+			return;
+		} // if (PERIOD_DELTA_LIM < abs(abs_diff - inp_qei_s.period))
+
+		inp_qei_s.params.calib = QEI_CALIB_DONE; // Set flag indicating 2 consecutive Origins found
+
+		// Allow slow change in estimated QEI period
+		if (inp_qei_s.period < abs_diff)
+		{
+			inp_qei_s.period++;
+
+			assert( inp_qei_s.period < (QEI_PER_REV << 1)); // MB~ Check for overflow
+		} // if (inp_qei_s.period < abs_diff)
+		else
+		{
+			if (inp_qei_s.period > abs_diff)
+			{
+				inp_qei_s.period--;
+
+				assert( inp_qei_s.period > 1); // MB~ Check for underflow
+			} // if (inp_qei_s.period > abs_diff)
+		} // else !(inp_qei_s.period < abs_diff)
+
+		// Round total angle to multiple of QEI_PER_REV;
+		inp_qei_s.tot_ang += HALF_QEI_CNT; // Add offset to get rounding
+		inp_qei_s.tot_ang &= ~QEI_REV_MASK; // Clear least significant bits
 
 		// Update origin counter
 		if (0 > inp_qei_s.ang_inc)
@@ -202,9 +247,7 @@ static void update_origin_state( // Update origin state
 			inp_qei_s.orig_cnt++; // Increment
 		} // else !(0 > inp_qei_s.ang_inc)
 
-		// Round total angle to multiple of QEI_PER_REV;
-		inp_qei_s.tot_ang += HALF_QEI_CNT; // Add offset to get rounding
-		inp_qei_s.tot_ang &= ~QEI_REV_MASK; // Clear least significant bits
+		inp_qei_s.params.old_ang = inp_qei_s.tot_ang; // Store new total-angle for next iteration
 	} // if (orig_flg)
 
 	return;

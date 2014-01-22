@@ -94,7 +94,7 @@
  * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
  * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
  */
-#define HALF_PERIOD 94 // (Min 87) // Use Slow clock for Regular-Sampling mode 
+#define HALF_PERIOD 94 // 94 (Min 87) // Use Slow clock for Regular-Sampling mode 
 #define TICKS_PER_SAMP (HALF_PERIOD << 1) // NB Max 510
 
 #define SAMP_LOOP_BITS 3
@@ -107,6 +107,8 @@
 #define QEI_HALF_VELOC (1 << (QEI_VELOC_BITS - 1)) 
 
 #define MAX_TIME_ERR 1 // Max. No of consecutive timing errors allowed 
+
+#define PERIOD_DELTA_LIM 5 // Allow a change in QEI PERIOD of upto 5 phases
 
 #define DBG_SIZ 384
 				
@@ -185,6 +187,7 @@ typedef struct QEI_DATA_TAG //
 	int tot_ang; // Counts total angular position of motor from time=0
 	ANG_INC_TYP ang_inc; // angular increment value
 	int orig_cnt; // Counts number of origin detections (revolutions) of motor
+	unsigned period; // number of QEI phases changes per revolution
 	int prev_orig; // Previous origin flag
 
 	int status_errs; // counter for invalid QEI status errors

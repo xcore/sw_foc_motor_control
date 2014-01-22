@@ -1394,7 +1394,7 @@ static void find_qei_origin( // Test QEI state for origin
 	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
 ) // Returns new motor-state
 {
-	if (motor_s.qei_params.calib) // Check if angular position origin found
+	if (QEI_UNCALIBRATED != motor_s.qei_params.calib) // Check if angular position origin found
 	{
  		// Check if we finished SEARCH state
 		if (SEARCH != motor_s.state)
@@ -1403,7 +1403,7 @@ static void find_qei_origin( // Test QEI state for origin
 		} // if (FOC == motor_s.state)
 
 		motor_s.qei_found = 1; // Set flag indicating QEI origin located
-	} // if (motor_s.qei_params.calib)
+	} // if (QEI_UNCALIBRATED != motor_s.qei_params.calib)
 
 } // find_qei_origin
 /*****************************************************************************/
@@ -1533,6 +1533,10 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 
 	motor_s.diff_ang = motor_s.qei_params.tot_ang - motor_s.raw_ang;
 
+	if ((motor_s.qei_found) && (abs(motor_s.diff_ang) > 10))
+	{
+		acquire_lock(); printstr("WARNING: Bad QEI Data, Angle Increment="); printintln(motor_s.diff_ang); release_lock(); //MB~
+	} // if ((motor_s.qei_found) && (abs(tmp_diff) > 10))
 
 // #ifdef MB
 if (0 == motor_s.id)
@@ -1549,7 +1553,7 @@ if (0 == motor_s.id)
 	{
 		if (2000 < abs(motor_s.est_veloc))
 		{
-			acquire_lock(); printstr("WARNING: Bad QEI Data, Angle Increment="); printintln(tmp_diff); release_lock(); //MB~
+			acquire_lock(); printstr("WARNING: BAD QEI Data, Angle Inc="); printintln(tmp_diff); release_lock(); //MB~
 		} // if (2000 < abs(motor_s.est_veloc))
 
 		if (tmp_diff < 0)
