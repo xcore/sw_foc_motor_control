@@ -360,7 +360,6 @@ static void service_input_pins( // Service detected change on input pins
 	orig_flg = inp_pins & QEI_ORIG_MASK; 		// Extract origin flag 
 	err_flg = !(inp_pins & QEI_NERR_MASK); 	// NB Bit_3=0, and err_flg=1, if error detected, 
 
-
 	// Check for first data
 	if (0 == inp_qei_s.pin_changes)
 	{ // Initialise 'previous data'
@@ -386,6 +385,7 @@ static void service_input_pins( // Service detected change on input pins
 		// Check for change in origin state
 		if (orig_flg != inp_qei_s.prev_orig)
 		{
+// if (0 == inp_qei_s.id) xscope_int( 1 ,(10 * (inp_pins & 0b1100))); // MB~
 			update_origin_state( inp_qei_s ,orig_flg ); // update origin state
 	
 			inp_qei_s.prev_orig = orig_flg; // Store origin flag value

@@ -237,21 +237,15 @@ static void dbg_motor(
 	wait(3000);
 	stop(c_speed);
 
-while(1)
-{
-	printstrln("Positive Start");
 	set_both_motors_speed(c_speed ,MAX_TEST_RPM );
 	wait(3000);
-	print_speed( c_speed );
-
 	stop(c_speed);
 
-	printstrln("Negative Start");
-	set_both_motors_speed(c_speed ,-MAX_TEST_RPM );
+while(1)
+{
+	set_both_motors_speed(c_speed ,MAX_TEST_RPM );
 	wait(3000);
-	print_speed( c_speed );
-
-	stop(c_speed);
+//	print_speed( c_speed );
 } // while
 
 	return;
@@ -409,8 +403,8 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 3;
 
-test_motor( c_speed ); //MB~
-//	dbg_motor( c_speed ); //MB~
+//	test_motor( c_speed ); //MB~
+dbg_motor( c_speed ); //MB~
 						break; // case 4
 #endif // ( 1 == ASJ)
 	

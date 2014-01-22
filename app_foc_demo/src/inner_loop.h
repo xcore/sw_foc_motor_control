@@ -144,8 +144,9 @@
 
 // Set-up defines for scaling ...
 #define SHIFT_20 20
-#define SHIFT_13 13
 #define SHIFT_16 16
+#define SHIFT_13 13
+#define SHIFT_12 12
 #define SHIFT_9   9
 
 #define PHASE_BITS SHIFT_20 // No of bits in phase offset scaling factor 
@@ -170,13 +171,15 @@
 #define VOLT_DIFF_MASK ((1 << VOLT_DIFF_BITS ) - 1) // Used to mask out Voltage difference bits
 
 // Linear conversion are used to relate 2 parameters. E.G. PWM Voltage applied to the coil current produced  (I = m*V + c)
-#define LIN_BITS SHIFT_16 // No of bits in Voltage to current scaling factor 
+#define S2V_BITS SHIFT_12 // No of bits in Voltage to current scaling factor 
+#define S2V_DENOM (1 << S2V_BITS)
+#define HALF_S2V (S2V_DENOM >> 1)
+#define S2V_MUX 2575 // Speed multiplier. NB 0.6286 ~= 2575/2^12 
 
-#define LIN_DENOM (1 << LIN_BITS)
-#define HALF_LIN (LIN_DENOM >> 1)
-#define S2V_MUX 41198 // Speed multiplier. NB 0.6286 ~= 41198/2^16 
+#define V2I_BITS SHIFT_16 // No of bits in Voltage to current scaling factor 
+#define V2I_DENOM (1 << V2I_BITS)
+#define HALF_V2I (V2I_DENOM >> 1)
 #define V2I_MUX 1341 // Voltage multiplier. NB 0.02045 ~= 1341/2^16 
-#define V2I_OFF (-10)  // Voltage Offset
 
 // Used to smooth demand Voltage
 #define SMOOTH_VOLT_INC 2 // Maximum allowed increment in demand voltage

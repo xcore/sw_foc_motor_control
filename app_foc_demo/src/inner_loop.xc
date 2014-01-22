@@ -504,7 +504,7 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 } // MB~
 #endif //MB~
 
-if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.vect_data[D_ROTA].est_I ); //MB~
+if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I ); //MB~
 if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I ); //MB~
 } // estimate_Iq_using_transforms
 /*****************************************************************************/
@@ -570,7 +570,7 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 	motor_s.vect_data[D_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[D_ROTA] );
 	motor_s.vect_data[Q_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[Q_ROTA] );
 if (motor_s.xscope) xscope_int( (1-motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
-if (motor_s.xscope) xscope_int( (9-motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
+if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
 
 	// Inverse park  [d, q, theta] --> [alpha, beta]
 	inverse_park_transform( alpha_set ,beta_set ,motor_s.vect_data[D_ROTA].set_V ,motor_s.vect_data[Q_ROTA].set_V 
@@ -743,9 +743,15 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	int corr_Id;	// Correction to radial current value
 	int corr_Iq;	// Correction to tangential current value
 	int corr_veloc;	// Correction to angular velocity
+	int abs_Id; // magnitude if target Id value;
 
 
 #pragma xta label "foc_loop_speed_pid"
+
+if (10 < abs(motor_s.diff_ang)) //MB~
+{
+	acquire_lock(); printstr(" WARNING: Bad QEI data: diff_ang="); printintln(motor_s.diff_ang); release_lock(); //MB~
+} // if (10 < abs(motor_s.diff_ang))
 
 	// Applying Speed PID.
 
@@ -778,10 +784,9 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	} //if (motor_s.iters > 25000)
 #endif //MB~
 
-if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.diff_ang ); //MB~
-// if (motor_s.xscope) xscope_int( (5-motor_s.id) ,(motor_s.targ_vel - motor_s.est_veloc) ); //MB~
+if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
-if (motor_s.xscope) xscope_int( (11-motor_s.id) ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
+// if (motor_s.xscope) xscope_int( (9-motor_s.id) ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
 
 	// Calculate velocity PID output
 	if (PROPORTIONAL)
@@ -797,7 +802,7 @@ if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
 
 	if (VELOC_CLOSED)
 	{ // Evaluate requested IQ from velocity PID
-		motor_s.vect_data[Q_ROTA].req_closed_V = ((S2V_MUX * motor_s.pid_veloc) + HALF_LIN) >> LIN_BITS;
+		motor_s.vect_data[Q_ROTA].req_closed_V = ((S2V_MUX * motor_s.pid_veloc) + HALF_S2V) >> S2V_BITS;
 
 		// Check for Negative spin direction
 		if (0 > motor_s.targ_vel)
@@ -811,7 +816,8 @@ if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
 #pragma xta label "foc_loop_id_iq_pid"
 
 	// WARNING: Dividing by a larger amount, may switch the sign of the PID error, and cause instability
-	targ_Iq = (motor_s.vect_data[Q_ROTA].req_closed_V + 4) >> 3; // Scale requested value to be of same order as estimated value
+if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.vect_data[Q_ROTA].req_closed_V ); // MB~
+	targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V) + HALF_V2I) >> V2I_BITS;
 
 	/* Here we would like to set targ_Id = 0, for max. efficiency.
 	 * However, some motors can NOT reach 4000 RPM, no matter how much Vq is increased.
@@ -821,18 +827,21 @@ if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
 	 * Also, each time targ_Id is changed, Iq takes about 1 second to stabilise 
    */
 
-if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].req_closed_V ); // MB~
-	targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V) + HALF_LIN) >> LIN_BITS;
-
-	// Clamp to sensible value
-	if (targ_Iq > (IQ_LIM << 1)) targ_Iq = (IQ_LIM << 1);
-
 	targ_Id = 0; // Preset target Id value to 'NO field-weakening'
 
 	if (targ_Iq > IQ_LIM)
 	{ // Apply field weakening
-		int abs_Id = (targ_Iq - IQ_LIM + IQ_ID_HALF) >> IQ_ID_BITS; // Calculate new absolute Id value, NB divide by IQ_ID_RATIO 
-
+		if (targ_Iq > (IQ_LIM << 1))
+		{
+			targ_Iq = (targ_Iq >> 1); // Limit target Iq value
+			abs_Id = (targ_Iq + IQ_ID_HALF) >> IQ_ID_BITS; // Calculate new absolute Id value, NB divide by IQ_ID_RATIO 
+		} // if (targ_Iq > (IQ_LIM << 1))
+		else
+		{
+			abs_Id = (targ_Iq - IQ_LIM + IQ_ID_HALF) >> IQ_ID_BITS; // Calculate new absolute Id value, NB divide by IQ_ID_RATIO 
+			targ_Iq = IQ_LIM; // Limit target Iq value
+		} // else !(targ_Iq > (IQ_LIM << 1))
+	
 		targ_Id = abs(motor_s.prev_Id); // Preset to magnitude of previous value
 		
 		// Add a bit of hysterisis. MB~ This can probably be removed when Id resolution improved
@@ -850,8 +859,6 @@ if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].req_cl
 		{ // Negative spin direction
 			targ_Id = -targ_Id; // targ_Id must be -ve for -ve spin
 		} // if (0 > motor_s.targ_vel)
-
-		targ_Iq = IQ_LIM; // Limit target Iq value
 
 		// Check if Field-Weakening Applied
 		if (0 != targ_Id)
@@ -896,8 +903,8 @@ if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].req_cl
 
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
 
-if (motor_s.xscope) xscope_int( 8 ,targ_Iq ); //MB~
-if (motor_s.xscope) xscope_int( 0 ,targ_Id ); // MB~
+if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); //MB~
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
 	// Apply PID control to Iq and Id
 
 	// Check if PID's need presetting
@@ -933,7 +940,7 @@ if (motor_s.xscope) xscope_int( 0 ,targ_Id ); // MB~
 	} // else !(PROPORTIONAL)
 
 // if (motor_s.xscope) xscope_int( 8 ,motor_s.pid_Id ); // MB~
-// if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_Iq ); // MB~
+// if (motor_s.xscope) xscope_int( (11-motor_s.id) ,motor_s.pid_Iq ); // MB~
 
 	if (IQ_ID_CLOSED)
 	{ // Update set DQ values
@@ -1182,10 +1189,6 @@ if (motor_s.ws_cnt > 0)
 				motor_s.qei_offset = (motor_s.open_theta - motor_s.tot_ang); // Difference betweene Open-loop and QEI angle
 
 //MB~ acquire_lock(); printstrln("TRANSIT");release_lock(); //MB~
-if (motor_s.ws_cnt > 0)
-{
-	acquire_lock(); printstr("SEARCH WS_cnt="); printintln(motor_s.ws_cnt); release_lock(); //MB~
-} // if (motor_s.ws_cnt > 0)
 				motor_s.state = TRANSIT;
 
 				motor_s.state = check_spin_direction( motor_s );
@@ -1207,10 +1210,6 @@ if (motor_s.ws_cnt > 0)
 	
 	//MB~ acquire_lock(); printstrln("FOC"); release_lock(); //MB~
 					motor_s.fw_on = 0;	// Reset flag to NO Field Weakening 
-if (motor_s.ws_cnt > 0)
-{
-	acquire_lock(); printstr("TRANS WS_cnt="); printintln(motor_s.ws_cnt); release_lock(); //MB~
-} // if (motor_s.ws_cnt > 0)
 					motor_s.state = FOC; 
 				} // if ((QEI_PER_PAIR << 1) == abs(motor_s.open_theta))
 			} // if (WAIT_STOP != motor_s.state)
@@ -1533,6 +1532,40 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
 
 	motor_s.diff_ang = motor_s.qei_params.tot_ang - motor_s.raw_ang;
+
+
+// #ifdef MB
+if (0 == motor_s.id)
+{ //MB~
+#define TMP_LIM 10000
+#define TMP_ANG 10
+	unsigned tmp_period = motor_s.qei_params.period;
+	int tmp_diff = motor_s.diff_ang;
+
+	if (tmp_period > TMP_LIM) tmp_period = TMP_LIM;
+//	xscope_int( motor_s.id ,(int)tmp_period ); // MB~
+
+	if (abs(tmp_diff) > TMP_ANG)
+	{
+		if (2000 < abs(motor_s.est_veloc))
+		{
+			acquire_lock(); printstr("WARNING: Bad QEI Data, Angle Increment="); printintln(tmp_diff); release_lock(); //MB~
+		} // if (2000 < abs(motor_s.est_veloc))
+
+		if (tmp_diff < 0)
+		{ 
+			tmp_diff = -TMP_ANG;
+		}
+		else
+		{ 
+			tmp_diff = TMP_ANG;
+		}
+	} // if (abs(tmp_diff) > TMP_ANG)
+
+	xscope_int( (11-motor_s.id) ,tmp_diff ); //MB~
+} //MB~
+// #endif //MB~
+
 	motor_s.raw_ang =  motor_s.qei_params.tot_ang; // Store raw angle velue
 
 	// Check for changed data
@@ -1916,7 +1949,7 @@ acquire_lock(); printint(motor_s.id); printstrln(": STOP DEMO"); release_lock();
 
 // acquire_lock(); printint(motor_s.id); printstr(": MS="); printintln(motor_s.state); release_lock(); //MB~
 		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
-if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.req_veloc ); //MB~
+// if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.req_veloc ); //MB~
 
 	}	// while (POWER_OFF != motor_s.state)
 
