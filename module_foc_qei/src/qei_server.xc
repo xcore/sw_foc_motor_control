@@ -200,8 +200,6 @@ static void update_origin_state( // Update origin state
 			inp_qei_s.params.calib = QEI_CALIB_1ST; // Set flag indicating 1st Origin found
 		} // if (0 == inp_qei_s.params.calib)
 
-if (0 == inp_qei_s.id) xscope_int( 9 ,inp_qei_s.period ); // MB~
-
 		// Check for valid origin
 		if (PERIOD_DELTA_LIM < abs(abs_diff - inp_qei_s.period))
 		{

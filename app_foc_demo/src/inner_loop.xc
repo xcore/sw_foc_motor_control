@@ -748,11 +748,6 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 
 #pragma xta label "foc_loop_speed_pid"
 
-if (10 < abs(motor_s.diff_ang)) //MB~
-{
-	acquire_lock(); printstr(" WARNING: Bad QEI data: diff_ang="); printintln(motor_s.diff_ang); release_lock(); //MB~
-} // if (10 < abs(motor_s.diff_ang))
-
 	// Applying Speed PID.
 
 	// Check if PID's need presetting
@@ -1533,12 +1528,7 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 
 	motor_s.diff_ang = motor_s.qei_params.tot_ang - motor_s.raw_ang;
 
-	if ((motor_s.qei_found) && (abs(motor_s.diff_ang) > 10))
-	{
-		acquire_lock(); printstr("WARNING: Bad QEI Data, Angle Increment="); printintln(motor_s.diff_ang); release_lock(); //MB~
-	} // if ((motor_s.qei_found) && (abs(tmp_diff) > 10))
-
-// #ifdef MB
+#ifdef MB
 if (0 == motor_s.id)
 { //MB~
 #define TMP_LIM 10000
@@ -1568,7 +1558,7 @@ if (0 == motor_s.id)
 
 	xscope_int( (11-motor_s.id) ,tmp_diff ); //MB~
 } //MB~
-// #endif //MB~
+#endif //MB~
 
 	motor_s.raw_ang =  motor_s.qei_params.tot_ang; // Store raw angle velue
 
@@ -1935,7 +1925,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			{
 				motor_s.xscope = 1; // Switch ON xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
-// motor_s.xscope = 0; // MB~ Crude Switch
+motor_s.xscope = 0; // MB~ Crude Switch
 
 			collect_sensor_data( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
 

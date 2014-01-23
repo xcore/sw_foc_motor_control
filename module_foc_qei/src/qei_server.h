@@ -94,7 +94,7 @@
  * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
  * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
  */
-#define HALF_PERIOD 94 // 94 (Min 87) // Use Slow clock for Regular-Sampling mode 
+#define HALF_PERIOD 98 // 94 (Min 87) // Use Slow clock for Regular-Sampling mode 
 #define TICKS_PER_SAMP (HALF_PERIOD << 1) // NB Max 510
 
 #define SAMP_LOOP_BITS 3
