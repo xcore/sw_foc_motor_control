@@ -1408,13 +1408,6 @@ static void correct_qei_origin( // If necessary, apply a correction to the QEI o
 			// Check if QEI offset has been calculated
 			if (SEARCH < motor_s.state)
 			{ // Apply correction to offset
-if (0 == motor_s.id)
-{
-	acquire_lock(); 
-	printstr(" ms1="); printint(motor_s.state); 
-	printstr(" CA="); printintln(motor_s.qei_params.corr_ang); 
-	release_lock(); //MB~
-} //if (0 == motor_s.id)
 				motor_s.qei_offset += (motor_s.qei_params.corr_ang << QEI_UPSCALE_BITS); // Add upscaled correction
 				motor_s.qei_calib = 1; // Set QEI calibrated flag
 
@@ -1422,13 +1415,6 @@ if (0 == motor_s.id)
 			} // if (SEARCH < motor_s.state)
 			else
 			{ // QEI Offset NOT yet calculated. Update correction to total-angle
-if (0 == motor_s.id)
-{
-	acquire_lock(); 
-	printstr(" MS2="); printint(motor_s.state); 
-	printstr(" CA="); printintln(motor_s.qei_params.corr_ang); 
-	release_lock(); //MB~
-} //if (0 == motor_s.id)
 				motor_s.corr_ang += motor_s.qei_params.corr_ang; // Update total correction
 				motor_s.qei_params.tot_ang += motor_s.corr_ang ; // Add total correction to total-angle
 			} // if (SEARCH < motor_s.state)
@@ -1966,7 +1952,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			{
 				motor_s.xscope = 1; // Switch ON xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
-// motor_s.xscope = 0; // MB~ Crude Switch
+motor_s.xscope = 0; // MB~ Crude Switch
 
 			collect_sensor_data( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
 

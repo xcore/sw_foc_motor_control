@@ -196,7 +196,6 @@ static void update_origin_state( // Update origin state
 		int abs_diff = abs(diff_ang); // Magnitude of angle change since last origin
 		int uncorr_ang;	// Angular position before correction
 
-
 		// Check for valid origin
 		if (PERIOD_DELTA_LIM > abs(abs_diff - inp_qei_s.period))
 		{ // Valid origin period found
@@ -211,8 +210,6 @@ static void update_origin_state( // Update origin state
 			inp_qei_s.params.corr_ang = uncorr_ang - inp_qei_s.tot_ang; // Evaluate correction
 			inp_qei_s.params.orig_corr = 1; // Set flag to correction available
 
-if (0 == inp_qei_s.id) xscope_int( 9 ,inp_qei_s.params.corr_ang ); // MB~
-
 			// Allow slow change in estimated QEI period
 			if (inp_qei_s.period < abs_diff)
 			{
@@ -226,7 +223,7 @@ if (0 == inp_qei_s.id) xscope_int( 9 ,inp_qei_s.params.corr_ang ); // MB~
 				{
 					inp_qei_s.period--;
 
-					assert( inp_qei_s.period > 1); // MB~ Check for underflow
+					assert( inp_qei_s.period > (QEI_PER_REV >> 1)); // MB~ Check for underflow
 				} // if (inp_qei_s.period > abs_diff)
 			} // else !(inp_qei_s.period < abs_diff)
 		} // if (PERIOD_DELTA_LIM > abs(abs_diff - inp_qei_s.period))
