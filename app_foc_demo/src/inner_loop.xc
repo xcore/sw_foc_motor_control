@@ -288,6 +288,7 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	motor_s.prev_ang = 0;	// Previous value of total angle
 	motor_s.raw_ang = 0;	// Raw QEI total angle value
 	motor_s.diff_ang = 0;	// Difference between QEI angles
+	motor_s.corr_ang = 0;	// Correction angle (when QEI origin detected)
 	motor_s.prev_diff = 0;	// Previous difference between QEI angles
 	motor_s.est_theta = 0; // estimated theta value (from QEI data)
 	motor_s.set_theta = 0; // Set PWM theta value
@@ -574,6 +575,7 @@ if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V 
 	// Inverse park  [d, q, theta] --> [alpha, beta]
 	inverse_park_transform( alpha_set ,beta_set ,motor_s.vect_data[D_ROTA].set_V ,motor_s.vect_data[Q_ROTA].set_V 
 		,((inp_theta + QEI_HALF_UPSCALE) >> QEI_UPSCALE_BITS) );
+if (motor_s.xscope) xscope_int( (11-motor_s.id) ,inp_theta ); //MB~
 
 	// Final voltages applied: 
 	inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
@@ -792,7 +794,7 @@ if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 		motor_s.pid_veloc = motor_s.vect_data[Q_ROTA].req_closed_V + corr_veloc;
 	} // else !(PROPORTIONAL)
 
-if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
+// if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
 
 	if (VELOC_CLOSED)
 	{ // Evaluate requested IQ from velocity PID
@@ -810,7 +812,7 @@ if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
 #pragma xta label "foc_loop_id_iq_pid"
 
 	// WARNING: Dividing by a larger amount, may switch the sign of the PID error, and cause instability
-if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.vect_data[Q_ROTA].req_closed_V ); // MB~
+// if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.vect_data[Q_ROTA].req_closed_V ); // MB~
 	targ_Iq = ((V2I_MUX * motor_s.vect_data[Q_ROTA].req_closed_V) + HALF_V2I) >> V2I_BITS;
 
 	/* Here we would like to set targ_Id = 0, for max. efficiency.
@@ -897,7 +899,7 @@ if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.vect_data[Q_ROTA].req_cl
 
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
 
-if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); //MB~
+// if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); //MB~
 if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
 	// Apply PID control to Iq and Id
 
@@ -1402,26 +1404,39 @@ static void correct_qei_origin( // If necessary, apply a correction to the QEI o
  		// Check for valid correction
 		if (motor_s.qei_params.orig_corr)
 		{ // Correct QEI offset, now QEI theta has done origin reset
+
 			// Check if QEI offset has been calculated
 			if (SEARCH < motor_s.state)
 			{ // Apply correction to offset
-				motor_s.qei_offset += motor_s.qei_params.corr_ang; // Add correction
-
+if (0 == motor_s.id)
+{
+	acquire_lock(); 
+	printstr(" ms1="); printint(motor_s.state); 
+	printstr(" CA="); printintln(motor_s.qei_params.corr_ang); 
+	release_lock(); //MB~
+} //if (0 == motor_s.id)
+				motor_s.qei_offset += (motor_s.qei_params.corr_ang << QEI_UPSCALE_BITS); // Add upscaled correction
 				motor_s.qei_calib = 1; // Set QEI calibrated flag
+
+				motor_s.raw_ang += motor_s.qei_params.corr_ang; // Add incremental correction to previous raw total angle
 			} // if (SEARCH < motor_s.state)
 			else
-			{ // Aplly correction to total-angle
-
-
-				motor_s.qei_params.tot_ang += motor_s.qei_params.corr_ang; // Add correction
-
-
+			{ // QEI Offset NOT yet calculated. Update correction to total-angle
+if (0 == motor_s.id)
+{
+	acquire_lock(); 
+	printstr(" MS2="); printint(motor_s.state); 
+	printstr(" CA="); printintln(motor_s.qei_params.corr_ang); 
+	release_lock(); //MB~
+} //if (0 == motor_s.id)
+				motor_s.corr_ang += motor_s.qei_params.corr_ang; // Update total correction
+				motor_s.qei_params.tot_ang += motor_s.corr_ang ; // Add total correction to total-angle
 			} // if (SEARCH < motor_s.state)
 
 			motor_s.qei_params.corr_ang = 0; // Clear correction value
 			motor_s.qei_params.orig_corr = 0; // Reset flag to QEI correction NOT available
 		} // if (motor_s.qei_params.orig_corr)
-	} // if (motor_s.qei_params.origin) // Check if angular position origin found
+	} // if (0 == motor_s.qei_calib)
 
 } // correct_qei_origin
 /*****************************************************************************/
@@ -1551,16 +1566,13 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 
 	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
 
-	correct_qei_origin( motor_s );	// If necessary. correct QEI angle
+if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.qei_params.tot_ang ); // MB~
 
-	if (0 == motor_s.qei_calib)
-	{
-	} // if (0 == motor_s.qei_calib)
+	correct_qei_origin( motor_s );	// If necessary. correct QEI angle
+if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.qei_offset ); // MB~
+
 	motor_s.diff_ang = motor_s.qei_params.tot_ang - motor_s.raw_ang;
 
-<<<<<<< Updated upstream
-#ifdef MB
-=======
 	motor_s.tymer :> cur_time;
 	dif_time = cur_time - motor_s.restart_time; // NB unsigned handles wrap-around
 
@@ -1569,8 +1581,7 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 		acquire_lock(); printstr("WARNING: Bad QEI Data, Angle Increment="); printintln(motor_s.diff_ang); release_lock(); //MB~
 	} // if ((1 < motor_s.qei_orig_cnt) && (abs(tmp_diff) > 10))
 
-// #ifdef MB
->>>>>>> Stashed changes
+#ifdef MB
 if (0 == motor_s.id)
 { //MB~
 #define TMP_LIM 10000
@@ -1610,11 +1621,6 @@ if (0 == motor_s.id)
 		// The theta value should be in the range:  -180 <= theta < 180 degrees ...
 		motor_s.tot_ang = motor_s.qei_params.tot_ang;	// Calculate total angle traversed
 	
-#if (LDO_MOTOR_SPIN)
-		// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
-		motor_s.tot_ang = -motor_s.tot_ang; // Invert total angle
-#endif // (LDO_MOTOR_SPIN)
-
 		rev_bits = (motor_s.tot_ang + motor_s.half_qei) >> QEI_RES_BITS; // Get revoultion bits
 		motor_s.est_theta = motor_s.tot_ang - (rev_bits << QEI_RES_BITS); // Calculate remaining angular position [-512..+511]
 
@@ -1651,6 +1657,7 @@ if (0 == motor_s.id)
 				qei_period = motor_s.prev_period; // Assign previous QEI period
 			} // if (motor_s.est_period > motor_s.prev_period)
 		} // else !(diff_ang != 0)
+if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.tot_ang ); //MB~
 
 		qei_period = filter_period( motor_s ,qei_period ); // Filter QEI period
 
@@ -1959,7 +1966,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			{
 				motor_s.xscope = 1; // Switch ON xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
-motor_s.xscope = 0; // MB~ Crude Switch
+// motor_s.xscope = 0; // MB~ Crude Switch
 
 			collect_sensor_data( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
 

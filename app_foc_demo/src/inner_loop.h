@@ -344,6 +344,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int raw_ang;	// Raw total angle delivered by QEI Client
 	int prev_ang;	// Previous total angle traversed (NB accounts for multiple revolutions)
 	int diff_ang;	// Difference angle QEI between updates
+	int corr_ang;	// Correction angle (when QEI origin detected)
 	int prev_diff;	// Previous Non-zero Difference angle QEI between updates
 	int est_theta;		// Estimated Angular position (from QEI data)
 	int est_revs;	// Estimated No of revolutions (No. of origin traversals) (from QEI data)

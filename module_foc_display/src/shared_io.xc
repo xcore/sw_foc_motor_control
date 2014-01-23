@@ -30,7 +30,7 @@
 #define HI_SPEED_INC 100
 
 #define FIRST_MOTOR 0 //MB~
-#define LAST_MOTOR 1 //MB~
+#define LAST_MOTOR 0 //MB~
 
 /*****************************************************************************/
 static void wait(unsigned millis){
@@ -403,8 +403,8 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 3;
 
-test_motor( c_speed ); //MB~
-//	dbg_motor( c_speed ); //MB~
+//	test_motor( c_speed ); //MB~
+dbg_motor( c_speed ); //MB~
 						break; // case 4
 #endif // ( 1 == ASJ)
 	

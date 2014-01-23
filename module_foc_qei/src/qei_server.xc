@@ -200,23 +200,11 @@ static void update_origin_state( // Update origin state
 		// Check for valid origin
 		if (PERIOD_DELTA_LIM > abs(abs_diff - inp_qei_s.period))
 		{ // Valid origin period found
-
-<<<<<<< Updated upstream
-		// Check for valid origin
-		if (PERIOD_DELTA_LIM < abs(abs_diff - inp_qei_s.period))
-		{
-			// Check if Conscutive origin
-			if (inp_qei_s.params.calib == QEI_CALIB_1ST)
-			{ // Not yet fully calibrated
-				inp_qei_s.params.old_ang = inp_qei_s.tot_ang; // Store new total-angle for next iteration
-			} // if (inp_qei_s.params.calib == QEI_CALIB_1ST)
-=======
 			uncorr_ang = inp_qei_s.tot_ang; // Store angle before correction
 
 			// Re-calibrate total-angle by rounding to multiple of QEI_PER_REV;
 			inp_qei_s.tot_ang += HALF_QEI_CNT; // Add offset to get rounding
 			inp_qei_s.tot_ang &= ~QEI_REV_MASK; // Clear least significant bits
->>>>>>> Stashed changes
 
 			// Update client data parameters
 			assert(0 == inp_qei_s.params.orig_corr); // ERROR: Unused correction
@@ -255,8 +243,14 @@ static void service_client_data_request( // Send processed QEI data to client
 	streaming chanend c_qei // Data channel to client (carries processed QEI data)
 )
 {
-	inp_qei_s.params.tot_ang = inp_qei_s.tot_ang;
 	inp_qei_s.params.period = (inp_qei_s.change_time - inp_qei_s.prev_change); // Time taken to traverse previous QEI phase
+	inp_qei_s.params.tot_ang = inp_qei_s.tot_ang;
+
+#if (LDO_MOTOR_SPIN)
+	// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
+	inp_qei_s.params.tot_ang = -inp_qei_s.params.tot_ang;
+	inp_qei_s.params.corr_ang = -inp_qei_s.params.corr_ang;
+#endif // (LDO_MOTOR_SPIN)
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
 
