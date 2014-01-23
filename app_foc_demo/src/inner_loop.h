@@ -247,7 +247,7 @@
 
 /** Different Motor Phases */
 typedef enum MOTOR_STATE_ETAG
-{
+	{ // WARNING: Maintain the order of the following state
   WAIT_START = 0, // Wait for motor to start (receives non-zero request velocity)
   ALIGN, // Align Coils opposite magnet
   SEARCH, // Turn motor until FOC start conditions found
@@ -341,7 +341,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int pid_Iq;	// Output of 'tangential' current PID
 	int prev_Id;	// previous target 'radial' current value
 	int tot_ang;	// Total angle traversed (NB accounts for multiple revolutions)
-	int old_ang;	// Old value of total angle
 	int raw_ang;	// Raw total angle delivered by QEI Client
 	int prev_ang;	// Previous total angle traversed (NB accounts for multiple revolutions)
 	int diff_ang;	// Difference angle QEI between updates
@@ -370,7 +369,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	int qei_offset;	// Phase difference between the QEI origin and PWM theta origin
 	int hall_offset;	// Phase difference between the Hall sensor origin and PWM theta origin
-	int qei_found; // Flag set when QEI angular offset found
+	int qei_calib; // Flag set when QEI offset has been calibrated
 	int hall_found;	// Flag set when QEI orign found
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter

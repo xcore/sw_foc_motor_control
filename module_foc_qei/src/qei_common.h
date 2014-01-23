@@ -69,15 +69,6 @@ typedef enum ERROR_QEI_ETAG
   NUM_QEI_ERRS	// Handy Value!-)
 } ERROR_QEI_ENUM;
 
-/** Different Calibration states */
-typedef enum QEI_CALIB_ETAG
-{
-  QEI_UNCALIBRATED = 0,  // Uncalibrated QEI (Origin NOT found)
-  QEI_CALIB_1ST , // 1st QEI Origin found
-  QEI_CALIB_DONE , // Calibration Completed (correct Origin period found)
-	NUM_QEI_CALIBS // Number of different QEI Calibration states
-} QEI_CALIB_ETYP;
-
 /** Raw QEI data type (on input pins) */
 typedef unsigned long QEI_RAW_TYP;
 
@@ -87,8 +78,8 @@ typedef struct QEI_PARAM_TAG //
 {
 	int tot_ang;	// Total angle traveresed since time=0
 	unsigned period; // time (in ticks) to traverse one QEI phase (angular position)
-	int old_ang;	// Old angular position before origin reset to zero
-	QEI_CALIB_ETYP calib;		// QEI Calibration state
+	int corr_ang;	// Angular correction (Old - New)
+	int orig_corr; // Flag set if origin correction available
 	ERROR_QEI_ENUM err;	// Flag set when Error condition detected
 
 	// WARNING: If editing this structure, also edit parameter_compare() in check_qei_test.xc 

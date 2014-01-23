@@ -60,15 +60,15 @@ static void init_qei_data( // Initialise  QEI data for one motor
 
 	inp_qei_s.params.tot_ang = 0;
 	inp_qei_s.params.period = 0;
-	inp_qei_s.params.old_ang = 0; // Clear old angular position (at reset)
-	inp_qei_s.params.calib = 0; // Clear calibration flag
+	inp_qei_s.params.corr_ang = 0; // Clear correction angle
+	inp_qei_s.params.orig_corr = 0; // Preset flag to QEI correction NOT available
 	inp_qei_s.params.err = QEI_ERR_OFF; // Clear error status flag returned to client
 
 	inp_qei_s.pin_changes = 0; // NB Initially this is used to count input-pin changes
 	inp_qei_s.id = inp_id; // Assign unique motor identifier
-	inp_qei_s.orig_cnt = 0; // Reset origin counter
 	inp_qei_s.period = QEI_PER_REV; // Preset No. of QEI phases changes between each origin detection
 	inp_qei_s.tot_ang = 0; // Reset counter indicating total angular position of motor (since time=0)
+	inp_qei_s.prev_ang = 0; // Reset previous total angle value
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
 	inp_qei_s.status_errs = 0; // Initialise counter for QEI status errors
 
@@ -188,18 +188,20 @@ static void update_origin_state( // Update origin state
 	unsigned orig_flg // Flag set when motor at origin position 
 )
 {
+
 	if (orig_flg)
 	{ // Reset position ( 'orig_flg' transition  0 --> 1 )
-		int diff_ang = inp_qei_s.params.tot_ang - inp_qei_s.params.old_ang; // Calculate change in angle since last origin
+		// Check angular period
+		int diff_ang = inp_qei_s.params.tot_ang - inp_qei_s.prev_ang; // Calculate change in angle since last origin
 		int abs_diff = abs(diff_ang); // Magnitude of angle change since last origin
+		int uncorr_ang;	// Angular position before correction
 
 
-		// Check if first origin
-		if (QEI_UNCALIBRATED == inp_qei_s.params.calib)
-		{
-			inp_qei_s.params.calib = QEI_CALIB_1ST; // Set flag indicating 1st Origin found
-		} // if (0 == inp_qei_s.params.calib)
+		// Check for valid origin
+		if (PERIOD_DELTA_LIM > abs(abs_diff - inp_qei_s.period))
+		{ // Valid origin period found
 
+<<<<<<< Updated upstream
 		// Check for valid origin
 		if (PERIOD_DELTA_LIM < abs(abs_diff - inp_qei_s.period))
 		{
@@ -208,44 +210,40 @@ static void update_origin_state( // Update origin state
 			{ // Not yet fully calibrated
 				inp_qei_s.params.old_ang = inp_qei_s.tot_ang; // Store new total-angle for next iteration
 			} // if (inp_qei_s.params.calib == QEI_CALIB_1ST)
+=======
+			uncorr_ang = inp_qei_s.tot_ang; // Store angle before correction
 
-			return;
-		} // if (PERIOD_DELTA_LIM < abs(abs_diff - inp_qei_s.period))
+			// Re-calibrate total-angle by rounding to multiple of QEI_PER_REV;
+			inp_qei_s.tot_ang += HALF_QEI_CNT; // Add offset to get rounding
+			inp_qei_s.tot_ang &= ~QEI_REV_MASK; // Clear least significant bits
+>>>>>>> Stashed changes
 
-		inp_qei_s.params.calib = QEI_CALIB_DONE; // Set flag indicating 2 consecutive Origins found
+			// Update client data parameters
+			assert(0 == inp_qei_s.params.orig_corr); // ERROR: Unused correction
+			inp_qei_s.params.corr_ang = uncorr_ang - inp_qei_s.tot_ang; // Evaluate correction
+			inp_qei_s.params.orig_corr = 1; // Set flag to correction available
 
-		// Allow slow change in estimated QEI period
-		if (inp_qei_s.period < abs_diff)
-		{
-			inp_qei_s.period++;
+if (0 == inp_qei_s.id) xscope_int( 9 ,inp_qei_s.params.corr_ang ); // MB~
 
-			assert( inp_qei_s.period < (QEI_PER_REV << 1)); // MB~ Check for overflow
-		} // if (inp_qei_s.period < abs_diff)
-		else
-		{
-			if (inp_qei_s.period > abs_diff)
+			// Allow slow change in estimated QEI period
+			if (inp_qei_s.period < abs_diff)
 			{
-				inp_qei_s.period--;
+				inp_qei_s.period++;
 
-				assert( inp_qei_s.period > 1); // MB~ Check for underflow
-			} // if (inp_qei_s.period > abs_diff)
-		} // else !(inp_qei_s.period < abs_diff)
+				assert( inp_qei_s.period < (QEI_PER_REV << 1)); // MB~ Check for overflow
+			} // if (inp_qei_s.period < abs_diff)
+			else
+			{
+				if (inp_qei_s.period > abs_diff)
+				{
+					inp_qei_s.period--;
 
-		// Round total angle to multiple of QEI_PER_REV;
-		inp_qei_s.tot_ang += HALF_QEI_CNT; // Add offset to get rounding
-		inp_qei_s.tot_ang &= ~QEI_REV_MASK; // Clear least significant bits
+					assert( inp_qei_s.period > 1); // MB~ Check for underflow
+				} // if (inp_qei_s.period > abs_diff)
+			} // else !(inp_qei_s.period < abs_diff)
+		} // if (PERIOD_DELTA_LIM > abs(abs_diff - inp_qei_s.period))
 
-		// Update origin counter
-		if (0 > inp_qei_s.ang_inc)
-		{ // Negative Angle
-			inp_qei_s.orig_cnt--; // Decrement
-		} // if (0 > inp_qei_s.ang_inc)
-		else
-		{ // Positive Angle
-			inp_qei_s.orig_cnt++; // Increment
-		} // else !(0 > inp_qei_s.ang_inc)
-
-		inp_qei_s.params.old_ang = inp_qei_s.tot_ang; // Store new total-angle for next iteration
+		inp_qei_s.prev_ang = inp_qei_s.params.tot_ang; // Store origin angle for next iteration
 	} // if (orig_flg)
 
 	return;
@@ -261,6 +259,9 @@ static void service_client_data_request( // Send processed QEI data to client
 	inp_qei_s.params.period = (inp_qei_s.change_time - inp_qei_s.prev_change); // Time taken to traverse previous QEI phase
 
 	c_qei <: inp_qei_s.params; // Transmit QEI parameters to Client
+
+	inp_qei_s.params.corr_ang = 0; // Clear correction value
+	inp_qei_s.params.orig_corr = 0; // Reset flag to correction NOT available
 } // service_client_data_request
 /*****************************************************************************/
 static unsigned update_one_phase( // Returns filtered phase value NB Only works on Binary data
@@ -425,7 +426,7 @@ static void service_input_pins( // Service detected change on input pins
 	
 		// Check for change in origin state
 		if (orig_flg != inp_qei_s.prev_orig)
-		{
+		{ // Process change of origin flag
 // if (0 == inp_qei_s.id) xscope_int( 1 ,(10 * (inp_pins & 0b1100))); // MB~
 			update_origin_state( inp_qei_s ,orig_flg ); // update origin state
 	

@@ -279,13 +279,12 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	motor_s.hall_offset = 0;	// Phase difference between the Hall sensor origin and PWM theta origin
 	motor_s.qei_offset = 0;	// Phase difference between the QEI origin and PWM theta origin
 	motor_s.hall_found = 0;	// Set flag to Hall origin NOT found
-	motor_s.qei_found = 0;	// Set flag to QEI origin NOT found
+	motor_s.qei_calib = 0;	// Clear QEI calibration flag
 	motor_s.fw_on = 0;	// Reset flag to NO Field Weakening 
 	motor_s.prev_pwm_time = 0; 	// previous open-loop time stamp
 	motor_s.prev_qei_time = 0; 	// previous open-loop time stamp
 
 	motor_s.tot_ang = 0;	// Total angle traversed (NB accounts for multiple revolutions)
-	motor_s.old_ang = 0;	// Old value of total angle
 	motor_s.prev_ang = 0;	// Previous value of total angle
 	motor_s.raw_ang = 0;	// Raw QEI total angle value
 	motor_s.diff_ang = 0;	// Difference between QEI angles
@@ -1385,22 +1384,46 @@ static void find_hall_origin( // Test Hall-state for origin
 
 } // find_hall_origin
 /*****************************************************************************/
-static void find_qei_origin( // Test QEI state for origin
+static void correct_qei_origin( // If necessary, apply a correction to the QEI offset
 	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
 ) // Returns new motor-state
+/* When the QEI origin is found, the QEI angle will be reset to zero.
+ * This may happen before (1), or after (2), the QEI offset has been calculated.
+ * (1) If the origin is found before the QEI offset is calculated:
+ *   then the QEI offset is already correct, and the 1st correction received will be 
+ *   approximately zero, leaving the QEI offset unchanged.
+ * (2) If the origin is found after the QEI offset has been calculated:
+ *   then the the 1st correction received will be NON-zero, and will correct the QEI offset.
+ */
 {
-	if (QEI_UNCALIBRATED != motor_s.qei_params.calib) // Check if angular position origin found
+	// Check if QEI has been calibrated
+	if (0 == motor_s.qei_calib)
 	{
- 		// Check if we finished SEARCH state
-		if (SEARCH != motor_s.state)
-		{ // Re-calculate QEI offset, now QEI theta has done origin reset
-			motor_s.qei_offset += (motor_s.old_ang - motor_s.tot_ang); // Add back old QEI, & subtract new
-		} // if (FOC == motor_s.state)
+ 		// Check for valid correction
+		if (motor_s.qei_params.orig_corr)
+		{ // Correct QEI offset, now QEI theta has done origin reset
+			// Check if QEI offset has been calculated
+			if (SEARCH < motor_s.state)
+			{ // Apply correction to offset
+				motor_s.qei_offset += motor_s.qei_params.corr_ang; // Add correction
 
-		motor_s.qei_found = 1; // Set flag indicating QEI origin located
-	} // if (QEI_UNCALIBRATED != motor_s.qei_params.calib)
+				motor_s.qei_calib = 1; // Set QEI calibrated flag
+			} // if (SEARCH < motor_s.state)
+			else
+			{ // Aplly correction to total-angle
 
-} // find_qei_origin
+
+				motor_s.qei_params.tot_ang += motor_s.qei_params.corr_ang; // Add correction
+
+
+			} // if (SEARCH < motor_s.state)
+
+			motor_s.qei_params.corr_ang = 0; // Clear correction value
+			motor_s.qei_params.orig_corr = 0; // Reset flag to QEI correction NOT available
+		} // if (motor_s.qei_params.orig_corr)
+	} // if (motor_s.qei_params.origin) // Check if angular position origin found
+
+} // correct_qei_origin
 /*****************************************************************************/
 static unsigned filter_period( // Smoothes QEI period using low-pass filter
 	MOTOR_DATA_TYP &motor_s, // Reference to structure containing motor data
@@ -1522,13 +1545,32 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	int rev_bits; // Bits of total angle count used for revolution count
 	signed char diff_revs; // Difference in LS bits of revolution counter
 	unsigned qei_period; // QEI period: input (unsigned) ticks per QEI position (in Reference Frequency Cycles)
+	unsigned cur_time; // Current time 
+	unsigned dif_time; // Time since last re-start 
 
 
 	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
 
+	correct_qei_origin( motor_s );	// If necessary. correct QEI angle
+
+	if (0 == motor_s.qei_calib)
+	{
+	} // if (0 == motor_s.qei_calib)
 	motor_s.diff_ang = motor_s.qei_params.tot_ang - motor_s.raw_ang;
 
+<<<<<<< Updated upstream
 #ifdef MB
+=======
+	motor_s.tymer :> cur_time;
+	dif_time = cur_time - motor_s.restart_time; // NB unsigned handles wrap-around
+
+	if ((MILLI_400_SECS < dif_time)	&& (abs(motor_s.diff_ang) > 10))
+	{
+		acquire_lock(); printstr("WARNING: Bad QEI Data, Angle Increment="); printintln(motor_s.diff_ang); release_lock(); //MB~
+	} // if ((1 < motor_s.qei_orig_cnt) && (abs(tmp_diff) > 10))
+
+// #ifdef MB
+>>>>>>> Stashed changes
 if (0 == motor_s.id)
 { //MB~
 #define TMP_LIM 10000
@@ -1556,7 +1598,7 @@ if (0 == motor_s.id)
 		}
 	} // if (abs(tmp_diff) > TMP_ANG)
 
-	xscope_int( (11-motor_s.id) ,tmp_diff ); //MB~
+//	xscope_int( (11-motor_s.id) ,tmp_diff ); //MB~
 } //MB~
 #endif //MB~
 
@@ -1567,11 +1609,9 @@ if (0 == motor_s.id)
 	{
 		// The theta value should be in the range:  -180 <= theta < 180 degrees ...
 		motor_s.tot_ang = motor_s.qei_params.tot_ang;	// Calculate total angle traversed
-		motor_s.old_ang = motor_s.qei_params.old_ang; // Invert old total angular value
 	
 #if (LDO_MOTOR_SPIN)
 		// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
-		motor_s.old_ang = -motor_s.old_ang; // Invert old total angular value
 		motor_s.tot_ang = -motor_s.tot_ang; // Invert total angle
 #endif // (LDO_MOTOR_SPIN)
 
@@ -1579,7 +1619,6 @@ if (0 == motor_s.id)
 		motor_s.est_theta = motor_s.tot_ang - (rev_bits << QEI_RES_BITS); // Calculate remaining angular position [-512..+511]
 
 		motor_s.est_theta <<= QEI_UPSCALE_BITS; // Upscale QEI [-32768..+32767]
-		motor_s.old_ang <<= QEI_UPSCALE_BITS; // Upscale QEI [-32768..+32767]
 		motor_s.tot_ang <<= QEI_UPSCALE_BITS; // Upscale QEI [-32768..+32767]
 	
 		// Handle wrap-around ...
@@ -1696,11 +1735,6 @@ acquire_lock(); printint(motor_s.id); printstr("WARNING: Safe Speed Exceeded=");
 		motor_s.state = WAIT_STOP; // Switch to pause state
 		return;
 	} // if (4100 < motor_s.est_veloc)
-
-	if (0 == motor_s.qei_found)
-	{
-		find_qei_origin( motor_s );
-	} // if (0 == motor_s.qei_found)
 
 motor_s.dbg_tmr :> motor_s.dbg_strt; //MB~
 	update_motor_state( motor_s );
