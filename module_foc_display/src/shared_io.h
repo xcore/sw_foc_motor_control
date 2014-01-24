@@ -55,7 +55,7 @@ typedef enum CMD_IO_ETAG
 	IO_CMD_SET_SPEED, // Set Motor Speed: Expect another parameter 
 	IO_CMD_INC_SPEED, // Increment speed by STEP_SPEED
 	IO_CMD_DEC_SPEED, // Decrement speed by STEP_SPEED
-	IO_CMD_FLIP_SPIN, // Change direction of spin (currently un-supported
+	IO_CMD_FLIP_SPIN, // Change direction of spin
 	IO_CMD_DIR,
 	IO_CMD_GET_VALS2,
 	IO_CMD_GET_FAULT,
