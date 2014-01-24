@@ -28,6 +28,8 @@ static void init_error_data( // Initialise Error-handling data
 	for (err_cnt=0; err_cnt<NUM_ERR_TYPS; err_cnt++)
 	{
 		err_data_s.line[err_cnt] = -1; 	// Initialised to unassigned line number
+		err_data_s.err_cnt[err_cnt] = 0; 	// Initialised to unassigned line number
+		err_data_s.err_lim[err_cnt] = 0; 	// Initialised to unassigned line number
 		safestrcpy( err_data_s.err_strs[err_cnt].str ,"No Message! Please add in function init_motor()" );
 	} // for err_cnt
 
@@ -37,6 +39,8 @@ static void init_error_data( // Initialise Error-handling data
 	safestrcpy( err_data_s.err_strs[DIRECTION_ERR].str ,"Motor Spinning In Wrong Direction!" );
 	safestrcpy( err_data_s.err_strs[SPEED_ERR].str ,"Motor Exceeded Maximim Speed" );
 
+	//MB~ Need to Re-do this properly, with new init_one_error function for each error-type
+	err_data_s.err_lim[OVERCURRENT_ERR] = OC_ERR_LIM;
 } // init_error_data 
 /*****************************************************************************/
 static unsigned calc_bit_resolution( // Calculate No of bits required to represent (unsigned) input value
@@ -1254,6 +1258,8 @@ if (motor_s.ws_cnt > 0)
 		break; // case WAIT_STOP
 	
 		case POWER_OFF : // Error state where motor stopped
+			acquire_lock(); printint(motor_s.id); printstrln(": POWER_OFF"); release_lock(); //MB~
+
 			// Absorbing state. Nothing to do
 		break; // case POWER_OFF
 	
@@ -1701,8 +1707,15 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 	{
 		motor_s.err_data.err_flgs |= (1 << OVERCURRENT_ERR);
 		motor_s.err_data.line[OVERCURRENT_ERR] = __LINE__;
-		motor_s.cnts[POWER_OFF] = 0; // Initialise power-down state counter 
-		motor_s.state = POWER_OFF; // Switch to power-down state
+		motor_s.err_data.err_cnt[OVERCURRENT_ERR]++; // Increment error count
+
+		acquire_lock(); printint(motor_s.id); printstrln(": ERROR: Hall OverCurrent Detected"); release_lock(); //MB~
+
+		if (motor_s.err_data.err_cnt[OVERCURRENT_ERR] > motor_s.err_data.err_lim[OVERCURRENT_ERR])
+		{
+			motor_s.cnts[POWER_OFF] = 0; // Initialise power-down state counter 
+			motor_s.state = POWER_OFF; // Switch to power-down state
+		} // if (motor_s.err_data.err_cnt[OVERCURRENT_ERR] > motor_s.err_data.err_lim[OVERCURRENT_ERR])
 
 		return;
 	} // if (motor_s.hall_params.err)
@@ -1956,14 +1969,15 @@ motor_s.xscope = 0; // MB~ Crude Switch
 
 			collect_sensor_data( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
 
+#ifdef MB
 			// Check if it is time to stop demo
-//MB~			if (motor_s.iters > DEMO_LIMIT)
-			if (motor_s.iters < -DEMO_LIMIT)
+			if (motor_s.iters > DEMO_LIMIT)
 			{
 				motor_s.state = POWER_OFF; // Switch to stop state
 				motor_s.cnts[POWER_OFF] = 0; // Initialise stop-state counter 
 acquire_lock(); printint(motor_s.id); printstrln(": STOP DEMO"); release_lock(); //MB~
 			} // if (motor_s.iters > DEMO_LIMIT)
+#endif //MB~
 		break; // default:
 
 		}	// select

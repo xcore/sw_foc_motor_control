@@ -238,6 +238,8 @@
 #define UQ_PER_REV (QEI_PER_REV << QEI_UPSCALE_BITS) // No. of different Up-scaled QEI values per revolution
 #define UQ_REV_MASK (UQ_PER_REV - 1) // (16-bit) Mask used to extract Up-scaled QEI bits
 
+#define OC_ERR_LIM 512 // Number of Hall Over-current errors allowed before Board powered down
+
 #pragma xta command "add exclusion foc_loop_motor_fault"
 #pragma xta command "add exclusion foc_loop_speed_comms"
 #pragma xta command "add exclusion foc_loop_shared_comms"
@@ -304,6 +306,8 @@ typedef struct STRING_TAG // Structure containing string
 typedef struct ERR_DATA_TAG // Structure containing Error handling data
 {
 	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array messages for each error type 
+	unsigned err_cnt[NUM_ERR_TYPS];	// Count No of Errors.
+	unsigned err_lim[NUM_ERR_TYPS];	// Error count Limit
 	int line[NUM_ERR_TYPS];	// Array of line number for NEWEST occurance of error type.
 	unsigned err_flgs;	// Set of Fault detection flags for each error type
 } ERR_DATA_TYP;

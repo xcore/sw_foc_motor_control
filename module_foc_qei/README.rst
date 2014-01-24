@@ -10,12 +10,13 @@ Features
 --------
 
    * Filters raw QEI input data (from motor)
-   * Computes the following QEI parameters: Angular_Position, Revolution_Counter, Angular_Velocity, Error_Status
+   * Computes the following QEI parameters: Total_Angular_Position, Phase_Interval, Angular_Correction, Correction_Flag, Error_Status
    * Can handle QEI for multiple motors in one logical core
 
 Evaluation
 ----------
 
-This module can be evaluated using the following demo applications:
+WARMING: This Test-harness NOT upto date.
+The module can be evaluated using the following demo applications:
 
    * QEI test harness ``Quadrature Encoder Interface (QEI) Test Harness``
