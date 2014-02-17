@@ -285,8 +285,6 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	motor_s.hall_found = 0;	// Set flag to Hall origin NOT found
 	motor_s.qei_calib = 0;	// Clear QEI calibration flag
 	motor_s.fw_on = 0;	// Reset flag to NO Field Weakening 
-	motor_s.prev_pwm_time = 0; 	// previous open-loop time stamp
-	motor_s.prev_qei_time = 0; 	// previous open-loop time stamp
 
 	motor_s.tot_ang = 0;	// Total angle traversed (NB accounts for multiple revolutions)
 	motor_s.prev_ang = 0;	// Previous value of total angle
@@ -474,12 +472,6 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 		filter_current_component( motor_s.vect_data[comp_cnt] );
 	} // for comp_cnt
 
-	// Check for wrong spin
-	if (0 < (motor_s.targ_vel * motor_s.vect_data[D_ROTA].est_I))
-	{
-		motor_s.ws_cnt++;
-	} // if (0 < (motor_s.targ_vel * motor_s.vect_data[D_ROTA].est_I))
-
 #ifdef MB
 { // MB~
 	int d_abs = abs(motor_s.vect_data[D_ROTA].est_I);
@@ -508,8 +500,8 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 } // MB~
 #endif //MB~
 
-if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I ); //MB~
-if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I ); //MB~
+// if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I ); //MB~
+// if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I ); //MB~
 } // estimate_Iq_using_transforms
 /*****************************************************************************/
 static unsigned convert_volts_to_pwm_width( // Converted voltages to PWM pulse-widths
@@ -1049,6 +1041,7 @@ static MOTOR_STATE_ENUM check_spin_direction( // Check if motor is spinning in w
 		unsigned dif_time; // Time since last re-start 
 
 
+		motor_s.ws_cnt++; // Update wrong-spin event counter
 		motor_s.tymer :> cur_time;
 		dif_time = cur_time - motor_s.restart_time; // NB unsigned handles wrap-around
 
@@ -1140,12 +1133,16 @@ static void update_motor_state( // Update state of motor based on motor sensor d
  * If too long a time is spent in the STALL state, this becomes an error and the motor is stopped.
  */
 {
+if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I ); //MB~
+if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I ); //MB~
+if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
+
 	// Update motor state based on new sensor data
 	switch( motor_s.state )
 	{
 		case WAIT_START : // Wait for non-zero requested speed
 		{
-			stop_pwm( motor_s ); // Swicth off PWM
+			stop_pwm( motor_s ); // Switch off PWM
 
 			if (MIN_SPEED <= abs(motor_s.req_veloc))
 			{
@@ -1166,15 +1163,17 @@ static void update_motor_state( // Update state of motor based on motor sensor d
 
 			if (ALIGN_PERIOD < diff_time)
 			{
-				motor_s.prev_pwm_time = ts1; // Store time-stamp
+				// Check for zero-crossing of angular velocity (in correct direction)
+				if (((0 < motor_s.targ_vel) && (0 > motor_s.prev_veloc) && (0 <= motor_s.est_veloc))
+					|| ((0 > motor_s.targ_vel) && (0 < motor_s.prev_veloc) && (0 >= motor_s.est_veloc)))
+				{
+					motor_s.prev_pwm_time = ts1; // Store time-stamp
 
+xscope_int( 7 ,-100 ); //MB~
 //MB~ acquire_lock(); printstrln("SEARCH"); release_lock(); //MB~
-if (motor_s.ws_cnt > 0)
-{
-	acquire_lock(); printstr("ALIGN WS_cnt="); printintln(motor_s.ws_cnt); release_lock(); //MB~
-} // if (motor_s.ws_cnt > 0)
-				motor_s.state = SEARCH;
-			} // if 
+					motor_s.state = SEARCH;
+				} // if ...
+			} // if (ALIGN_PERIOD < diff_time)
 		} break; // case ALIGN
 	
 		case SEARCH : // Turn motor using theta steps (open-loop), and update motor state
@@ -1192,6 +1191,8 @@ if (motor_s.ws_cnt > 0)
 				motor_s.state = TRANSIT;
 
 				motor_s.state = check_spin_direction( motor_s );
+
+// motor_s.state = POWER_OFF; //MB~
 			} // if (QEI_PER_PAIR == abs(motor_s.open_theta))
 		break; // case SEARCH 
 	
@@ -1653,6 +1654,7 @@ if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.tot_ang ); //MB~
 
 		qei_period = filter_period( motor_s ,qei_period ); // Filter QEI period
 
+		motor_s.prev_veloc = motor_s.est_veloc; // Store previous velocity
 		motor_s.est_veloc = get_velocity( motor_s ,diff_ang ,qei_period ); // Update velocity estimate
 
 #if (1 == VELOC_FILT) 
@@ -1669,11 +1671,9 @@ if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.tot_ang ); //MB~
 				motor_s.est_veloc = (motor_s.prev_veloc + MAX_VELOC_INC);
 			} // if (motor_s.est_veloc < (motor_s.prev_veloc + MAX_VELOC_INC))
 		} // else !(motor_s.est_veloc < (motor_s.prev_veloc -MAX_VELOC_INC ))
-	
-		motor_s.prev_veloc = motor_s.est_veloc; // Update previous velocity
 #endif // VELOC_FILT
 
-if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
+// if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 
 #ifdef MB
 if (motor_s.xscope)
@@ -1957,7 +1957,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			motor_s.iters++; // Increment No. of iterations 
 
 			// NB There is not enough band-width to probe all xscope data
-			if ((1 == motor_s.id) || (motor_s.iters & 31)) // probe every 32nd value
+			if ((1 == motor_s.id) || (motor_s.iters & 31)) // 31 probe at intervals
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
@@ -1965,7 +1965,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			{
 				motor_s.xscope = 1; // Switch ON xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
-motor_s.xscope = 0; // MB~ Crude Switch
+// motor_s.xscope = 0; // MB~ Crude Switch
 
 			collect_sensor_data( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
 
@@ -1983,7 +1983,7 @@ acquire_lock(); printint(motor_s.id); printstrln(": STOP DEMO"); release_lock();
 		}	// select
 
 // acquire_lock(); printint(motor_s.id); printstr(": MS="); printintln(motor_s.state); release_lock(); //MB~
-		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
+		c_wd <: WD_CMD_TICK; // Keep WatchDog alive55
 // if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.req_veloc ); //MB~
 
 	}	// while (POWER_OFF != motor_s.state)
@@ -2124,7 +2124,7 @@ void run_motor (
 	release_lock();
 
 	// Stagger the start of each motor 
-motor_s.tymer when timerafter(ts1 + ((MICRO_SEC << 4) * motor_id)) :> ts1;
+	motor_s.tymer when timerafter(ts1 + ((MICRO_SEC << 4) * motor_id)) :> ts1;
 	motor_s.prev_pwm_time = ts1; // Store time_stamp
 
 	// start-and-run motor

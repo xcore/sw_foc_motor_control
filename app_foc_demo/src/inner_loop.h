@@ -114,11 +114,11 @@
 #define INIT_THETA 0 // Initial start-up angle
 
 
-#define START_VOLT_OPENLOOP 2000 // Voltage (Vh) magnitude for start of open-loop state
+#define START_VOLT_OPENLOOP 4000 // 2000 Voltage (Vh) magnitude for start of open-loop state
 #define START_GAMMA_OPENLOOP 64  // Voltage angle for start of open-loop state (ie Vq = Vh.cos(angle)
 
-#define END_VOLT_OPENLOOP 3000 // 3000  Voltage (Vh) magnitude for end of open-loop state
-#define END_GAMMA_OPENLOOP 19 //  32 Voltage angle for end of open-loop state (ie Vq = Vh.cos(angle)
+#define END_VOLT_OPENLOOP 5000 // 3000  Voltage (Vh) magnitude for end of open-loop state
+#define END_GAMMA_OPENLOOP 19 //  19 32 Voltage angle for end of open-loop state (ie Vq = Vh.cos(angle)
 
 #define REQ_VOLT_CLOSEDLOOP 1000 // Default staring value
 #define REQ_GAMMA_CLOSEDLOOP 19     // Used to tune IQ PID
@@ -381,7 +381,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	timer tymer;	// Timer
 	unsigned prev_pwm_time; 	// previous open-loop time stamp
-	unsigned prev_qei_time; 	// Previous QEI time-stamp
 
 	int filt_adc; // filtered ADC value
 	int coef_err; // Coefficient diffusion error

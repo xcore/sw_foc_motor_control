@@ -30,7 +30,7 @@
 #define HI_SPEED_INC 100
 
 #define FIRST_MOTOR 0 //MB~
-#define LAST_MOTOR 1 //MB~
+#define LAST_MOTOR 0 //MB~
 
 /*****************************************************************************/
 static void wait(unsigned millis){
@@ -73,6 +73,25 @@ static void print_speed(chanend c_speed[])
 	int motor_cnt;
 
 
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_GET_IQ;
+		c_speed[motor_cnt] :> meas_vel;
+		c_speed[motor_cnt] :> req_vel;
+
+		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t"); 
+	} // for motor_cnt
+
+	printstrln(" ");
+}
+/*****************************************************************************/
+static void print_asj_speed(chanend c_speed[], int target)
+{
+	int meas_vel; // Measured velocity
+	int req_vel; // Requested velocity
+	int motor_cnt;
+
+	printint(target); printstr(" ->\t");
 	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
 	{
 		c_speed[motor_cnt] <: IO_CMD_GET_IQ;
@@ -226,6 +245,84 @@ static void test_motor( chanend c_speed[])
 	return;
 } // test_motor 
 /*****************************************************************************/
+void pretty_print_speed(int speed){
+    printstr("Motor speed: ");
+    printint(speed);
+    printstrln(" RPM");
+}
+
+static void demo_motor( chanend c_speed[])
+{
+    set_both_motors_speed(c_speed, 1000);
+    wait(10000);
+    print_asj_speed( c_speed, 1000);
+    set_both_motors_speed(c_speed, 1000);
+    wait(10000);
+    print_asj_speed( c_speed, 1000);
+#define MAX_TEST_RPM 2000
+    while(1){
+
+        //////////////////////////////////////////////////////////////
+        set_both_motors_speed(c_speed, EASY_SPEED);
+        pretty_print_speed(EASY_SPEED);
+        wait(3000);
+
+        set_both_motors_speed(c_speed, MAX_TEST_RPM);
+        pretty_print_speed(MAX_TEST_RPM);
+        wait(15000);
+
+        stop(c_speed);
+        wait(1000);
+        pretty_print_speed(0);
+
+        //////////////////////////////////////////////////////////////
+        set_both_motors_speed(c_speed, -EASY_SPEED);
+        pretty_print_speed(-EASY_SPEED);
+        wait(3000);
+
+        set_both_motors_speed(c_speed, -MAX_TEST_RPM);
+        pretty_print_speed(-MAX_TEST_RPM);
+        wait(15000);
+
+        stop(c_speed);
+        wait(1000);
+        pretty_print_speed(0);
+
+        //////////////////////////////////////////////////////////////
+        set_both_motors_speed(c_speed, MAX_TEST_RPM);
+        pretty_print_speed(MAX_TEST_RPM);
+        wait(15000);
+
+        set_both_motors_speed(c_speed, -MAX_TEST_RPM);
+        pretty_print_speed(-MAX_TEST_RPM);
+        wait(15000);
+
+        stop(c_speed);
+        wait(1000);
+        pretty_print_speed(0);
+
+        //////////////////////////////////////////////////////////////
+        set_both_motors_speed(c_speed, EASY_SPEED);
+        wait(1000);
+        for(int i=EASY_SPEED;i > 220; i-= 20){
+            pretty_print_speed(i);
+            set_both_motors_speed(c_speed, i);
+            wait(1000);
+            print_asj_speed( c_speed, i);
+        }
+        for(int i=220;i >= 120; i-=4){
+            pretty_print_speed(i);
+            set_both_motors_speed(c_speed, i);
+            wait(2000);
+            print_asj_speed( c_speed, i);
+        }
+        wait(10000);
+    }
+
+
+    return;
+} // demo_motor
+/*****************************************************************************/
 static void dbg_motor(
 	chanend c_speed[NUMBER_OF_MOTORS]
 )
@@ -309,6 +406,8 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 
 	/* Get the initial time value */
 	timer_10Hz :> time_10Hz_val;
+
+//	demo_motor( c_speed ); //ASJ~
 
 	/* Loop forever processing commands */
 	while (1)
