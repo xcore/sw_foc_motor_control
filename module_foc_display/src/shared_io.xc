@@ -30,7 +30,7 @@
 #define HI_SPEED_INC 100
 
 #define FIRST_MOTOR 0 //MB~
-#define LAST_MOTOR 0 //MB~
+#define LAST_MOTOR 1 //MB~
 
 /*****************************************************************************/
 static void wait(unsigned millis){
@@ -259,7 +259,7 @@ static void demo_motor( chanend c_speed[])
     set_both_motors_speed(c_speed, 1000);
     wait(10000);
     print_asj_speed( c_speed, 1000);
-#define MAX_TEST_RPM 2000
+#define MAX_ASJ_TEST_RPM 2000
     while(1){
 
         //////////////////////////////////////////////////////////////
@@ -267,8 +267,8 @@ static void demo_motor( chanend c_speed[])
         pretty_print_speed(EASY_SPEED);
         wait(3000);
 
-        set_both_motors_speed(c_speed, MAX_TEST_RPM);
-        pretty_print_speed(MAX_TEST_RPM);
+        set_both_motors_speed(c_speed, MAX_ASJ_TEST_RPM);
+        pretty_print_speed(MAX_ASJ_TEST_RPM);
         wait(15000);
 
         stop(c_speed);
@@ -280,8 +280,8 @@ static void demo_motor( chanend c_speed[])
         pretty_print_speed(-EASY_SPEED);
         wait(3000);
 
-        set_both_motors_speed(c_speed, -MAX_TEST_RPM);
-        pretty_print_speed(-MAX_TEST_RPM);
+        set_both_motors_speed(c_speed, -MAX_ASJ_TEST_RPM);
+        pretty_print_speed(-MAX_ASJ_TEST_RPM);
         wait(15000);
 
         stop(c_speed);
@@ -289,12 +289,12 @@ static void demo_motor( chanend c_speed[])
         pretty_print_speed(0);
 
         //////////////////////////////////////////////////////////////
-        set_both_motors_speed(c_speed, MAX_TEST_RPM);
-        pretty_print_speed(MAX_TEST_RPM);
+        set_both_motors_speed(c_speed, MAX_ASJ_TEST_RPM);
+        pretty_print_speed(MAX_ASJ_TEST_RPM);
         wait(15000);
 
-        set_both_motors_speed(c_speed, -MAX_TEST_RPM);
-        pretty_print_speed(-MAX_TEST_RPM);
+        set_both_motors_speed(c_speed, -MAX_ASJ_TEST_RPM);
+        pretty_print_speed(-MAX_ASJ_TEST_RPM);
         wait(15000);
 
         stop(c_speed);
@@ -334,16 +334,21 @@ static void dbg_motor(
 	wait(3000);
 	stop(c_speed);
 
+	set_both_motors_speed(c_speed, EASY_SPEED);
+	wait(3000);
+	print_speed( c_speed );
+	for(unsigned speed = (EASY_SPEED + HI_SPEED_INC); speed <= MAX_TEST_RPM; speed += HI_SPEED_INC)
+	{
+	  set_both_motors_speed(c_speed, speed);
+	  wait(1000);
+		print_speed( c_speed );
+	}
+
 	set_both_motors_speed(c_speed ,MAX_TEST_RPM );
 	wait(3000);
 	stop(c_speed);
 
-while(1)
-{
-	set_both_motors_speed(c_speed ,MAX_TEST_RPM );
-	wait(3000);
-//	print_speed( c_speed );
-} // while
+while(1);
 
 	return;
 } // dbg_motor
@@ -502,8 +507,8 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 3;
 
-test_motor( c_speed ); //MB~
-//	dbg_motor( c_speed ); //MB~
+//	test_motor( c_speed ); //MB~
+dbg_motor( c_speed ); //MB~
 						break; // case 4
 #endif // ( 1 == ASJ)
 	

@@ -30,9 +30,6 @@
 
 #define PWM_CLK_MHZ 250 // For historical reasons, PWM timings are based on a 250 MHz clock 
 
-// Number of PWM time increments between ADC/PWM synchronisation points. NB Independent of Reference Frequency
-#define INIT_SYNC_INCREMENT (PWM_MAX_VALUE)
-
 /** Structure containing pwm server control data */
 typedef struct PWM_SERV_TAG
 {

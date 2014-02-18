@@ -380,7 +380,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int adc_err;	// Error diffusion value for ADC extrema filter
 
 	timer tymer;	// Timer
-	unsigned prev_pwm_time; 	// previous open-loop time stamp
+	unsigned prev_time; 	// previous time stamp
 
 	int filt_adc; // filtered ADC value
 	int coef_err; // Coefficient diffusion error

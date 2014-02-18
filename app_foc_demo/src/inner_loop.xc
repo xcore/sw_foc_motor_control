@@ -260,6 +260,7 @@ static void start_motor_reset( // Reset motor data ready for re-start
 )
 {
 	int phase_cnt; // phase counter
+	unsigned ts1;	/* timestamp */
 
 
 	init_error_data( motor_s.err_data );
@@ -332,7 +333,15 @@ static void start_motor_reset( // Reset motor data ready for re-start
 
 	motor_s.ws_cnt = 0;	// Reset Wrong-spin counter
 
-	motor_s.tymer :> motor_s.restart_time; 	// Store start-up time
+	// Stagger the start of each motor
+	motor_s.tymer :> ts1; // Get current time
+	ts1 += INIT_SYNC_INCREMENT; // NB Ensure we have a time in the future
+	ts1 = ts1 & ~(INIT_SYNC_INCREMENT - 1);	// Align base time reference with PWM_PERIOD boundary
+
+	// Wait until stagger offset for this motor
+	motor_s.tymer when timerafter(ts1 + (PWM_STAGGER * motor_s.id)) :> motor_s.restart_time; // Store start-up time
+	motor_s.prev_time = motor_s.restart_time; // Initialise previous time_stamp
+
 } // start_motor_reset
 /*****************************************************************************/
 static void stop_pwm( // Stops motor by switching off PWM
@@ -592,14 +601,14 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 
 
 	motor_s.tymer :> cur_time;
-	diff_time = (int)(cur_time - motor_s.prev_pwm_time); 
+	diff_time = (int)(cur_time - motor_s.prev_time); 
 
 
 	// Check if theta needs incrementing
 	if (motor_s.open_period < diff_time)
 	{
 		motor_s.open_theta += motor_s.open_uq_inc; // Increment demand theta value
-		motor_s.prev_pwm_time = cur_time; // Update previous time
+		motor_s.prev_time = cur_time; // Update previous time
 	} // if (motor_s.open_period < diff_time)
 
 	// NB QEI_REV_MASK correctly maps -ve values into +ve range 0 <= theta < QEI_PER_REV;
@@ -648,13 +657,13 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 
 
 	motor_s.tymer :> cur_time;
-	diff_time = (int)(cur_time - motor_s.prev_pwm_time); 
+	diff_time = (int)(cur_time - motor_s.prev_time); 
 
 
 	// Check if theta needs incrementing
 	if (motor_s.open_period < diff_time)
 	{
-		motor_s.prev_pwm_time = cur_time; // Update previous time
+		motor_s.prev_time = cur_time; // Update previous time
 
 		motor_s.open_theta += motor_s.open_uq_inc; // Increment demand theta value
 
@@ -1159,7 +1168,7 @@ if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 			unsigned diff_time;	// time difference
 
 			motor_s.tymer :> ts1;
-			diff_time = ts1 - motor_s.prev_pwm_time;
+			diff_time = ts1 - motor_s.prev_time;
 
 			if (ALIGN_PERIOD < diff_time)
 			{
@@ -1167,9 +1176,9 @@ if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 				if (((0 < motor_s.targ_vel) && (0 > motor_s.prev_veloc) && (0 <= motor_s.est_veloc))
 					|| ((0 > motor_s.targ_vel) && (0 < motor_s.prev_veloc) && (0 >= motor_s.est_veloc)))
 				{
-					motor_s.prev_pwm_time = ts1; // Store time-stamp
+					motor_s.prev_time = ts1; // Store time-stamp
 
-xscope_int( 7 ,-100 ); //MB~
+xscope_int( 7 ,(200*motor_s.id - 100) ); //MB~
 //MB~ acquire_lock(); printstrln("SEARCH"); release_lock(); //MB~
 					motor_s.state = SEARCH;
 				} // if ...
@@ -1562,7 +1571,7 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.qei_params.tot_ang ); // MB~
 
 	correct_qei_origin( motor_s );	// If necessary. correct QEI angle
-if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.qei_offset ); // MB~
+// if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.qei_offset ); // MB~
 
 	motor_s.diff_ang = motor_s.qei_params.tot_ang - motor_s.raw_ang;
 
@@ -1650,7 +1659,7 @@ if (0 == motor_s.id)
 				qei_period = motor_s.prev_period; // Assign previous QEI period
 			} // if (motor_s.est_period > motor_s.prev_period)
 		} // else !(diff_ang != 0)
-if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.tot_ang ); //MB~
+// if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.tot_ang ); //MB~
 
 		qei_period = filter_period( motor_s ,qei_period ); // Filter QEI period
 
@@ -1896,7 +1905,7 @@ static void use_motor ( // Start motor, and run step through different motor sta
 	CMD_IO_ENUM cmd_id; // Command identifier from control interface
 
 
-	motor_s.tymer :> motor_s.prev_pwm_time; // Store time-stamp
+	motor_s.tymer :> motor_s.prev_time; // Store time-stamp
 
 motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 
@@ -2122,10 +2131,6 @@ void run_motor (
 	printint(motor_id);
 	printstrln(" Starts");
 	release_lock();
-
-	// Stagger the start of each motor 
-	motor_s.tymer when timerafter(ts1 + ((MICRO_SEC << 4) * motor_id)) :> ts1;
-	motor_s.prev_pwm_time = ts1; // Store time_stamp
 
 	// start-and-run motor
 	use_motor( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl ,c_speed ,c_commands ,c_wd );

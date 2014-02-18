@@ -113,9 +113,7 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 	// Align base time reference with PWM_PERIOD boundary
 	pwm_serv_s.ref_time = pwm_serv_s.ref_time & ~(INIT_SYNC_INCREMENT - 1);
 
-	// Get time interval between motors
-	pwm_time_off = (INIT_SYNC_INCREMENT + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS; // NB rounded
-	pwm_time_off *= motor_id; // Calculate PWM time period offset for this motor
+	pwm_time_off = motor_id * PWM_STAGGER; // Calculate PWM time period stagger offset for this motor
 
 	pwm_serv_s.ref_time += pwm_time_off; // Add offset to base reference
 
