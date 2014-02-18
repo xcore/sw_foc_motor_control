@@ -57,7 +57,7 @@ void xscope_user_init()
 		,XSCOPE_CONTINUOUS, "setVq", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "mVel0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "qeiAn", XSCOPE_INT , "n"
-		,XSCOPE_CONTINUOUS, "motAn", XSCOPE_INT , "n"
+		,XSCOPE_CONTINUOUS, "trId0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "qeiOf", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "trIq0", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "rawAn", XSCOPE_INT , "n"

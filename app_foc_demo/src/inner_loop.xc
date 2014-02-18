@@ -146,9 +146,21 @@ static void init_pid_data( // Initialise PID data
 	 * Therefore in the init_pid_consts interface K_i is upscaled by 2^PID_CONST_RES to compensate
 	 */
 	// Regular-Sampling mode 
+// #define NO_LOAD 1
+#if (1 == NO_LOAD)
 	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,1.0 ,0.0058 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,8.0 ,0.017 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,4.0 ,0.00012 ,0.0 );
+#else // NO_LOAD
+//MB~	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.5 ,0.0015 ,0.0 );
+//MB~	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.1 ,0.0045 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.1 ,0.0046 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,4.0 ,0.011 ,0.0 );
+
+	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.4 ,0.0044 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,16.0 ,0.012 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,2.0 ,0.0000075 ,0.0 );
+#endif // NO_LOAD
 
 	motor_s.pid_Id = 0;	// Output from radial current PID
 	motor_s.pid_Iq = 0;	// Output from tangential current PID
@@ -877,35 +889,49 @@ if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 	} // if ((targ_Iq > IQ_LIM)
 
 #ifdef MB // Iq PID tuning
-	if (motor_s.iters > 60000)
+	if (motor_s.iters > 300000) motor_s.state = POWER_OFF;
+
+	if (motor_s.iters > 100000)
 	{ // Track est_Iq value
-		targ_Iq = 9;
-	} //if (motor_s.iters > 75000)
+		targ_Iq = 6;
+	} // if
 	else
 	{ // Track est_Iq value
-		targ_Iq = 54;
+		if (motor_s.iters == 100000)
+		{ // Track est_Iq value
+			acquire_lock(); printstrln("S"); release_lock(); //MB~
+		} // if
+
+		targ_Iq = 8;
 	} //if (motor_s.iters > 75000)
 
 	targ_Id = 0;
 #endif //MB~
 
 #ifdef MB // Id PID tuning
+	if (motor_s.iters > 500000) motor_s.state = POWER_OFF;
+
 	if (motor_s.iters > 200000)
 	{ // Track est_Iq value
-		targ_Id = -8;
+		targ_Id = 0;
 	} //if (motor_s.iters > 75000)
 	else
 	{ // Track est_Iq value
 		targ_Id = 8;
+
+		if (motor_s.iters == 200000)
+		{ // Track est_Iq value
+			acquire_lock(); printstrln("S"); release_lock(); //MB~
+		} //if (motor_s.iters > 75000)
 	} //if (motor_s.iters > 75000)
 
-	targ_Iq = 18;
+	targ_Iq = 16;
 #endif //MB~
 
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
 
-// if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); //MB~
-if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
+if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); //MB~
+// if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
 	// Apply PID control to Iq and Id
 
 	// Check if PID's need presetting
@@ -1142,7 +1168,15 @@ static void update_motor_state( // Update state of motor based on motor sensor d
  * If too long a time is spent in the STALL state, this becomes an error and the motor is stopped.
  */
 {
-if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I ); //MB~
+if (motor_s.xscope) 
+{
+	int tmp_Id = motor_s.vect_data[D_ROTA].est_I;
+
+	if (tmp_Id > 20) tmp_Id = 20;
+	if (tmp_Id < -20) tmp_Id = -20;
+	xscope_int( motor_s.id ,tmp_Id ); //MB~
+} // if (motor_s.xscope) 
+// if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I ); //MB~
 if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I ); //MB~
 if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 
