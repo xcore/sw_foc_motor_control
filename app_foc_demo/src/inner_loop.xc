@@ -154,12 +154,18 @@ static void init_pid_data( // Initialise PID data
 #else // NO_LOAD
 //MB~	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.5 ,0.0015 ,0.0 );
 //MB~	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.1 ,0.0045 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.1 ,0.0046 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,4.0 ,0.011 ,0.0 );
+//MB~	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.1 ,0.0046 ,0.0 );
+//MB~	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,4.0 ,0.011 ,0.0 );
 
+#ifdef MB
 	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.4 ,0.0044 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,16.0 ,0.012 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,2.0 ,0.0000075 ,0.0 );
+#endif //MB~
+
+	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,15.0 ,0.007 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,100.0 ,0.01 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,2.0 ,0.00002 ,0.0 );
 #endif // NO_LOAD
 
 	motor_s.pid_Id = 0;	// Output from radial current PID
@@ -586,13 +592,13 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 
 	motor_s.vect_data[D_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[D_ROTA] );
 	motor_s.vect_data[Q_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[Q_ROTA] );
-if (motor_s.xscope) xscope_int( (1-motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
-if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
+// if (motor_s.xscope) xscope_int( (1-motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
+// if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
 
 	// Inverse park  [d, q, theta] --> [alpha, beta]
 	inverse_park_transform( alpha_set ,beta_set ,motor_s.vect_data[D_ROTA].set_V ,motor_s.vect_data[Q_ROTA].set_V 
 		,((inp_theta + QEI_HALF_UPSCALE) >> QEI_UPSCALE_BITS) );
-if (motor_s.xscope) xscope_int( (11-motor_s.id) ,inp_theta ); //MB~
+// if (motor_s.xscope) xscope_int( (11-motor_s.id) ,inp_theta ); //MB~
 
 	// Final voltages applied: 
 	inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
@@ -811,7 +817,7 @@ if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 		motor_s.pid_veloc = motor_s.vect_data[Q_ROTA].req_closed_V + corr_veloc;
 	} // else !(PROPORTIONAL)
 
-// if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
+if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
 
 	if (VELOC_CLOSED)
 	{ // Evaluate requested IQ from velocity PID
@@ -889,20 +895,20 @@ if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 	} // if ((targ_Iq > IQ_LIM)
 
 #ifdef MB // Iq PID tuning
-	if (motor_s.iters > 300000) motor_s.state = POWER_OFF;
+	if (motor_s.iters > 500000) motor_s.state = POWER_OFF;
 
-	if (motor_s.iters > 100000)
+	if (motor_s.iters > 200000)
 	{ // Track est_Iq value
-		targ_Iq = 6;
-	} // if
+		targ_Iq = 16;
+	} //if (motor_s.iters > 75000)
 	else
 	{ // Track est_Iq value
-		if (motor_s.iters == 100000)
+		targ_Iq = 6;
+
+		if (motor_s.iters == 200000)
 		{ // Track est_Iq value
 			acquire_lock(); printstrln("S"); release_lock(); //MB~
-		} // if
-
-		targ_Iq = 8;
+		} //if (motor_s.iters > 75000)
 	} //if (motor_s.iters > 75000)
 
 	targ_Id = 0;
@@ -913,11 +919,11 @@ if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 
 	if (motor_s.iters > 200000)
 	{ // Track est_Iq value
-		targ_Id = 0;
+		targ_Id = 8;
 	} //if (motor_s.iters > 75000)
 	else
 	{ // Track est_Iq value
-		targ_Id = 8;
+		targ_Id = -8;
 
 		if (motor_s.iters == 200000)
 		{ // Track est_Iq value
@@ -931,26 +937,23 @@ if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
 
 if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); //MB~
-// if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
 	// Apply PID control to Iq and Id
 
 	// Check if PID's need presetting
 	if (motor_s.pid_preset)
 	{
-//MB~	preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,(motor_s.vect_data[D_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
-//MB~	preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,(motor_s.vect_data[Q_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
 		preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,motor_s.vect_data[D_ROTA].end_open_V ,targ_Id ,(motor_s.vect_data[D_ROTA].est_I >> ADC_UPSCALE_BITS) );
 		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,(motor_s.vect_data[Q_ROTA].est_I >> ADC_UPSCALE_BITS) );
 	}; // if (motor_s.pid_preset)
 
 // if (motor_s.xscope) xscope_int( 8 ,(targ_Iq - ((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~
 // if (motor_s.xscope) xscope_int( 8 ,(targ_Id - ((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~
-//MB~	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I ,abs(motor_s.diff_ang) );
-//MB~	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I ,abs(motor_s.diff_ang) );
 		corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,targ_Id ,((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
 		corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
 
-// if (motor_s.xscope) xscope_int( 0 ,motor_s.pid_regs[IQ_PID].sum_err  ); //MB~
+if (motor_s.xscope) xscope_int( 8 ,(targ_Iq - ((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~
+if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[IQ_PID].sum_err  ); //MB~
 // if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[ID_PID].sum_err  ); //MB~
 
 	if (PROPORTIONAL)
@@ -965,9 +968,6 @@ if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); //MB~
 		motor_s.pid_Id = targ_Id + corr_Id;
 		motor_s.pid_Iq = targ_Iq + corr_Iq;
 	} // else !(PROPORTIONAL)
-
-// if (motor_s.xscope) xscope_int( 8 ,motor_s.pid_Id ); // MB~
-// if (motor_s.xscope) xscope_int( (11-motor_s.id) ,motor_s.pid_Iq ); // MB~
 
 	if (IQ_ID_CLOSED)
 	{ // Update set DQ values
@@ -996,6 +996,9 @@ if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); //MB~
 #endif //MB~
 
 	motor_s.pid_preset = 0; // Clear 'Preset PID' flag
+
+if (motor_s.xscope) xscope_int( (1-motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); // MB~
+if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); // MB~
 
 } // update_foc_voltage
 /*****************************************************************************/
@@ -1168,15 +1171,18 @@ static void update_motor_state( // Update state of motor based on motor sensor d
  * If too long a time is spent in the STALL state, this becomes an error and the motor is stopped.
  */
 {
-if (motor_s.xscope) 
-{
-	int tmp_Id = motor_s.vect_data[D_ROTA].est_I;
 
-	if (tmp_Id > 20) tmp_Id = 20;
-	if (tmp_Id < -20) tmp_Id = -20;
-	xscope_int( motor_s.id ,tmp_Id ); //MB~
-} // if (motor_s.xscope) 
-// if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I ); //MB~
+#ifdef MB
+if (motor_s.xscope)
+{
+ int tmp = motor_s.vect_data[D_ROTA].est_I; //MB~
+ if (tmp < -20) tmp = -20;
+ if (tmp > 20) tmp = 20;
+ xscope_int( motor_s.id ,tmp ); //MB~
+}
+#endif //MB~
+
+if (motor_s.xscope) xscope_int( motor_s.id ,motor_s.vect_data[D_ROTA].est_I ); //MB~
 if (motor_s.xscope) xscope_int( (2+motor_s.id) ,motor_s.vect_data[Q_ROTA].est_I ); //MB~
 if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 
@@ -1602,7 +1608,7 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 
 	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
 
-if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.qei_params.tot_ang ); // MB~
+// if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.qei_params.tot_ang ); // MB~
 
 	correct_qei_origin( motor_s );	// If necessary. correct QEI angle
 // if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.qei_offset ); // MB~
@@ -2000,7 +2006,8 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 			motor_s.iters++; // Increment No. of iterations 
 
 			// NB There is not enough band-width to probe all xscope data
-			if ((1 == motor_s.id) || (motor_s.iters & 31)) // 31 probe at intervals
+//			if ((1 == motor_s.id) || (motor_s.iters & 31)) // 31 probe at intervals
+			if ((motor_s.iters & 31)) // 31 probe at intervals
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))

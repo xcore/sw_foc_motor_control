@@ -44,7 +44,7 @@ int init_one_pid_const( // Convert one floating point PID Constant to fixed poin
 
 	out_int = (int)(inp_Ke * (float)scale_factor + (float)0.5); // Scale-up floating-point to fixed-point
 
-	assert( out_int > 16 ); // WARNING: Loss of precision
+	assert( out_int > 32 ); // WARNING: Loss of precision
 
 	return out_int; // Return rounded value
 } // init_one_pid_const
@@ -162,6 +162,10 @@ printf("PID Re-scale\n"); //MB~
 			down_err = (int)((corr_err + (S64_T)pid_const_p->half_scale) >> pid_const_p->sum_res); // Down-scale error 
 		} // while (pid_regul_p->sum_err > (MAX_ERR_SUM - down_err))
 
+if (motor_id)
+{
+//	printf("InpErr=%d  Kp=%d  Ki=%d  res_l=%lld  res_h=%lld  cor_e=%d  dwn_e=%d  SumErr=%d  rem=%d  qnt=%d \n" ,inp_err ,pid_const_p->K_p ,pid_const_p->K_i ,res_l_64 ,res_h_64 ,corr_err ,down_err ,pid_regul_p->sum_err ,pid_regul_p->rem ,pid_regul_p->qnt_err ); //MB~
+} if (motor_id)
 		pid_regul_p->sum_err += down_err; // Update Sum of (down-scaled) errors
 		res_h_64 += (S64_T)pid_const_p->K_i * (S64_T)pid_regul_p->sum_err;
 
@@ -182,9 +186,19 @@ pid_regul_p->prev_err = inp_err; // MB~ Dbg
  
 	// Convert to 32-bit result ...
 
+if (motor_id)
+{
+//	printf("      res_h=%lld  req_val=%d  meas_vel=%d \n" ,res_h_64 ,requ_val ,meas_val ); //MB~
+} if (motor_id)
+
 	res_h_64 += (S64_T)pid_regul_p->qnt_err; // Add-in previous quantisation (diffusion) error
 	res_32 = (int)((res_h_64 + (S64_T)PID_HALF_HI_SCALE) >> (S64_T)PID_CONST_HI_RES); // Down-scale result
 	pid_regul_p->qnt_err = (int)(res_h_64 - ((S64_T)res_32 << (S64_T)PID_CONST_HI_RES)); // Update diffusion error
+
+if (motor_id)
+{
+//	printf("              res_h=%lld  SumErr=%d  rem=%d  qnt=%d  RES=%d \n" ,res_h_64 ,pid_regul_p->sum_err ,pid_regul_p->rem ,pid_regul_p->qnt_err ,res_32 ); //MB~
+} if (motor_id)
 
 	return res_32;
 } // get_pid_regulator_correction 

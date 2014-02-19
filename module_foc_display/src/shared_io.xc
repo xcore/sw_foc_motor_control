@@ -29,8 +29,8 @@
 #define LO_SPEED_INC 50
 #define HI_SPEED_INC 100
 
-#define FIRST_MOTOR 0 //MB~
-#define LAST_MOTOR 0 //MB~
+#define FIRST_MOTOR 1 //MB~
+#define LAST_MOTOR 1 //MB~
 
 /*****************************************************************************/
 static void wait(unsigned millis){
@@ -331,25 +331,21 @@ static void dbg_motor(
 
 
 	printstrln("Debug Motor Tests");
-	wait(3000);
-	stop(c_speed);
 
 	set_both_motors_speed(c_speed ,MAX_TEST_RPM );
 	wait(5000);
 	print_speed( c_speed );
 
 #ifdef MB
-	for(unsigned speed = (EASY_SPEED + HI_SPEED_INC); speed <= MAX_TEST_RPM; speed += HI_SPEED_INC)
+	for(unsigned speed = -MIN_TEST_RPM; speed >= -MAX_TEST_RPM; speed -= HI_SPEED_INC)
 	{
 	  set_both_motors_speed(c_speed, speed);
-	  wait(1000);
+	  wait(2000);
 		print_speed( c_speed );
 	}
 #endif //MB~
 
-	set_both_motors_speed( c_speed, 400 );
-	wait(3000);
-	print_speed( c_speed );
+wait(5000);
 
 while(1);
 
