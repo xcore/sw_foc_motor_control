@@ -118,6 +118,7 @@ void preset_pid( // Preset PID ready for first iteration
 /*****************************************************************************/
 int get_pid_regulator_correction( // Computes new PID correction based on input error
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
 	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
 	PID_CONST_TYP * pid_const_p, // Local pointer to PID constants data structure
 	int requ_val, // request value
@@ -132,6 +133,7 @@ int get_pid_regulator_correction( // Computes new PID correction based on input 
 	S64_T res_l_64; // Partial result at Low resolution (Kp) at 64-bit precision
 	S64_T res_h_64; // Result at High resolution (Ki & Kd) at 64-bit precision
 	int res_32; // Result at 32-bit precision
+	int tmp;
 
 
 	// Build 64-bit result
@@ -162,10 +164,11 @@ printf("PID Re-scale\n"); //MB~
 			down_err = (int)((corr_err + (S64_T)pid_const_p->half_scale) >> pid_const_p->sum_res); // Down-scale error 
 		} // while (pid_regul_p->sum_err > (MAX_ERR_SUM - down_err))
 
-if (motor_id)
+if ((SPEED_PID == pid_id))
 {
-//	printf("InpErr=%d  Kp=%d  Ki=%d  res_l=%lld  res_h=%lld  cor_e=%d  dwn_e=%d  SumErr=%d  rem=%d  qnt=%d \n" ,inp_err ,pid_const_p->K_p ,pid_const_p->K_i ,res_l_64 ,res_h_64 ,corr_err ,down_err ,pid_regul_p->sum_err ,pid_regul_p->rem ,pid_regul_p->qnt_err ); //MB~
-} if (motor_id)
+//	printf("\nM%1d:P%1d  InpErr=%d  res_l=%lld  res_h=%lld  cor_e=%d  dwn_e=%d  SumErr=%d  rem=%d  qnt=%d \n" ,motor_id ,pid_id ,inp_err ,res_l_64 ,res_h_64 ,corr_err ,down_err ,pid_regul_p->sum_err ,pid_regul_p->rem ,pid_regul_p->qnt_err ); //MB~
+} // if (motor_id)
+
 		pid_regul_p->sum_err += down_err; // Update Sum of (down-scaled) errors
 		res_h_64 += (S64_T)pid_const_p->K_i * (S64_T)pid_regul_p->sum_err;
 
@@ -186,19 +189,19 @@ pid_regul_p->prev_err = inp_err; // MB~ Dbg
  
 	// Convert to 32-bit result ...
 
-if (motor_id)
+if ((SPEED_PID == pid_id))
 {
-//	printf("      res_h=%lld  req_val=%d  meas_vel=%d \n" ,res_h_64 ,requ_val ,meas_val ); //MB~
-} if (motor_id)
+//	printf("      res_h=%lld  req_val=%d  meas_vel=%d Kp=%d  Ki=%d \n" ,res_h_64 ,requ_val ,meas_val ,pid_const_p->K_p ,pid_const_p->K_i ); //MB~
+} // if (motor_id)
 
 	res_h_64 += (S64_T)pid_regul_p->qnt_err; // Add-in previous quantisation (diffusion) error
 	res_32 = (int)((res_h_64 + (S64_T)PID_HALF_HI_SCALE) >> (S64_T)PID_CONST_HI_RES); // Down-scale result
 	pid_regul_p->qnt_err = (int)(res_h_64 - ((S64_T)res_32 << (S64_T)PID_CONST_HI_RES)); // Update diffusion error
 
-if (motor_id)
+if ((SPEED_PID == pid_id))
 {
 //	printf("              res_h=%lld  SumErr=%d  rem=%d  qnt=%d  RES=%d \n" ,res_h_64 ,pid_regul_p->sum_err ,pid_regul_p->rem ,pid_regul_p->qnt_err ,res_32 ); //MB~
-} if (motor_id)
+} // if (motor_id)
 
 	return res_32;
 } // get_pid_regulator_correction 

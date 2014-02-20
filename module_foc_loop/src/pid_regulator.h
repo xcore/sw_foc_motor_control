@@ -113,6 +113,7 @@ void preset_pid( // Computes new PID correction based on input error
 /*****************************************************************************/
 int get_pid_regulator_correction( // Computes new PID correction based on input error
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
 	PID_REGULATOR_TYP &pid_regul_s, // Reference to PID regulator data structure
 	PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
 	int requ_val, // request value
@@ -145,6 +146,7 @@ void preset_pid( // Preset PID data ready for first iteration
 /*****************************************************************************/
 int get_pid_regulator_correction( // Computes new PID correction based on input error
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
 	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
 	PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
 	int requ_val, // request value

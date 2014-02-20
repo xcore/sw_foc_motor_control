@@ -158,6 +158,7 @@ static void init_pid_data( // Initialise PID data
 //MB~	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,4.0 ,0.011 ,0.0 );
 
 #ifdef MB
+	// Meta-stable version 18-FEB-2014 
 	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.4 ,0.0044 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,16.0 ,0.012 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,2.0 ,0.0000075 ,0.0 );
@@ -804,8 +805,8 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 #endif //MB~
 
 if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
-	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
-// if (motor_s.xscope) xscope_int( (9-motor_s.id) ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
+	corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
+if (motor_s.xscope) xscope_int( (12+motor_s.id) ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
 
 	// Calculate velocity PID output
 	if (PROPORTIONAL)
@@ -817,7 +818,7 @@ if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 		motor_s.pid_veloc = motor_s.vect_data[Q_ROTA].req_closed_V + corr_veloc;
 	} // else !(PROPORTIONAL)
 
-if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.pid_veloc ); // MB~
+if (motor_s.xscope) xscope_int( (14+motor_s.id) ,motor_s.pid_veloc ); // MB~
 
 	if (VELOC_CLOSED)
 	{ // Evaluate requested IQ from velocity PID
@@ -949,11 +950,11 @@ if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
 
 // if (motor_s.xscope) xscope_int( 8 ,(targ_Iq - ((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~
 // if (motor_s.xscope) xscope_int( 8 ,(targ_Id - ((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~
-		corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,targ_Id ,((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
-		corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
+		corr_Id = get_pid_regulator_correction( motor_s.id ,ID_PID ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,targ_Id ,((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
+		corr_Iq = get_pid_regulator_correction( motor_s.id ,IQ_PID ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
 
-if (motor_s.xscope) xscope_int( 8 ,(targ_Iq - ((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~
-if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[IQ_PID].sum_err  ); //MB~
+// if (motor_s.xscope) xscope_int( 8 ,(targ_Iq - ((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS)) ); //MB~
+// if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[IQ_PID].sum_err  ); //MB~
 // if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[ID_PID].sum_err  ); //MB~
 
 	if (PROPORTIONAL)
@@ -997,8 +998,8 @@ if (motor_s.xscope) xscope_int( 10 ,motor_s.pid_regs[IQ_PID].sum_err  ); //MB~
 
 	motor_s.pid_preset = 0; // Clear 'Preset PID' flag
 
-if (motor_s.xscope) xscope_int( (1-motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); // MB~
-if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); // MB~
+// if (motor_s.xscope) xscope_int( (1-motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); // MB~
+// if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); // MB~
 
 } // update_foc_voltage
 /*****************************************************************************/
@@ -1218,7 +1219,6 @@ if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 				{
 					motor_s.prev_time = ts1; // Store time-stamp
 
-xscope_int( 7 ,(200*motor_s.id - 100) ); //MB~
 //MB~ acquire_lock(); printstrln("SEARCH"); release_lock(); //MB~
 					motor_s.state = SEARCH;
 				} // if ...
@@ -2007,7 +2007,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 
 			// NB There is not enough band-width to probe all xscope data
 //			if ((1 == motor_s.id) || (motor_s.iters & 31)) // 31 probe at intervals
-			if ((motor_s.iters & 31)) // 31 probe at intervals
+			if ((motor_s.iters & 63)) // 31 probe at intervals
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
@@ -2033,7 +2033,7 @@ acquire_lock(); printint(motor_s.id); printstrln(": STOP DEMO"); release_lock();
 		}	// select
 
 // acquire_lock(); printint(motor_s.id); printstr(": MS="); printintln(motor_s.state); release_lock(); //MB~
-		c_wd <: WD_CMD_TICK; // Keep WatchDog alive55
+		c_wd <: WD_CMD_TICK; // Keep WatchDog alive
 // if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.req_veloc ); //MB~
 
 	}	// while (POWER_OFF != motor_s.state)

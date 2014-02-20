@@ -29,7 +29,7 @@
 #define LO_SPEED_INC 50
 #define HI_SPEED_INC 100
 
-#define FIRST_MOTOR 1 //MB~
+#define FIRST_MOTOR 0 //MB~
 #define LAST_MOTOR 1 //MB~
 
 /*****************************************************************************/
@@ -82,7 +82,7 @@ static void print_speed(chanend c_speed[])
 		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t"); 
 	} // for motor_cnt
 
-	printstrln(" ");
+	printstr(" R:"); printint(req_vel); printstrln(" ");
 }
 /*****************************************************************************/
 static void print_asj_speed(chanend c_speed[], int target)
