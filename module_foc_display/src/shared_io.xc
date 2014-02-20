@@ -85,6 +85,23 @@ static void print_speed(chanend c_speed[])
 	printstr(" R:"); printint(req_vel); printstrln(" ");
 }
 /*****************************************************************************/
+static void measure_velocities(
+	chanend c_speed[],
+	int meas_vels[] 
+)
+{
+	int req_vel; // Requested velocity
+	int motor_cnt;
+
+
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_GET_IQ;
+		c_speed[motor_cnt] :> meas_vels[motor_cnt];
+		c_speed[motor_cnt] :> req_vel;
+	} // for motor_cnt
+} // measure_velocities
+/*****************************************************************************/
 static void print_speed2(
 	chanend c_speed[],
 	int req_speed )
@@ -351,6 +368,11 @@ static void dbg_motor(
 {
 	int cur_speed; // Current Speed
 	int set_speed; // Requested Speed
+	int targ_speed; // Target Speed
+	int meas_vels[NUMBER_OF_MOTORS]; // Array of Measured Motor Velocities
+	int hunt_flags[NUMBER_OF_MOTORS]; // Array of 'hunting' flags for each motor
+	int num_hunting; // No of motors still 'hunting' set speed
+	int motor_cnt;
 
 
 	printstrln("Debug Motor Tests");
@@ -372,29 +394,89 @@ static void dbg_motor(
 
 while(1)
 {
-	set_speed = 400;
+	set_speed = 4000;
 	set_both_motors_speed( c_speed ,set_speed );
 	wait(WAIT_TIME);
 	print_speed2( c_speed ,set_speed );
 
-	set_speed = 4000;
-	set_both_motors_speed( c_speed ,set_speed );
-	wait(WAIT_TIME);
-	wait(WAIT_TIME);
-	wait(WAIT_TIME);
-	wait(WAIT_TIME);
-	wait(WAIT_TIME);
-	wait(WAIT_TIME);
-	wait(WAIT_TIME);
-	wait(WAIT_TIME);
-	wait(WAIT_TIME);
-	wait(WAIT_TIME);
+	set_speed = 30;
+	targ_speed = 100;
+  set_both_motors_speed( c_speed ,set_speed );
+
+	num_hunting = 0; // Reset No. of motors 'hunting' target speed
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
+	{
+		hunt_flags[motor_cnt] = 1; // Initialise 'hunting' flag for current motor
+		num_hunting++; // Increment No. of motors 'hunting' target speed
+	} // for motor_cnt
+
+	while(0 < num_hunting)
+	{
+	  wait(1000);
+	  measure_velocities( c_speed ,meas_vels );
+
+		for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
+		{
+			// Check if this motor is still hunting
+			if (hunt_flags[motor_cnt])
+			{
+				if (meas_vels[motor_cnt] <= targ_speed)
+				{ // Target speed reached
+					c_speed[motor_cnt] <: IO_CMD_SET_SPEED;
+					c_speed[motor_cnt] <: targ_speed * (2*motor_cnt - 1);
+
+					hunt_flags[motor_cnt] = 0; // Swithc of hunting flag
+					num_hunting--; // Decrement No. of motors still 'hunting' target speed
+				} // if (meas_vels[motor_cnt] <= set_speed)
+			} // if (hunt_flags[motor_cnt])
+		} // for motor_cnt
+	} // while(0 < num_hunting)
+	
 	print_speed2( c_speed ,set_speed );
 } // while(1)
 
 
 	return;
 } // dbg_motor
+/*****************************************************************************/
+static void demo_1(
+	chanend c_speed[NUMBER_OF_MOTORS]
+)
+#define ONE_SECOND 1000
+#define FIVE_SECOND (5 * ONE_SECOND)
+#define TEN_SECOND (10 * ONE_SECOND)
+#define TWENTY_SECOND (2 * TEN_SECOND)
+{
+	int cur_speed; // Current Speed
+	int set_speed; // Requested Speed
+	int targ_speed; // Target Speed
+	int meas_vels[NUMBER_OF_MOTORS]; // Array of Measured Motor Velocities
+	int hunt_flags[NUMBER_OF_MOTORS]; // Array of 'hunting' flags for each motor
+	int num_hunting; // No of motors still 'hunting' set speed
+	int motor_cnt;
+
+
+	printstrln("Demo_1");
+
+while(1)
+{
+	set_speed = 4000;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(FIVE_SECOND);
+	print_speed2( c_speed ,set_speed );
+	stop(c_speed);
+
+	set_speed = 30;
+  set_both_motors_speed( c_speed ,set_speed );
+	wait(TWENTY_SECOND);
+	wait(TWENTY_SECOND);
+	print_speed2( c_speed ,set_speed );
+	stop(c_speed);
+} // while(1)
+
+
+	return;
+} // demo_1
 /*****************************************************************************/
 
 #endif // ( 1 == ASJ) End-of Andrew_SJ's test-code
@@ -456,6 +538,7 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 	timer_10Hz :> time_10Hz_val;
 
 //	demo_motor( c_speed ); //ASJ~
+demo_1( c_speed ); //MB~
 
 	/* Loop forever processing commands */
 	while (1)
@@ -551,7 +634,8 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 							leds <: 3;
 
 //	test_motor( c_speed ); //MB~
-dbg_motor( c_speed ); //MB~
+// dbg_motor( c_speed ); //MB~
+demo_1( c_speed ); //MB~
 						break; // case 4
 #endif // ( 1 == ASJ)
 	

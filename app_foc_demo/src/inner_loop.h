@@ -113,14 +113,14 @@
 
 #define INIT_THETA 0 // Initial start-up angle
 
-
+#ifdef MB // Old values
 #define START_VOLT_OPENLOOP 4000 // 2000 Voltage (Vh) magnitude for start of open-loop state
 #define START_GAMMA_OPENLOOP 64  // Voltage angle for start of open-loop state (ie Vq = Vh.cos(angle)
 
 #define END_VOLT_OPENLOOP 5000 // 3000  Voltage (Vh) magnitude for end of open-loop state
 #define END_GAMMA_OPENLOOP 19 //  19 32 Voltage angle for end of open-loop state (ie Vq = Vh.cos(angle)
 
-#define REQ_VOLT_CLOSEDLOOP 1000 // Default staring value
+#define REQ_VOLT_CLOSEDLOOP 1000 // Default starting value
 #define REQ_GAMMA_CLOSEDLOOP 19     // Used to tune IQ PID
 
 #define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value
@@ -130,8 +130,27 @@
 #define START_SPEED 800 // Speed used to start motor
 #define INIT_SPEED 400 // Initial motor speed, before external request received
 
-//MB~ #define MIN_SPEED 300 // This value is derived from experience
+#define MIN_SPEED 300 // This value is derived from experience
+#endif //MB~
+
+#define START_VOLT_OPENLOOP 4000 // 2000 Voltage (Vh) magnitude for start of open-loop state
+#define START_GAMMA_OPENLOOP 64  // Voltage angle for start of open-loop state (ie Vq = Vh.cos(angle)
+
+#define END_VOLT_OPENLOOP 2500 // 3000  Voltage (Vh) magnitude for end of open-loop state
+#define END_GAMMA_OPENLOOP 19 //  19 32 Voltage angle for end of open-loop state (ie Vq = Vh.cos(angle)
+
+#define REQ_VOLT_CLOSEDLOOP 400 // Default starting value
+#define REQ_GAMMA_CLOSEDLOOP 19     // Used to tune IQ PID
+
+#define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value
+#define MAX_VQ_OPENLOOP 5800 // MB~ Max Vq value for open-loop tuning
+#define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
+
+#define START_SPEED 100 // Speed used to start motor
+#define INIT_SPEED 100 // Initial motor speed, before external request received
+
 #define MIN_SPEED 30 // This value is derived from experience
+
 #define SPEC_MAX_SPEED 4000 // This value is derived from the LDO Motor Max. spec. speed
 #define SAFE_MAX_SPEED 5800 // This value is derived from the Optical Encoder Max. rate of 100kHz (gives 5860)
 #define SPEED_INC 100 // If speed change requested, this is the amount of change

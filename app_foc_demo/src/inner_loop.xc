@@ -170,9 +170,10 @@ static void init_pid_data( // Initialise PID data
 #endif //MB~
 
 	// 20-FEB-2014: Re-tuned for Fastest response with NO velocity 'undershoot'
-	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,15.0 ,0.007 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,426.0 ,0.006 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[SPEED_PID] ,3.0 ,0.000003 ,0.0 );
+//	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,15.0 ,0.007 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,8.0 ,0.002 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,426.0 ,0.005 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[SPEED_PID] ,3.0 ,0.000002 ,0.0 );
 #endif // NO_LOAD
 
 	motor_s.pid_Id = 0;	// Output from radial current PID
