@@ -162,11 +162,17 @@ static void init_pid_data( // Initialise PID data
 	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.4 ,0.0044 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,16.0 ,0.012 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,2.0 ,0.0000075 ,0.0 );
-#endif //MB~
 
+	// Stable version 19-FEB-2014 
 	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,15.0 ,0.007 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,100.0 ,0.01 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,2.0 ,0.00002 ,0.0 );
+#endif //MB~
+
+	// 20-FEB-2014: Re-tuned for Fastest response with NO velocity 'undershoot'
+	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,15.0 ,0.007 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,426.0 ,0.006 ,0.0 );
+	init_all_pid_consts( motor_s.pid_consts[SPEED_PID] ,3.0 ,0.000003 ,0.0 );
 #endif // NO_LOAD
 
 	motor_s.pid_Id = 0;	// Output from radial current PID
@@ -806,7 +812,7 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 
 if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
-if (motor_s.xscope) xscope_int( (12+motor_s.id) ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
+// if (motor_s.xscope) xscope_int( (12+motor_s.id) ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
 
 	// Calculate velocity PID output
 	if (PROPORTIONAL)
@@ -818,7 +824,7 @@ if (motor_s.xscope) xscope_int( (12+motor_s.id) ,motor_s.pid_regs[SPEED_PID].sum
 		motor_s.pid_veloc = motor_s.vect_data[Q_ROTA].req_closed_V + corr_veloc;
 	} // else !(PROPORTIONAL)
 
-if (motor_s.xscope) xscope_int( (14+motor_s.id) ,motor_s.pid_veloc ); // MB~
+// if (motor_s.xscope) xscope_int( (14+motor_s.id) ,motor_s.pid_veloc ); // MB~
 
 	if (VELOC_CLOSED)
 	{ // Evaluate requested IQ from velocity PID

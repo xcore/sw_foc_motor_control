@@ -45,7 +45,7 @@
 #define PID_CONST_RES 9 // Bit resolution of PID constants
 #endif
 
-#define PID_CONST_XTRA_RES 14 // Extra resolution required for Sum and Diff terms
+#define PID_CONST_XTRA_RES 15 // Extra resolution required for Sum and Diff terms
 
 #define PID_CONST_LO_RES PID_CONST_RES // Resolution of Proportional (Kp) Terms
 #define PID_CONST_HI_RES (PID_CONST_RES + PID_CONST_XTRA_RES) // Resolution of Other Terms (Ki & Kd) 

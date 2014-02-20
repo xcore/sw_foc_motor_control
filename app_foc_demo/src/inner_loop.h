@@ -130,7 +130,8 @@
 #define START_SPEED 800 // Speed used to start motor
 #define INIT_SPEED 400 // Initial motor speed, before external request received
 
-#define MIN_SPEED 300 // This value is derived from experience
+//MB~ #define MIN_SPEED 300 // This value is derived from experience
+#define MIN_SPEED 30 // This value is derived from experience
 #define SPEC_MAX_SPEED 4000 // This value is derived from the LDO Motor Max. spec. speed
 #define SAFE_MAX_SPEED 5800 // This value is derived from the Optical Encoder Max. rate of 100kHz (gives 5860)
 #define SPEED_INC 100 // If speed change requested, this is the amount of change
