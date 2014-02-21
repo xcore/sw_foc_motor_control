@@ -371,7 +371,7 @@ static void start_motor_reset( // Reset motor data ready for re-start
 
 	motor_s.sync_on = 0; // Clear Flag indicating angular synchronisation NOT in operation
 	motor_s.prev_sync = 0; // Previous value of sync-flag
-	init_angular_sync_data( motor_s ,motor_s.targ_vel ); // Initialise angular synchronisation data	
+	update_angular_sync_data( motor_s ,motor_s.targ_vel ); // Initialise angular synchronisation data	
 
 	motor_s.tmp = 400; // MB~ Dbg
 	motor_s.temp = 0; // MB~ Dbg
@@ -2016,7 +2016,7 @@ static void process_speed_command( // Decodes speed command, and implements chan
 			if (0 == motor_s.prev_sync)
 			{
 acquire_lock(); printint(motor_s.id); printstrln(":SYNC"); release_lock(); //MB~
-				init_angular_sync_data( motor_s ,motor_s.req_veloc );
+				update_angular_sync_data( motor_s ,motor_s.req_veloc );
 			} // if (0 == motor_s.prev_sync)
 		} // else !(abs(motor_s.req_veloc) > SYNC_SPEED)
 
