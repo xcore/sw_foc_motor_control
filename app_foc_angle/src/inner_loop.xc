@@ -440,8 +440,6 @@ static void init_motor( // initialise data structure for one motor
 		motor_s.req_veloc = -INIT_SPEED;
 	} // if (0 > motor_s.req_veloc)
 
-	motor_s.sync_on = 0; // Clear Flag indicating angular synchronisation NOT in operation
-	motor_s.prev_sync = 0; // Previous value of sync-flag
 	init_angular_sync_data( motor_s ,motor_s.req_veloc ); // Initialise angular synchronisation data	
 
 	// Place motor in stationary state
