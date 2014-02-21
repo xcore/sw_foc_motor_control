@@ -425,6 +425,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int pwm_cnt; // Counts number of PWM cycles since start of synchronisation
 	double q_per_c; // QEI-phases per PWM-cycle (depends on angular requested velocity)
 	double rpm2qpc; // const used to convert RPM to QEI-phases per PWM-cycle 
+	S64_T ang_rem; // Remainder in angle down-scaling
+	int ang_qnt; // Angle Quantisation error
 
 	int tmp; // MB~
 	int temp; // MB~ Dbg

@@ -271,8 +271,10 @@ static void update_angular_sync_data( // Update angular synchronisation data
 )
 {
 	motor_s.start_ang = motor_s.tot_ang; // Value of total angle at start of synchronisation
-	motor_s.pwm_cnt = 0; // Counts number of PWM cycles since start of synchronisation
+	motor_s.pwm_cnt = 1; // Counts number of PWM cycles since start of synchronisation
 	motor_s.q_per_c = (double)init_veloc * motor_s.rpm2qpc; // Expected QEI-phases per PWM-cycle
+	motor_s.ang_rem = 0; // Remainder after rounding
+	motor_s.ang_qnt = 0; // Quantisation error
 } // update_angular_sync_data
 /*****************************************************************************/
 static void init_angular_sync_data( // Initialise angular synchronisation data	
@@ -760,7 +762,7 @@ static int update_target_velocity( // If necessary, update target velocity
 	int ang_off; // angular position offset since start of synchronisation
 	int veloc_inc = 0; // Clear velocity increment
 
-
+#ifdef MB
 	// Check if angular synchronisation activated
 	if (motor_s.sync_on)
 	{ // Calculate target angular position
@@ -774,7 +776,15 @@ static int update_target_velocity( // If necessary, update target velocity
 		} // else !(0 > motor_s.q_per_c)
 
 		targ_ang = motor_s.start_ang + ang_off;
-
+/*
+acquire_lock(); 
+printint(motor_s.id); 
+printstr(": Cnt="); printint(motor_s.pwm_cnt); 
+printstr(" Off="); printint(ang_off); 
+printstr(" Strt="); printint(motor_s.start_ang); 
+printstr(" TarA="); printintln(targ_ang); 
+release_lock(); //MB~
+*/
 		// Check if target velocity needs updating
 		if (motor_s.tot_ang < targ_ang)
 		{
@@ -793,6 +803,7 @@ static int update_target_velocity( // If necessary, update target velocity
 		} // else (out_veloc < motor_s.req_veloc)
 	} // if (motor_s.sync_on)
 	else
+#endif //MB~
 	{ // Smoothly change target velocity if required
 		// Check if target velocity needs updating
 		if (out_veloc < motor_s.req_veloc)
@@ -833,6 +844,10 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
  * The estimated and requested values fed into the Iq PID must be simliar to ensure correct operation
  * Therefore, the requested value is scaled down by a factor of 32.
  */
+#define MYMY_BITS (12 + QEI_UPSCALE_BITS)
+#define MYMY_DIV (1 << MYMY_BITS)
+#define MYMY_HALF (MYMY_DIV >> 1)
+
 {
 	int targ_Id;	// target 'radial' current value
 	int targ_Iq;	// target 'tangential' current value
@@ -840,16 +855,43 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	int corr_Iq;	// Correction to tangential current value
 	int corr_veloc;	// Correction to angular velocity
 	int abs_Id; // magnitude if target Id value;
+	int veloc_est;	// Velocity estimated from angular position
+	S64_T int_64 = 5859375; // Scaling factor
+	S64_T down_64; // Down-scaled angle
+	int scaled_ang; // Scaled angular difference 
 
 
 #pragma xta label "foc_loop_speed_pid"
+
+	if (motor_s.sync_on)
+	{ // Estimate velocity from angular position
+		int_64 *= (S64_T)(motor_s.tot_ang - motor_s.start_ang);  
+		int_64 += motor_s.ang_rem; // Add in remainder
+		down_64 = (int_64 + motor_s.ang_rem + (S64_T)MYMY_HALF) >> (S64_T)MYMY_BITS; // Down-scale angle difference
+		motor_s.ang_rem = int_64 - (down_64 << (S64_T)MYMY_BITS); // Update remainder
+
+		scaled_ang = (int)down_64 + motor_s.ang_qnt; // Add in quantisation error
+		scaled_ang += (int)down_64 + (motor_s.pwm_cnt >> 1); // Add rounding error
+
+		veloc_est = (scaled_ang + (motor_s.pwm_cnt >> 1)) / motor_s.pwm_cnt;
+		motor_s.ang_qnt = scaled_ang - (veloc_est * motor_s.pwm_cnt); // Update Quantisation error
+
+		// Update values
+		motor_s.start_ang = motor_s.tot_ang;
+		motor_s.pwm_cnt = 0;
+		
+	} // if (motor_s.sync_on)
+	else
+	{
+		veloc_est = motor_s.est_veloc;
+	} // else !(motor_s.sync_on)
 
 	// Applying Speed PID.
 
 	// Check if PID's need presetting
 	if (motor_s.pid_preset)
 	{
-		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.old_veloc ,motor_s.targ_vel ,motor_s.est_veloc );
+		preset_pid( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.old_veloc ,motor_s.targ_vel ,veloc_est );
 	}; // if (motor_s.pid_preset)
 
 #ifdef MB
@@ -877,14 +919,17 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 
 if (motor_s.xscope)
 {
+	int lim = 64;
 	int tt = motor_s.targ_vel;
-	if (tt > 40) tt = 40;
-	if (tt < -40) tt = -40;
+
+	while (tt >= lim) tt -= lim; 
+	while (tt <= -lim) tt += lim; 
+
 	xscope_int( (10+motor_s.id) ,tt ); //MB~
 // if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 }
-	corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
-// if (motor_s.xscope) xscope_int( (12+motor_s.id) ,motor_s.pid_regs[SPEED_PID].sum_err  ); //MB~
+	corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,veloc_est ,abs(motor_s.diff_ang) );
+if (motor_s.xscope) xscope_int( (12+motor_s.id) ,veloc_est ); //MB~
 
 	// Calculate velocity PID output
 	if (PROPORTIONAL)
@@ -1099,6 +1144,31 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
+	// Check if angular synchronisation is required
+	motor_s.prev_sync = motor_s.sync_on; // Store previous synchronisation value
+	if (abs(motor_s.est_veloc) > SYNC_SPEED)
+	{ // Fast speed
+		motor_s.sync_on = 0; // Switch OFF angular synchronisation 
+
+		// Check if synchronisation initialisation required
+		if (1 == motor_s.prev_sync)
+		{
+// acquire_lock(); printint(motor_s.id); printstrln(":NO_SYNC"); release_lock(); //MB~
+			update_angular_sync_data( motor_s ,motor_s.req_veloc );
+		} // if (0 == motor_s.prev_sync)
+	} // if (abs(motor_s.req_veloc) > SYNC_SPEED)
+	else
+	{ // Slow speed
+		motor_s.sync_on = 1; // Switch ON angular synchronisation 
+
+		// Check if synchronisation initialisation required
+		if (0 == motor_s.prev_sync)
+		{
+// acquire_lock(); printint(motor_s.id); printstrln(":SYNC_ON"); release_lock(); //MB~
+			update_angular_sync_data( motor_s ,motor_s.req_veloc );
+		} // if (0 == motor_s.prev_sync)
+	} // else !(abs(motor_s.req_veloc) > SYNC_SPEED)
+
 	motor_s.old_veloc =  motor_s.targ_vel; // Store previous target velocity
 	motor_s.targ_vel = update_target_velocity( motor_s );
 
@@ -1999,24 +2069,6 @@ static void process_speed_command( // Decodes speed command, and implements chan
 		} // if (stop_motor)
 
 		motor_s.req_veloc = new_veloc;
-
-		// Check if angular synchronisation is required
-		motor_s.prev_sync = motor_s.sync_on; // Store previous synchronisation value
-		if (abs(motor_s.req_veloc) > SYNC_SPEED)
-		{ // Fast speed
-			motor_s.sync_on = 0; // Switch OFF angular synchronisation 
-		} // if (abs(motor_s.req_veloc) > SYNC_SPEED)
-		else
-		{ // Slow speed
-			motor_s.sync_on = 1; // Switch ON angular synchronisation 
-
-			// Check if synchronisation initialisation required
-			if (0 == motor_s.prev_sync)
-			{
-acquire_lock(); printint(motor_s.id); printstrln(":SYNC"); release_lock(); //MB~
-				update_angular_sync_data( motor_s ,motor_s.req_veloc );
-			} // if (0 == motor_s.prev_sync)
-		} // else !(abs(motor_s.req_veloc) > SYNC_SPEED)
 
 if (motor_s.id)
 {
