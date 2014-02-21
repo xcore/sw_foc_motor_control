@@ -265,15 +265,24 @@ static void update_velocity_data( // Update velocity dependent data
 	} // else !(0 > motor_s.targ_vel)
 } // update_velocity_data
 /*****************************************************************************/
-static void init_angular_sync_data( // Initialise angular synchronisation data	
+static void update_angular_sync_data( // Update angular synchronisation data	
 	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
 	int init_veloc // Initial velocity
 )
 {
 	motor_s.start_ang = motor_s.tot_ang; // Value of total angle at start of synchronisation
 	motor_s.pwm_cnt = 0; // Counts number of PWM cycles since start of synchronisation
-	motor_s.rpm2qpc = ((double)QEI_PER_REV/(double)SECS_PER_MIN) * ((double)PWM_MAX_VALUE/(double)PLATFORM_REFERENCE_HZ);
 	motor_s.q_per_c = (double)init_veloc * motor_s.rpm2qpc; // Expected QEI-phases per PWM-cycle
+} // update_angular_sync_data
+/*****************************************************************************/
+static void init_angular_sync_data( // Initialise angular synchronisation data	
+	MOTOR_DATA_TYP &motor_s, // reference to structure containing motor data
+	int init_veloc // Initial velocity
+)
+{
+	motor_s.rpm2qpc = ((double)QEI_PER_REV/(double)SECS_PER_MIN) * ((double)PWM_MAX_VALUE/(double)PLATFORM_REFERENCE_HZ);
+
+	update_angular_sync_data( motor_s ,init_veloc ); // Initialise angular synchronisation data	
 } // init_angular_sync_data
 /*****************************************************************************/
 static void speed_change_reset( // Reset motor data after large speed change
