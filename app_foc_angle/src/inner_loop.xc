@@ -272,8 +272,6 @@ static void init_angular_sync_data( // Initialise angular synchronisation data
 {
 	motor_s.start_ang = motor_s.tot_ang; // Value of total angle at start of synchronisation
 	motor_s.pwm_cnt = 0; // Counts number of PWM cycles since start of synchronisation
-	motor_s.vel_fact = 0; // Velocity factor (Scale velocity to remove division) 
-	motor_s.vel_rem = 0; // Remainder due to integer division of Velocity
 	motor_s.rpm2qpc = ((double)QEI_PER_REV/(double)SECS_PER_MIN) * ((double)PWM_MAX_VALUE/(double)PLATFORM_REFERENCE_HZ);
 	motor_s.q_per_c = (double)init_veloc * motor_s.rpm2qpc; // Expected QEI-phases per PWM-cycle
 } // init_angular_sync_data

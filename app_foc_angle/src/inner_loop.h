@@ -423,8 +423,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int prev_sync; // Previous value of sync-flag
 	int start_ang;	// Value of total angle at start of synchronisation
 	int pwm_cnt; // Counts number of PWM cycles since start of synchronisation
-	int vel_fact; // Velocity factor (Scale velocity to remove division) 
-	int vel_rem; // Remainder due to integer division of Velocity
 	double q_per_c; // QEI-phases per PWM-cycle (depends on angular requested velocity)
 	double rpm2qpc; // const used to convert RPM to QEI-phases per PWM-cycle 
 
