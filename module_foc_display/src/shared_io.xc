@@ -478,6 +478,47 @@ while(1)
 	return;
 } // demo_1
 /*****************************************************************************/
+static void demo_2( // Angular Synchronisation
+	chanend c_speed[NUMBER_OF_MOTORS]
+)
+#define ONE_SECOND 1000
+#define FIVE_SECOND (5 * ONE_SECOND)
+#define TEN_SECOND (10 * ONE_SECOND)
+#define TWENTY_SECOND (2 * TEN_SECOND)
+{
+	int cur_speed; // Current Speed
+	int set_speed; // Requested Speed
+	int targ_speed; // Target Speed
+	int meas_vels[NUMBER_OF_MOTORS]; // Array of Measured Motor Velocities
+	int hunt_flags[NUMBER_OF_MOTORS]; // Array of 'hunting' flags for each motor
+	int num_hunting; // No of motors still 'hunting' set speed
+	int motor_cnt;
+
+
+	printstrln("Demo_1");
+
+while(1)
+{
+	set_speed = 4000;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(FIVE_SECOND);
+	print_speed2( c_speed ,set_speed );
+	stop(c_speed);
+
+	set_speed = 30;
+  set_both_motors_speed( c_speed ,set_speed );
+	while(1)
+	{
+		wait(TWENTY_SECOND);
+		print_speed2( c_speed ,set_speed );
+	} // while(1)
+	stop(c_speed);
+} // while(1)
+
+
+	return;
+} // demo_2
+/*****************************************************************************/
 
 #endif // ( 1 == ASJ) End-of Andrew_SJ's test-code
 
@@ -538,7 +579,8 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 	timer_10Hz :> time_10Hz_val;
 
 //	demo_motor( c_speed ); //ASJ~
-demo_1( c_speed ); //MB~
+// demo_1( c_speed ); //MB~
+demo_2( c_speed ); //MB~
 
 	/* Loop forever processing commands */
 	while (1)
