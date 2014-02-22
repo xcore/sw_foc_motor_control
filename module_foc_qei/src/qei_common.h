@@ -76,7 +76,8 @@ typedef unsigned long QEI_RAW_TYP;
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_PARAM_TAG // 
 {
-	int tot_ang;	// Total angle traveresed since time=0
+	int tot_ang_this;	// Total angle traveresed since time=0, for this motor
+	int tot_ang_othr;	// Total angle traveresed since time=0, for other motor
 	unsigned period; // time (in ticks) to traverse one QEI phase (angular position)
 	int corr_ang;	// Angular correction (Old - New)
 	int orig_corr; // Flag set if origin correction available

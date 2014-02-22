@@ -369,10 +369,12 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int pid_Id;	// Output of 'radial' current PID
 	int pid_Iq;	// Output of 'tangential' current PID
 	int prev_Id;	// previous target 'radial' current value
-	int tot_ang;	// Total angle traversed (NB accounts for multiple revolutions)
-	int raw_ang;	// Raw total angle delivered by QEI Client
-	int prev_ang;	// Previous total angle traversed (NB accounts for multiple revolutions)
-	int diff_ang;	// Difference angle QEI between updates
+	int raw_ang;	// raw total angle (delivered by QEI Client)
+	int tot_up_ang;	// Upscaled Total angle traversed (NB accounts for multiple revolutions)
+	int prev_up_ang;	// Upscaled previous total angle traversed (NB accounts for multiple revolutions)
+	int diff_up_ang;	// Upscaled difference angle QEI between updates
+	int prev_ang_this;	// Previous raw total angle (delivered by QEI Client) for this motor
+	int prev_ang_othr;	// Previous raw total angle (delivered by QEI Client) for other motor
 	int corr_ang;	// Correction angle (when QEI origin detected)
 	int prev_diff;	// Previous Non-zero Difference angle QEI between updates
 	int est_theta;		// Estimated Angular position (from QEI data)
@@ -421,12 +423,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	int sync_on; // Flag indicating angular synchronisation in operation
 	int prev_sync; // Previous value of sync-flag
-	int start_ang;	// Value of total angle at start of synchronisation
-	int pwm_cnt; // Counts number of PWM cycles since start of synchronisation
-	double q_per_c; // QEI-phases per PWM-cycle (depends on angular requested velocity)
-	double rpm2qpc; // const used to convert RPM to QEI-phases per PWM-cycle 
-	S64_T ang_rem; // Remainder in angle down-scaling
-	int ang_qnt; // Angle Quantisation error
+	int start_ang_this;	// Total angle at start of sync. for this motor
+	int start_ang_othr;	// Total angle at start of sync. for other motor
 
 	int tmp; // MB~
 	int temp; // MB~ Dbg
