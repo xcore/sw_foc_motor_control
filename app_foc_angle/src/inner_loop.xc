@@ -316,6 +316,7 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	} // for phase_cnt
 
 	motor_s.iters = 0;
+	motor_s.buf_cnt = 0;
 	motor_s.cnts[ALIGN] = 0;
 	motor_s.cnts[SEARCH] = 0;
 	motor_s.cnts[STALL] = 0;
@@ -328,9 +329,12 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	motor_s.qei_offset = 0;	// Phase difference between the QEI origin and PWM theta origin
 	motor_s.hall_found = 0;	// Set flag to Hall origin NOT found
 	motor_s.qei_calib = 0;	// Clear QEI calibration flag
+	motor_s.calib_iters = 0x7fffffff;	// Set No. of iterations required to calibrate to max_int
 	motor_s.fw_on = 0;	// Reset flag to NO Field Weakening 
 
 	motor_s.raw_ang = 0;	// Raw QEI total angle value
+	motor_s.diff_buf_ang = 0;
+	motor_s.buf_full = 0; // Set flag to buffer NOT full
 	motor_s.tot_up_ang = 0;	// Upscaled total angle traversed (NB accounts for multiple revolutions)
 	motor_s.prev_up_ang = 0;	// Upscaled previous value of total angle
 	motor_s.diff_up_ang = 0;	// Upscaled difference between QEI angles for this motor
@@ -355,6 +359,8 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	{
 		motor_s.targ_vel = START_SPEED;
 	} // if (0 > motor_s.req_veloc)
+
+	motor_s.targ_diff = (VEL2ANG_MUX * motor_s.targ_vel + VEL2ANG_HALF) >> VEL2ANG_RES;
 
 	motor_s.half_veloc = (motor_s.targ_vel >> 1);
 	motor_s.old_veloc = motor_s.targ_vel; // Preset old requested velocity to start-up target velocity 
@@ -953,7 +959,17 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 #endif //MB~
 
 // if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
-	corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_up_ang) );
+
+	if (motor_s.buf_full)
+	{
+		motor_s.targ_diff = (VEL2ANG_MUX * motor_s.targ_vel + VEL2ANG_HALF) >> VEL2ANG_RES;
+
+		corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,(2 * motor_s.targ_diff) ,(2 * motor_s.diff_buf_ang) ,abs(motor_s.diff_up_ang) );
+	} // if (motor_s.buf_full)
+	else
+	{
+		corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_up_ang) );
+	} // if (motor_s.buf_full)
 
 	// Calculate velocity PID output
 	if (PROPORTIONAL)
@@ -1622,6 +1638,7 @@ static void correct_qei_origin( // If necessary, apply a correction to the QEI o
 			{ // Apply correction to offset
 				motor_s.qei_offset += (motor_s.qei_params.corr_ang << QEI_UPSCALE_BITS); // Add upscaled correction
 				motor_s.qei_calib = 1; // Set QEI calibrated flag
+				motor_s.calib_iters = motor_s.iters; // Store No. of iterations required to calibrate
 
 				motor_s.raw_ang += motor_s.qei_params.corr_ang; // Add incremental correction to previous raw total angle
 			} // if (SEARCH < motor_s.state)
@@ -1762,11 +1779,28 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 	unsigned dif_time; // Time since last re-start 
 
 
-	motor_s.raw_ang =  motor_s.qei_params.tot_ang_this; // Store raw angle velue for this motor
+	motor_s.raw_ang =  motor_s.qei_params.tot_ang_this; // Store previous raw angle velue for this motor
 
 	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
 
-// if (motor_s.xscope) xscope_int( (5-motor_s.id) ,motor_s.qei_params.tot_ang_this ); // MB~
+	// Calculate change in angle after ANG_BUF_SIZ iterations
+	if (1 == motor_s.qei_calib)
+	{
+		// Check if we have a full buffer of calibrated values
+		if (motor_s.iters > (motor_s.calib_iters + ANG_BUF_SIZ))
+		{
+			motor_s.buf_full = 1; // Set flag indicating buffer now full
+			motor_s.diff_buf_ang = motor_s.qei_params.tot_ang_this - motor_s.ang_vals[motor_s.buf_cnt];
+		} // if (motor_s.iters > ANG_BUF_SIZ)
+
+		motor_s.ang_vals[motor_s.buf_cnt] = motor_s.qei_params.tot_ang_this; // Update buffer entry
+	} // if (1 == motor_s.qei_calib)
+	else
+	{
+		motor_s.ang_vals[motor_s.buf_cnt] = 0; // Update buffer entry
+	} // else !(1 == motor_s.qei_calib)
+
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.diff_buf_ang ); // MB~
 
 	correct_qei_origin( motor_s );	// If necessary. correct QEI angle
 // if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.qei_offset ); // MB~
@@ -1929,7 +1963,6 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 	{
 		speed_sync = abs(motor_s.targ_vel); // test against target speed
 
- 
 		// Check if angular synchronisation is required
 		motor_s.prev_sync = motor_s.sync_on; // Store previous synchronisation value
 		if (speed_sync > SYNC_SPEED)
@@ -2161,7 +2194,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 
 			// NB There is not enough band-width to probe all xscope data
 //			if ((1 == motor_s.id) || (motor_s.iters & 31)) // 31 probe at intervals
-			if ((motor_s.iters & 3)) // 31 probe at intervals
+			if ((motor_s.iters & 63)) // 31 probe at intervals
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))
@@ -2172,6 +2205,9 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 // motor_s.xscope = 0; // MB~ Crude Switch
 
 			collect_sensor_data( motor_s ,c_pwm ,c_hall ,c_qei ,c_adc_cntrl );
+
+			motor_s.buf_cnt++; // Increment buffer counter
+			if (motor_s.buf_cnt >= ANG_BUF_SIZ) motor_s.buf_cnt = 0; 
 
 #ifdef MB
 			// Check if it is time to stop demo

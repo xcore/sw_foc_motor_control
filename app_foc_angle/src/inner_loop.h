@@ -230,6 +230,18 @@
 #define SYNC_SCALE_DIVR (1 << SYNC_SCALE_BITS) // Scaling factor used to scale velocity in sync. mode
 #define HALF_SYNC_SCALE (SYNC_SCALE_DIVR >> 1) // Half scaling factor used in rounding
 
+#define ANG_BUF_SIZ 625 // This is a chosen to be a factor of (SECS_IN_MIN * PLATFORM_REFERENCE_HZ)
+
+#define VEL2ANG_MUX 229065 // Velocity to Angle conversion factor
+#define VEL2ANG_RES 19 // Resolution of Velocity to Angle conversion factor
+#define VEL2ANG_DIV (1 << VEL2ANG_RES) // Divisor for Velocity to Angle conversion factor
+#define VEL2ANG_HALF (VEL2ANG_DIV >> 1) // Half Divisor (used for rounding)
+
+#define ANG2VEL_MUX 9375// Angle to Velocity conversion factor
+#define ANG2VEL_RES 12 // Resolution of Angle to Velocity conversion factor
+#define ANG2VEL_DIV (1 << ANG2VEL_RES) // Divisor for Angle to Velocity conversion factor
+#define ANG2VEL_HALF (ANG2VEL_DIV >> 1) // Half Divisor (used for rounding)
+
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
 #define DEMO_LIMIT 400000 // XSCOPE
@@ -349,6 +361,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
 	ERR_DATA_TYP err_data; // Structure containing data for error-handling
 	ROTA_DATA_TYP vect_data[NUM_ROTA_COMPS]; // Array of structures holding data for each rotating vector component
+	int ang_vals[ANG_BUF_SIZ];	// Array of previous ANG_BUF_SIZ raw total angle values (delivered by QEI Client)
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
 	MOTOR_STATE_ENUM state; // Current motor state
 	CMD_IO_ENUM cmd_id; // Speed Command
@@ -357,6 +370,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int req_veloc;	// (External) Requested angular velocity
 	int old_veloc;	// Old Requested angular velocity
 	int targ_vel;	// (Internal) Target angular velocity
+	int targ_diff;	// (Internal) Target angular difference
 	int est_veloc;	// Estimated angular velocity (from QEI data)
 	int half_veloc;	// Half requested angular velocity
 	int speed_inc; // Speed increment when commanded
@@ -372,6 +386,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int pid_Iq;	// Output of 'tangential' current PID
 	int prev_Id;	// previous target 'radial' current value
 	int raw_ang;	// raw total angle (delivered by QEI Client)
+	int diff_buf_ang;	// angular difference between complete cycle of buffer entries
+	int buf_full;	// Flag set ang-diff buffer full
 	int tot_up_ang;	// Upscaled Total angle traversed (NB accounts for multiple revolutions)
 	int prev_up_ang;	// Upscaled previous total angle traversed (NB accounts for multiple revolutions)
 	int diff_up_ang;	// Upscaled difference angle QEI between updates
@@ -396,6 +412,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int ws_cnt; // Wrong-Spin count //MB~
 
 	int iters; // Iterations of inner_loop
+	int buf_cnt; // Angular buffer counter
 	unsigned id; // Unique Motor identifier e.g. 0 or 1
 	unsigned prev_hall; // previous hall state value
 	unsigned end_hall; // hall state at end of cycle. I.e. next value is first value of cycle (001)
@@ -404,6 +421,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int qei_offset;	// Phase difference between the QEI origin and PWM theta origin
 	int hall_offset;	// Phase difference between the Hall sensor origin and PWM theta origin
 	int qei_calib; // Flag set when QEI offset has been calibrated
+	int calib_iters; // Value of iteration counter when calibration occured
 	int hall_found;	// Flag set when QEI orign found
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter
