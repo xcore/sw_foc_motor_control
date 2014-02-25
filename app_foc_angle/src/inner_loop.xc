@@ -172,7 +172,9 @@ static void init_pid_data( // Initialise PID data
 //	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,15.0 ,0.007 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,8.0 ,0.002 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,426.0 ,0.005 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[SPEED_PID] ,3.0 ,0.000002 ,0.0 );
+
+//MB~	init_all_pid_consts( motor_s.pid_consts[SPEED_PID] ,3.0 ,0.000002 ,0.0 ); //Uses Velocity Estimate
+	init_all_pid_consts( motor_s.pid_consts[SPEED_PID] ,6.9 ,0.0000046 ,0.0 ); // uses Ang-Diff Estimate
 #endif // (LOAD_VAL == BIG_LOAD)
 
 	motor_s.pid_Id = 0;	// Output from radial current PID
@@ -329,7 +331,6 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	motor_s.qei_offset = 0;	// Phase difference between the QEI origin and PWM theta origin
 	motor_s.hall_found = 0;	// Set flag to Hall origin NOT found
 	motor_s.qei_calib = 0;	// Clear QEI calibration flag
-	motor_s.calib_iters = 0x7fffffff;	// Set No. of iterations required to calibrate to max_int
 	motor_s.calib_off = 0;	// Set No. of iterations required to calibrate to max_int
 	motor_s.fw_on = 0;	// Reset flag to NO Field Weakening 
 
@@ -964,10 +965,11 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	assert(0 < motor_s.buf_full); //MB~ Remove when confident Check
 
 	motor_s.targ_diff = (VEL2ANG_MUX * motor_s.targ_vel + VEL2ANG_HALF) >> VEL2ANG_RES;
-	corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,(2 * motor_s.targ_diff) ,(2 * motor_s.diff_buf_ang) ,abs(motor_s.diff_up_ang) );
+//	corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,(2 * motor_s.targ_diff) ,(2 * motor_s.diff_buf_ang) ,abs(motor_s.diff_up_ang) );
+	corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_diff ,motor_s.diff_buf_ang ,abs(motor_s.diff_up_ang) );
 
 #ifdef MB
-		corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_up_ang) );
+	corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_up_ang) );
 #endif //MB~
 
 	// Calculate velocity PID output
@@ -980,7 +982,7 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 		motor_s.pid_veloc = motor_s.vect_data[Q_ROTA].req_closed_V + corr_veloc;
 	} // else !(PROPORTIONAL)
 
-// if (motor_s.xscope) xscope_int( (14+motor_s.id) ,motor_s.pid_veloc ); // MB~
+if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.pid_veloc ); // MB~
 
 	if (VELOC_CLOSED)
 	{ // Evaluate requested IQ from velocity PID
@@ -1638,7 +1640,6 @@ static void correct_qei_origin( // If necessary, apply a correction to the QEI o
 				motor_s.calib_off = motor_s.qei_params.corr_ang; // Store calibration correction angle
 				motor_s.qei_offset += (motor_s.calib_off << QEI_UPSCALE_BITS); // Add upscaled correction
 				motor_s.qei_calib = 1; // Set QEI calibrated flag
-				motor_s.calib_iters = motor_s.iters; // Store No. of iterations required to calibrate
 
 				motor_s.raw_ang += motor_s.calib_off; // Add incremental correction to previous raw total angle
 			} // if (SEARCH < motor_s.state)
@@ -1784,7 +1785,8 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 
 	foc_qei_get_parameters( motor_s.qei_params ,c_qei );
 
-if (motor_s.xscope) xscope_int( (16+motor_s.id) ,motor_s.calib_off ); // MB~
+	correct_qei_origin( motor_s );	// If necessary. correct QEI angle
+// if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.qei_offset ); // MB~
 
 	corr_ang = motor_s.qei_params.tot_ang_this + motor_s.calib_off; // Add any calibration offset
 
@@ -1800,10 +1802,6 @@ if (motor_s.xscope) xscope_int( (16+motor_s.id) ,motor_s.calib_off ); // MB~
 
 	motor_s.ang_vals[motor_s.buf_cnt] = corr_ang; // Update buffer entry
 if (motor_s.xscope) xscope_int( (8+motor_s.id) ,motor_s.diff_buf_ang ); // MB~
-if (motor_s.xscope) xscope_int( (10+motor_s.id) ,(motor_s.qei_offset >> QEI_UPSCALE_BITS) ); // MB~
-
-	correct_qei_origin( motor_s );	// If necessary. correct QEI angle
-// if (motor_s.xscope) xscope_int( (7-motor_s.id) ,motor_s.qei_offset ); // MB~
 
 	motor_s.diff_up_ang = motor_s.qei_params.tot_ang_this - motor_s.raw_ang;
 
