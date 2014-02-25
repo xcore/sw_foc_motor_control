@@ -146,12 +146,11 @@ static void init_pid_data( // Initialise PID data
 	 * Therefore in the init_pid_consts interface K_i is upscaled by 2^PID_CONST_RES to compensate
 	 */
 	// Regular-Sampling mode 
-// #define NO_LOAD 1
-#if (1 == NO_LOAD)
+#if (LOAD_VAL == NO_LOAD)
 	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,1.0 ,0.0058 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,8.0 ,0.017 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,4.0 ,0.00012 ,0.0 );
-#else // NO_LOAD
+#elif (LOAD_VAL == BIG_LOAD)
 //MB~	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.5 ,0.0015 ,0.0 );
 //MB~	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.1 ,0.0045 ,0.0 );
 //MB~	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,0.1 ,0.0046 ,0.0 );
@@ -174,7 +173,7 @@ static void init_pid_data( // Initialise PID data
 	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,8.0 ,0.002 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,426.0 ,0.005 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[SPEED_PID] ,3.0 ,0.000002 ,0.0 );
-#endif // NO_LOAD
+#endif // (LOAD_VAL == BIG_LOAD)
 
 	motor_s.pid_Id = 0;	// Output from radial current PID
 	motor_s.pid_Iq = 0;	// Output from tangential current PID
@@ -625,13 +624,13 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 
 	motor_s.vect_data[D_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[D_ROTA] );
 	motor_s.vect_data[Q_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[Q_ROTA] );
-// if (motor_s.xscope) xscope_int( (1-motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
-// if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
+if (motor_s.xscope) xscope_int( (12+motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
+if (motor_s.xscope) xscope_int( (14+motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
 
 	// Inverse park  [d, q, theta] --> [alpha, beta]
 	inverse_park_transform( alpha_set ,beta_set ,motor_s.vect_data[D_ROTA].set_V ,motor_s.vect_data[Q_ROTA].set_V 
 		,((inp_theta + QEI_HALF_UPSCALE) >> QEI_UPSCALE_BITS) );
-// if (motor_s.xscope) xscope_int( (11-motor_s.id) ,inp_theta ); //MB~
+if (motor_s.xscope) xscope_int( (6+motor_s.id) ,inp_theta ); //MB~
 
 	// Final voltages applied: 
 	inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
@@ -953,19 +952,8 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	} //if (motor_s.iters > 25000)
 #endif //MB~
 
-if (motor_s.xscope)
-{
-	int lim = 256;
-	int tt = motor_s.targ_vel;
-
-while (tt >= lim) tt -= lim; 
-while (tt <= -lim) tt += lim; 
-
-	xscope_int( (10+motor_s.id) ,tt ); //MB~
 // if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
-}
 	corr_veloc = get_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_up_ang) );
-if (motor_s.xscope) xscope_int( (12+motor_s.id) ,motor_s.est_veloc ); //MB~
 
 	// Calculate velocity PID output
 	if (PROPORTIONAL)
@@ -1096,8 +1084,8 @@ if (motor_s.xscope) xscope_int( (12+motor_s.id) ,motor_s.est_veloc ); //MB~
 
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
 
-if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); //MB~
-if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
+// if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); //MB~
+// if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
 	// Apply PID control to Iq and Id
 
 	// Check if PID's need presetting
@@ -1180,10 +1168,12 @@ static void calc_foc_pwm( // Calculate FOC PWM output values
 	MOTOR_DATA_TYP &motor_s // reference to structure containing motor data
 )
 {
+#ifdef MB
 	if ((motor_s.id) && (motor_s.sync_on))
 	{
 		motor_s.req_veloc = update_requested_velocity( motor_s );
 	} // if (motor_s.sync_on)
+#endif //MB~
 
 	motor_s.old_veloc =  motor_s.targ_vel; // Store previous target velocity
 	motor_s.targ_vel = update_target_velocity( motor_s );
@@ -1375,17 +1365,19 @@ if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
 			motor_s.tymer :> ts1;
 			diff_time = ts1 - motor_s.prev_time;
 
+			// Allow small amount of time for speed to ramp-up
 			if (ALIGN_PERIOD < diff_time)
 			{
 				// Check for zero-crossing of angular velocity (in correct direction)
 				if (((0 < motor_s.targ_vel) && (0 > motor_s.prev_veloc) && (0 <= motor_s.est_veloc))
-					|| ((0 > motor_s.targ_vel) && (0 < motor_s.prev_veloc) && (0 >= motor_s.est_veloc)))
+ 					|| ((0 > motor_s.targ_vel) && (0 < motor_s.prev_veloc) && (0 >= motor_s.est_veloc)))
 				{
 					motor_s.prev_time = ts1; // Store time-stamp
 
 //MB~ acquire_lock(); printstrln("SEARCH"); release_lock(); //MB~
 					motor_s.state = SEARCH;
 				} // if ...
+
 			} // if (ALIGN_PERIOD < diff_time)
 		} break; // case ALIGN
 	
@@ -1887,25 +1879,6 @@ if (0 == motor_s.id)
 #endif // VELOC_FILT
 
 // if (motor_s.xscope) xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
-
-
-
-
-
-
-
-#ifdef MB
-if (motor_s.xscope)
-{
-if ((motor_s.tmp > abs(motor_s.est_veloc)) && (motor_s.iters > 100000))
-{
-	motor_s.tmp = abs(motor_s.est_veloc);
-	acquire_lock(); printstr("el="); printintln(motor_s.est_veloc); release_lock(); //MB~
-}
- xscope_int( (4+motor_s.id) ,motor_s.est_veloc ); // MB~
-}
-#endif //MB~
-
 // if (motor_s.xscope) xscope_int( (6+motor_s.id) ,motor_s.est_theta ); // MB~
 	} // if (motor_s.qei_params.period > 0)
 } // get_qei_data
@@ -2188,7 +2161,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 
 			// NB There is not enough band-width to probe all xscope data
 //			if ((1 == motor_s.id) || (motor_s.iters & 31)) // 31 probe at intervals
-			if ((motor_s.iters & 63)) // 31 probe at intervals
+			if ((motor_s.iters & 3)) // 31 probe at intervals
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))

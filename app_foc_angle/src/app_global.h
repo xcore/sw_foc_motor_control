@@ -67,6 +67,15 @@
 #define QEI_PER_REV (QEI_PER_PAIR * NUM_POLE_PAIRS) // No. Of QEI positions per Revolution
 #define HALL_PER_REV (HALL_PER_PAIR * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
 
+/** Define motor loads */
+#define NO_LOAD 0
+#define SMALL_LOAD 1
+#define BIG_LOAD 2
+
+/** Assign motor load */
+#define LOAD_VAL BIG_LOAD
+
+
 /**  Seconds in a minute */
 #define SECS_PER_MIN 60
 

@@ -377,64 +377,14 @@ static void dbg_motor(
 
 	printstrln("Debug Motor Tests");
 
-#ifdef MB
-	set_speed = MIN;
-	set_both_motors_speed(c_speed ,set_speed );
-	wait(WAIT_TIME);
-	print_speed2( c_speed ,set_speed );
-
-	for(unsigned cur_speed = 390; cur_speed > 100; cur_speed -= 10)
-	{
-		set_speed = cur_speed;
-	  set_both_motors_speed( c_speed ,set_speed );
-	  wait(WAIT_TIME);
-		print_speed2( c_speed ,set_speed );
-	}
-#endif //MB~
 
 while(1)
 {
-	set_speed = 4000;
+	set_speed = 400;
 	set_both_motors_speed( c_speed ,set_speed );
 	wait(WAIT_TIME);
 	print_speed2( c_speed ,set_speed );
-
-	set_speed = 30;
-	targ_speed = 100;
-  set_both_motors_speed( c_speed ,set_speed );
-
-	num_hunting = 0; // Reset No. of motors 'hunting' target speed
-	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
-	{
-		hunt_flags[motor_cnt] = 1; // Initialise 'hunting' flag for current motor
-		num_hunting++; // Increment No. of motors 'hunting' target speed
-	} // for motor_cnt
-
-	while(0 < num_hunting)
-	{
-	  wait(1000);
-	  measure_velocities( c_speed ,meas_vels );
-
-		for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
-		{
-			// Check if this motor is still hunting
-			if (hunt_flags[motor_cnt])
-			{
-				if (meas_vels[motor_cnt] <= targ_speed)
-				{ // Target speed reached
-					c_speed[motor_cnt] <: IO_CMD_SET_SPEED;
-					c_speed[motor_cnt] <: targ_speed * (2*motor_cnt - 1);
-
-					hunt_flags[motor_cnt] = 0; // Swithc of hunting flag
-					num_hunting--; // Decrement No. of motors still 'hunting' target speed
-				} // if (meas_vels[motor_cnt] <= set_speed)
-			} // if (hunt_flags[motor_cnt])
-		} // for motor_cnt
-	} // while(0 < num_hunting)
-	
-	print_speed2( c_speed ,set_speed );
 } // while(1)
-
 
 	return;
 } // dbg_motor
@@ -580,7 +530,8 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 
 //	demo_motor( c_speed ); //ASJ~
 // demo_1( c_speed ); //MB~
-demo_2( c_speed ); //MB~
+// demo_2( c_speed ); //MB~
+dbg_motor( c_speed ); //MB~
 
 	/* Loop forever processing commands */
 	while (1)
@@ -676,8 +627,8 @@ demo_2( c_speed ); //MB~
 							leds <: 3;
 
 //	test_motor( c_speed ); //MB~
-// dbg_motor( c_speed ); //MB~
-demo_1( c_speed ); //MB~
+dbg_motor( c_speed ); //MB~
+// demo_1( c_speed ); //MB~
 						break; // case 4
 #endif // ( 1 == ASJ)
 	

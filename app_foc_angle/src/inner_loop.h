@@ -82,7 +82,7 @@
 
 // Timing definitions
 #define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
-#define ALIGN_PERIOD (24 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
+#define ALIGN_PERIOD (8 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
 
 #define PWM_MIN_LIMIT (PWM_MAX_VALUE >> 4) // Min PWM value allowed (1/16th of max range)
 #define PWM_MAX_LIMIT (PWM_MAX_VALUE - PWM_MIN_LIMIT) // Max. PWM value allowed
@@ -113,7 +113,7 @@
 
 #define INIT_THETA 0 // Initial start-up angle
 
-#ifdef MB // Old values
+#if (LOAD_VAL == NO_LOAD)
 #define START_VOLT_OPENLOOP 4000 // 2000 Voltage (Vh) magnitude for start of open-loop state
 #define START_GAMMA_OPENLOOP 64  // Voltage angle for start of open-loop state (ie Vq = Vh.cos(angle)
 
@@ -131,7 +131,7 @@
 #define INIT_SPEED 400 // Initial motor speed, before external request received
 
 #define MIN_SPEED 300 // This value is derived from experience
-#endif //MB~
+#elif (LOAD_VAL == BIG_LOAD)
 
 #define START_VOLT_OPENLOOP 4000 // 2000 Voltage (Vh) magnitude for start of open-loop state
 #define START_GAMMA_OPENLOOP 64  // Voltage angle for start of open-loop state (ie Vq = Vh.cos(angle)
@@ -149,9 +149,11 @@
 #define START_SPEED 100 // Speed used to start motor
 #define INIT_SPEED 100 // Initial motor speed, before external request received
 
-#define SYNC_SPEED 400 // Speed below which angular synchronisation used
 #define MIN_SPEED 30 // This value is derived from experience
+#endif // (LOAD_VAL == BIG_LOAD)
 
+
+#define SYNC_SPEED 400 // Speed below which angular synchronisation used
 #define SPEC_MAX_SPEED 4000 // This value is derived from the LDO Motor Max. spec. speed
 #define SAFE_MAX_SPEED 5800 // This value is derived from the Optical Encoder Max. rate of 100kHz (gives 5860)
 #define SPEED_INC 100 // If speed change requested, this is the amount of change
