@@ -388,6 +388,7 @@ while(1)
 	set_both_motors_speed( c_speed ,set_speed );
 	wait(WAIT_TIME);
 	print_speed2( c_speed ,set_speed );
+
 } // while(1)
 
 	return;

@@ -421,7 +421,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int qei_offset;	// Phase difference between the QEI origin and PWM theta origin
 	int hall_offset;	// Phase difference between the Hall sensor origin and PWM theta origin
 	int qei_calib; // Flag set when QEI offset has been calibrated
-	int calib_iters; // Value of iteration counter when calibration occured
+	int calib_off; // Calibration angular offset
 	int hall_found;	// Flag set when QEI orign found
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter
