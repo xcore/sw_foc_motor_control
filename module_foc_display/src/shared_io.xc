@@ -377,18 +377,18 @@ static void dbg_motor(
 
 	printstrln("Debug Motor Tests");
 
-while(1)
-{
-	set_speed = 400;
-	set_both_motors_speed( c_speed ,set_speed );
-	wait(WAIT_TIME);
-	print_speed2( c_speed ,set_speed );
-
+/*
 	set_speed = 4000;
 	set_both_motors_speed( c_speed ,set_speed );
 	wait(WAIT_TIME);
 	print_speed2( c_speed ,set_speed );
-
+*/
+while(1)
+{
+	set_speed = 30;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(WAIT_TIME);
+	print_speed2( c_speed ,set_speed );
 } // while(1)
 
 	return;

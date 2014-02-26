@@ -279,6 +279,8 @@
 
 #define OC_ERR_LIM 512 // Number of Hall Over-current errors allowed before Board powered down
 
+#define USE_VEL 0 // Flag set if velocity estimate used (NOT angular-difference)
+
 #pragma xta command "add exclusion foc_loop_motor_fault"
 #pragma xta command "add exclusion foc_loop_speed_comms"
 #pragma xta command "add exclusion foc_loop_shared_comms"
@@ -361,18 +363,22 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
 	ERR_DATA_TYP err_data; // Structure containing data for error-handling
 	ROTA_DATA_TYP vect_data[NUM_ROTA_COMPS]; // Array of structures holding data for each rotating vector component
-	int ang_vals[ANG_BUF_SIZ];	// Array of previous ANG_BUF_SIZ raw total angle values (delivered by QEI Client)
+	int this_angs[ANG_BUF_SIZ];	// Array of previous raw total angle values, (delivered by QEI Client) for this motor
+	int othr_angs[ANG_BUF_SIZ];	// Array of previous raw total angle values, (delivered by QEI Client) for other motor
+	int diff_angs[ANG_BUF_SIZ];	// Array of previous raw total angle values, (delivered by QEI Client) for other motor
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
 	MOTOR_STATE_ENUM state; // Current motor state
 	CMD_IO_ENUM cmd_id; // Speed Command
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int stall_speed;	// Speed below which motor is assumed to have stalled
 	int req_veloc;	// (External) Requested angular velocity
+	int req_diff;	// (External) Requested angular difference 
+	int strt_diff;	// ang-diff of motors at start of synchronisation period
+	int old_diff;	// Old Requested angular-difference
 	int old_veloc;	// Old Requested angular velocity
 	int targ_vel;	// (Internal) Target angular velocity
 	int targ_diff;	// (Internal) Target angular difference
 	int est_veloc;	// Estimated angular velocity (from QEI data)
-	int half_veloc;	// Half requested angular velocity
 	int speed_inc; // Speed increment when commanded
 	int prev_veloc;	// previous velocity
 	unsigned est_period;	// Estimate of QEI period: ticks per QEI position (in Reference Frequency Cycles)
@@ -386,7 +392,11 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int pid_Iq;	// Output of 'tangential' current PID
 	int prev_Id;	// previous target 'radial' current value
 	int raw_ang;	// raw total angle (delivered by QEI Client)
-	int diff_buf_ang;	// angular difference between complete cycle of buffer entries
+	int this_diff_ang;	// angular difference between complete cycle of buffer entries, for this motor
+	int othr_diff_ang;	// angular difference between complete cycle of buffer entries, for other motor
+	int spec_max_diff;	// Angular-Difference above which QEI data unreliable
+	int min_diff;	// Angular-Difference below which motor is assumed to have stalled
+	int sync_diff;	// Angular-Difference below which motor synchronisation is switched on
 	int buf_full;	// Flag set ang-diff buffer full
 	int tot_up_ang;	// Upscaled Total angle traversed (NB accounts for multiple revolutions)
 	int prev_up_ang;	// Upscaled previous total angle traversed (NB accounts for multiple revolutions)
