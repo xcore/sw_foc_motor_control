@@ -384,6 +384,8 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	motor_s.sync_on = 0; // Clear Flag indicating angular synchronisation NOT in operation
 	motor_s.prev_sync = 0; // Previous value of sync-flag
 	motor_s.strt_diff = 0; // Clear angular-difference between motors
+	motor_s.sum_err_diff = 0; // Clear sum of difference errors
+	motor_s.rem_err_diff = 0; // Clear sum-of-difference remainder
 	update_angular_sync_data( motor_s ); // Initialise angular synchronisation data	
 
 	motor_s.tmp = 400; // MB~ Dbg
@@ -805,7 +807,7 @@ static int clip_spin_value( // If necessary, clip input spin-value into specifie
 	return out_int; // Return clipped velocity
 } // clip_spin_value
 /*****************************************************************************/
-static int update_set_voltage( // If necessary, update requested velocity
+static int update_set_voltage_old( // If necessary, update requested velocity
 	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
 ) // Returns set voltage correction
 // This routine adjusts the requested velocity to maintain motor synchronisation,
@@ -829,6 +831,50 @@ if (motor_s.xscope) xscope_int( (8+motor_s.id) ,diff_err ); //MB~
 if (0 == motor_s.buf_cnt)
 {
 	acquire_lock(); printint(motor_s.id); printstr(": De="); printintln(diff_err); release_lock(); //MB~
+} // if (0 == motor_s.buf_cnt)
+
+	return out_corr; // Return set voltage correction
+} // update_set_voltage_old
+/*****************************************************************************/
+static int update_set_voltage( // If necessary, update requested velocity
+	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
+) // Returns set voltage correction
+// This routine adjusts the requested velocity to maintain motor synchronisation,
+
+#define SUM_ERR_RES 10
+#define SUM_ERR_DIV (1 << SUM_ERR_RES)
+#define SUM_ERR_HALF (SUM_ERR_DIV >> 1)
+{
+	int out_corr; // set voltage correction
+	int sum_corr; // voltage correction due to sum of errors
+	int diff_ang_this; // Absolute Difference angle for this motor
+	int diff_ang_othr; // Absolute Difference angle for other motor
+	int diff_err; // angular-difference error
+
+
+  // Calculate incremental angle changes
+	if (0 < motor_s.this_diff_ang)
+	{ // Positive spin
+		diff_err =  motor_s.diff_angs[motor_s.buf_cnt] - motor_s.strt_diff;
+	}	// if (0 < motor_s.this_diff_ang)
+	else
+	{ // Negative spin
+		diff_err = motor_s.strt_diff - motor_s.diff_angs[motor_s.buf_cnt];
+	}	// if (0 < motor_s.this_diff_ang)
+
+	motor_s.sum_err_diff += diff_err;
+
+	sum_corr = (motor_s.sum_err_diff + motor_s.rem_err_diff + SUM_ERR_HALF) >> SUM_ERR_RES;
+	motor_s.rem_err_diff = motor_s.sum_err_diff - (sum_corr << SUM_ERR_RES); 
+
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,diff_err ); //MB~
+if (motor_s.xscope) xscope_int( (9-motor_s.id) ,sum_corr ); //MB~
+
+	out_corr = (diff_err << 3) + sum_corr;
+
+if (0 == motor_s.buf_cnt)
+{
+//	acquire_lock(); printint(motor_s.id); printstr(": De="); printint(diff_err); printstr(": Sc="); printintln(sum_corr); release_lock(); //MB~
 } // if (0 == motor_s.buf_cnt)
 
 	return out_corr; // Return set voltage correction
@@ -1937,6 +1983,7 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 
 		motor_s.this_diff_ang = motor_s.req_diff;
 		motor_s.othr_diff_ang = motor_s.this_diff_ang;
+		motor_s.diff_angs[motor_s.buf_cnt] = 0;
 	}
 
 	motor_s.this_angs[motor_s.buf_cnt] = corr_ang; // Update buffer entry
@@ -2084,12 +2131,14 @@ acquire_lock(); printint(motor_s.id); printstrln(":NO_SYNC"); release_lock(); //
 		// Check if synchronisation initialisation required
 		if (0 == motor_s.prev_sync)
 		{
-acquire_lock(); printint(motor_s.id); printstrln(":SYNC_ON"); release_lock(); //MB~
 			update_angular_sync_data( motor_s );
-		} // if (0 == motor_s.prev_sync)
 
-		// Store angular-difference between motors at start of synchronisation period
-		motor_s.strt_diff = motor_s.diff_angs[motor_s.buf_cnt]; 
+			// Store angular-difference between motors at start of synchronisation period
+			motor_s.strt_diff = motor_s.diff_angs[motor_s.buf_cnt]; 
+acquire_lock(); printint(motor_s.id); 
+printstr(": SYNC_ON="); printintln(motor_s.strt_diff);
+release_lock(); //MB~
+		} // if (0 == motor_s.prev_sync)
 
 		return 1; // Switch ON angular synchronisation 
 	} // else !(speed_sync > sync_val)
@@ -2135,14 +2184,14 @@ static void collect_sensor_data( // Collect sensor data and update motor state i
 	get_qei_data( motor_s ,c_qei );
 
 	// Check if QEI calibrated
-	if (0 == motor_s.qei_calib)
+	if (motor_s.qei_calib)
 	{
 #if (1 == USE_VEL)
 	motor_s.sync_on = test_for_synchronisation( motor_s ,motor_s.targ_vel ,SYNC_SPEED );
 #else // (1 == USE_VEL)
 	motor_s.sync_on = test_for_synchronisation( motor_s ,motor_s.targ_diff ,motor_s.sync_diff );
 #endif // !(1 == USE_VEL)
-	} // if (0 == motor_s.qei_calib)
+	} // if (motor_s.qei_calib)
 
 	motor_s.meas_speed = abs( motor_s.est_veloc ); // NB Used to spot stalling behaviour
 
@@ -2351,7 +2400,7 @@ motor_s.dbg_tmr :> motor_s.dbg_orig; // MB~
 
 			// NB There is not enough band-width to probe all xscope data
 //			if ((1 == motor_s.id) || (motor_s.iters & 31)) // 31 probe at intervals
-			if ((motor_s.iters & 63)) // 31 probe at intervals
+			if ((motor_s.iters & 1023)) // 31 probe at intervals
 			{
 				motor_s.xscope = 0; // Switch OFF xscope probe
 			} // if ((motor_s.id) & !(motor_s.iters & 7))

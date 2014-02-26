@@ -372,8 +372,10 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int stall_speed;	// Speed below which motor is assumed to have stalled
 	int req_veloc;	// (External) Requested angular velocity
-	int req_diff;	// (External) Requested angular difference 
+	int req_diff;	// (External) Requested angular difference
 	int strt_diff;	// ang-diff of motors at start of synchronisation period
+	int sum_err_diff;	// sum of differece errors
+	int rem_err_diff;	// Remainder after scaling sum of differece errors
 	int old_diff;	// Old Requested angular-difference
 	int old_veloc;	// Old Requested angular velocity
 	int targ_vel;	// (Internal) Target angular velocity
