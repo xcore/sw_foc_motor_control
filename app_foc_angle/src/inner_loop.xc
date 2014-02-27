@@ -635,6 +635,79 @@ static int smooth_demand_voltage( // Limits large changes in demand voltage
 	return set_V; // Return smoothed value
 } // smooth_demand_voltage
 /*****************************************************************************/
+static int update_set_voltage_old( // If necessary, update requested velocity
+	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
+) // Returns set voltage correction
+// This routine adjusts the requested velocity to maintain motor synchronisation,
+{
+	int out_corr; // set voltage correction
+	int diff_ang_this; // Absolute Difference angle for this motor
+	int diff_ang_othr; // Absolute Difference angle for other motor
+	int diff_err; // angular-difference error
+
+
+  // Calculate incremental angle changes
+	diff_ang_this = abs(motor_s.this_diff_ang);
+	diff_ang_othr = abs(motor_s.othr_diff_ang);
+
+	diff_err = diff_ang_othr - diff_ang_this;
+
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,diff_err ); //MB~
+ 
+	out_corr = (diff_err << 1);
+
+if (0 == motor_s.buf_cnt)
+{
+	acquire_lock(); printint(motor_s.id); printstr(": De="); printintln(diff_err); release_lock(); //MB~
+} // if (0 == motor_s.buf_cnt)
+
+	return out_corr; // Return set voltage correction
+} // update_set_voltage_old
+/*****************************************************************************/
+static int update_set_voltage( // If necessary, update requested velocity
+	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
+) // Returns set voltage correction
+// This routine adjusts the requested velocity to maintain motor synchronisation,
+
+#define SUM_ERR_RES 10
+#define SUM_ERR_DIV (1 << SUM_ERR_RES)
+#define SUM_ERR_HALF (SUM_ERR_DIV >> 1)
+{
+	int out_corr; // set voltage correction
+	int sum_corr; // voltage correction due to sum of errors
+	int diff_ang_this; // Absolute Difference angle for this motor
+	int diff_ang_othr; // Absolute Difference angle for other motor
+	int diff_err; // angular-difference error
+
+
+  // Calculate incremental angle changes
+	if (0 < motor_s.this_diff_ang)
+	{ // Positive spin
+		diff_err =  motor_s.diff_angs[motor_s.buf_cnt] - motor_s.strt_diff;
+	}	// if (0 < motor_s.this_diff_ang)
+	else
+	{ // Negative spin
+		diff_err = motor_s.strt_diff - motor_s.diff_angs[motor_s.buf_cnt];
+	}	// if (0 < motor_s.this_diff_ang)
+
+	motor_s.sum_err_diff += diff_err;
+
+	sum_corr = (motor_s.sum_err_diff + motor_s.rem_err_diff + SUM_ERR_HALF) >> SUM_ERR_RES;
+	motor_s.rem_err_diff = motor_s.sum_err_diff - (sum_corr << SUM_ERR_RES); 
+
+if (motor_s.xscope) xscope_int( (8+motor_s.id) ,diff_err ); //MB~
+if (motor_s.xscope) xscope_int( (9-motor_s.id) ,sum_corr ); //MB~
+
+	out_corr = (diff_err << 3) + sum_corr;
+
+if (0 == motor_s.buf_cnt)
+{
+//	acquire_lock(); printint(motor_s.id); printstr(": De="); printint(diff_err); printstr(": Sc="); printintln(sum_corr); release_lock(); //MB~
+} // if (0 == motor_s.buf_cnt)
+
+	return out_corr; // Return set voltage correction
+} // update_set_voltage
+/*****************************************************************************/
 static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values 
 	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
 )
@@ -647,6 +720,19 @@ static void dq_to_pwm ( // Convert Id & Iq input values to 3 PWM output values
 
 	motor_s.vect_data[D_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[D_ROTA] );
 	motor_s.vect_data[Q_ROTA].set_V = smooth_demand_voltage( motor_s.vect_data[Q_ROTA] );
+
+#if (1 == USE_VEL)
+#else // (1 == USE_VEL)
+	if (motor_s.diff_up_ang != 0)
+	{
+		if ((motor_s.id) && (motor_s.sync_on) && (motor_s.iters > 10000))
+		{
+			int volt_corr = update_set_voltage( motor_s );
+			motor_s.vect_data[Q_ROTA].set_V += volt_corr;
+		} // if (motor_s.sync_on)
+	} // if (motor_s.diff_up_ang != 0)
+#endif // !(1 == USE_VEL)
+
 if (motor_s.xscope) xscope_int( (12+motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); //MB~
 if (motor_s.xscope) xscope_int( (14+motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); //MB~
 
@@ -806,79 +892,6 @@ static int clip_spin_value( // If necessary, clip input spin-value into specifie
 
 	return out_int; // Return clipped velocity
 } // clip_spin_value
-/*****************************************************************************/
-static int update_set_voltage_old( // If necessary, update requested velocity
-	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
-) // Returns set voltage correction
-// This routine adjusts the requested velocity to maintain motor synchronisation,
-{
-	int out_corr; // set voltage correction
-	int diff_ang_this; // Absolute Difference angle for this motor
-	int diff_ang_othr; // Absolute Difference angle for other motor
-	int diff_err; // angular-difference error
-
-
-  // Calculate incremental angle changes
-	diff_ang_this = abs(motor_s.this_diff_ang);
-	diff_ang_othr = abs(motor_s.othr_diff_ang);
-
-	diff_err = diff_ang_othr - diff_ang_this;
-
-if (motor_s.xscope) xscope_int( (8+motor_s.id) ,diff_err ); //MB~
- 
-	out_corr = (diff_err << 1);
-
-if (0 == motor_s.buf_cnt)
-{
-	acquire_lock(); printint(motor_s.id); printstr(": De="); printintln(diff_err); release_lock(); //MB~
-} // if (0 == motor_s.buf_cnt)
-
-	return out_corr; // Return set voltage correction
-} // update_set_voltage_old
-/*****************************************************************************/
-static int update_set_voltage( // If necessary, update requested velocity
-	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
-) // Returns set voltage correction
-// This routine adjusts the requested velocity to maintain motor synchronisation,
-
-#define SUM_ERR_RES 10
-#define SUM_ERR_DIV (1 << SUM_ERR_RES)
-#define SUM_ERR_HALF (SUM_ERR_DIV >> 1)
-{
-	int out_corr; // set voltage correction
-	int sum_corr; // voltage correction due to sum of errors
-	int diff_ang_this; // Absolute Difference angle for this motor
-	int diff_ang_othr; // Absolute Difference angle for other motor
-	int diff_err; // angular-difference error
-
-
-  // Calculate incremental angle changes
-	if (0 < motor_s.this_diff_ang)
-	{ // Positive spin
-		diff_err =  motor_s.diff_angs[motor_s.buf_cnt] - motor_s.strt_diff;
-	}	// if (0 < motor_s.this_diff_ang)
-	else
-	{ // Negative spin
-		diff_err = motor_s.strt_diff - motor_s.diff_angs[motor_s.buf_cnt];
-	}	// if (0 < motor_s.this_diff_ang)
-
-	motor_s.sum_err_diff += diff_err;
-
-	sum_corr = (motor_s.sum_err_diff + motor_s.rem_err_diff + SUM_ERR_HALF) >> SUM_ERR_RES;
-	motor_s.rem_err_diff = motor_s.sum_err_diff - (sum_corr << SUM_ERR_RES); 
-
-if (motor_s.xscope) xscope_int( (8+motor_s.id) ,diff_err ); //MB~
-if (motor_s.xscope) xscope_int( (9-motor_s.id) ,sum_corr ); //MB~
-
-	out_corr = (diff_err << 3) + sum_corr;
-
-if (0 == motor_s.buf_cnt)
-{
-//	acquire_lock(); printint(motor_s.id); printstr(": De="); printint(diff_err); printstr(": Sc="); printintln(sum_corr); release_lock(); //MB~
-} // if (0 == motor_s.buf_cnt)
-
-	return out_corr; // Return set voltage correction
-} // update_set_voltage
 /*****************************************************************************/
 static int update_requested_velocity( // If necessary, update requested velocity
 	MOTOR_DATA_TYP &motor_s // Reference to structure containing motor data
@@ -1294,24 +1307,7 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 		calc_open_loop_pwm( motor_s );
 	} // else !(IQ_ID_CLOSED)
 
-#ifdef MB
-	// Clip set_Vq to set_Vd
-	if (motor_s.vect_data[Q_ROTA].set_V < abs(motor_s.vect_data[D_ROTA].set_V))
-	{
-		motor_s.vect_data[Q_ROTA].set_V = abs(motor_s.vect_data[D_ROTA].set_V);
-	} // if (motor_s.vect_data[Q_ROTA].set_V < abs(motor_s.vect_data[D_ROTA].set_V))
-#endif //MB~
-
 	motor_s.pid_preset = 0; // Clear 'Preset PID' flag
-
-#if (1 == USE_VEL)
-#else // (1 == USE_VEL)
-	if ((motor_s.id) && (motor_s.sync_on) && (motor_s.iters > 10000))
-	{
-		int volt_corr = update_set_voltage( motor_s );
-		motor_s.vect_data[Q_ROTA].set_V += volt_corr;
-	} // if (motor_s.sync_on)
-#endif // !(1 == USE_VEL)
 
 // if (motor_s.xscope) xscope_int( (1-motor_s.id) ,motor_s.vect_data[D_ROTA].set_V ); // MB~
 // if (motor_s.xscope) xscope_int( (3-motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V ); // MB~

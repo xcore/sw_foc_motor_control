@@ -382,10 +382,35 @@ static void dbg_motor(
 	set_both_motors_speed( c_speed ,set_speed );
 	wait(WAIT_TIME);
 	print_speed2( c_speed ,set_speed );
+
+	set_speed = 30;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(WAIT_TIME);
+	print_speed2( c_speed ,set_speed );
+
+	set_speed = 60;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(WAIT_TIME);
+	print_speed2( c_speed ,set_speed );
+
+	set_speed = 120;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(WAIT_TIME);
+	print_speed2( c_speed ,set_speed );
+
+	set_speed = 200;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(WAIT_TIME);
+	print_speed2( c_speed ,set_speed );
+
+	set_speed = 300;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(WAIT_TIME);
+	print_speed2( c_speed ,set_speed );
 */
 while(1)
 {
-	set_speed = 30;
+	set_speed = 1000;
 	set_both_motors_speed( c_speed ,set_speed );
 	wait(WAIT_TIME);
 	print_speed2( c_speed ,set_speed );
