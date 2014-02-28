@@ -16,9 +16,15 @@
 #define __SINE_LOOKUP_H__
 
 // WARNING: If the value of SINE_RES_BITS is changed sine_table[] needs to be regenerated
-#define SINE_RES_BITS 14 // Number of bits used to scale Sine/Cosine functions
-#define MAX_SINE (1 << SINE_RES_BITS) // Max. table value, i.e. sine( 90 degrees )
-#define HALF_SINE (MAX_SINE >> 1) // Half of max. sine value ), NB used for rounding
+#define SINE_AMP_BITS 14 // Number of bits used to scale Sine/Cosine functions
+#define SINE_AMP_NORM (1 << SINE_AMP_BITS) // Normaliser for table values
+#define HALF_SINE_AMP (SINE_AMP_NORM >> 1) // Half of sine value divisor), NB used for rounding
+
+#define  SINE_ANG_BITS 6 // Number of bits used to represent angle ressolution of sine table (no. of entries)
+#define  NUM_SIN_ANGS_IN_QUAD (1 << SINE_ANG_BITS) // Number of Sine table entries, angles in quadrant (90 degrees)
+#define  NUM_SIN_ANGS_IN_Qx2 (NUM_SIN_ANGS_IN_QUAD << 1) // No. of angles in 2 quadrants
+#define  NUM_SIN_ANGS_IN_Qx3 (NUM_SIN_ANGS_IN_Qx2 + NUM_SIN_ANGS_IN_QUAD) // No. of angles in 3 quadrants
+#define  NUM_SIN_ANGS_IN_REV (NUM_SIN_ANGS_IN_QUAD << 2) // Number of different angles in whole revolution (360 degrees)
 
 extern short sine_table[];
 

@@ -184,7 +184,7 @@ typedef struct QEI_DATA_TAG //
 	unsigned prev_time; // Previous port time-stamp
 	unsigned change_time; // Time-stamp when valid phase change detected
 	unsigned prev_change; // Previous valid phase change Time-stamp
-	int tot_ang; // Counts total angular position of motor from time=0
+	int ang_tot; // Counts total angular position of motor from time=0
 	int prev_ang;	// Angular position when previous origin detected (possibly false)
 	ANG_INC_TYP ang_inc; // angular increment value
 	unsigned period; // number of QEI phases changes per revolution
@@ -196,6 +196,7 @@ typedef struct QEI_DATA_TAG //
 
 	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
 	int dbg; // Debug
+	int dbg_ang; // Debug
 
 	int tmp_raw; // Debug
 	int tmp_i[4]; // Debug
