@@ -103,7 +103,7 @@
 							<targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id="com.xmos.cdt.core.platform.1042475242" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform"/>
 							<builder arguments="CONFIG=Debug" id="com.xmos.cdt.builder.base.2103980541" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base"/>
 							<tool id="com.xmos.cdt.xc.compiler.1799934602" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
-								<option id="com.xmos.xc.compiler.option.include.paths.1031262482" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
+								<option id="com.xmos.xc.compiler.option.include.paths.1031262482" name="com.xmos.xc.compiler.option.include.paths" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
@@ -129,7 +129,7 @@
 								<inputType id="com.xmos.cdt.xc.compiler.input.1490583677" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
 							<tool id="com.xmos.cdt.c.compiler.1942965986" name="com.xmos.cdt.c.compiler" superClass="com.xmos.cdt.c.compiler">
-								<option id="com.xmos.c.compiler.option.include.paths.926077671" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
+								<option id="com.xmos.c.compiler.option.include.paths.926077671" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
@@ -155,7 +155,7 @@
 								<inputType id="com.xmos.cdt.c.compiler.input.c.721629192" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
 							<tool id="com.xmos.cdt.cxx.compiler.1740250908" name="com.xmos.cdt.cxx.compiler" superClass="com.xmos.cdt.cxx.compiler">
-								<option id="com.xmos.cxx.compiler.option.include.paths.945557249" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
+								<option id="com.xmos.cxx.compiler.option.include.paths.945557249" name="com.xmos.cxx.compiler.option.include.paths" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
@@ -285,7 +285,7 @@
 							<targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id="com.xmos.cdt.core.platform.1681239007" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform"/>
 							<builder arguments="CONFIG=Default" id="com.xmos.cdt.builder.base.1888465134" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base"/>
 							<tool id="com.xmos.cdt.xc.compiler.1203302461" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
-								<option id="com.xmos.xc.compiler.option.include.paths.1147008401" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
+								<option id="com.xmos.xc.compiler.option.include.paths.1147008401" name="com.xmos.xc.compiler.option.include.paths" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
@@ -311,7 +311,7 @@
 								<inputType id="com.xmos.cdt.xc.compiler.input.269178607" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
 							<tool id="com.xmos.cdt.c.compiler.559294236" name="com.xmos.cdt.c.compiler" superClass="com.xmos.cdt.c.compiler">
-								<option id="com.xmos.c.compiler.option.include.paths.647274058" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
+								<option id="com.xmos.c.compiler.option.include.paths.647274058" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
@@ -337,7 +337,7 @@
 								<inputType id="com.xmos.cdt.c.compiler.input.c.113196963" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
 							<tool id="com.xmos.cdt.cxx.compiler.535747145" name="com.xmos.cdt.cxx.compiler" superClass="com.xmos.cdt.cxx.compiler">
-								<option id="com.xmos.cxx.compiler.option.include.paths.1430835539" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
+								<option id="com.xmos.cxx.compiler.option.include.paths.1430835539" name="com.xmos.cxx.compiler.option.include.paths" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
@@ -466,7 +466,7 @@
 							<targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id="com.xmos.cdt.core.platform.1775832087" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform"/>
 							<builder arguments="CONFIG=Release" id="com.xmos.cdt.builder.base.77561663" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base"/>
 							<tool id="com.xmos.cdt.xc.compiler.584083667" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
-								<option id="com.xmos.xc.compiler.option.include.paths.1144906653" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
+								<option id="com.xmos.xc.compiler.option.include.paths.1144906653" name="com.xmos.xc.compiler.option.include.paths" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
@@ -492,7 +492,7 @@
 								<inputType id="com.xmos.cdt.xc.compiler.input.460884051" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
 							</tool>
 							<tool id="com.xmos.cdt.c.compiler.453086085" name="com.xmos.cdt.c.compiler" superClass="com.xmos.cdt.c.compiler">
-								<option id="com.xmos.c.compiler.option.include.paths.1380489946" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
+								<option id="com.xmos.c.compiler.option.include.paths.1380489946" name="com.xmos.c.compiler.option.include.paths" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
@@ -518,7 +518,7 @@
 								<inputType id="com.xmos.cdt.c.compiler.input.c.2020073526" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
 							</tool>
 							<tool id="com.xmos.cdt.cxx.compiler.1697967763" name="com.xmos.cdt.cxx.compiler" superClass="com.xmos.cdt.cxx.compiler">
-								<option id="com.xmos.cxx.compiler.option.include.paths.737071312" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
+								<option id="com.xmos.cxx.compiler.option.include.paths.737071312" name="com.xmos.cxx.compiler.option.include.paths" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
