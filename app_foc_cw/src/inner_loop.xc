@@ -60,9 +60,9 @@ static void init_blend_data( // Initialise blending data for 'TRANSIT state'
 
 	// Check bit precision ...
 	assert(BLEND_BITS >= 0); // ERROR: Investigate definition in inner_loop.h
-	assert(31 > (QEI_RES_BITS + QEI_UPSCALE_BITS + BLEND_BITS)); // ERROR: QEI_UPSCALE_BITS too large 
+	assert(31 > (QEI_RES_BITS + QEI_UQ_BITS + BLEND_BITS)); // ERROR: QEI_UQ_BITS too large 
 
-	sum_bits = QEI_RES_BITS + QEI_UPSCALE_BITS + PWM_RES_BITS; // 28
+	sum_bits = QEI_RES_BITS + QEI_UQ_BITS + PWM_RES_BITS; // 28
 
 	// WARNING: Definition of RF_DIV_RPM_BITS assumes values for Reference_Freq and Starting_Speed. See inner_loop.h
 	if (sum_bits < RF_DIV_RPM_BITS)
@@ -87,7 +87,7 @@ static void init_blend_data( // Initialise blending data for 'TRANSIT state'
 	motor_s.blend_inc = (1 << blend_bits); // Blending weight increment for during TRANSIT state
 
 	// Evaluate state termination conditions (NB require power-of-2 for TRANSIT state blending function)
-	motor_s.search_theta = UQ_PER_PAIR; // Upscaled theta value at end of 'SEARCH state'
+	motor_s.search_theta = QEI_PER_PAIR; // Upscaled theta value at end of 'SEARCH state'
 
 	// This section uses at least one electrical cycle per 1024 Vq values ..
 
@@ -109,7 +109,7 @@ static void init_blend_data( // Initialise blending data for 'TRANSIT state'
 	motor_s.trans_cycles = (max_diff + VOLT_DIFF_MASK) >> VOLT_DIFF_BITS;
 	if (motor_s.trans_cycles < 1) motor_s.trans_cycles = 1; // Ensure at least one cycle
 
-	diff_theta = UQ_PER_PAIR * motor_s.trans_cycles; // No of Upscaled QEI positions (theta)
+	diff_theta = QEI_PER_PAIR * motor_s.trans_cycles; // No of Upscaled QEI positions (theta)
 	motor_s.trans_theta = motor_s.search_theta + diff_theta; // theta at end of 'TRANSIT state'
 
 	motor_s.blend_weight = motor_s.blend_inc; // Preset 1st blending weight
@@ -231,7 +231,7 @@ static void speed_change_reset( // Reset motor data after large speed change
 	motor_s.Iq_err = 0; // Clear Error diffusion value for measured Iq
 	motor_s.prev_Id = 0;	// Initial target 'radial' current value
 
-	motor_s.filt_veloc = (motor_s.est_veloc << VEL_SCALE_BITS); // Upscaled Estimated velocity
+	motor_s.filt_veloc = (motor_s.est_veloc << VEL_FILT_BITS); // Upscaled Estimated velocity
 	motor_s.coef_vel_err = 0; // Velocity filter coefficient diffusion error
 	motor_s.scale_vel_err = 0; // Velocity scaling diffusion error 
 
@@ -279,6 +279,7 @@ static void start_motor_reset( // Reset motor data ready for re-start
 	motor_s.est_theta = 0; // estimated theta value (from QEI data)
 	motor_s.set_theta = 0; // Set PWM theta value
 	motor_s.open_theta = 0; // Open-loop theta value
+	motor_s.open_uq_theta = 0; // Open-loop theta value
 	motor_s.foc_theta = 0; // FOC theta value
 	motor_s.est_revs = 0; // Estimated No. of revolutions (from QEI data)
 	motor_s.prev_revs = 0; // Previous No. of revolutions
@@ -446,7 +447,7 @@ static void estimate_Iq_using_transforms( // Calculate Id & Iq currents using tr
 	// NB Invert alpha & beta here, as Back_EMF is in opposite direction to applied (PWM) voltage
 
 	park_transform( motor_s.vect_data[D_ROTA].inp_I ,motor_s.vect_data[Q_ROTA].inp_I ,-alpha_meas ,-beta_meas 
-		,((motor_s.set_theta + QEI_HALF_UPSCALE) >> QEI_UPSCALE_BITS) );
+		,motor_s.set_theta );
 
 	// Filter current estimate
 	for (comp_cnt=0; comp_cnt<NUM_ROTA_COMPS; comp_cnt++)
@@ -522,7 +523,7 @@ if (motor_s.xscope) xscope_int( (14+motor_s.id) ,motor_s.vect_data[Q_ROTA].set_V
 
 	// Inverse park  [d, q, theta] --> [alpha, beta]
 	inverse_park_transform( alpha_set ,beta_set ,motor_s.vect_data[D_ROTA].set_V ,motor_s.vect_data[Q_ROTA].set_V 
-		,((inp_theta + QEI_HALF_UPSCALE) >> QEI_UPSCALE_BITS) );
+		,inp_theta );
 
 	// Final voltages applied: 
 	inverse_clarke_transform( volts[PWM_PHASE_A] ,volts[PWM_PHASE_B] ,volts[PWM_PHASE_C] ,alpha_set ,beta_set ); // Correct order
@@ -549,12 +550,13 @@ static void calc_open_loop_pwm ( // Calculate open-loop PWM output values to spi
 	// Check if theta needs incrementing
 	if (motor_s.open_period < diff_time)
 	{
-		motor_s.open_theta += motor_s.open_uq_inc; // Increment demand theta value
+		motor_s.open_uq_theta += motor_s.open_uq_inc; // Increment demand theta value
+		motor_s.open_theta = (motor_s.open_uq_theta + QEI_UQ_HALF) >> QEI_UQ_BITS; // Down-scale to normal QEI resolution
 		motor_s.prev_time = cur_time; // Update previous time
 	} // if (motor_s.open_period < diff_time)
 
 	// NB QEI_REV_MASK correctly maps -ve values into +ve range 0 <= theta < QEI_PER_REV;
-	motor_s.set_theta = motor_s.open_theta & UQ_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
+	motor_s.set_theta = motor_s.open_theta & QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 
 } // calc_open_loop_pwm
 /*****************************************************************************/
@@ -607,7 +609,8 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 	{
 		motor_s.prev_time = cur_time; // Update previous time
 
-		motor_s.open_theta += motor_s.open_uq_inc; // Increment demand theta value
+		motor_s.open_uq_theta += motor_s.open_uq_inc; // Increment demand theta value
+		motor_s.open_theta = (motor_s.open_uq_theta + QEI_UQ_HALF) >> QEI_UQ_BITS;
 
 		motor_s.trans_cnt++; // Increment No of transition cycles
 
@@ -631,7 +634,7 @@ static void calc_transit_pwm( // Calculate FOC PWM output values
 
 	motor_s.set_theta += motor_s.open_theta; // Add in Old value (Starting Value)
 
-	motor_s.set_theta &= UQ_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
+	motor_s.set_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 
 	motor_s.vect_data[D_ROTA].set_V = motor_s.vect_data[D_ROTA].trans_V; 
 	motor_s.vect_data[Q_ROTA].set_V = motor_s.vect_data[Q_ROTA].trans_V; 
@@ -819,7 +822,7 @@ static int update_foc_angle( // Update FOC PWM angular postion
 
 	// Update 'demand' theta value for next dq_to_pwm iteration from QEI-angle
 	out_theta = calc_foc_angle( motor_s ,motor_s.est_theta );
-	out_theta &= UQ_REV_MASK; // Convert to base-range [0..UQ_REV_MASK]
+	out_theta &= QEI_REV_MASK; // Convert to base-range [0..QEI_REV_MASK]
 
 	return out_theta;  // Return new PWM angular position
 } // update_foc_angle
@@ -1194,7 +1197,7 @@ static void find_hall_origin( // Test Hall-state for origin
 					 * NB There are multiple values of set_theta that can be used for each meas_theta, 
            * depending on the number of pole pairs. E.g. [0, 256, 512, 768] are equivalent.
 					 */
-					motor_s.hall_offset = (motor_s.set_theta >> QEI_UPSCALE_BITS);
+					motor_s.hall_offset = motor_s.set_theta;
 					motor_s.hall_found = 1; // Set flag indicating Hall origin located
 				} // if (0 < motor_s.est_revs)
 			} // if (motor_s.prev_hall == motor_s.end_hall)
@@ -1227,7 +1230,7 @@ static void correct_qei_origin( // If necessary, apply a correction to the QEI o
 			// Check if QEI offset has been calculated
 			if (SEARCH < motor_s.state)
 			{ // Apply correction to offset
-				motor_s.qei_offset += (motor_s.qei_params.corr_ang << QEI_UPSCALE_BITS); // Add upscaled correction
+				motor_s.qei_offset += motor_s.qei_params.corr_ang; // Add upscaled correction
 				motor_s.qei_calib = 1; // Set QEI calibrated flag
 
 				motor_s.raw_ang += motor_s.qei_params.corr_ang; // Add incremental correction to previous raw total angle
@@ -1286,7 +1289,7 @@ static int filter_velocity( // Smooths velocity estimate using low-pass filter
  * Error diffusion is used to keep control of systematic quantisation errors.
  */
 {
-	int scaled_inp = (meas_veloc << VEL_SCALE_BITS); // Upscaled QEI input value
+	int scaled_inp = (meas_veloc << VEL_FILT_BITS); // Upscaled QEI input value
 	int diff_val; // Difference between input and filtered output
 	int increment; // new increment to filtered output value
 	int out_veloc = meas_veloc; // preset output to input value
@@ -1307,8 +1310,8 @@ static int filter_velocity( // Smooths velocity estimate using low-pass filter
 	
 		// Update mean value by down-scaling filtered output value
 		motor_s.filt_veloc += motor_s.scale_vel_err; // Add in diffusion error;
-		out_veloc = (motor_s.filt_veloc + VEL_HALF_SCALE) >> VEL_SCALE_BITS; // Down-scale
-		motor_s.scale_vel_err = motor_s.filt_veloc - (out_veloc << VEL_SCALE_BITS); // Evaluate new remainder value 
+		out_veloc = (motor_s.filt_veloc + VEL_FILT_HALF) >> VEL_FILT_BITS; // Down-scale
+		motor_s.scale_vel_err = motor_s.filt_veloc - (out_veloc << VEL_FILT_BITS); // Evaluate new remainder value 
 	} // if ((abs(meas_veloc) > motor_s.stall_speed)	&& (abs(meas_veloc) < SAFE_MAX_SPEED))
 
 	return out_veloc; // return filtered output value
@@ -1394,9 +1397,6 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 		rev_bits = (motor_s.tot_ang + motor_s.half_qei) >> QEI_RES_BITS; // Get revoultion bits
 		motor_s.est_theta = motor_s.tot_ang - (rev_bits << QEI_RES_BITS); // Calculate remaining angular position [-512..+511]
 
-		motor_s.est_theta <<= QEI_UPSCALE_BITS; // Upscale QEI [-32768..+32767]
-		motor_s.tot_ang <<= QEI_UPSCALE_BITS; // Upscale QEI [-32768..+32767]
-	
 		// Handle wrap-around ...
 		diff_revs = (signed char)(rev_bits - motor_s.est_revs); // Difference of Least Significant 8 bits
 		motor_s.est_revs += (int)diff_revs; // Update revolution counter with difference

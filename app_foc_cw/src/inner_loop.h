@@ -184,8 +184,9 @@
 #define IQ_ID_RATIO (1 << IQ_ID_BITS) // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
 #define IQ_ID_HALF (IQ_ID_RATIO >> 1) // Quantisation error is half IQ_ID_RATIO 
 
-#define VEL_SCALE_BITS 16 // Used to generate 2^n scaling factor
-#define VEL_HALF_SCALE (1 << (VEL_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
+#define VEL_FILT_BITS 16 // Resolution of Velocity filter
+#define VEL_FILT_DIV (1 << VEL_FILT_BITS) // Velocity filter Scaling factor
+#define VEL_FILT_HALF (VEL_FILT_DIV >> 1) // Half Scaling factor (used in rounding)
 
 #define VEL_COEF_BITS 8 // Used to generate filter coef divisor. coef_div = 1/2^n
 #define VEL_COEF_DIV (1 << VEL_COEF_BITS) // Coef divisor
@@ -211,12 +212,9 @@
 #define BLEND_DENOM (1 << BLEND_BITS) // Up-scaling factor
 #define BLEND_HALF (BLEND_DENOM >> 1) // Half Up-scaling factor. Used in rounding
 
-#define QEI_UPSCALE_BITS 2
-#define QEI_UPSCALE_DENOM (1 << QEI_UPSCALE_BITS) // Factor for up-scaling QEI values
-#define QEI_HALF_UPSCALE (QEI_UPSCALE_DENOM >> 1) // Half QEI up-scaling Factor (used for rounding)
-#define UQ_PER_PAIR (QEI_PER_PAIR << QEI_UPSCALE_BITS) // No. of different Up-scaled QEI values per pole pair
-#define UQ_PER_REV (QEI_PER_REV << QEI_UPSCALE_BITS) // No. of different Up-scaled QEI values per revolution
-#define UQ_REV_MASK (UQ_PER_REV - 1) // (16-bit) Mask used to extract Up-scaled QEI bits
+#define QEI_UQ_BITS 2 // Resolution of open-loop theta
+#define QEI_UQ_DIV (1 << QEI_UQ_BITS) // Scaling factor for open-loop theta
+#define QEI_UQ_HALF (QEI_UQ_DIV >> 1) // Half scaling factor (used in rounding)
 
 #define OC_ERR_LIM 512 // Number of Hall Over-current errors allowed before Board powered down
 
@@ -319,7 +317,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	unsigned restart_time; // Re-start time-stamp
 	int prev_period;	// previous value of QEI period
 	int open_period;	// Time between updates PWM data during open-loop phase
-	int open_uq_inc;	// Increment to Upscaled theta value during open-loop phase
 	int pid_veloc;	// Output of angular velocity PID
 	int pid_Id;	// Output of 'radial' current PID
 	int pid_Iq;	// Output of 'tangential' current PID
@@ -335,6 +332,8 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int prev_revs;	// Previous No of revolutions
 	int set_theta;	// PWM theta value
 	int open_theta;	// Open-loop theta value
+	int open_uq_theta;	// Open-loop upsampled theta value
+	int open_uq_inc;	// Increment to Upscaled theta value during open-loop phase
 	int foc_theta;	// FOC theta value
 	int pid_preset; // Flag set if PID needs preseting
 	int search_theta;	// theta value at end of 'SEARCH state'
