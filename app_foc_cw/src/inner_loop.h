@@ -80,9 +80,10 @@
 #include "watchdog.h"
 #include "shared_io.h"
 
+
 // Timing definitions
 #define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
-#define ALIGN_PERIOD (24 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
+#define ALIGN_PERIOD (8 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
 
 #define PWM_MIN_LIMIT (PWM_MAX_VALUE >> 4) // Min PWM value allowed (1/16th of max range)
 #define PWM_MAX_LIMIT (PWM_MAX_VALUE - PWM_MIN_LIMIT) // Max. PWM value allowed
@@ -123,10 +124,6 @@
 #define REQ_VOLT_CLOSEDLOOP 1000 // Default staring value
 #define REQ_GAMMA_CLOSEDLOOP 19     // Used to tune IQ PID
 
-#define MIN_VQ 1600 // Motor will stall if abs(Vq) falls below this value
-#define MAX_VQ_OPENLOOP 5800 // MB~ Max Vq value for open-loop tuning
-#define MIN_VQ_OPENLOOP 1000 // MB~ Min Vq value for open-loop tuning
-
 #define START_SPEED 800 // Speed used to start motor
 #define INIT_SPEED 400 // Initial motor speed, before external request received
 
@@ -138,8 +135,7 @@
 // Test definitions
 #define ITER_INC 50000 // No. of FOC iterations between speed increments
 
-// MB~ Cludge to stop velocity spikes. Needs proper fix. Changed Power board, seemed to clear up QEI data
-#define VELOC_FILT 1
+#define VELOC_FILT 1 // Switch on filter to limit velocity changes
 #define MAX_VELOC_INC 1 // MB~ Maximum allowed velocity increment.
 
 // Set-up defines for scaling ...
@@ -161,10 +157,6 @@
 #define XTR_COEF_BITS SHIFT_9 // Used to generate filter coef divisor. coef_div = 1/2^n
 #define XTR_COEF_DIV (1 << XTR_COEF_BITS) // Coef divisor
 #define XTR_HALF_COEF (XTR_COEF_DIV >> 1) // Half of Coef divisor
-
-#define PROPORTIONAL 1 // Selects between 'proportional' and 'offset' error corrections
-#define VELOC_CLOSED 1 // MB~ 1 Selects fully closed loop (both velocity, Iq and Id)
-#define IQ_ID_CLOSED 1 // MB~ 1 Selects Iq/Id closed-loop, velocity open-loop
 
 // TRANSIT state uses at least one electrical cycle per 1024 Vq values ...
 #define VOLT_DIFF_BITS 10 // NB 2^10 = 1024, Used to down-scale Voltage differences in blending function
@@ -203,19 +195,7 @@
 #define PERIOD_COEF_DIV (1 << PERIOD_COEF_BITS) // Coef divisor
 #define PERIOD_HALF_COEF (PERIOD_COEF_DIV >> 1) // Half of Coef divisor
 
-#if (USE_XSCOPE)
-//MB~	#define DEMO_LIMIT 100000 // XSCOPE
-#define DEMO_LIMIT 400000 // XSCOPE
-//MB~	#define DEMO_LIMIT 800000 // XSCOPE
-#else // if (USE_XSCOPE)
-//MB~	#define DEMO_LIMIT 4000000
-	#define DEMO_LIMIT 4000
-#endif // else !(USE_XSCOPE)
-
 #define STR_LEN 80 // String Length
-
-// Debug/Tuning switches
-#define GAMMA_SWEEP 0 // IQ/ID Open-loop, Gamma swept through electrical cycle
 
 // Parameters for filtering estimated rotational current values.
 #define ROTA_FILT_BITS 9 // WARNING: Using larger values will increase the response time of the motor
@@ -364,7 +344,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int blend_weight;	// Current value of blending weight
 	int blend_inc;	// Increment to blending weight
 	int fw_on; // Flag set if Field Weakening required
-	int ws_cnt; // Wrong-Spin count //MB~
 
 	int iters; // Iterations of inner_loop
 	unsigned id; // Unique Motor identifier e.g. 0 or 1
@@ -393,19 +372,6 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int coef_vel_err; // velocity filter coefficient diffusion error
 	int scale_vel_err; // Velocity scaling diffusion error 
 	int veloc_calc_err; // Velocity calculation diffusion error 
-
-	int tmp; // MB~
-	int temp; // MB~ Dbg
-
-timer dbg_tmr; // MB~
-unsigned dbg_orig; // MB~
-unsigned dbg_strt;
-unsigned dbg_end;
-unsigned dbg_prev;
-unsigned dbg_diff;
-unsigned dbg_sum; // MB~
-int dbg_err; // MB~
-
 } MOTOR_DATA_TYP;
 
 /*****************************************************************************/
