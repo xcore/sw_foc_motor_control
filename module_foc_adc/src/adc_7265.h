@@ -94,17 +94,15 @@
 #define ADC_TRIGGER_CORR 128 // Timing correction
 #define ADC_TRIGGER_DELAY (QUART_PWM_MAX - ADC_TRIGGER_CORR) // MB~ Re-tune
 
-// Parameters for filtering raw ADC values.
-#define ADC_FILT_BITS 2 // WARNING: Values larger than 2 will significantly reduced the amplitude of the ADC signal
-#if (1 <  ADC_FILT_BITS)
-#define ADC_HALF_FILT (1 << (ADC_FILT_BITS - 1))
-#else
-#define ADC_HALF_FILT 0
-#endif
+// Parameters for filtering raw ADC values. WARNING: ADC_FILT_RES>2 will significantly reduce the ADC amplitude
+#define ADC_FILT_RES 2 // ADC Filter scaling resolution
+#define ADC_FILT_DIV (1 << ADC_FILT_RES) // ADC Filter scaling factor
+#define ADC_FILT_HALF (ADC_FILT_DIV >> 1) // Half ADC scaling factor (used for rounding)
 
 // Parameters for filtering to obtain the mean ADC values
-#define ADC_SCALE_BITS (16 - ADC_UPSCALE_BITS) // Used to generate 2^n scaling factor
-#define ADC_HALF_SCALE (1 << (ADC_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
+#define ADC_SCALE_BITS 16 // Used to generate 2^n scaling factor
+#define ADC_SCALE_DIV (1 << ADC_SCALE_BITS) // ADC scaling factor
+#define ADC_SCALE_HALF (ADC_SCALE_DIV >> 1) // Half Scaling factor (used in rounding)
 
 #define ADC_MAX_COEF_BITS 13 // Used to generate max. filter coef divisor. coef_div = 1/2^n
 #define ADC_MAX_COEF_DIV (1 << ADC_MAX_COEF_BITS) // Max. coef divisor

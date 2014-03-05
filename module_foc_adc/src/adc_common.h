@@ -19,10 +19,6 @@
 
 #include "use_locks.h"
 
-#define ADC_UPSCALE_BITS 0 // No of bits used when upsacaling ADC values (to improve precision)
-#define ADC_UPSCALE_FACTOR (1 << ADC_UPSCALE_BITS) // Factor for upsacaling ADC values (to improve precision)
-#define ADC_HALF_UPSCALE (ADC_UPSCALE_FACTOR >> 1) // Half Up-scaling factor (Used for rounding)
-
 /** Different ADC Phases */
 typedef enum ADC_PHASE_ETAG
 {

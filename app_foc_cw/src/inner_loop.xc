@@ -131,8 +131,16 @@ static void init_pid_data( // Initialise PID data
 	// Regular-Sampling mode 
 	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,1.0 ,0.0058 ,0.0 );
 	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,8.0 ,0.017 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,4.0 ,0.00012 ,0.0 );
+//MB~	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,4.0 ,0.00012 ,0.0 );
+//CW~		init_all_pid_consts( motor_s.pid_consts[SPEED_PID] ,4.0 ,0.0 ,0.0 );
 
+if (motor_s.id)
+{
+	acquire_lock(); printint(motor_s.id); 
+	printstr(": Kp="); printint(motor_s.pid_consts[SPEED_PID].K_p); 
+	printstr(": Ki="); printintln(motor_s.pid_consts[SPEED_PID].K_i); 
+	release_lock();
+}
 	motor_s.pid_Id = 0;	// Output from radial current PID
 	motor_s.pid_Iq = 0;	// Output from tangential current PID
 	motor_s.pid_veloc = 0;	// Output from velocity PID
@@ -708,7 +716,11 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 	}; // if (motor_s.pid_preset)
 
 if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
-	corr_veloc = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
+
+//CW~	corr_veloc = get_cw_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
+	corr_veloc = get_mb_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
+if (motor_s.xscope) xscope_int( 16 ,(motor_s.targ_vel - motor_s.est_veloc) ); //MB~
+if (motor_s.xscope) xscope_int( 17 ,motor_s.pid_regs[SPEED_PID].sum_err ); //MB~
 
 	motor_s.pid_veloc = corr_veloc;
 
@@ -790,24 +802,20 @@ if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
 	// Check if PID's need presetting
 	if (motor_s.pid_preset)
 	{
-//MB~	preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,(motor_s.vect_data[D_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
-//MB~	preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,(motor_s.vect_data[Q_ROTA].end_open_V << ADC_UPSCALE_BITS) ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
-		preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,motor_s.vect_data[D_ROTA].end_open_V ,targ_Id ,(motor_s.vect_data[D_ROTA].est_I >> ADC_UPSCALE_BITS) );
-		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,(motor_s.vect_data[Q_ROTA].est_I >> ADC_UPSCALE_BITS) );
+		preset_pid( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,motor_s.vect_data[D_ROTA].end_open_V ,targ_Id ,motor_s.vect_data[D_ROTA].est_I );
+		preset_pid( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,motor_s.vect_data[Q_ROTA].end_open_V ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I );
 	}; // if (motor_s.pid_preset)
 
-//MB~	corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I ,abs(motor_s.diff_ang) );
-//MB~	corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I ,abs(motor_s.diff_ang) );
-		corr_Id = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,targ_Id ,((motor_s.vect_data[D_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
-		corr_Iq = get_pid_regulator_correction( motor_s.id ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,((motor_s.vect_data[Q_ROTA].est_I + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS) ,abs(motor_s.diff_ang) );
+	corr_Id = get_mb_pid_regulator_correction( motor_s.id ,ID_PID ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I ,abs(motor_s.diff_ang) );
+	corr_Iq = get_mb_pid_regulator_correction( motor_s.id ,IQ_PID ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I ,abs(motor_s.diff_ang) );
+if (motor_s.xscope) xscope_int( 18 ,(targ_Iq - motor_s.vect_data[Q_ROTA].est_I) ); //MB~
+if (motor_s.xscope) xscope_int( 19 ,motor_s.pid_regs[IQ_PID].sum_err ); //MB~
 
 	motor_s.pid_Id = corr_Id;
 	motor_s.pid_Iq = corr_Iq;
 
 	motor_s.vect_data[D_ROTA].set_V  = motor_s.pid_Id;
 	motor_s.vect_data[Q_ROTA].set_V = motor_s.pid_Iq;
-//MB~	motor_s.vect_data[D_ROTA].set_V = (motor_s.pid_Id + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS;
-//MB~	motor_s.vect_data[Q_ROTA].set_V = (motor_s.pid_Iq + ADC_HALF_UPSCALE) >> ADC_UPSCALE_BITS;
 
 	motor_s.pid_preset = 0; // Clear 'Preset PID' flag
 
@@ -1435,9 +1443,6 @@ static void get_qei_data( // Get raw QEI data, and compute QEI parameters (E.g. 
 
 
 #if (1 == VELOC_FILT) 
-		// Filter velocity. MB~ Need to investigate why velocity spikes occur
-
-
 		if (motor_s.est_veloc < (motor_s.prev_veloc - MAX_VELOC_INC))
 		{
 			motor_s.est_veloc = (motor_s.prev_veloc - MAX_VELOC_INC);
