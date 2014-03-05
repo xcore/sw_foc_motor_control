@@ -39,9 +39,6 @@
 /**  Default No. OF QEI positions per Revolution */
 #define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
 
-/**  Default Filter Mode  1 == On */
-#define QEI_FILTER 0
-
 /**  Seconds in a minute */
 #define SECS_PER_MIN 60
 

@@ -130,27 +130,6 @@ typedef struct QEI_BUF_TAG //
 	PORT_TIME_TYP time16; // 16-bit Time-stamp for when port-pins read
 } QEI_BUF_TYP;
 
-#if (QEI_DBG)
-typedef struct DBG_SMP_TAG // MB~ Dbg
-{
-	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
-	int diff_time; // Difference between 2 adjacent time-stamps.
-	ANG_INC_TYP phase_inc; // angular increment value
-	ANG_INC_TYP hi_inc; // Higher bound for angular increment value
-	ANG_INC_TYP lo_inc; // Lower bound for angular increment value
-	ANG_INC_TYP ang_inc; // new angular increment value
-	QEI_STATE_ETYP curr_state; // Curremt QEI state
-	int confid; // Spin-direction confidence. (+ve: confident Positive spin, -ve: confident negative spin)
-	int veloc; // measured angular velocity
-} DBG_SMP_TYP;
-
-typedef struct ALL_DBG_TAG // MB~ Dbg
-{
-	DBG_SMP_TYP ss[DBG_SIZ]; // Array of all Debug data
-	int cnt; // Counts No of dbg array entries
-} ALL_DBG_TYP;
-#endif // QEI_DBG
-
 /** Type containing 2-D array for look-up table */
 typedef struct QEI_LUT_TAG
 {
@@ -171,10 +150,6 @@ typedef struct QEI_PHASE_TAG //
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_DATA_TAG // 
 {
-#if (QEI_DBG)
-	ALL_DBG_TYP dd; // All Debug data
-#endif // QEI_DBG
-
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
 	QEI_LUT_TYP ang_lut;	// Look-up table for converting phase changes to angle increments
 	QEI_PHASE_TYP phase_data[NUM_QEI_PHASES];	// Structure containing all data for one QEI phase
@@ -201,12 +176,7 @@ typedef struct QEI_DATA_TAG //
 	int tmp_i[4]; // Debug
 } QEI_DATA_TYP;
 
-// Assign correct port type for sampling mode
-#if (1 == QEI_RS_MODE)
 #define QEI_PORT port:32 // Use 32-bit buffering for Regular-Sampling mode 
-#else // if (1 == QEI_RS_MODE)
-#define QEI_PORT port:4  // Use 4-bit buffering for Edge-Trigger mode 
-#endif // else !(1 == QEI_RS_MODE)
 
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client

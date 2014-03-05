@@ -52,10 +52,6 @@ static void init_qei_data( // Initialise  QEI data for one motor
 
 	int tmp_val; // temporary manipulation value
 
-#if (QEI_DBG)
-	inp_qei_s.dd.cnt = 0; // MB~ Dbg
-#endif //(QEI_DBG)
-
 	inp_qei_s.ang_lut = ang_incs; // Assign table converting phase changes to angle increments
 
 	inp_qei_s.params.tot_ang = 0;
@@ -144,44 +140,6 @@ static void acknowledge_qei_command( // Acknowledge QEI command
 {
 	c_qei <: QEI_CMD_ACK; // Transmit QEI parameters to Client
 } // acknowledge_qei_command
-#if (QEI_DBG)
-/*****************************************************************************/
-static void print_smp_dbg( // MB~ Print debug sample
-	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	DBG_SMP_TYP dbg_smp_s // Reference to structure containing debug sample info
-)
-{
-	printstr( dbg_smp_s.dbg_str ); 
-
-	printstr(" TD="); printint( dbg_smp_s.diff_time ); 
-	printstr(" LI="); printint( dbg_smp_s.lo_inc ); 
-	printstr(" HI="); printint( dbg_smp_s.hi_inc );
-	printstr(" PI="); printint( dbg_smp_s.phase_inc ); 
-	printstr(" AI="); printint( dbg_smp_s.ang_inc ); 
-	printstr(" CS="); printint( dbg_smp_s.curr_state ); 
-	printstr(" CFD="); printint( dbg_smp_s.confid ); 
-	printstr(" VEL="); printint( dbg_smp_s.veloc ); 
-	printstrln("");
-} // print_smp_dbg
-/*****************************************************************************/
-static void print_all_dbg( // MB~ Print all debug info.
-	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
-)
-{
-	int dbg_cnt;
-
-
-	acquire_lock(); 
-
-	for(dbg_cnt=0; dbg_cnt<inp_qei_s.dd.cnt; dbg_cnt++)
-	{ 
-		printint(dbg_cnt); printstr(": "); 
-		print_smp_dbg( inp_qei_s ,inp_qei_s.dd.ss[dbg_cnt] );  
-	} // for dbg_cnt
-
-	release_lock();
-} // print_all_dbg
-#endif //(QEI_DBG)
 /*****************************************************************************/
 static void update_origin_state( // Update origin state
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
@@ -332,51 +290,6 @@ static void update_rs_phase_states( // Regular-Sampling: Update phase state
 	return;
 } // update_rs_phase_states
 /*****************************************************************************/
-static void update_et_phase_states( // Regular-Sampling: Update phase state
-	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	unsigned edge_time, // Phase-Edge time-stamp (32-bit value)
-	unsigned cur_phases // Current set of phase values
-)
-{
-	int diff_time = (int)((unsigned)(edge_time - inp_qei_s.prev_time)); // Difference between 2 adjacent time-stamps.
-
-	// Check for sensible time
-	if (THR_TICKS_PER_QEI < diff_time)
-	{ // Sensible time!
-		// Check for change in phase data
-		if (inp_qei_s.prev_phases != cur_phases)
-		{ // Update angular position
-			inp_qei_s.ang_inc = inp_qei_s.ang_lut.incs[inp_qei_s.prev_phases][cur_phases]; // Decode angular increment
-	
-			// Check for valid transition
-			if (0 != inp_qei_s.ang_inc)
-			{
-				inp_qei_s.tot_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
-	
-				inp_qei_s.prev_change = inp_qei_s.change_time; // Store previous phase change time
-				inp_qei_s.change_time = edge_time; // Store time of filtered phase change
-	
-				inp_qei_s.prev_phases = cur_phases;
-			} //if (0 != inp_qei_s.ang_inc)
-	
-			inp_qei_s.tmp_i[0]++; //MB~
-		} // if (inp_qei_s.prev_phases != cur_phases)
-		else inp_qei_s.tmp_i[1]++; //MB~
-	} // if (THR_TICKS_PER_QEI < diff_time)
-	else // MB~ Depreciated
-	{
-		if (inp_qei_s.prev_phases != cur_phases)
-		{ // Update angular position
-			inp_qei_s.tmp_i[2]++; //MB~
-		} // if (inp_qei_s.prev_phases != cur_phases)
-		else inp_qei_s.tmp_i[3]++; //MB~
-	} // else !(THR_TICKS_PER_QEI < diff_time)
-
-	inp_qei_s.prev_time = edge_time; // Store time-stamp
-
-	return;
-} // update_et_phase_states
-/*****************************************************************************/
 static void service_input_pins( // Service detected change on input pins
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
 	unsigned time_stamp, // 32-bit time-stamp
@@ -402,18 +315,12 @@ static void service_input_pins( // Service detected change on input pins
 
 		inp_qei_s.pin_changes = 1; // Update number of pin-changes
 
-#if (1 == QEI_RS_MODE)
 		update_first_phase( inp_qei_s.phase_data[QEI_PHASE_A] ,(cur_phases & 0b01) ); // Phase_A
 		update_first_phase( inp_qei_s.phase_data[QEI_PHASE_B] ,((cur_phases & 0b10) >> 1) ); // Phase_B
-#endif // if (1 == QEI_RS_MODE)
 	} // if (0 == inp_qei_s.pin_changes)
 	else
 	{ // NOT first data
-#if (1 == QEI_RS_MODE)
 		update_rs_phase_states( inp_qei_s ,time_stamp ,cur_phases ); // update phase state
-#else // if (1 == QEI_RS_MODE)
-		update_et_phase_states( inp_qei_s ,time_stamp ,cur_phases ); // update phase state
-#endif // else !(1 == QEI_RS_MODE)
 	
 		// Check for change in origin state
 		if (orig_flg != inp_qei_s.prev_orig)
@@ -435,7 +342,7 @@ static void service_input_pins( // Service detected change on input pins
 	return;
 } // service_input_pins
 /*****************************************************************************/
-#if (1 == QEI_RS_MODE)  // Following functions for Regular-Sampling Mode
+
 /*****************************************************************************/
 void foc_qei_config(  // Configure all QEI ports
 	buffered QEI_PORT in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
@@ -500,13 +407,6 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	int samp_cnt; // Sample counter
 	int do_loop = 1;   // Flag set until loop-end condition found
 
-#ifdef MB
-unsigned dbg_orig = 0; // MB~
-unsigned dbg_strt = 0;
-unsigned dbg_end = 0;
-unsigned dbg_diff; // MB~
-#endif //MB~
-
 
 	acquire_lock(); 
 	printstrln("                                          QEI RS_Server Starts");
@@ -537,8 +437,6 @@ unsigned dbg_diff; // MB~
 		prev16_cnt[motor_cnt] = (PORT_TIME_TYP)samp32_time;
 	} // for motor_cnt
 
-// chronometer :> dbg_orig; // MB~
-
 	while (do_loop) 
 	{
 #pragma xta endpoint "qei_main_loop"
@@ -549,7 +447,6 @@ unsigned dbg_diff; // MB~
 			pb4_inp[motor_cnt] :> buf_data @ port16_cnt; // Get all buffer samples (8)
 			chronometer :> samp32_time; // Get 32-bit timer value to use as sample time-stamp
 
-// chronometer :> dbg_strt; // MB~
 			// Check Timing has been met ...
 
 			diff16_ticks = (PORT_TIME_TYP)(port16_cnt - prev16_cnt[motor_cnt]);
@@ -576,7 +473,6 @@ unsigned dbg_diff; // MB~
 				samp32_time += (unsigned)TICKS_PER_SAMP; // Increment time to end next sample
 			} // for samp_cnt
 
-// chronometer :> dbg_end; // MB~
 			select {
 				case c_qei[motor_cnt] :> inp_cmd :
 				{
@@ -584,7 +480,6 @@ unsigned dbg_diff; // MB~
 					{
 						case QEI_CMD_DATA_REQ : // Data Request
 							service_client_data_request( all_qei_s[motor_cnt] ,c_qei[motor_cnt] );
-// xscope_int( (8+motor_cnt) ,(dbg_end - dbg_strt) ); //MB~
 						break; // case QEI_CMD_DATA_REQ
 	
 						case QEI_CMD_LOOP_STOP : // Termination Command
@@ -610,10 +505,6 @@ unsigned dbg_diff; // MB~
 
 	}	// while (do_loop)
 
-#if (QEI_DBG)
-	print_all_dbg( all_qei_s[0] ); // MB~ Dbg
-#endif //(QEI_DBG)
-
 	acquire_lock(); 
 	printstrln("");
 	printstrln("                                             QEI Server Ends");
@@ -622,191 +513,4 @@ unsigned dbg_diff; // MB~
 	return;
 } // foc_qei_do_multiple
 /*****************************************************************************/
-#else // if (1 == QEI_RS_MODE)  // Following functions for Edge-Trigger Mode
-/*****************************************************************************/
-void foc_qei_config(  // Configure all QEI ports
-	buffered QEI_PORT in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
-	clock qei_clks[NUMBER_OF_MOTORS] // Array of clocks for generating accurate QEI timing (one per input port)
-)
-{
-	timer chronometer; // H/W timer
-	unsigned big_ticks; // ticks from 32-bit timer
-	int motor_cnt; // motor counter
-
-
- 	configure_clock_rate( qei_clks[0] ,PLATFORM_REFERENCE_MHZ ,1 ); // Configure clock rate to PLATFORM_REFERENCE_MHZ/1 (100 MHz)
-
-	// Loop through all ports to be configured
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{
-		do_qei_port_config( pb4_QEI[motor_cnt] ,qei_clks[0] ); // configure current port
-	} // for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
-
-	// Once all ports configured, synchronise port-timers with reference clock
-	chronometer :> big_ticks;												// Get current time
-	big_ticks &= ~0xffff;														// Clear bottom 16 bits
-	big_ticks += 0x20000;														// Step on time by 2 port-timer cycles
-	chronometer when timerafter(big_ticks) :> void;	// Wait until synchronisation time
-
-	start_clock( qei_clks[0] ); // Start common QEI clock, 
-} // foc_qei_config
-/*****************************************************************************/
-#pragma unsafe arrays
-void foc_qei_do_multiple( // Get QEI data from motor and send to client
-	streaming chanend c_qei[], // Array of data channel to client (carries processed QEI data)
-	buffered QEI_PORT in pb4_QEI[NUMBER_OF_MOTORS] // Array of buffered 4-bit input ports (carries raw QEI motor data)
-)
-#define STAT_BITS 12
-#define NUM_STATS (1 << STAT_BITS)
-#define HALF_STATS (NUM_STATS >> 1)
-{
-	QEI_BUF_TYP buffer[QEI_BUF_SIZ]; // Buffers raw QEI values
-	QEI_DATA_TYP all_qei_s[NUMBER_OF_MOTORS]; // Array of structures containing QEI parameters for all motor
-	QEI_RAW_TYP inp_pins[NUMBER_OF_MOTORS]; // Array of raw data values on input port pins
-	QEI_RAW_TYP tmp_pins; // temporary raw data value from input port pins
-	CMD_QEI_ENUM inp_cmd; // QEI command from Client
-	timer chronometer; // H/W timer
-	unsigned approx32_ticks; // Approximate port sample time (32-bit value)
-	unsigned exact32_ticks; // Exact port sample time (32-bit value)
-	PORT_TIME_TYP port16_ticks; // Exact port sample time (16-bit value)
-	PORT_TIME_TYP low16_ticks; // lowest 16-bits of 32-bit time (16-bit value)
-	PORT_TIME_TYP corr16_ticks; // timer correction value (16-bit value)
-	int motor_id; // Unique Motor identifier	
-	int read_cnt = 0; // No of QEI values read from buffer
-	int write_cnt = 0; // No of QEI values written to buffer
-	unsigned read_off = 0; // read offset into buffer
-	unsigned write_off = 0; // wtite offset into buffer
-	int do_loop = 1;   // Flag set until loop-end condition found
-
-
-	acquire_lock(); 
-	printstrln("                                          QEI ET_Server Starts");
-	release_lock();
-
-	// Check if we are running on the simulator
-	if(0 == _is_simulation())
-	{ // Running on real hardware
-		// Wait 128ms for UV_FAULT pin to finish toggling
-		chronometer :> exact32_ticks;
-		chronometer when timerafter(exact32_ticks + (MILLI_SEC << 7)) :> void;
-	} // if (0 == _is_simulation())
-
-	for (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; ++motor_cnt) 
-	{
-		inp_pins[motor_cnt] = 0xFF; // Set buffer for reading input pins to impossible value
-		init_qei_data( all_qei_s[motor_cnt] ,motor_cnt ); // Initialise QEI data for current motor
-
-		chronometer :> approx32_ticks;
-		all_qei_s[motor_cnt].prev_time = approx32_ticks; // Initialise previous time-stamp with sensible value
-		all_qei_s[motor_cnt].change_time = approx32_ticks; // Initialise time-stamp with sensible value
-		all_qei_s[motor_cnt].prev_change = approx32_ticks; // Initialise time-stamp with sensible value
-
-		// Use acknowledge command to signal to control-loop that initialisation is complete
-		acknowledge_qei_command( all_qei_s[motor_cnt] ,c_qei[motor_cnt] );
-	} // for motor_cnt
-
-	while (do_loop) {
-#pragma xta endpoint "qei_main_loop"
-#pragma ordered // If multiple cases fire at same time, service top-most first
-		select {
-			// Service any change on input port pins
-			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) pb4_QEI[motor_id] when pinsneq(inp_pins[motor_id]) :> inp_pins[motor_id] @ port16_ticks:
-			{
-				pb4_QEI[motor_id] :> tmp_pins; // Re-sample to test for glitch
-
-				// WARNING: H/W pin-change detector sometimes mis-fires, so also do check in S/W
-				if (tmp_pins == inp_pins[motor_id])
-				{
-					// Build accurate 32-bit port time value ...
-					chronometer :> approx32_ticks; // Get approximate 32-bit timer value
-
-					buffer[write_off].time16 = port16_ticks; // Store exact 16-bit timer value
-					buffer[write_off].time32 = approx32_ticks; // Store approximate 32-bit timer value
-					buffer[write_off].inp_pins = tmp_pins;
-					buffer[write_off].id = motor_id;
-	
-					// new QEI data written to buffer
-					write_cnt++; // Increment write counter.  WARNING No overflow check
-					write_off = write_cnt & QEI_BUF_MASK; // Wrap into buffer range
-	
-					assert( (write_cnt - read_cnt) < QEI_BUF_MASK); // Check for buffer overflow
-				} // if (tmp_pins == inp_pins[motor_id])
-			} // case
-			break;
-
-			// Service any client command
-			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) c_qei[motor_id] :> inp_cmd :
-			{
-				switch(inp_cmd)
-				{
-					case QEI_CMD_DATA_REQ : // Data Request
-						service_client_data_request( all_qei_s[motor_id] ,c_qei[motor_id] );
-					break; // case QEI_CMD_DATA_REQ
-
-					case QEI_CMD_LOOP_STOP : // Termination Command
-						acknowledge_qei_command( all_qei_s[motor_id] ,c_qei[motor_id] );
-
-						do_loop = 0; // Terminate while loop
-					break; // case QEI_CMD_DATA_REQ
-
-					default : // Unknown Command
-						assert(0 == 1); // ERROR: Should not happen
-					break; // default
-				} // switch(inp_cmd)
-			} // case	c_qei[motor_id] :> inp_cmd :
-			break;
-
-			default :
-				// Check if any buffer data needs processing
-				if (write_cnt > read_cnt)
-				{
-					motor_id = buffer[read_off].id;	
-
-// if (0 == motor_id) xscope_int( 0 ,buffer[read_off].inp_pins ); // MB~
-					low16_ticks = (PORT_TIME_TYP)(buffer[read_off].time32 & PORT_TIME_MASK); // Get lowest 16-bits of 32-bit timer
-
-					// Calculate timer correction. NB correctly handles wrapped timer values
-					corr16_ticks = (PORT_TIME_TYP)(low16_ticks - buffer[read_off].time16);
-					buffer[read_off].time32 = buffer[read_off].time32 - (unsigned)corr16_ticks; // Correct 32-bit timer value
-
-					service_input_pins( all_qei_s[motor_id] ,buffer[read_off].time32 ,buffer[read_off].inp_pins );
-
-					read_cnt++; // Increment read counter. WARNING No overflow check
-					read_off = read_cnt & QEI_BUF_MASK; // Wrap into buffer range
-				} // if (write_off != read_off)
-			break; // default
-		} // select
-	}	// while (do_loop)
-
-#if (QEI_DBG)
-	print_all_dbg( all_qei_s[0] ); // MB~ Dbg
-#endif //(QEI_DBG)
-
-{ //MB~
-	int cc;
-	acquire_lock(); 
-
-	for (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; ++motor_cnt) 
-	{
-		printstr("M_");
-		printintln(motor_cnt);
-
-		for (cc=0; cc<4; cc++)
-		{
-			printstr(" ");
-			printint(all_qei_s[motor_cnt].tmp_i[cc]);
-		} // for cc
-		printstrln(" <I");
-	} // for motor_cnt
-} //MB~
-
-	acquire_lock(); 
-	printstrln("");
-	printstrln("                                             QEI Server Ends");
-	release_lock();
-
-	return;
-} // foc_qei_do_multiple
-/*****************************************************************************/
-#endif // else !(1 == QEI_RS_MODE)
-/*****************************************************************************/
+// qei_server.xc

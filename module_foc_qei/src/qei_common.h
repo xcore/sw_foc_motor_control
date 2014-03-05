@@ -16,7 +16,6 @@
 #define _QEI_COMMON_H_
 
 #include "use_locks.h"
-
 #include "app_global.h"
 
 #ifndef PLATFORM_REFERENCE_MHZ
