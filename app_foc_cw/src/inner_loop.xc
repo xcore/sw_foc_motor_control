@@ -799,7 +799,7 @@ if (motor_s.xscope) xscope_int( 17 ,motor_s.pid_regs[SPEED_PID].sum_err ); //MB~
 
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
 
-//CW~ targ_Iq = 20; // CW~ Iq PID tuning
+//CW~ targ_Iq = 20; // CW~  Iq PID tuning
 if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); // MB~
 if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
 	// Apply PID control to Iq and Id
