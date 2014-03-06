@@ -123,11 +123,6 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	int motor_cnt; // Counts number of motors
 	int do_loop = 1;   // Flag set until loop-end condition found 
 
-timer chronometer; // MB~
-unsigned dbg_orig; // MB~
-unsigned dbg_strt;
-unsigned dbg_end;
-unsigned dbg_sum = 0; // MB~
 
 	acquire_lock(); 
 	printstrln("                                             Hall Server Starts");
@@ -142,8 +137,6 @@ unsigned dbg_sum = 0; // MB~
 		acknowledge_hall_command( all_hall_data[motor_cnt] ,c_hall[motor_cnt] );
 	} // for motor_cnt
 
-chronometer :> dbg_orig; // MB~
-
 	// Loop forever
 	while (do_loop) {
 #pragma xta endpoint "hall_main_loop"
@@ -153,24 +146,13 @@ chronometer :> dbg_orig; // MB~
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) p4_hall[motor_id] when pinsneq(hall_bufs[motor_id]) :> hall_bufs[motor_id] :
 			{
-chronometer :> dbg_strt;
 				service_hall_input_pins( all_hall_data[motor_id] ,hall_bufs[motor_id] );
-
-#if (HALL_XSCOPE)
-				// NB These signals have to be registered in the file main.xc for the target application
-				xscope_probe_data( 0 ,hall_bufs[motor_id] );
-				xscope_probe_data( 1 ,all_hall_data[motor_id].params.hall_val );
-				xscope_probe_data( 2 ,all_hall_data[motor_id].params.err );
-#endif // (HALL_XSCOPE)
-chronometer :> dbg_end; //MB~
-dbg_sum += (unsigned)(dbg_end - dbg_strt);
 			} // case
 			break;
 
 			// Service any client request for data
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) c_hall[motor_id] :> inp_cmd :
 			{
-chronometer :> dbg_strt;
 				switch(inp_cmd)
 				{
 					case HALL_CMD_DATA_REQ : // Data Request
@@ -187,11 +169,6 @@ chronometer :> dbg_strt;
 						assert(0 == 1); // ERROR: Should not happen
 					break; // default
 				} // switch(inp_cmd)
-
-chronometer :> dbg_end; //MB~
-dbg_sum += (unsigned)(dbg_end - dbg_strt);
-// if (motor_id) xscope_probe_data( 6 ,dbg_sum ); //MB~
-// if (motor_id) xscope_probe_data( 7 ,(dbg_end - dbg_orig) ); //MB~
 			} // case
 			break;
 

@@ -198,13 +198,10 @@
 
 #define STR_LEN 80 // String Length
 
-// Parameters for filtering estimated rotational current values.
-#define ROTA_FILT_BITS 9 // WARNING: Using larger values will increase the response time of the motor
-#if (1 <  ROTA_FILT_BITS)
-#define ROTA_HALF_FILT (1 << (ROTA_FILT_BITS - 1))
-#else
-#define ROTA_HALF_FILT 0
-#endif
+// Parameters for filtering estimated rotational current values. WARNING: Larger values will increase the motor response time
+#define ROTA_FILT_RES 9 // Bit resolution of scaling factor
+#define ROTA_FILT_DIV (1 << ROTA_FILT_RES) // Scaling factor for rotational current filter
+#define ROTA_FILT_HALF (ROTA_FILT_DIV >> 1) // Half scaling factor (used for rounding)
 
 #define RF_DIV_RPM_BITS 24 // Bit resolution for Reference_Freq/Start_Speed = (100 MHz)/(358 RPM/60) as power of 2
 

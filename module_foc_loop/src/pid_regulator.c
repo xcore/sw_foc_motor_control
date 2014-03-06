@@ -93,7 +93,7 @@ void initialise_pid( // Initialise PID regulator
 	pid_regul_p->rem = 0;
 } // initialise_pid
 /*****************************************************************************/
-void preset_pid( // Preset PID ready for first iteration
+void preset_mb_pid( // Preset PID ready for first iteration
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
 	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
 	PID_CONST_TYP * pid_const_p, // Local pointer to PID constants data structure
@@ -115,7 +115,30 @@ void preset_pid( // Preset PID ready for first iteration
 		// Integer division (with rounding) by Hi-Res up-scaled Integral constant
 		pid_regul_p->sum_err = (int)((tmp_64 + ((S64_T)pid_const_p->K_i >> 1)) / (S64_T)pid_const_p->K_i);
 	} //if (pid_const_p->K_i)
-} // preset_pid 
+} // preset_mb_pid 
+/*****************************************************************************/
+void preset_cw_pid( // Preset PID ready for first iteration
+	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
+	PID_CONST_TYP * pid_const_p, // Local pointer to PID constants data structure
+	int open_val, // Open-loop requested value
+	int closed_val, // Closed-loop requested value
+	int meas_val // measured value
+)
+{
+	S64_T tmp_64; // temporary 64-bit precision velue
+
+
+	// Prevent divide by zero (by unused I_D PID)
+	if (pid_const_p->K_i)
+	{
+		tmp_64 = ((S64_T)CW_PRESCALE * (S64_T)(closed_val - meas_val)) << (S64_T)CW_PROP_ERR_RES; // Lo-Res Up-scaled proportional error
+		tmp_64 = (((S64_T)open_val << (S64_T)(CW_DOWNSCALE_RES + PID_CONST_LO_RES)) + ((S64_T)pid_const_p->K_p >> 1)) / (S64_T)pid_const_p->K_p - tmp_64; // Subtract from Hi-Res Up-scaled Requested open-loop value
+
+		// Integer division (with rounding) by Hi-Res up-scaled Integral constant
+		pid_regul_p->sum_err = (int)((tmp_64 << (S64_T)PID_CONST_HI_RES) + ((S64_T)pid_const_p->K_i >> 1)) / (S64_T)pid_const_p->K_i;
+	} //if (pid_const_p->K_i)
+} // preset_cw_pid 
 /*****************************************************************************/
 int get_mb_pid_regulator_correction( // Computes new PID correction based on input error
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
@@ -242,7 +265,6 @@ int get_cw_pid_regulator_correction( // Computes new PID correction based on inp
         diff_err <<= CW_DIFF_ERR_RES; // Upscale difference error
 
         diff_term = (S64_T)pid_const_p->K_d * (S64_T)diff_err; // Calculate differential error term
-
         pid_regul_p->prev_err = inp_err; // Update previous error
     } // if (pid_const_p->K_d)
 
@@ -251,6 +273,13 @@ int get_cw_pid_regulator_correction( // Computes new PID correction based on inp
 
     // Convert to 32-bit result
     res_32 = (int)((res_64 + (S64_T)CW_DOWNSCALE_HALF) >> (S64_T)CW_DOWNSCALE_RES); // Down-scale result
+
+if ((0 == motor_id) && (IQ_PID == pid_id))
+{
+	printf("%1d: Kp=%5d Ki=%4d Targ=%3d Meas=%3d T-M=%3d InpErr=%lld ProTerm=%lld SumErr=%lld SumTerm=%lld Res64=%lld Res32=%5d\n"
+	 ,motor_id ,pid_const_p->K_p ,pid_const_p->K_i ,requ_val ,meas_val ,(requ_val - meas_val) 
+   ,inp_err ,prop_term ,pid_regul_p->sum_err ,sum_term ,res_64 ,res_32 ); 
+} // if (IQ_PID == pid_id)
 
     return res_32;
 } // get_cw_pid_regulator_correction

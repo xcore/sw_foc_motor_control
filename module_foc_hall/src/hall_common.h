@@ -39,12 +39,6 @@
 	#error Define. USE_XSCOPE in app_global.h
 #endif
 
-#if (USE_XSCOPE)
-#define HALL_XSCOPE 0 // Edit this branch for local switch
-#else
-#define HALL_XSCOPE 0 // Always zero in this branch
-#endif // (USE_XSCOPE)
-
 #define HALL_BITS 4 // No of Active bits in QEI value
 #define HALL_PHASE_MASK (0b0111) // Used to mask out 3 Hall Sensor Phase Bits
 #define HALL_NERR_MASK (0b1000) // Used to mask out Hall Error Bit(s)
