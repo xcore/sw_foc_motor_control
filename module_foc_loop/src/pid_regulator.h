@@ -116,16 +116,7 @@ void initialise_pid( // Initialise PID settings
     PID_REGULATOR_TYP &pid_regul_s // Reference to PID regulator data structure
 );
 /*****************************************************************************/
-void preset_mb_pid( // Computes new PID correction based on input error
-    unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
-    PID_REGULATOR_TYP &pid_regul_s, // Reference to PID regulator data structure
-    PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
-    int open_val, // Open-loop requested value
-    int closed_val, // Closed-loop requested value
-    int meas_val // measured value
-);
-/*****************************************************************************/
-void preset_cw_pid( // Computes new PID correction based on input error
+void preset_pid( // Computes new PID correction based on input error
     unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
     PID_REGULATOR_TYP &pid_regul_s, // Reference to PID regulator data structure
     PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
@@ -168,16 +159,7 @@ void inititialise_pid( // Initialise PID settings
     PID_REGULATOR_TYP * pid_regul_p // Pointer to PID regulator data structure
 );
 /*****************************************************************************/
-void preset_mb_pid( // Preset PID data ready for first iteration
-    unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
-    PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
-    PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
-    int open_val, // Open-loop requested value
-    int closed_val, // Closed-loop requested value
-    int meas_val // measured value
-);
-/*****************************************************************************/
-void preset_cw_pid( // Preset PID data ready for first iteration
+void preset_pid( // Preset PID data ready for first iteration
     unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
     PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
     PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure

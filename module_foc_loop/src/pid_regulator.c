@@ -93,7 +93,7 @@ void initialise_pid( // Initialise PID regulator
 	pid_regul_p->rem = 0;
 } // initialise_pid
 /*****************************************************************************/
-void preset_mb_pid( // Preset PID ready for first iteration
+void preset_pid( // Preset PID ready for first iteration
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
 	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
 	PID_CONST_TYP * pid_const_p, // Local pointer to PID constants data structure
@@ -115,30 +115,7 @@ void preset_mb_pid( // Preset PID ready for first iteration
 		// Integer division (with rounding) by Hi-Res up-scaled Integral constant
 		pid_regul_p->sum_err = (int)((tmp_64 + ((S64_T)pid_const_p->K_i >> 1)) / (S64_T)pid_const_p->K_i);
 	} //if (pid_const_p->K_i)
-} // preset_mb_pid 
-/*****************************************************************************/
-void preset_cw_pid( // Preset PID ready for first iteration
-	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
-	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
-	PID_CONST_TYP * pid_const_p, // Local pointer to PID constants data structure
-	int open_val, // Open-loop requested value
-	int closed_val, // Closed-loop requested value
-	int meas_val // measured value
-)
-{
-	S64_T tmp_64; // temporary 64-bit precision velue
-
-
-	// Prevent divide by zero (by unused I_D PID)
-	if (pid_const_p->K_i)
-	{
-		tmp_64 = ((S64_T)CW_PRESCALE * (S64_T)(closed_val - meas_val)) << (S64_T)CW_PROP_ERR_RES; // Lo-Res Up-scaled proportional error
-		tmp_64 = (((S64_T)open_val << (S64_T)(CW_DOWNSCALE_RES + PID_CONST_LO_RES)) + ((S64_T)pid_const_p->K_p >> 1)) / (S64_T)pid_const_p->K_p - tmp_64; // Subtract from Hi-Res Up-scaled Requested open-loop value
-
-		// Integer division (with rounding) by Hi-Res up-scaled Integral constant
-		pid_regul_p->sum_err = (int)((tmp_64 << (S64_T)PID_CONST_HI_RES) + ((S64_T)pid_const_p->K_i >> 1)) / (S64_T)pid_const_p->K_i;
-	} //if (pid_const_p->K_i)
-} // preset_cw_pid 
+} // preset_pid 
 /*****************************************************************************/
 int get_mb_pid_regulator_correction( // Computes new PID correction based on input error
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
