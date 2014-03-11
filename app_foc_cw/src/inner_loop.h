@@ -12,49 +12,61 @@
  * copyright notice above.
  *
  *****************************************************************************
+  WAIT_START = 0, // Wait for motor to start (receives non-zero request velocity)
+  ALIGN, // Align Coils opposite magnet
+  SEARCH, // Turn motor until FOC start conditions found
+  TRANSIT,	// Transit state
+  FOC,		  // Normal FOC state
+	STALL,		// State where motor stalled
+	WAIT_STOP, // Wait for motor to stop (measures small velocity)
+	POWER_OFF, // Error state where motor powered off
  *
  * During normal operation, the inner_loop() function loops through the following states:
- *  START: Initial entry state. 
- *		Move to SEARCH state.
+ *  WAIT_START: Initial entry state. Motor waits for valid command 
+ *		Move to ALIGN state.
+ *
+ *  ALIGN: A short burst of voltage is applied to the Motor, 
+ *    to align the coils opposite a magnet (NB magnets move, coils are stationary)
+ *		Move to SEARCH:	state.
  *
  *  SEARCH:	Motor runs open-loop, spinning the magnetic field around at a fixed torque,
  *		until the QEI reports that it has an accurate position measurement.
  *		Then the Hall sensors and QEI data are used to calculate the phase 
  *		difference between the motors coils and the QEI origin.
+ *		Move to TRANSIT state.
+ *
+ *  TRANSIT: Transition state between open-loop and closed-loop.
+ *    Both open-loop theta and closed-loop theta are calculated.
+ *		and this state controls a smooth transition from the open-loop to closed-loop value.
  *		Move to FOC state.
  *
- *  FOC:		Motor runs in closed-loop, the full Field Oriented Control (FOC)
- *		is used to commutate the rotor, until a 'stop' or 'stall' condition is detected.
- *		Move to STOP or STALL state.
+ *  FOC: Motor runs in closed-loop, the full Field Oriented Control (FOC)
+ *		is used to commutate the rotor, until a 'stop' or 'stall' 'power off' condition is detected.
+ *		Move to WAIT_STOP, STALL, or POWER_OFF state.
  *
- *	STALL: Currently, error message is issued.
- *		Move to STOP state.
+ *	STALL: (Motor continues to run), the stall-condition is analysed and the state is changed to 
+ *    either WAIT_START or FOC.
+ *		Move to WAIT_START or FOC state.
  *
- *	STOP: End loop
+ *	WAIT_STOP: (Motor continues to run). Power to the coils is cut, 
+ *    and when the speed is below the stall-speed, the state is changed to WAIT_START
+ *
+ *	POWER_OFF: This state is entered at the end of the motor schedule, 
+ *    or when a un-recoverable error is encountered.
  *
  *	For each iteration of the FOC state, the following actions are performed:-
  *		Read the QEI and ADC data.
  *		Estimate the angular velocity from the QEI data. 
- *		Estimate the Iq value from either the ADC data or angular velocity.
- *		Optionally estimate the Id value from the ADC data
- *		Optionally use the demand and estimated velocity to produce a demand Iq value, using a PID
- *		Use the demand and estimated Iq to produce a requested Iq value, using a PID
- *  	Transform the requested Iq and Id values into voltages for the motor coils
- *  	Convert voltages into PWM duty cycles.
+ *		Estimate the Iq and Id values from the ADC data
+ *		Read a requested velocity from the control interface.
+ *    Convert the requested velocity into a series of target velocities
+ *		Use the target and estimated velocity to produce a requested Iq value, using a PID
+ *		Convert the requested Iq into a target Iq
+ *		Use the target and estimated Iq to produce a requested Iq value, using a PID
+ *		Use the target and estimated Id to produce a requested Id value, using a PID
+ *  	Convert the requested Iq and Id values into PWM voltages for the motor coils
  *
  * This is a standard FOC algorithm, with the current and speed control loops combined.
- *
- * Notes:
- *
- *	The Leading_Angle is the angle between the position of maximum Iq 
- *	(tangential magnetic field), and the position of the magnetic pole.
- *	This allows the coil to be pulled towards the pole in an efficient manner.
- *
- *	The Phase_Lag, is the angular difference between the applied voltage (PWM),
- *	and the measured current (ADC).
- *
- *	Due to the effects of back EMF and inductance, both the Leading_Angle and 
- *	Phase_Lag vary with angular velocity.
  *
  **/                                   
 
@@ -84,6 +96,7 @@
 // Timing definitions
 #define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
 #define ALIGN_PERIOD (8 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
+#define MAX_PERIOD (8 * MILLI_SEC) // NB Larger then the period for the minimum specified speed (stall-speed)
 
 #define PWM_MIN_LIMIT (PWM_MAX_VALUE >> 4) // Min PWM value allowed (1/16th of max range)
 #define PWM_MAX_LIMIT (PWM_MAX_VALUE - PWM_MIN_LIMIT) // Max. PWM value allowed
@@ -100,7 +113,7 @@
 #define HALF_VOLT_TO_PWM (1 << (VOLT_TO_PWM_BITS - 1)) // Used for rounding
 #define VOLT_OFFSET (VOLT_MAX_MAG + HALF_VOLT_TO_PWM) // Offset required to make PWM pulse-width +ve
 
-#define STALL_TRIP_COUNT 5000
+#define STALL_TRIP_COUNT 5000 // No. of consecutive STALL states, before motor stopped.
 
 #define FIRST_HALL_STATE 0b001 // [CBA] 1st Hall state of 6-state cycle
 #define POSI_LAST_HALL_STATE 0b101 // [CBA] last Hall state of 6-state cycle if spinning in Positive direction
@@ -145,33 +158,20 @@
 #define SHIFT_12 12
 #define SHIFT_9   9
 
-#define PHASE_BITS SHIFT_20 // No of bits in phase offset scaling factor 
-#define PHASE_DENOM (1 << PHASE_BITS)
-#define HALF_PHASE (PHASE_DENOM >> 1)
-
-#define VEL_GRAD 10000 // (Estimated_Current)^2 = VEL_GRAD * Angular_Velocity
-
-#define XTR_SCALE_BITS SHIFT_16 // Used to generate 2^n scaling factor
-#define XTR_HALF_SCALE (1 << (XTR_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
-
-#define XTR_COEF_BITS SHIFT_9 // Used to generate filter coef divisor. coef_div = 1/2^n
-#define XTR_COEF_DIV (1 << XTR_COEF_BITS) // Coef divisor
-#define XTR_HALF_COEF (XTR_COEF_DIV >> 1) // Half of Coef divisor
-
 // TRANSIT state uses at least one electrical cycle per 1024 Vq values ...
 #define VOLT_DIFF_BITS 10 // NB 2^10 = 1024, Used to down-scale Voltage differences in blending function
 #define VOLT_DIFF_MASK ((1 << VOLT_DIFF_BITS ) - 1) // Used to mask out Voltage difference bits
 
-// Linear conversion are used to relate 2 parameters. E.G. PWM Voltage applied to the coil current produced  (I = m*V + c)
-#define S2V_BITS SHIFT_12 // No of bits in Voltage to current scaling factor 
-#define S2V_DENOM (1 << S2V_BITS)
-#define HALF_S2V (S2V_DENOM >> 1)
-#define S2V_MUX 2575 // Speed multiplier. NB 0.6286 ~= 2575/2^12 
+// Linear conversion are used to relate 2 parameters. E.G. PWM Voltage applied to the coil current produced (I = m*V + c)
+#define V2I_BITS SHIFT_16 // No of bits in Voltage-to-Current scaling factor 
+#define V2I_DENOM (1 << V2I_BITS) // Voltage-to-Current scaling factor
+#define HALF_V2I (V2I_DENOM >> 1) // Half Voltage-to-Current scaling factor (used in rounding)
+#define V2I_MUX 1341 // Voltage pre-multiplier. NB 0.02045 ~= 1341/2^16 
 
-#define V2I_BITS SHIFT_16 // No of bits in Voltage to current scaling factor 
-#define V2I_DENOM (1 << V2I_BITS)
-#define HALF_V2I (V2I_DENOM >> 1)
-#define V2I_MUX 1341 // Voltage multiplier. NB 0.02045 ~= 1341/2^16 
+#define S2V_BITS SHIFT_12 // No of bits in Speed-to-Voltage scaling factor 
+#define S2V_DENOM (1 << S2V_BITS) // Speed-to-Voltage scaling factor
+#define HALF_S2V (S2V_DENOM >> 1) // Half Speed-to-Voltage scaling factor (used in rounding)
+#define S2V_MUX 2575 // Speed pre-multiplier. NB 0.6286 ~= 2575/2^12 
 
 // Used to smooth demand Voltage
 #define SMOOTH_VOLT_INC 2 // Maximum allowed increment in demand voltage
@@ -240,11 +240,11 @@ typedef enum MOTOR_STATE_ETAG
 /** Different Motor Phases */
 typedef enum ERROR_ETAG
 {
-	OVERCURRENT_ERR = 0,
-	UNDERVOLTAGE_ERR,
-	STALLED_ERR,
-	DIRECTION_ERR,
-	SPEED_ERR,
+	OVERCURRENT_ERR = 0, // Current too large
+	UNDERVOLTAGE_ERR, // Voltage too small
+	STALLED_ERR, // Motor stalled
+	DIRECTION_ERR, // Motor spinning in wrong direction
+	SPEED_ERR, // Motor speed out of defined range
   NUM_ERR_TYPS	// Handy Value!-)
 } ERROR_ENUM;
 
@@ -372,14 +372,14 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 /*****************************************************************************/
 void run_motor ( // run the motor inner loop
-	unsigned motor_id,
-	chanend c_wd,
-	chanend c_pwm,
-	streaming chanend c_hall,
-	streaming chanend c_qei,
-	streaming chanend c_adc,
-	chanend c_speed,
-	chanend c_can_eth_shared 
+	unsigned motor_id, // Unique motor identifier (NB 0 or 1)
+	chanend c_wd, // channel to WatchDog client (fail-safe) 
+	chanend c_pwm, // channel to PWM client
+	streaming chanend c_hall, // channel to Hall client
+	streaming chanend c_qei, // channel to QEI client
+	streaming chanend c_adc, // channel to ADC client
+	chanend c_speed, // channel to Control client
+	chanend c_can_eth_shared  // channel to CAN or Ethernet client (unused)
 );
 /*****************************************************************************/
 

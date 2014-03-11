@@ -507,8 +507,8 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 3;
 
-//	test_motor( c_speed ); //MB~
-dbg_motor( c_speed ); //MB~
+							test_motor( c_speed ); //MB~
+//	dbg_motor( c_speed ); //MB~
 						break; // case 4
 #endif // ( 1 == ASJ)
 	
