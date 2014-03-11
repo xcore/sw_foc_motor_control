@@ -128,11 +128,11 @@ static void init_pid_data( // Initialise PID data
 	// Convert Floating-point PID constants to fixed-point arithmetic
 
 	init_all_pid_consts( motor_s.pid_consts[ID_PID] ,1.0 ,0.0058 ,0.0 );
-	init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,8.0 ,0.017 ,0.0 );
-//CW~ init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,16.0 ,0.000001 ,0.0 );
+//MB~ init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,8.0 ,0.017 ,0.0 );
+init_all_pid_consts( motor_s.pid_consts[IQ_PID] ,16.0 ,0.000001 ,0.0 );
 
-	init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,4.0 ,0.00012 ,0.0 );
-//CW~ init_all_pid_consts( motor_s.pid_consts[SPEED_PID] ,4.0 ,0.0 ,0.0 );
+//MB~ init_all_pid_consts( motor_s.pid_consts[SPEED_PID]	,4.0 ,0.00012 ,0.0 );
+init_all_pid_consts( motor_s.pid_consts[SPEED_PID] ,4.0 ,0.0 ,0.0 );
 
 if (motor_s.id)
 {
@@ -726,8 +726,8 @@ static void update_foc_voltage( // Update FOC PWM Voltage (Pulse Width) output v
 if (motor_s.xscope) xscope_int( (10+motor_s.id) ,motor_s.targ_vel ); //MB~
 
 	// Get the New 'set' Velocity
-//CW~	motor_s.pid_veloc = get_cw_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
-	motor_s.pid_veloc = get_mb_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
+	motor_s.pid_veloc = get_cw_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
+//MB~	motor_s.pid_veloc = get_mb_pid_regulator_correction( motor_s.id ,SPEED_PID ,motor_s.pid_regs[SPEED_PID] ,motor_s.pid_consts[SPEED_PID] ,motor_s.targ_vel ,motor_s.est_veloc ,abs(motor_s.diff_ang) );
 if (motor_s.xscope) xscope_int( 16 ,(motor_s.targ_vel - motor_s.est_veloc) ); //MB~
 if (motor_s.xscope) xscope_int( 17 ,motor_s.pid_regs[SPEED_PID].sum_err ); //MB~
 
@@ -809,7 +809,7 @@ if (motor_s.xscope) xscope_int( 17 ,motor_s.pid_regs[SPEED_PID].sum_err ); //MB~
 
 	motor_s.prev_Id = targ_Id; // Update previous target Id value
 
-// targ_Iq = 20; // CW~  Iq PID tuning
+targ_Iq = 20; // CW~  Iq PID tuning
 if (motor_s.xscope) xscope_int( (6+motor_s.id) ,targ_Id ); // MB~
 if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
 	// Apply PID control to Iq and Id
@@ -823,8 +823,8 @@ if (motor_s.xscope) xscope_int( (8+motor_s.id) ,targ_Iq ); // MB~
 
 	// Get the New 'set' Current's
 	motor_s.pid_Id = get_mb_pid_regulator_correction( motor_s.id ,ID_PID ,motor_s.pid_regs[ID_PID] ,motor_s.pid_consts[ID_PID] ,targ_Id ,motor_s.vect_data[D_ROTA].est_I ,abs(motor_s.diff_ang) );
-	motor_s.pid_Iq = get_mb_pid_regulator_correction( motor_s.id ,IQ_PID ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I ,abs(motor_s.diff_ang) );
-//CW~ 	motor_s.pid_Iq = get_cw_pid_regulator_correction( motor_s.id ,IQ_PID ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I ,abs(motor_s.diff_ang) );
+//MB~	motor_s.pid_Iq = get_mb_pid_regulator_correction( motor_s.id ,IQ_PID ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I ,abs(motor_s.diff_ang) );
+	motor_s.pid_Iq = get_cw_pid_regulator_correction( motor_s.id ,IQ_PID ,motor_s.pid_regs[IQ_PID] ,motor_s.pid_consts[IQ_PID] ,targ_Iq ,motor_s.vect_data[Q_ROTA].est_I ,abs(motor_s.diff_ang) );
 if (motor_s.xscope) xscope_int( 18 ,(targ_Iq - motor_s.vect_data[Q_ROTA].est_I) ); //MB~
 if (motor_s.xscope) xscope_int( 19 ,motor_s.pid_regs[IQ_PID].sum_err ); //MB~
 
