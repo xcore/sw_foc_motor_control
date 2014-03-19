@@ -43,11 +43,13 @@
   at the position origin. 
 	NB When the motor starts, it is NOT normally at the origin
 
-	The timer is read every time the phase bits change. I.E. 1024 times per revolution
+	The timer is read every time a full buffer of samples is returned to the S/W.
+	(Currently 8 4-bit samples) NB these may all be the same value.
 
-	The angular postion is incremented/decremented (with the spin value) if the 
-	motor is NOT at the origin. 
-	If the motor is at the origin, the angular position is reset to zero.
+	The samples are inspected in chronological order, and when a valid phase change is detected,
+	the angular postion is incremented/decremented (with the spin value).
+
+	If the origin flag is detected, the angular position is corrected (to the nearest multiple of 1024).
 
 \*****************************************************************************/
 
@@ -72,63 +74,46 @@
 	#error Define. MAX_SPEC_RPM in app_global.h
 #endif // MAX_SPEC_RPM
 
-#define QEI_DBG 0 // Set flag for printout of debug info.
-
 #define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
 
-#define MIN_TICKS_PER_QEI (TICKS_PER_MIN_PER_QEI / MAX_SPEC_RPM) // Min. expected Ticks/QEI // 12 bits
-#define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
-
 #define QEI_SCALE_BITS 16 // Used to generate 2^n scaling factor
-#define QEI_HALF_SCALE (1 << (QEI_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
-
-#define QEI_BUF_BITS 5 // Use power-of-2 size to get all 1's mask
-#define QEI_BUF_SIZ (1 << QEI_BUF_BITS) 
-#define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
+#define QEI_SCALE_DIV (1 << QEI_SCALE_BITS) // Scaling factor
+#define QEI_SCALE_HALF (QEI_SCALE_DIV >>1) // Half Scaling factor (used in rounding)
 
 #define MAX_QEI_STATUS_ERR 3 // 3 Maximum number of consecutive QEI status errors allowed
 
 /* HALF_PERIOD determines the clock frequency for port sampling. 
  * The sampling period must allow enough time (inbetween samples) for processing
- * Currently this is about 660..680 cycles per 32-bit buffer. 
- * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
- * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
+ * Currently this is about 800 cycles per 32-bit buffer. 
+ * Therefore ~100 cycles/sample. There are a maximum of 2 motors to service.
+ * Therefore, 200 cycles/sample/motor.
  */
-#define HALF_PERIOD 98 // 94 (Min 87) // Use Slow clock for Regular-Sampling mode 
-#define TICKS_PER_SAMP (HALF_PERIOD << 1) // NB Max 510
+#define HALF_PERIOD 98 // 94 (Min 87) // ~100 Half of Max. allowed No. of ticks-per-sample
+#define TICKS_PER_SAMP (HALF_PERIOD << 1) // ~200 Max. allowed No. of ticks-per-sample
 
-#define SAMP_LOOP_BITS 3
-#define SAMPS_PER_LOOP (1 << SAMP_LOOP_BITS) // 8
-#define TICKS_PER_LOOP (TICKS_PER_SAMP << SAMP_LOOP_BITS) // 4080
-#define STAG_TICKS ((TICKS_PER_LOOP + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS) // 2040 NB Used to stagger servicing of port buffers
+#define SAMP_LOOP_BITS 3 // Used to define No. of samples in 32-bit port buffer
+#define SAMPS_PER_LOOP (1 << SAMP_LOOP_BITS) // 8  No. of samples in 32-bit port buffer
+#define TICKS_PER_LOOP (TICKS_PER_SAMP << SAMP_LOOP_BITS) // ~1600 Time taken to service a buffer of samples
+#define STAG_TICKS ((TICKS_PER_LOOP + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS) // ~800 NB Used to stagger servicing of port buffers
 
 // Require filter to decay from 1 to 1/2 after 5 samples. This is equivalent to filter coef of 0.1295 (~ 1/8)
-#define QEI_VELOC_BITS 3 // NB Equivalent to a filter coefficient of 1/8)
-#define QEI_HALF_VELOC (1 << (QEI_VELOC_BITS - 1)) 
+#define QEI_VELOC_BITS 3 // bit resolution of QEI filter coefficient
+#define QEI_VELOC_DIV (1 << QEI_VELOC_BITS) // 8 Divisor for filter coefficient
+#define QEI_VELOC_HALF (QEI_VELOC_DIV >> 1) // 4 Half of filt-coef divisor (used for rounding) 
 
 #define MAX_TIME_ERR 1 // Max. No of consecutive timing errors allowed 
 
 #define PERIOD_DELTA_LIM 5 // Allow a change in QEI PERIOD of upto 5 phases
 
-#define DBG_SIZ 384
-				
+typedef signed char ANG_INC_TYP; // Angular Increment type
+
 /** Different QEI phases */
 typedef enum QEI_PHASE_ETAG
 {
   QEI_PHASE_A = 0,  // Phase_A identifier
-  QEI_PHASE_B,  // Phase_A identifier
+  QEI_PHASE_B,  // Phase_B identifier
 	NUM_QEI_PHASES // Number of different QEI Phase signals
 } QEI_PHASE_ETYP;
-
-typedef signed char ANG_INC_TYP; // Angular Increment type
-
-typedef struct QEI_BUF_TAG // 
-{
-	QEI_RAW_TYP inp_pins; // Set of raw data values on input port pins
-	int id; // Motor Id
-	unsigned time32; // 32-bit Time-stamp for when port-pins read
-	PORT_TIME_TYP time16; // 16-bit Time-stamp for when port-pins read
-} QEI_BUF_TYP;
 
 /** Type containing 2-D array for look-up table */
 typedef struct QEI_LUT_TAG
@@ -162,18 +147,12 @@ typedef struct QEI_DATA_TAG //
 	int tot_ang; // Counts total angular position of motor from time=0
 	int prev_ang;	// Angular position when previous origin detected (possibly false)
 	ANG_INC_TYP ang_inc; // angular increment value
-	unsigned period; // number of QEI phases changes per revolution
+	unsigned rev_period; // number of QEI phases changes per revolution
 	int prev_orig; // Previous origin flag
 
 	int status_errs; // counter for invalid QEI status errors
-	int pin_changes; // Counts pin changes during start-up phase
+	int pins_idle; // Flag set until first pin change detected
 	int id; // Unique motor identifier
-
-	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
-	int dbg; // Debug
-
-	int tmp_raw; // Debug
-	int tmp_i[4]; // Debug
 } QEI_DATA_TYP;
 
 #define QEI_PORT port:32 // Use 32-bit buffering for Regular-Sampling mode 

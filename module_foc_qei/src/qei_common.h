@@ -35,6 +35,7 @@
 #define QEI_SAMP_BITS 4 // Size of QEI input port sample in bits
 #define QEI_SAMP_SIZ (1 << QEI_SAMP_BITS) // Max. No. of possible QEI sample values
 #define QEI_SAMP_MASK (QEI_SAMP_SIZ - 1) // Mask used to extract sample bits from buffer
+
 #define QEI_PHASE_MASK (0b0011) // 2 LS-bits contain [A,B] phase info.
 #define QEI_ORIG_MASK (0b0100) // Bit_2 contain origin info.
 #define QEI_NERR_MASK (0b1000) // Bit_3 contains error status (1 == No Errors)
@@ -71,12 +72,11 @@ typedef enum ERROR_QEI_ETAG
 /** Raw QEI data type (on input pins) */
 typedef unsigned long QEI_RAW_TYP;
 
-
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_PARAM_TAG // 
 {
 	int tot_ang;	// Total angle traveresed since time=0
-	unsigned period; // time (in ticks) to traverse one QEI phase (angular position)
+	unsigned phase_period; // time (in ticks) to traverse one QEI phase (angular position)
 	int corr_ang;	// Angular correction (Old - New)
 	int orig_corr; // Flag set if origin correction available
 	ERROR_QEI_ENUM err;	// Flag set when Error condition detected
