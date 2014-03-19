@@ -28,7 +28,8 @@ typedef enum ADC_PHASE_ETAG
 	NUM_ADC_PHASES // 3 ADC phases [A, B, C]
 } ADC_PHASE_ENUM;
 
-#define USED_ADC_PHASES (NUM_ADC_PHASES - 1) // NB 3rd Phase can be inferred as 3 phases sum to zero
+// NB H/W only returns 1st and 2nd phases, 3rd Phase can be inferred as 3 phases sum to zero
+#define USED_ADC_PHASES (NUM_ADC_PHASES - 1)
 
 /** Different ADC Commands */
 typedef enum CMD_ADC_ETAG

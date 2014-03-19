@@ -19,14 +19,14 @@ static void init_adc_phase( // Initialise the data for this phase of one ADC tri
 	ADC_PHASE_TYP &phase_data_s // Reference to structure containing data for this phase of one ADC trigger
 )
 {
-	phase_data_s.mean = 0;
-	phase_data_s.filt_val = 0;
-	phase_data_s.adc_val = 0;
-	phase_data_s.coef_err = 0;
-	phase_data_s.scale_err = 0;
-	phase_data_s.rem = 0;
-	phase_data_s.curr_raw = 0;
-	phase_data_s.prev_raw = 0;
+	phase_data_s.mean = 0; // Clear local mean value
+	phase_data_s.filt_val = 0; // Clear (Upscaled) filtered value
+	phase_data_s.adc_val = 0; // Clear measured current ADC value
+	phase_data_s.coef_err = 0; // Clear (Upscaled) Coefficient diffusion error
+	phase_data_s.scale_err = 0; // Clear (Upscaled) Scaling diffusion error 
+	phase_data_s.rem = 0; // Clear remainder for error diffusion 
+	phase_data_s.curr_raw = 0; // Clear current raw ADC value
+	phase_data_s.prev_raw = 0; // Clear previous raw ADC value
 
 } // init_adc_phase
 /*****************************************************************************/
@@ -49,8 +49,10 @@ static void init_adc_trigger( // Initialise the data for this ADC trigger
 	int phase_cnt; // ADC Phase counter
 
 
+	// Loop through used ADC phases
 	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
 	{
+		// Initialise the data for current phase of one ADC trigger
 		init_adc_phase( adc_data_s.phase_data[phase_cnt] );
 	} // for phase_cnt
 
@@ -61,7 +63,6 @@ static void init_adc_trigger( // Initialise the data for this ADC trigger
 	adc_data_s.mux_id = inp_mux; // Assign Mux port for this trigger
 	adc_data_s.filt_cnt = 0; // Initialise filter count
 
-	adc_data_s.tmp = 0; // MB~
 } // init_adc_trigger
 /*****************************************************************************/
 static void configure_adc_ports_7265( // Configure all ADC data ports
@@ -103,67 +104,75 @@ static void configure_adc_ports_7265( // Configure all ADC data ports
 	*/
 
 	// configure the clock to be (at most) 13 MHz. (NB This is independent of the XCore Reference Frequency)
-	configure_clock_rate_at_most( xclk ,ADC_SCLK_MHZ ,1 );
+	configure_clock_rate_at_most( xclk ,ADC_SCLK_MHZ ,1 ); // XS1 library call
 	configure_port_clock_output( p1_serial_clk, xclk ); // Drive ADC serial clock port with XMOS clock
 
 	configure_out_port( p1_ready ,xclk ,0 ); // Set initial value of port to 0 ( NOT ready )
 	set_port_inv( p1_ready ); // Invert p1_ready for connection to AD7265, which has active low
 
-	// For each port, configure to read into buffer when using the serial clock
+	// Loop through ADC data ports
 	for (port_cnt=0; port_cnt<NUM_ADC_DATA_PORTS; port_cnt++)
-	{
-		configure_in_port_strobed_slave( p32_data[port_cnt] ,p1_ready ,xclk );
+	{	
+		// For current port, configure to read into buffer when using the serial clock
+		configure_in_port_strobed_slave( p32_data[port_cnt] ,p1_ready ,xclk ); // XS1 Library call
 	} // for port_cnt
 
-	// Start the ADC serial clock port
-	start_clock( xclk );
+	start_clock( xclk );	// Start the ADC serial clock port
+
 } // configure_adc_ports_7265
 /*****************************************************************************/
 static ADC_TYP median3_filter( // Returns median of 3 input values
 	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing data for this phase of one ADC trigger
 	ADC_TYP new_val  // newest (32-bit) ADC value 
 )
+// This code filters out single-sample glitchs, as follows ...
+// The filter ranks 3 values [New ,Current ,Previous] in order of size, then returns the central value.
 {
 	ADC_TYP cur_val = phase_data_s.curr_raw; // current raw ADC value 
-	ADC_TYP old_val = phase_data_s.prev_raw; // oldest raw ADC value 
+	ADC_TYP prev_val = phase_data_s.prev_raw; // previous raw ADC value 
 
 
 	if (new_val < cur_val)
-	{ // N < (C,O) or O < N < C
-		if (cur_val < old_val)
-		{ // N < C < O
+	{ // N < (C,P) or P < N < C
+
+		if (cur_val < prev_val)
+		{ // N < C < P
 			return cur_val;
-		} // if (cur_val < old_val)
+		} // if (cur_val < prev_val)
 		else
-		{ // (N,O) < C
-			if (new_val < old_val)
-			{ // N < O < C
-				return old_val;
-			} // if (new_val < old_val)
+		{ // (N,P) < C
+
+			if (new_val < prev_val)
+			{ // N < P < C
+				return prev_val;
+			} // if (new_val < prev_val)
 			else
-			{ // O < N < C
+			{ // P < N < C
 				return new_val;
-			}	// else !(new_val < old_val)
-		}	// else !(cur_val < old_val)
+			}	// else !(new_val < prev_val)
+		}	// else !(cur_val < prev_val)
 	} // if (new_val < cur_val)
 	else
-	{ // C < (N,O) or C < N <= O
-		if (cur_val < old_val)
-		{ // C < (N,O)
-			if (new_val < old_val)
-			{ // C < N < O
+	{ // C < (N,P) or C < N <= P
+
+		if (cur_val < prev_val)
+		{ // C < (N,P)
+
+			if (new_val < prev_val)
+			{ // C < N < P
 				return new_val;
-			} // if (new_val < old_val)
+			} // if (new_val < prev_val)
 			else
-			{ // C < O < N
-				return old_val;
-			}	// else !(new_val < old_val)
-		} // if (cur_val < old_val)
+			{ // C < P < N
+				return prev_val;
+			}	// else !(new_val < prev_val)
+		} // if (cur_val < prev_val)
 		else
-		{ // O < C < N
+		{ // P < C < N
 			return cur_val;
-		}	// else !(cur_val < old_val)
+		}	// else !(cur_val < prev_val)
 	} // else !(new_val < cur_val)
+
 } // median3_filter
 /*****************************************************************************/
 static void get_adc_port_data( // Get ADC data from one port
@@ -197,10 +206,11 @@ static void get_adc_port_data( // Get ADC data from one port
 
 	// Check if filtering selected
 	if (1 == ADC_FILTER) 
-	{
+	{	// Filtering selected
+
 		// Skip if NOT enough data to filter
 		if (1 < filt_cnt)
-		{
+		{ // Enough data so filter
 			ADC_TYP prev_val = phase_data_s.adc_val; // get previous filtered value
 			int corr_val; // Correction to previous value
 
@@ -217,9 +227,6 @@ static void get_adc_port_data( // Get ADC data from one port
 			phase_data_s.rem = corr_val - (out_val << ADC_FILT_RES); // Update remainder
 			out_val += prev_val; // Add filtered difference to previous value
 		} // if (0 < filt_cnt)
-		else
-		{
-		} // else !(0 < filt_cnt)
 	} // if (1 == ADC_FILTER)
 
 	phase_data_s.adc_val = out_val; // Update uncalibrated value
@@ -230,7 +237,7 @@ static void get_adc_port_data( // Get ADC data from one port
 
 } // get_adc_port_data
 /*****************************************************************************/
-static void get_trigger_data_7265( 
+static void get_trigger_data_7265( // Get ADC values for this trigger	
 	ADC_DATA_TYP &adc_data_s, // Reference to structure containing data for this ADC trigger
 	in buffered port:32 p32_data[NUM_ADC_DATA_PORTS],  // Array of 32-bit buffered ADC data ports
 	port p1_ready,	 // 1-bit port used to as ready signal for p32_adc_data ports and ADC chip
@@ -238,15 +245,15 @@ static void get_trigger_data_7265(
 )
 {
 	int port_cnt; // port counter
-	unsigned time_stamp;
+	unsigned time_stamp; // Time stamp
 
 
 	p4_mux <: adc_data_s.mux_id; // Signal to Multiplexor which input to use for this trigger
 
-	// Loop through phases
+	// Loop through ADC ports
 	for (port_cnt=0; port_cnt<NUM_ADC_DATA_PORTS; port_cnt++)
 	{
-		clearbuf( p32_data[port_cnt] );
+		clearbuf( p32_data[port_cnt] ); // Clear the buffer used by current port.
 	} // for port_cnt
 
 	p1_ready <: 1 @ time_stamp; // Switch ON input reads (and ADC conversion)
@@ -255,15 +262,18 @@ static void get_trigger_data_7265(
 
 	sync( p1_ready ); // Wait until port has completed any pending outputs
 
+	// Loop through ADC ports
 	for (port_cnt=0; port_cnt<NUM_ADC_DATA_PORTS; port_cnt++)
 	{
-		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] ,adc_data_s.filt_cnt ,adc_data_s.mux_id ,port_cnt );
+		// Get ADC data from current port
+		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] 
+			,adc_data_s.filt_cnt ,adc_data_s.mux_id ,port_cnt );
 	} // for port_cnt
 
 } // get_trigger_data_7265
 /*****************************************************************************/
 static void filter_adc_data( // Low-pass filter generate a mean value which is used to 'calibrate' the ADC data
-	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing adc phase data
+	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing ADC phase data
 	ADC_FILT_TYP &filt_s // Reference to structure containing filter parameters
 )
 /* In its simplest from, this is a 1st order IIR filter, it is configured as a low-pass filter, 
@@ -276,24 +286,22 @@ static void filter_adc_data( // Low-pass filter generate a mean value which is u
  */
 {
 	int scaled_inp = ((int)phase_data_s.adc_val << ADC_SCALE_BITS); // Upscaled ADC input value
-	int diff_val; // Difference between input and filtered output
+	int diff_val = scaled_inp - phase_data_s.filt_val; // Form difference with previous filter output
 	int increment; // new increment to filtered output value
 
 
-	// Form difference with previous filter output
-	diff_val = scaled_inp - phase_data_s.filt_val;
+	// Do filtering ...
 
-	// Multiply difference by filter coefficient (alpha)
 	diff_val += phase_data_s.coef_err; // Add in diffusion error;
 	increment = (diff_val + filt_s.half_div) >> filt_s.coef_bits ; // Multiply by filter coef (with rounding)
-	phase_data_s.coef_err = diff_val - (increment << filt_s.coef_bits); // Evaluate new quantisation error value 
-
+	phase_data_s.coef_err = diff_val - (increment << filt_s.coef_bits); // Evaluate new error diffusion value 
 	phase_data_s.filt_val += increment; // Update (up-scaled) filtered output value
 
-	// Update mean value by down-scaling filtered output value
+	// Do Scaling ...
+
 	phase_data_s.filt_val += phase_data_s.scale_err; // Add in diffusion error;
-	phase_data_s.mean = (phase_data_s.filt_val + ADC_SCALE_HALF) >> ADC_SCALE_BITS; // Down-scale
-	phase_data_s.scale_err = phase_data_s.filt_val - (phase_data_s.mean << ADC_SCALE_BITS); // Evaluate new remainder value 
+	phase_data_s.mean = (phase_data_s.filt_val + ADC_SCALE_HALF) >> ADC_SCALE_BITS; // Down-scale filtered output
+	phase_data_s.scale_err = phase_data_s.filt_val - (phase_data_s.mean << ADC_SCALE_BITS); // Evaluate new diffusion value
 
 } // filter_adc_data
 /*****************************************************************************/

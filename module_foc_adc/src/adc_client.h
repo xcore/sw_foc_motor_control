@@ -32,7 +32,7 @@
  */
 void foc_adc_get_parameters( // Get 12-bit ADC values and convert to signed 32-bit integer
 	ADC_PARAM_TYP &adc_param_s, // Structure containing ADC parameters
-	streaming chanend c_adc
+	streaming chanend c_adc // Channel connecting ADC to client and server
 );
 /*****************************************************************************/
 #endif // _ADC_CLIENT_H_

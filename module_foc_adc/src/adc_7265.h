@@ -129,7 +129,7 @@ typedef struct ADC_FILT_TAG // Structure containing data for one ADC Trigger
 typedef struct ADC_DATA_TAG // Structure containing data for one ADC Trigger
 {
 	ADC_PARAM_TYP params; // Structure containing ADC parameters (for Client)
-	ADC_PHASE_TYP phase_data[USED_ADC_PHASES];
+	ADC_PHASE_TYP phase_data[USED_ADC_PHASES]; // Array of structures for each phase
 	ADC_FILT_TYP filt; // Filter parameters. NB Need to have separate structure to satisfy XC rules on aliasing
 	timer my_timer;	// timer
 	unsigned time_stamp; 	// time-stamp
@@ -137,7 +137,6 @@ typedef struct ADC_DATA_TAG // Structure containing data for one ADC Trigger
 	int mux_id; // Mux input identifier
 	int filt_cnt; // Counter used in filter
 	int id; // Trigger id
-	int tmp; // MB~
 } ADC_DATA_TYP;
 
 /*****************************************************************************/
