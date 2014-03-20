@@ -52,14 +52,14 @@ static void init_adc_trigger( // Initialise the data for this ADC trigger
 	// Loop through used ADC phases
 	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
 	{
-		// Initialise the data for current phase of one ADC trigger
+		// Initialise the data for this phase of one ADC trigger
 		init_adc_phase( adc_data_s.phase_data[phase_cnt] );
 	} // for phase_cnt
 
 	gen_filter_params( adc_data_s.filt ,0 ); // Initialise filter to fast response
 
 	adc_data_s.id = trig_id; // Assign unique trigger identifier
-	adc_data_s.guard_off = 0; // Initialise guard to ON
+	adc_data_s.guard_off = 0; // Initialise guard to ON (to prevent ADC capture)
 	adc_data_s.mux_id = inp_mux; // Assign Mux port for this trigger
 	adc_data_s.filt_cnt = 0; // Initialise filter count
 
@@ -113,7 +113,7 @@ static void configure_adc_ports_7265( // Configure all ADC data ports
 	// Loop through ADC data ports
 	for (port_cnt=0; port_cnt<NUM_ADC_DATA_PORTS; port_cnt++)
 	{	
-		// For current port, configure to read into buffer when using the serial clock
+		// For this port, configure to read into buffer when using the serial clock
 		configure_in_port_strobed_slave( p32_data[port_cnt] ,p1_ready ,xclk ); // XS1 Library call
 	} // for port_cnt
 
@@ -253,7 +253,7 @@ static void get_trigger_data_7265( // Get ADC values for this trigger
 	// Loop through ADC ports
 	for (port_cnt=0; port_cnt<NUM_ADC_DATA_PORTS; port_cnt++)
 	{
-		clearbuf( p32_data[port_cnt] ); // Clear the buffer used by current port.
+		clearbuf( p32_data[port_cnt] ); // Clear the buffer used by this port.
 	} // for port_cnt
 
 	p1_ready <: 1 @ time_stamp; // Switch ON input reads (and ADC conversion)
@@ -265,14 +265,14 @@ static void get_trigger_data_7265( // Get ADC values for this trigger
 	// Loop through ADC ports
 	for (port_cnt=0; port_cnt<NUM_ADC_DATA_PORTS; port_cnt++)
 	{
-		// Get ADC data from current port
+		// Get ADC data from this port
 		get_adc_port_data( adc_data_s.phase_data[port_cnt] ,p32_data[port_cnt] 
 			,adc_data_s.filt_cnt ,adc_data_s.mux_id ,port_cnt );
 	} // for port_cnt
 
 } // get_trigger_data_7265
 /*****************************************************************************/
-static void filter_adc_data( // Low-pass filter generate a mean value which is used to 'calibrate' the ADC data
+static void filter_adc_data( // Low-pass filter to generate mean ADC value
 	ADC_PHASE_TYP &phase_data_s, // Reference to structure containing ADC phase data
 	ADC_FILT_TYP &filt_s // Reference to structure containing filter parameters
 )
@@ -320,7 +320,8 @@ static void update_adc_trigger_data( // Update ADC values for this trigger
 	// Loop through used phases
 	for (phase_cnt=0; phase_cnt<USED_ADC_PHASES; ++phase_cnt) 
 	{
-		filter_adc_data( adc_data_s.phase_data[phase_cnt] ,adc_data_s.filt ); // Sum ADC values
+		// Low-pass filter ADC data to generate mean value for this phase
+		filter_adc_data( adc_data_s.phase_data[phase_cnt] ,adc_data_s.filt );
 	} // for phase_cnt
 
 	/* A low-pass filter is used to 'calibrate' the ADC values, see filter_adc_data for more detail.
@@ -330,26 +331,28 @@ static void update_adc_trigger_data( // Update ADC values for this trigger
 	 */
 	// Check if filter in 'dynamic' mode
 	if (ADC_MAX_COEF_DIV > 	adc_data_s.filt_cnt)
-	{
+	{	// In 'dynamic' mode
+
 		adc_data_s.filt_cnt++; // Update sample count
 
 		// Check if time to slow down filter response
 		if (adc_data_s.filt.coef_div == adc_data_s.filt_cnt)
-		{
+		{ // Time to slow down filter response
+
 			gen_filter_params( adc_data_s.filt ,(adc_data_s.filt.coef_bits + 1) ); // Double decay time of filter
 		} // if (adc_data_s.filt.coef_div == adc_data_s.filt_cnt)
 	} // if (ADC_MAX_COEF_DIV > 	adc_data_s.filt_cnt)
 
-	adc_data_s.guard_off = 0; // Reset guard to ON
+	adc_data_s.guard_off = 0; // Reset guard to ON (to prevent ADC capture)
 } // update_adc_trigger_data
 /*****************************************************************************/
 static void enable_adc_capture( // Do set-up to allow ADC values for this trigger to be captured
 	ADC_DATA_TYP &adc_data_s // Reference to structure containing data for this ADC trigger
 )
 {
-	adc_data_s.my_timer :> adc_data_s.time_stamp; 	// get current time
-	adc_data_s.time_stamp += ADC_TRIGGER_DELAY;				// Increment to time of ADC value capture
-	adc_data_s.guard_off = 1;													// Switch guard OFF to allow capture
+	adc_data_s.my_timer :> adc_data_s.time_stamp;	// get current time
+	adc_data_s.time_stamp += ADC_TRIGGER_DELAY;		// Increment to time of ADC value capture
+	adc_data_s.guard_off = 1;											// Switch guard OFF to allow ADC data capture
 } // enable_adc_capture
 /*****************************************************************************/
 static void service_control_token( // Services client control token for this trigger
@@ -357,6 +360,7 @@ static void service_control_token( // Services client control token for this tri
 	unsigned char inp_token // input control token
 )
 {
+	// Determine command category
 	switch(inp_token)
 	{
 		case XS1_CT_END : // ADC values ready for capture
@@ -381,6 +385,7 @@ static void service_data_request( // Services client command data request for th
 	ADC_TYP adc_sum; // Accumulator for transmitted ADC Phases
 
 
+	// Determine command category
 	switch(inp_cmd)
 	{
 		case ADC_CMD_DATA_REQ : // Request for ADC data
@@ -391,8 +396,8 @@ static void service_data_request( // Services client command data request for th
 			{
 				// Convert parameter phase values to zero mean
 				adc_val = adc_data_s.phase_data[phase_cnt].adc_val - adc_data_s.phase_data[phase_cnt].mean;
-				adc_sum += adc_val; // Add adc value to sum
-				adc_data_s.params.vals[phase_cnt] = adc_val; // Load adc value into parameter structure
+				adc_sum += adc_val; // Add ADC value to sum
+				adc_data_s.params.vals[phase_cnt] = adc_val; // Load ADC value into parameter structure
 			} // for phase_cnt
 
 			// Calculate last ADC phase from previous phases (NB Sum of phases is zero)
@@ -416,7 +421,7 @@ static void acknowledge_adc_command( // Acknowledge ADC command
 	c_control <: ADC_CMD_ACK; // Acknowledge ADC Command
 } // acknowledge_adc_command
 /*****************************************************************************/
-void foc_adc_7265_triggered( // Thread for ADC server
+void foc_adc_7265_triggered( // Get ADC data from AD7265 chip and send to client
 	streaming chanend c_control[NUM_ADC_TRIGGERS], // Array of ADC control Channels connecting to Control (inner_loop.xc)
 	chanend c_trigger[NUM_ADC_TRIGGERS], // Array of channels receiving control token triggers from PWM threads
 	in buffered port:32 p32_data[NUM_ADC_DATA_PORTS], // Array of 32-bit buffered ADC data ports
@@ -433,39 +438,47 @@ void foc_adc_7265_triggered( // Thread for ADC server
 	unsigned char cntrl_token; // control token
 	int cmd_id; // command identifier
 	int trig_id; // trigger identifier
-	int do_loop = 1;   // Flag set until loop-end condition found 
+	int do_loop = 1;	// Flag set until loop-end condition found 
 
 
 	acquire_lock(); 
 	printstrln("                                             ADC Server Starts");
 	release_lock();
 
+	//MB~ The next line gives priority to this thread, this is historical, and probably not required any more
+	//MB~ However, removing it will alter timing, and a re-tuning exercise may be required!-(
 	set_thread_fast_mode_on();
 
-	configure_adc_ports_7265( p32_data ,xclk ,p1_serial_clk ,p1_ready ,p4_mux );
+	configure_adc_ports_7265( p32_data ,xclk ,p1_serial_clk ,p1_ready ,p4_mux ); // Configure all ADC data ports
 
-	// Initialise data structure for each trigger
+	// Loop through triggers
 	for (trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) 
-	{
+	{	// Initialise data structure for this trigger
 		init_adc_trigger( all_adc_data[trig_id] ,trigger_channel_to_adc_mux[trig_id] ,trig_id );
 
 		acknowledge_adc_command( all_adc_data[trig_id] ,c_control[trig_id] ); // Signal initialisation complete
 	} // for trig_id
 
-	// Loop until loop termination condition detected
+	// Loop until termination condition detected
 	while (do_loop)
 	{
 #pragma xta endpoint "adc_7265_main_loop"
 #pragma ordered // If multiple cases fire at same time, service top-most first
+
+		// Wait for ANY of following events
 		select
 		{
 			// Service any Control Tokens that are received
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) inct_byref( c_trigger[trig_id], cntrl_token ) :
+
+				// Service client control token for this trigger
 				service_control_token( all_adc_data[trig_id] ,cntrl_token );
 			break;
 	
 			// If guard is OFF, load 'my_timer' at time 'time_stamp' 
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) all_adc_data[trig_id].guard_off => all_adc_data[trig_id].my_timer when timerafter( all_adc_data[trig_id].time_stamp ) :> void :
+
+				// Update ADC values for this trigger
 				update_adc_trigger_data( all_adc_data[trig_id] ,p32_data ,p1_ready ,p4_mux ); 
 			break;
 	
@@ -473,6 +486,7 @@ void foc_adc_7265_triggered( // Thread for ADC server
 			case (int trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) c_control[trig_id] :> cmd_id :
 				if (ADC_CMD_LOOP_STOP != cmd_id)
 				{
+					// Services client command data request for this trigger
 					service_data_request( all_adc_data[trig_id] ,c_control[trig_id] ,cmd_id );
 				} // if (ADC_CMD_LOOP_STOP != cmd_id)
 				else
@@ -487,10 +501,11 @@ void foc_adc_7265_triggered( // Thread for ADC server
 		} // select
 	} // while (do_loop)
 
-	// Initialise data structure for each trigger
+	// Loop through triggers
 	for (trig_id=0; trig_id<NUM_ADC_TRIGGERS; ++trig_id) 
 	{
-		acknowledge_adc_command( all_adc_data[trig_id] ,c_control[trig_id] ); // Signal ADC server shutdown
+		// Signal ADC server shutdown for this trigger
+		acknowledge_adc_command( all_adc_data[trig_id] ,c_control[trig_id] );
 	} // for trig_id
 
 	acquire_lock(); 
