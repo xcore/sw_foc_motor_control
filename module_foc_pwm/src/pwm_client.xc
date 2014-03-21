@@ -22,7 +22,8 @@ void foc_pwm_put_parameters( // Send PWM parameters from Client to Server
 {
 	// Check if shared memory used to transfer data from Client to Server 
 	if (1 == PWM_SHARED_MEM)
-	{
+	{	// Shared memory used
+
 		// Call 'C' interface to allow use of pointers
 		convert_widths_in_shared_mem( pwm_comms_s ); // Write port data to shared memory
 	} // if (1 == PWM_SHARED_MEM)

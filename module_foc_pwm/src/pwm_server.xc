@@ -33,7 +33,7 @@ static void init_pwm_data( // Initialise structure containing PWM data
 	c_pwm :> pwm_comms_s.buf;
 } // init_pwm_data
 /*****************************************************************************/
-static void do_pwm_port_config( 
+static void do_pwm_port_config( // Configure ports for one motor
 	buffered out port:32 p32_pwm_hi[], 
 	buffered out port:32 p32_pwm_lo[], 
 	in port? p16_adc_sync, 
@@ -43,16 +43,21 @@ static void do_pwm_port_config(
 	unsigned i;
 
 
+	// Loop through PWM phases
 	for (i = 0; i < NUM_PWM_PHASES; i++)
-	{
+	{	// Configure ports for this phase
+
 		configure_out_port( p32_pwm_hi[i] ,pwm_clk ,0 ); // Set initial value of port to 0 (Switched Off) 
 		configure_out_port( p32_pwm_lo[i] ,pwm_clk ,0 ); // Set initial value of port to 0 (Switched Off)  
 		set_port_inv( p32_pwm_lo[i] );
 	}
 
+	// Check of ADC synchronisation is being used
 	if (1 == LOCK_ADC_TO_PWM)
-	{
-		configure_in_port( p16_adc_sync ,pwm_clk );	// Dummy port used to send ADC synchronisation pulse
+	{	// ADC synchronisation activated
+
+		// Configure dummy input port used to send ADC synchronisation pulse
+		configure_in_port( p16_adc_sync ,pwm_clk );
 	} // if (1 == LOCK_ADC_TO_PWM)
 } // do_pwm_port_config
 /*****************************************************************************/
@@ -66,12 +71,13 @@ void foc_pwm_config(  // Configure ports
 	int motor_cnt; // motor counter
 
 
- 	configure_clock_rate( pwm_clk ,PLATFORM_REFERENCE_MHZ ,1 ); // Configure clock rate to PLATFORM_REFERENCE_MHZ/1 (100 MHz)
+	// Configure clock rate to PLATFORM_REFERENCE_MHZ/1 (100 MHz)
+ 	configure_clock_rate( pwm_clk ,PLATFORM_REFERENCE_MHZ ,1 );
 
-	// Loop through all ports to be configured
+	// Loop through motors
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{
-		do_pwm_port_config( p32_pwm_hi[motor_cnt] ,p32_pwm_lo[motor_cnt]  ,p16_adc_sync[motor_cnt] ,pwm_clk ); // configure the ports
+	{ // Configure all ports for this motor
+		do_pwm_port_config( p32_pwm_hi[motor_cnt] ,p32_pwm_lo[motor_cnt]  ,p16_adc_sync[motor_cnt] ,pwm_clk );
 	} // for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
 
 	start_clock( pwm_clk ); // Start common PWM clock, once all ports configured
@@ -110,6 +116,7 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 	// This section ensures PWM workload is interleaved in time ...
 
 	pwm_serv_s.ref_time += INIT_SYNC_INCREMENT; // NB Ensure we have a time in the future
+
 	// Align base time reference with PWM_PERIOD boundary
 	pwm_serv_s.ref_time = pwm_serv_s.ref_time & ~(INIT_SYNC_INCREMENT - 1);
 
@@ -124,6 +131,8 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 	/* This loop requires at least ~280 cycles, which means the PWM period must be at least 512 cycles (as needs to be 2^n)
 	 * If convert_all_pulse_widths was optimised for speed, maybe a PWM period of 256 cycles would be possible
 	 */
+
+	// Loop until termination command received
 	while (do_loop)
 	{
 #pragma xta endpoint "pwm_main_loop"
@@ -131,7 +140,8 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 
 		// Check if new data ready
 		if (pwm_serv_s.data_ready)
-		{
+		{ // Data ready
+
 			// If shared memory was used for data transfer, port data is already in pwm_ctrl_s.buf_data[pwm_comms_s.buf]
 			if (0 == PWM_SHARED_MEM)
 			{ // Shared Memory NOT used, so receive pulse widths from channel and calculate port data on server side.
@@ -161,8 +171,10 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 		p32_pwm_hi[PWM_PHASE_C] @ (PORT_TIME_TYP)(pwm_serv_s.ref_time + pwm_ctrl_s.buf_data[pwm_comms_s.buf].rise_edg.phase_data[PWM_PHASE_C].hi.time_off) <: pwm_ctrl_s.buf_data[pwm_comms_s.buf].rise_edg.phase_data[PWM_PHASE_C].hi.pattern;
 		p32_pwm_lo[PWM_PHASE_C] @ (PORT_TIME_TYP)(pwm_serv_s.ref_time + pwm_ctrl_s.buf_data[pwm_comms_s.buf].rise_edg.phase_data[PWM_PHASE_C].lo.time_off) <: pwm_ctrl_s.buf_data[pwm_comms_s.buf].rise_edg.phase_data[PWM_PHASE_C].lo.pattern;
 
+		// Check of ADC synchronisation is being used
 		if (1 == LOCK_ADC_TO_PWM)
-		{
+		{ // ADC synchronisation active
+
 			/* This trigger is used to signal to the ADC block the location of the PWM High-pulse mid-point.
 			 * As a blocking wait is required, we send the trigger early by 1/4 of a PWM pulse.
 			 * This then allows time to set up the falling edges before they are required.
@@ -170,7 +182,6 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 			 */
 			p16_adc_sync @ (PORT_TIME_TYP)(pwm_serv_s.ref_time - QUART_PWM_MAX) :> void; // NB Blocking wait for 1750..1920 cycles
 			outct( c_adc_trig ,XS1_CT_END ); // Send synchronisation token to ADC
-// xscope_probe_data( (0+motor_id) ,tmp ); //MB~
 		} // if (1 ==LOCK_ADC_TO_PWM)
 	
 		/* These port-load commands have been unwrapped and expanded to improve timing.
@@ -191,15 +202,17 @@ void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pai
 		select
 		{
 			case c_pwm :> cmd : // Get next PWM command
+
+				// Check for termination command
 				if (PWM_CMD_LOOP_STOP == cmd)
-				{
+				{ // Termination command
 					do_loop = 0; // Clear flag to terminate loop
 
 					pwm_serv_s.data_ready = 0; // signal data NOT ready
 				} // if (PWM_CMD_LOOP_STOP == cmd)
 				else
 				{ // cmd must be buffer index
-					pwm_comms_s.buf = cmd;
+					pwm_comms_s.buf = cmd; // Assign new buffer index (0 or 1)
 
 					pwm_serv_s.data_ready = 1; // signal new data ready
 				} // else !(PWM_CMD_LOOP_STOP == cmd)

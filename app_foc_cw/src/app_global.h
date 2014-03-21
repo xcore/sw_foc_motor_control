@@ -77,6 +77,8 @@
 #define PWM_RES_BITS 12 // Number of bits used to define number of different PWM pulse-widths
 #define PWM_MAX_VALUE (1 << PWM_RES_BITS) // No.of different PWM pulse-widths
 
+#define PWM_DEAD_TIME ((12 * MICRO_SEC + 5) / 10) // 1200ns PWM Dead-Time WARNING: Safety critical
+
 // Number of PWM time increments between ADC/PWM synchronisation points. NB Independent of Reference Frequency
 #define INIT_SYNC_INCREMENT (PWM_MAX_VALUE)
 // The time each motor starts the PWM is staggered by this amount 

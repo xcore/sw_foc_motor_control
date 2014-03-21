@@ -41,13 +41,6 @@
 
 #define HALF_PWM_MAX (PWM_MAX_VALUE >> 1)  // Half of maximum PWM width value
 
-// PWM specific definitions ...
-
-#define PWM_DEAD_TIME ((12 * MICRO_SEC + 5) / 10) // 1200ns PWM Dead-Time WARNING: Safety critical
-#define HALF_DEAD_TIME (PWM_DEAD_TIME >> 1) // Used for rounding
-
-#define PWM_WID_LIMIT (PWM_MAX_VALUE - PWM_DEAD_TIME - PWM_PORT_WID) // Pulse width limit
-
 /** Different PWM Control Commands (Client --> Server) */
 typedef enum CMD_PWM_ETAG
 {
@@ -84,7 +77,7 @@ typedef struct PWM_PARAM_TAG //
 typedef struct PWM_COMMS_TAG
 {
 	PWM_PARAM_TYP params; // Structure of PWM parameters (for Server)
-	int buf; 	// double-buffer identifier. e.g. 0 or 1 (NB -1 used to signal termination)
+	int buf; 	// double-buffer identifier. e.g. 0 or 1
 	unsigned mem_addr; // Shared memory address (if used)
 } PWM_COMMS_TYP;
 
