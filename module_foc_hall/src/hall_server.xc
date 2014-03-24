@@ -21,12 +21,12 @@ static void init_hall_data( // Initialise Hall data structure for one motor
 	unsigned &hall_buf // Reference to buffer of  raw hall data for one motor
 )
 {
-	hall_data_s.params.hall_val = 0;
+	hall_data_s.params.hall_val = 0; // Clear hall phase value
 	hall_data_s.params.err = HALL_ERR_OFF; // Clear error status flag returned to client
 
 	hall_data_s.id = motor_id; // Set unique motor id
 	hall_data_s.status_errs = 0; // Initialise counter for Hall status errors
-	hall_buf = 0;
+	hall_buf = 0; // Clear buffer data
 
 	return;
 } // init_hall_data
@@ -81,12 +81,10 @@ static void service_hall_input_pins( // Process new Hall data
 
 
 	phase_val = inp_pins & HALL_PHASE_MASK; // Mask out phase bits of Hall Sensor data
-	err_flg = !(inp_pins & HALL_NERR_MASK); 	// NB Bit_3=0, and err_flg=1, if error detected, 
+	err_flg = !(inp_pins & HALL_NERR_MASK);	// NB Bit_3=0, and err_flg=1, if error detected, 
 
 	// Update estimate of error status using new error flag
 	estimate_error_status( hall_data_s ,err_flg ); // NB Updates hall_data_s.params.err
-
-//MB~ TODO: Insert filter here
 
 	hall_data_s.params.hall_val = phase_val; // NB Filtering not yet implemented
 
@@ -98,7 +96,7 @@ static void service_client_data_request( // Send processed HALL data to client
 	streaming chanend c_hall // Data channel to client (carries processed HALL data)
 )
 {
-	c_hall <: hall_data_s.params;
+	c_hall <: hall_data_s.params; // Send set of hall data to client 
 
 	return;
 } // service_client_data_request
@@ -120,47 +118,53 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	HALL_DATA_TYP all_hall_data[NUMBER_OF_MOTORS]; // Array of structure containing HALL data for one motor
 	unsigned hall_bufs[NUMBER_OF_MOTORS]; // Buffer array of raw hall data from input port pins for each motor
 	CMD_HALL_ENUM inp_cmd; // Hall command from Client
-	int motor_cnt; // Counts number of motors
-	int do_loop = 1;   // Flag set until loop-end condition found 
+	int motor_cnt;	// Counts number of motors
+	int do_loop = 1;	// Flag set until loop-end condition found 
 
 
 	acquire_lock(); 
 	printstrln("                                             Hall Server Starts");
 	release_lock();
 
-	// Initialise Hall data for each motor
+	// Loop through all motors
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{ 
+	{ // Initialise Hall data for this motor
 		init_hall_data( motor_cnt ,all_hall_data[motor_cnt] ,hall_bufs[motor_cnt] );
 
 		// Use acknowledge command to signal to control-loop that initialisation is complete
 		acknowledge_hall_command( all_hall_data[motor_cnt] ,c_hall[motor_cnt] );
 	} // for motor_cnt
 
-	// Loop forever
+	// Loop until termination request received
 	while (do_loop) {
 #pragma xta endpoint "hall_main_loop"
 #pragma ordered // If multiple cases fire at same time, service top-most first
 
+		// Wait for any event
 		select {
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) p4_hall[motor_id] when pinsneq(hall_bufs[motor_id]) :> hall_bufs[motor_id] :
-			{
-				service_hall_input_pins( all_hall_data[motor_id] ,hall_bufs[motor_id] );
+			{	// Service change on this set of input port pins
+
+				service_hall_input_pins( all_hall_data[motor_id] ,hall_bufs[motor_id] ); // Process new Hall data
 			} // case
 			break;
 
 			// Service any client request for data
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) c_hall[motor_id] :> inp_cmd :
-			{
+			{ // Service this client request
+
+				// Determine command received
 				switch(inp_cmd)
 				{
 					case HALL_CMD_DATA_REQ : // Data Request
+
+						// Send processed HALL data to client
 						service_client_data_request( all_hall_data[motor_id] ,c_hall[motor_id] );
 					break; // case HALL_CMD_DATA_REQ
 
 					case HALL_CMD_LOOP_STOP : // Termination Command
-						acknowledge_hall_command( all_hall_data[motor_id] ,c_hall[motor_id] );
+						acknowledge_hall_command( all_hall_data[motor_id] ,c_hall[motor_id] ); // Acknowledge Hall command
 
 						do_loop = 0; // Terminate while loop
 					break; // case HALL_CMD_DATA_REQ
