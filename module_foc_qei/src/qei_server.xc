@@ -57,7 +57,8 @@ static void init_qei_data( // Initialise  QEI data for one motor
 
 	inp_qei_s.ang_lut = ang_incs; // Assign table converting phase changes to angle increments
 
-	inp_qei_s.params.tot_ang = 0;  // Clear total angle
+	inp_qei_s.params.tot_ang_this = 0;  // Clear total angle for this motor
+	inp_qei_s.params.tot_ang_master = 0;  // Clear total angle for master motor
 	inp_qei_s.params.phase_period = 0; // Clear Time taken to traverse previous QEI phase
 	inp_qei_s.params.corr_ang = 0; // Clear correction angle
 	inp_qei_s.params.orig_corr = 0; // Preset flag to QEI correction NOT available
@@ -66,7 +67,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.pins_idle = 1; // NB Flag set until first pin-change is detected
 	inp_qei_s.id = inp_id; // Assign unique motor identifier
 	inp_qei_s.rev_period = QEI_PER_REV; // Preset No. of QEI phases changes between each origin detection
-	inp_qei_s.tot_ang = 0; // Reset counter indicating total angular position of motor (since time=0)
+	inp_qei_s.ang_tot = 0; // Reset counter indicating total angular position of motor (since time=0)
 	inp_qei_s.prev_ang = 0; // Reset previous total angle value
 	inp_qei_s.ang_inc = 0; // Reset angular position increment
 	inp_qei_s.status_errs = 0; // Initialise counter for QEI status errors
@@ -134,7 +135,7 @@ static void process_new_origin( // Process new origin state
 	QEI_DATA_TYP &inp_qei_s // Reference to structure containing QEI parameters for one motor
 )
 {
-	int diff_ang = inp_qei_s.params.tot_ang - inp_qei_s.prev_ang; // Calculate change in angle since last origin
+	int diff_ang = inp_qei_s.params.tot_ang_this - inp_qei_s.prev_ang; // Calculate change in angle since last origin
 	int abs_diff = abs(diff_ang); // Magnitude of angle change since last origin
 	int drift_ang = abs(abs_diff - inp_qei_s.rev_period);	// QEI drift from estimated origin position
 	int uncorr_ang;	// Angular position before correction
@@ -143,17 +144,17 @@ static void process_new_origin( // Process new origin state
 	// Check for sensible drift value
 	if (PERIOD_DELTA_LIM > drift_ang)
 	{ // Valid drift value
-		uncorr_ang = inp_qei_s.tot_ang; // Store angle before correction
+		uncorr_ang = inp_qei_s.ang_tot; // Store angle before correction
 
 		// Re-calibrate total-angle by rounding to multiple of QEI_PER_REV;
-		inp_qei_s.tot_ang += HALF_QEI_CNT; // Add offset to get rounding
-		inp_qei_s.tot_ang &= ~QEI_REV_MASK; // Clear least significant bits
+		inp_qei_s.ang_tot += HALF_QEI_CNT; // Add offset to get rounding
+		inp_qei_s.ang_tot &= ~QEI_REV_MASK; // Clear least significant bits
 
 		// Check that previous correction has been processed by client
 		assert(0 == inp_qei_s.params.orig_corr); // ERROR: Unused correction
 
 		// Update client data parameters
-		inp_qei_s.params.corr_ang = uncorr_ang - inp_qei_s.tot_ang; // Evaluate correction
+		inp_qei_s.params.corr_ang = uncorr_ang - inp_qei_s.ang_tot; // Evaluate correction
 		inp_qei_s.params.orig_corr = 1; // Set flag to 'correction available'
 
 		// Update estimate of QEI period
@@ -174,7 +175,7 @@ static void process_new_origin( // Process new origin state
 		} // else !(inp_qei_s.rev_period < abs_diff)
 	} // if (PERIOD_DELTA_LIM > drift_ang)
 
-	inp_qei_s.prev_ang = inp_qei_s.params.tot_ang; // Store origin angle for next iteration
+	inp_qei_s.prev_ang = inp_qei_s.params.tot_ang_this; // Store origin angle for next iteration
 
 	return;
 } // process_new_origin
@@ -182,15 +183,17 @@ static void process_new_origin( // Process new origin state
 #pragma unsafe arrays
 static void service_client_data_request( // Send processed QEI data to client
 	QEI_DATA_TYP &inp_qei_s, // Reference to structure containing QEI parameters for one motor
-	streaming chanend c_qei // Data channel to client (carries processed QEI data)
+	streaming chanend c_qei, // Data channel to client (carries processed QEI data)
+	int master_tot_ang // Total angle for master motor
 )
 {
 	inp_qei_s.params.phase_period = (inp_qei_s.change_time - inp_qei_s.prev_change); // Time taken to traverse previous QEI phase
-	inp_qei_s.params.tot_ang = inp_qei_s.tot_ang; // Transfer total-angle to client data structure
+	inp_qei_s.params.tot_ang_this = inp_qei_s.ang_tot; // Transfer total-angle to client data structure
+	inp_qei_s.params.tot_ang_master = master_tot_ang;
 
 #if (LDO_MOTOR_SPIN)
 	// NB The QEI sensor on the LDO motor is inverted with respect to the other sensors
-	inp_qei_s.params.tot_ang = -inp_qei_s.params.tot_ang;
+	inp_qei_s.params.tot_ang_this = -inp_qei_s.params.tot_ang_this;
 	inp_qei_s.params.corr_ang = -inp_qei_s.params.corr_ang;
 #endif // (LDO_MOTOR_SPIN)
 
@@ -266,7 +269,7 @@ static void update_rs_phase_states( // Regular-Sampling: Update phase state
 		// Check for valid transition
 		if (0 != inp_qei_s.ang_inc)
 		{
-			inp_qei_s.tot_ang += inp_qei_s.ang_inc; // Update new angle with angular increment
+			inp_qei_s.ang_tot += inp_qei_s.ang_inc; // Update new angle with angular increment
 
 			inp_qei_s.prev_change = inp_qei_s.change_time; // Store previous phase change time
 			inp_qei_s.change_time = samp_time; // Store time of filtered phase change
@@ -479,7 +482,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 					{
 						case QEI_CMD_DATA_REQ : // Data Request
 							// Send processed QEI data to client
-							service_client_data_request( all_qei_s[motor_cnt] ,c_qei[motor_cnt] );
+							service_client_data_request( all_qei_s[motor_cnt] ,c_qei[motor_cnt] ,all_qei_s[0].ang_tot );
 						break; // case QEI_CMD_DATA_REQ
 	
 						case QEI_CMD_LOOP_STOP : // Termination Command

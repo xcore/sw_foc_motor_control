@@ -55,18 +55,6 @@
 
 #define MAX_ERR_SUM (1 << 30) // Max. value of error-sum before re-scaling occurs
 
-#define USE_CW_PID 0 // Selects Chris Williams PID
-
-#define CW_SATURATION_LIM 0x0fffffffffffffffULL
-
-#define CW_PRESCALE 96
-#define CW_PROP_ERR_RES 23
-#define CW_DIFF_ERR_RES 17
-#define CW_DOWNSCALE_RES 37
-#define CW_DOWNSCALE_DIV (1ULL << CW_DOWNSCALE_RES)
-#define CW_DOWNSCALE_HALF (CW_DOWNSCALE_DIV >> 1ULL)
-
-
 /** Different PID Regulators */
 typedef enum PID_ETAG
 {
@@ -89,7 +77,6 @@ typedef struct PID_CONST_TAG
 typedef struct PID_REGULATOR_TAG
 {
     S64_T sum_err; // Sum of errors
-    U64_T sum_lim; // Saturation limit for Sum of errors
     int prev_err; // Previous error
     int rem; // Remainder
     int qnt_err; // Quantisation Error
@@ -117,32 +104,22 @@ void initialise_pid( // Initialise PID settings
 );
 /*****************************************************************************/
 void preset_pid( // Computes new PID correction based on input error
-    unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
-    PID_REGULATOR_TYP &pid_regul_s, // Reference to PID regulator data structure
-    PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
-    int open_val, // Open-loop requested value
-    int closed_val, // Closed-loop requested value
-    int meas_val // measured value
+	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_REGULATOR_TYP &pid_regul_s, // Reference to PID regulator data structure
+	PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
+	int open_val, // Open-loop requested value
+	int closed_val, // Closed-loop requested value
+	int meas_val // measured value
 );
 /*****************************************************************************/
-int get_mb_pid_regulator_correction( // Computes new PID correction based on input error
-    unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
-    PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
-    PID_REGULATOR_TYP &pid_regul_s, // Reference to PID regulator data structure
-    PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
-    int requ_val, // request value
-    int meas_val, // measured value
-    int num_vals // Number of updates to perform
-);
-/*****************************************************************************/
-int get_cw_pid_regulator_correction( // Computes new PID correction based on input error
-    unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
-    PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
-    PID_REGULATOR_TYP &pid_regul_s, // Reference to PID regulator data structure
-    PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
-    int requ_val, // request value
-    int meas_val, // measured value
-    int num_vals // Number of updates to perform
+int get_pid_regulator_correction( // Computes new PID correction based on input error
+	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
+	PID_REGULATOR_TYP &pid_regul_s, // Reference to PID regulator data structure
+	PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
+	int requ_val, // request value
+	int meas_val, // measured value
+	int num_vals // Number of updates to perform
 );
 /*****************************************************************************/
 #else // ifdef __XC__
@@ -160,32 +137,22 @@ void inititialise_pid( // Initialise PID settings
 );
 /*****************************************************************************/
 void preset_pid( // Preset PID data ready for first iteration
-    unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
-    PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
-    PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
-    int open_val, // Open-loop requested value
-    int closed_val, // Closed-loop requested value
-    int meas_val // measured value
+	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
+	PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
+	int open_val, // Open-loop requested value
+	int closed_val, // Closed-loop requested value
+	int meas_val // measured value
 );
 /*****************************************************************************/
-int get_mb_pid_regulator_correction( // Computes new PID correction based on input error
-    unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
-    PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
-    PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
-    PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
-    int requ_val, // request value
-    int meas_val, // measured value
-    int num_vals // Number of updates to perform
-);
-/*****************************************************************************/
-int get_cw_pid_regulator_correction( // Computes new PID correction based on input error
-    unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
-    PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
-    PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
-    PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
-    int requ_val, // request value
-    int meas_val, // measured value
-    int num_vals // Number of updates to perform
+int get_pid_regulator_correction( // Computes new PID correction based on input error
+	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
+	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
+	PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
+	int requ_val, // request value
+	int meas_val, // measured value
+	int num_vals // Number of updates to perform
 );
 /*****************************************************************************/
 #endif // else !__XC__

@@ -82,7 +82,7 @@
 
 // Timing definitions
 #define MILLI_400_SECS (400 * MILLI_SEC) // 400 ms. Start-up settling time
-#define ALIGN_PERIOD (24 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
+#define ALIGN_PERIOD (8 * MILLI_SEC) // 24ms. Time to allow for Motor colis to align opposite magnets WARNING depends on START_VQ_OPENLOOP
 
 #define PWM_MIN_LIMIT (PWM_MAX_VALUE >> 4) // Min PWM value allowed (1/16th of max range)
 #define PWM_MAX_LIMIT (PWM_MAX_VALUE - PWM_MIN_LIMIT) // Max. PWM value allowed
@@ -113,7 +113,7 @@
 
 #define INIT_THETA 0 // Initial start-up angle
 
-#ifdef MB // Old values
+#if (LOAD_VAL == NO_LOAD)
 #define START_VOLT_OPENLOOP 4000 // 2000 Voltage (Vh) magnitude for start of open-loop state
 #define START_GAMMA_OPENLOOP 64  // Voltage angle for start of open-loop state (ie Vq = Vh.cos(angle)
 
@@ -131,7 +131,7 @@
 #define INIT_SPEED 400 // Initial motor speed, before external request received
 
 #define MIN_SPEED 300 // This value is derived from experience
-#endif //MB~
+#elif (LOAD_VAL == BIG_LOAD)
 
 #define START_VOLT_OPENLOOP 4000 // 2000 Voltage (Vh) magnitude for start of open-loop state
 #define START_GAMMA_OPENLOOP 64  // Voltage angle for start of open-loop state (ie Vq = Vh.cos(angle)
@@ -150,7 +150,10 @@
 #define INIT_SPEED 100 // Initial motor speed, before external request received
 
 #define MIN_SPEED 30 // This value is derived from experience
+#endif // (LOAD_VAL == BIG_LOAD)
 
+
+#define SYNC_SPEED 400 // Speed below which angular synchronisation used
 #define SPEC_MAX_SPEED 4000 // This value is derived from the LDO Motor Max. spec. speed
 #define SAFE_MAX_SPEED 5800 // This value is derived from the Optical Encoder Max. rate of 100kHz (gives 5860)
 #define SPEED_INC 100 // If speed change requested, this is the amount of change
@@ -223,6 +226,22 @@
 #define PERIOD_COEF_DIV (1 << PERIOD_COEF_BITS) // Coef divisor
 #define PERIOD_HALF_COEF (PERIOD_COEF_DIV >> 1) // Half of Coef divisor
 
+#define SYNC_SCALE_BITS 19 // Used to generate 2^n scaling factor 
+#define SYNC_SCALE_DIVR (1 << SYNC_SCALE_BITS) // Scaling factor used to scale velocity in sync. mode
+#define HALF_SYNC_SCALE (SYNC_SCALE_DIVR >> 1) // Half scaling factor used in rounding
+
+#define ANG_BUF_SIZ 625 // This is a chosen to be a factor of (SECS_IN_MIN * PLATFORM_REFERENCE_HZ)
+
+#define VEL2ANG_MUX 229065 // Velocity to Angle conversion factor
+#define VEL2ANG_RES 19 // Resolution of Velocity to Angle conversion factor
+#define VEL2ANG_DIV (1 << VEL2ANG_RES) // Divisor for Velocity to Angle conversion factor
+#define VEL2ANG_HALF (VEL2ANG_DIV >> 1) // Half Divisor (used for rounding)
+
+#define ANG2VEL_MUX 9375// Angle to Velocity conversion factor
+#define ANG2VEL_RES 12 // Resolution of Angle to Velocity conversion factor
+#define ANG2VEL_DIV (1 << ANG2VEL_RES) // Divisor for Angle to Velocity conversion factor
+#define ANG2VEL_HALF (ANG2VEL_DIV >> 1) // Half Divisor (used for rounding)
+
 #if (USE_XSCOPE)
 //MB~	#define DEMO_LIMIT 100000 // XSCOPE
 #define DEMO_LIMIT 400000 // XSCOPE
@@ -259,6 +278,8 @@
 #define UQ_REV_MASK (UQ_PER_REV - 1) // (16-bit) Mask used to extract Up-scaled QEI bits
 
 #define OC_ERR_LIM 512 // Number of Hall Over-current errors allowed before Board powered down
+
+#define USE_VEL 0 // Flag set if velocity estimate used (NOT angular-difference)
 
 #pragma xta command "add exclusion foc_loop_motor_fault"
 #pragma xta command "add exclusion foc_loop_speed_comms"
@@ -342,16 +363,24 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
 	ERR_DATA_TYP err_data; // Structure containing data for error-handling
 	ROTA_DATA_TYP vect_data[NUM_ROTA_COMPS]; // Array of structures holding data for each rotating vector component
+	int this_angs[ANG_BUF_SIZ];	// Array of previous raw total angle values, (delivered by QEI Client) for this motor
+	int othr_angs[ANG_BUF_SIZ];	// Array of previous raw total angle values, (delivered by QEI Client) for other motor
+	int diff_angs[ANG_BUF_SIZ];	// Array of previous raw total angle values, (delivered by QEI Client) for other motor
 	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
 	MOTOR_STATE_ENUM state; // Current motor state
 	CMD_IO_ENUM cmd_id; // Speed Command
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
 	int stall_speed;	// Speed below which motor is assumed to have stalled
 	int req_veloc;	// (External) Requested angular velocity
+	int req_diff;	// (External) Requested angular difference
+	int strt_diff;	// ang-diff of motors at start of synchronisation period
+	int sum_err_diff;	// sum of differece errors
+	int rem_err_diff;	// Remainder after scaling sum of differece errors
+	int old_diff;	// Old Requested angular-difference
 	int old_veloc;	// Old Requested angular velocity
 	int targ_vel;	// (Internal) Target angular velocity
+	int targ_diff;	// (Internal) Target angular difference
 	int est_veloc;	// Estimated angular velocity (from QEI data)
-	int half_veloc;	// Half requested angular velocity
 	int speed_inc; // Speed increment when commanded
 	int prev_veloc;	// previous velocity
 	unsigned est_period;	// Estimate of QEI period: ticks per QEI position (in Reference Frequency Cycles)
@@ -364,10 +393,18 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int pid_Id;	// Output of 'radial' current PID
 	int pid_Iq;	// Output of 'tangential' current PID
 	int prev_Id;	// previous target 'radial' current value
-	int tot_ang;	// Total angle traversed (NB accounts for multiple revolutions)
-	int raw_ang;	// Raw total angle delivered by QEI Client
-	int prev_ang;	// Previous total angle traversed (NB accounts for multiple revolutions)
-	int diff_ang;	// Difference angle QEI between updates
+	int raw_ang;	// raw total angle (delivered by QEI Client)
+	int this_diff_ang;	// angular difference between complete cycle of buffer entries, for this motor
+	int othr_diff_ang;	// angular difference between complete cycle of buffer entries, for other motor
+	int spec_max_diff;	// Angular-Difference above which QEI data unreliable
+	int min_diff;	// Angular-Difference below which motor is assumed to have stalled
+	int sync_diff;	// Angular-Difference below which motor synchronisation is switched on
+	int buf_full;	// Flag set ang-diff buffer full
+	int tot_up_ang;	// Upscaled Total angle traversed (NB accounts for multiple revolutions)
+	int prev_up_ang;	// Upscaled previous total angle traversed (NB accounts for multiple revolutions)
+	int diff_up_ang;	// Upscaled difference angle QEI between updates
+	int prev_ang_this;	// Previous raw total angle (delivered by QEI Client) for this motor
+	int prev_ang_othr;	// Previous raw total angle (delivered by QEI Client) for other motor
 	int corr_ang;	// Correction angle (when QEI origin detected)
 	int prev_diff;	// Previous Non-zero Difference angle QEI between updates
 	int est_theta;		// Estimated Angular position (from QEI data)
@@ -387,6 +424,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int ws_cnt; // Wrong-Spin count //MB~
 
 	int iters; // Iterations of inner_loop
+	int buf_cnt; // Angular buffer counter
 	unsigned id; // Unique Motor identifier e.g. 0 or 1
 	unsigned prev_hall; // previous hall state value
 	unsigned end_hall; // hall state at end of cycle. I.e. next value is first value of cycle (001)
@@ -395,6 +433,7 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int qei_offset;	// Phase difference between the QEI origin and PWM theta origin
 	int hall_offset;	// Phase difference between the Hall sensor origin and PWM theta origin
 	int qei_calib; // Flag set when QEI offset has been calibrated
+	int calib_off; // Calibration angular offset
 	int hall_found;	// Flag set when QEI orign found
 	int Iq_err;	// Error diffusion value for scaling of measured Iq
 	int adc_err;	// Error diffusion value for ADC extrema filter
@@ -413,6 +452,11 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	int coef_vel_err; // velocity filter coefficient diffusion error
 	int scale_vel_err; // Velocity scaling diffusion error 
 	int veloc_calc_err; // Velocity calculation diffusion error 
+
+	int sync_on; // Flag indicating angular synchronisation in operation
+	int prev_sync; // Previous value of sync-flag
+	int start_ang_this;	// Total angle at start of sync. for this motor
+	int start_ang_othr;	// Total angle at start of sync. for other motor
 
 	int tmp; // MB~
 	int temp; // MB~ Dbg

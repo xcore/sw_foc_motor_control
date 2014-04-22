@@ -67,6 +67,15 @@
 #define QEI_PER_REV (QEI_PER_PAIR * NUM_POLE_PAIRS) // No. Of QEI positions per Revolution
 #define HALL_PER_REV (HALL_PER_PAIR * NUM_POLE_PAIRS) // No. Of Hall positions per Revolution
 
+/** Define motor loads */
+#define NO_LOAD 0
+#define SMALL_LOAD 1
+#define BIG_LOAD 2
+
+/** Assign motor load */
+#define LOAD_VAL BIG_LOAD
+
+
 /**  Seconds in a minute */
 #define SECS_PER_MIN 60
 
@@ -80,12 +89,10 @@
 #define PWM_RES_BITS 12 // Number of bits used to define number of different PWM pulse-widths
 #define PWM_MAX_VALUE (1 << PWM_RES_BITS) // No.of different PWM pulse-widths
 
-#define PWM_DEAD_TIME ((12 * MICRO_SEC + 5) / 10) // 1200ns PWM Dead-Time WARNING: Safety critical
-
 // Number of PWM time increments between ADC/PWM synchronisation points. NB Independent of Reference Frequency
 #define INIT_SYNC_INCREMENT (PWM_MAX_VALUE)
 // The time each motor starts the PWM is staggered by this amount 
-#define PWM_STAGGER ((INIT_SYNC_INCREMENT + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS)
+#define	PWM_STAGGER ((INIT_SYNC_INCREMENT + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS)
 
 // If locked, the ADC sampling will occur in the middle of the  switching sequence.
 // It is triggered over a channel. Set this define to 0 to disable this feature

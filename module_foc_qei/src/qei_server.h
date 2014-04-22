@@ -74,7 +74,12 @@
 	#error Define. MAX_SPEC_RPM in app_global.h
 #endif // MAX_SPEC_RPM
 
+#define QEI_DBG 0 // Set flag for printout of debug info.
+
 #define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
+
+#define MIN_TICKS_PER_QEI (TICKS_PER_MIN_PER_QEI / MAX_SPEC_RPM) // Min. expected Ticks/QEI // 12 bits
+#define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
 
 #define QEI_SCALE_BITS 16 // Used to generate 2^n scaling factor
 #define QEI_SCALE_DIV (1 << QEI_SCALE_BITS) // Scaling factor
@@ -84,9 +89,9 @@
 
 /* HALF_PERIOD determines the clock frequency for port sampling. 
  * The sampling period must allow enough time (inbetween samples) for processing
- * Currently this is about 800 cycles per 32-bit buffer. 
- * Therefore ~100 cycles/sample. There are a maximum of 2 motors to service.
- * Therefore, 200 cycles/sample/motor.
+ * Currently this is about 660..680 cycles per 32-bit buffer. 
+ * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
+ * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
  */
 #define HALF_PERIOD 98 // 94 (Min 87) // ~100 Half of Max. allowed No. of ticks-per-sample
 #define TICKS_PER_SAMP (HALF_PERIOD << 1) // ~200 Max. allowed No. of ticks-per-sample
@@ -144,7 +149,7 @@ typedef struct QEI_DATA_TAG //
 	unsigned prev_time; // Previous port time-stamp
 	unsigned change_time; // Time-stamp when valid phase change detected
 	unsigned prev_change; // Previous valid phase change Time-stamp
-	int tot_ang; // Counts total angular position of motor from time=0
+	int ang_tot; // Counts total angular position of motor from time=0
 	int prev_ang;	// Angular position when previous origin detected (possibly false)
 	ANG_INC_TYP ang_inc; // angular increment value
 	unsigned rev_period; // number of QEI phases changes per revolution
@@ -153,6 +158,13 @@ typedef struct QEI_DATA_TAG //
 	int status_errs; // counter for invalid QEI status errors
 	int pins_idle; // Flag set until first pin change detected
 	int id; // Unique motor identifier
+
+	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
+	int dbg; // Debug
+	int dbg_ang; // Debug
+
+	int tmp_raw; // Debug
+	int tmp_i[4]; // Debug
 } QEI_DATA_TYP;
 
 #define QEI_PORT port:32 // Use 32-bit buffering for Regular-Sampling mode 
