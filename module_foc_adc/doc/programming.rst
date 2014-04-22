@@ -81,7 +81,7 @@ The ADC component can be used in conjunction with the PWM component. For more de
     = {  {PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
   on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
     = {  {PORT_M1_LO_A, PORT_M1_LO_B, PORT_M1_LO_C} ,{PORT_M2_LO_A, PORT_M2_LO_B, PORT_M2_LO_C} };
-  on tile[MOTOR_TILE]: clock pwm_clk[NUMBER_OF_MOTORS] = { XS1_CLKBLK_5 ,XS1_CLKBLK_4 };
+  on tile[MOTOR_TILE]: clock pwm_clk = XS1_CLKBLK_3;
   on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
   
   // ADC ports
@@ -103,6 +103,9 @@ The ADC component can be used in conjunction with the PWM component. For more de
     {
       on tile[MOTOR_TILE] : 
       {
+        // Configure PWM ports to run from common clock
+        foc_pwm_config( pb32_pwm_hi ,pb32_pwm_lo ,p16_adc_sync ,pwm_clk );
+
         par
         {
           // Loop through all motors
@@ -111,7 +114,7 @@ The ADC component can be used in conjunction with the PWM component. For more de
             run_motor( motor_cnt ,c_pwm[motor_cnt] ,c_adc_cntrl[motor_cnt] );
   
             foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] 
-              ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
+              ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] );
           } // par motor_cnt
 
           foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
