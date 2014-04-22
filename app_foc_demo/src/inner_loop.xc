@@ -2176,7 +2176,7 @@ void run_motor (
 		acquire_lock(); 
 		if (motor_s.err_data.err_flgs)
 		{
-			printstr( "Demo Ended Due to Following Errors on Motor " );
+			printstr( "Demo Ended Due to Following Errors on Motor  " );
 			printintln(motor_s.id);
 			error_handling( motor_s.err_data );
 		} // if (motor_s.err_data.err_flgs)
