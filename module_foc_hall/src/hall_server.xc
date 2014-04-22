@@ -21,12 +21,12 @@ static void init_hall_data( // Initialise Hall data structure for one motor
 	unsigned &hall_buf // Reference to buffer of  raw hall data for one motor
 )
 {
-	hall_data_s.params.hall_val = 0;
+	hall_data_s.params.hall_val = 0; // Clear hall phase value
 	hall_data_s.params.err = HALL_ERR_OFF; // Clear error status flag returned to client
 
 	hall_data_s.id = motor_id; // Set unique motor id
-	hall_data_s.status_errs = 0; // Initialise counter for QEI status errors
-	hall_buf = 0;
+	hall_data_s.status_errs = 0; // Initialise counter for Hall status errors
+	hall_buf = 0; // Clear buffer data
 
 	return;
 } // init_hall_data
@@ -86,8 +86,6 @@ static void service_hall_input_pins( // Process new Hall data
 	// Update estimate of error status using new error flag
 	estimate_error_status( hall_data_s ,err_flg ); // NB Updates hall_data_s.params.err
 
-	// NB Filter could be inserted here
-
 	hall_data_s.params.hall_val = phase_val; // NB Filtering not yet implemented
 
 	return;
@@ -98,21 +96,19 @@ static void service_client_data_request( // Send processed HALL data to client
 	streaming chanend c_hall // Data channel to client (carries processed HALL data)
 )
 {
-	c_hall <: hall_data_s.params;
+	c_hall <: hall_data_s.params; // Send set of hall data to client 
 
 	return;
 } // service_client_data_request
 /*****************************************************************************/
 #pragma unsafe arrays
-static void service_client_stop_request( // Acknowledge termination request from Hall client
-	HALL_DATA_TYP &hall_data_s, // Reference to structure containing HALL data for one motor
+static void acknowledge_hall_command( // Acknowledge Hall command
+	HALL_DATA_TYP &inp_hall_s, // Reference to structure containing HALL parameters for one motor
 	streaming chanend c_hall // Data channel to client (carries processed HALL data)
 )
 {
-	hall_data_s.params.err = HALL_TERMINATED; // Signal Hall Termination to Client
-
-	c_hall <: hall_data_s.params;
-} // service_client_stop_request
+	c_hall <: HALL_CMD_ACK; // Acknowledge control command
+} // acknowledge_hall_command
 /*****************************************************************************/
 void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	streaming chanend c_hall[], // Array of data channels to client (carries processed Hall data)
@@ -130,43 +126,45 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 	printstrln("                                             Hall Server Starts");
 	release_lock();
 
-	// Initialise Hall data for each motor
+	// Loop through all motors
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
-	{
+	{ // Initialise Hall data for this motor
 		init_hall_data( motor_cnt ,all_hall_data[motor_cnt] ,hall_bufs[motor_cnt] );
+
+		// Use acknowledge command to signal to control-loop that initialisation is complete
+		acknowledge_hall_command( all_hall_data[motor_cnt] ,c_hall[motor_cnt] );
 	} // for motor_cnt
 
-	// Loop forever
+	// Loop until termination request received
 	while (do_loop) {
 #pragma xta endpoint "hall_main_loop"
 #pragma ordered // If multiple cases fire at same time, service top-most first
 
+		// Wait for any event
 		select {
 			// Service any change on input port pins
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) p4_hall[motor_id] when pinsneq(hall_bufs[motor_id]) :> hall_bufs[motor_id] :
-			{
-				service_hall_input_pins( all_hall_data[motor_id] ,hall_bufs[motor_id] );
+			{	// Service change on this set of input port pins
 
-#if (USE_XSCOPE)
-				// NB These signals have to be registered in the file main.xc for the target application
-				xscope_int( 0 ,hall_bufs[motor_id] );
-				xscope_int( 1 ,all_hall_data[motor_id].params.hall_val );
-				xscope_int( 2 ,all_hall_data[motor_id].params.err );
-#endif // (USE_XSCOPE)
+				service_hall_input_pins( all_hall_data[motor_id] ,hall_bufs[motor_id] ); // Process new Hall data
 			} // case
 			break;
 
 			// Service any client request for data
 			case (int motor_id=0; motor_id<NUMBER_OF_MOTORS; motor_id++) c_hall[motor_id] :> inp_cmd :
-			{
+			{ // Service this client request
+
+				// Determine command received
 				switch(inp_cmd)
 				{
 					case HALL_CMD_DATA_REQ : // Data Request
+
+						// Send processed HALL data to client
 						service_client_data_request( all_hall_data[motor_id] ,c_hall[motor_id] );
 					break; // case HALL_CMD_DATA_REQ
 
 					case HALL_CMD_LOOP_STOP : // Termination Command
-						service_client_stop_request( all_hall_data[motor_id] ,c_hall[motor_id] );
+						acknowledge_hall_command( all_hall_data[motor_id] ,c_hall[motor_id] ); // Acknowledge Hall command
 
 						do_loop = 0; // Terminate while loop
 					break; // case HALL_CMD_DATA_REQ
@@ -175,9 +173,12 @@ void foc_hall_do_multiple( // Get Hall Sensor data from motor and send to client
 						assert(0 == 1); // ERROR: Should not happen
 					break; // default
 				} // switch(inp_cmd)
-
 			} // case
 			break;
+
+			default :
+				// Nothing to do
+			break; // default
 		} // select
 	}	// while (1)
 

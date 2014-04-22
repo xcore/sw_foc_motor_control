@@ -23,6 +23,12 @@
 #include "pwm_common.h"
 #include "pwm_client.h"
 
+#ifndef PWM_DEAD_TIME
+	#error Define. PWM_DEAD_TIME in app_global.h
+#endif // PWM_DEAD_TIME
+
+#define HALF_DEAD_TIME (PWM_DEAD_TIME >> 1) // Used for rounding
+
 /******************************************************************************/
 /** Converts PWM structure reference to address.
  * \param pwm_ps // Pointer to PWM control structure

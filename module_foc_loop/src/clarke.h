@@ -18,6 +18,11 @@
 #ifndef CLARKE_H_
 #define CLARKE_H_
 
+#include <assert.h>
+
+#define MAX_CLARKE_BITS (30 - CONST_RES_BITS) // Max. size of input values in bits 
+#define MAX_CLARKE_VAL (1 << MAX_CLARKE_BITS) // Max. allowed input value
+
 #ifdef __XC__
 
 	// XC Versions

@@ -83,8 +83,8 @@ static void init_spin_component( // Initialise QEI Test data for spin-direction 
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[ANTI].str ," Anti-Clock" );
-	safestrcpy( vect_comp_s.state_names[CLOCK].str ," Clock-Wise" );
+	safestrcpy( vect_comp_s.state_names[NEGATIVE].str ," Negative" );
+	safestrcpy( vect_comp_s.state_names[POSITIVE].str ," Positive" );
 
 	// Add any new component states here
 } // init_spin_component
@@ -142,55 +142,22 @@ static void init_control_component( // Initialise QEI Test data for Control/Comm
 	// Add any new component states here
 } // init_speed_component
 /*****************************************************************************/
-void print_test_vector( // print test vector details
-	COMMON_TST_TYP &comm_qei_s, // Reference to structure of common QEI data
-	TEST_VECT_TYP inp_vect, // Structure containing current QEI test vector to be printed
-	const char prefix_str[] // prefix string
+void init_common_data( // Initialise Test data
+	COMMON_TST_TYP &comm_data_s // Structure containing common test data
 )
 {
-	int comp_cnt; // Counter for Test Vector components
-	int comp_state; // state of current component of input test vector
-
-	acquire_lock(); // Acquire Display Mutex
-	printstr( prefix_str ); // Print prefix string
-
-	// Loop through NON-control test vector components
-	for (comp_cnt=1; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
-	{
-		comp_state = inp_vect.comp_state[comp_cnt];  // Get state of current component
-
-		if (comp_state < comm_qei_s.comp_data[comp_cnt].num_states)
-		{
-			printstr( comm_qei_s.comp_data[comp_cnt].state_names[comp_state].str ); // Print component status
-		} //if (comp_state < comm_qei_s.comp_data[comp_cnt].num_states)
-		else
-		{
-			printcharln(' ');
-			printstr( "ERROR: Invalid state. Found ");
-			printint( comp_state );
-			printstr( " for component ");
-			printstrln( comm_qei_s.comp_data[comp_cnt].comp_name.str );
-			assert(0 == 1); // Force abort
-		} //if (comp_state < comm_qei_s.comp_data[comp_cnt].num_states)
-	} // for comp_cnt
-
-	printchar( ':' );
-	comp_state = inp_vect.comp_state[CNTRL];  // Get state of Control/Comms. status
-	printstrln( comm_qei_s.comp_data[CNTRL].state_names[comp_state].str ); // Print Control/Comms. status
-
-	release_lock(); // Release Display Mutex
-} // print_test_vector
-/*****************************************************************************/
-void init_common_data( // Initialise QEI Test data
-	COMMON_TST_TYP &comm_qei_s // Reference to structure of common QEI data
-)
-{
-	init_error_component(		comm_qei_s.comp_data[ERROR]		,NUM_QEI_ERRS		," Status" );
-	init_origin_component(	comm_qei_s.comp_data[ORIGIN]	,NUM_QEI_ORIGS	," Origin" );
-	init_spin_component(		comm_qei_s.comp_data[SPIN]		,NUM_QEI_SPINS	,"  Spin " );
-	init_speed_component(		comm_qei_s.comp_data[SPEED]		,NUM_QEI_SPEEDS	," Speed " );
-	init_control_component(		comm_qei_s.comp_data[CNTRL]	,NUM_QEI_CNTRLS	," Comms." );
+	init_error_component(		comm_data_s.comp_data[ERROR]		,NUM_QEI_ERRS		," Status" );
+	init_origin_component(	comm_data_s.comp_data[ORIGIN]	,NUM_QEI_ORIGS	," Origin" );
+	init_spin_component(		comm_data_s.comp_data[SPIN]		,NUM_QEI_SPINS	,"  Spin " );
+	init_speed_component(		comm_data_s.comp_data[SPEED]		,NUM_QEI_SPEEDS	," Speed " );
+	init_control_component(		comm_data_s.comp_data[CNTRL]	,NUM_QEI_CNTRLS	," Comms." );
 
 	// Add any new test vector components here
+
+	safestrcpy( comm_data_s.prefix[DISP_INP_GEN].str ,"" );
+	safestrcpy( comm_data_s.prefix[DISP_INP_CHK].str ,"                                             " );
+
+	// Add any new display input prefixes here 
+
 } // init_common_data
 /*****************************************************************************/

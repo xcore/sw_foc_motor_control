@@ -204,10 +204,10 @@ static void check_hall_phase_change( // Check for valid phase change
 					release_lock(); // Release Display Mutex
 				break; // case 0:
 
-				case 1: // Clock-wise
+				case 1: // Positive-spin
 				break; // case 1:
 
-				case (HALL_PER_POLE - 1): // Anti-clockwise
+				case (HALL_PER_POLE - 1): // Negative-spin
 				break; // case (HALL_PER_POLE - 1):
 
 				default:
@@ -239,7 +239,7 @@ static void check_hall_spin_direction( // Check correct update of Hall spin dire
 
 	switch( chk_data_s.curr_vect.comp_state[SPIN] )
 	{
-		case CLOCK: // Clock-wise
+		case POSITIVE: // Positive-spin
 			if (1 != chk_data_s.off_diff)
 			{
 				chk_data_s.motor_errs[SPIN]++;
@@ -247,12 +247,12 @@ static void check_hall_spin_direction( // Check correct update of Hall spin dire
 				acquire_lock(); // Acquire Display Mutex
 				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
-				printstrln("Clock-Wise FAILURE");
+				printstrln("Positive-spin FAILURE");
 				release_lock(); // Release Display Mutex
 			} // if (1 != chk_data_s.off_diff)
-		break; // case CLOCK:
+		break; // case POSITIVE:
 
-		case ANTI: // Anti-clockwise
+		case NEGATIVE: // Negative-spin
 			if ((HALL_PER_POLE - 1) != chk_data_s.off_diff)
 			{
 				chk_data_s.motor_errs[SPIN]++;
@@ -260,10 +260,10 @@ static void check_hall_spin_direction( // Check correct update of Hall spin dire
 				acquire_lock(); // Acquire Display Mutex
 				printcharln(' ');
 				printstr( chk_data_s.padstr1 );
-				printstrln("Anti-Clock FAILURE");
+				printstrln("Negative-spin FAILURE");
 				release_lock(); // Release Display Mutex
 			} // if ((HALL_PER_POLE - 1) != chk_data_s.off_diff)
-		break; // case ANTI:
+		break; // case NEGATIVE:
 
 		default:
 			acquire_lock(); // Acquire Display Mutex
@@ -392,11 +392,16 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 )
 {
 	timer chronometer; // XMOS timer
+	unsigned cmd; // Hall Control Command
 	int do_loop = 1;   // Flag set until loop-end condition found
 
 
 	chronometer :> chk_data_s.time; // Get start time
 	chronometer when timerafter(chk_data_s.time + (MICRO_SEC << 1)) :> chk_data_s.time; // Wait for Test Generation to Start
+
+	// Wait for Hall server to start
+	c_hall :> cmd;
+	assert(HALL_CMD_ACK == cmd); // ERROR: Hall server did NOT send acknowledge signal
 
 	acquire_lock(); // Acquire Display Mutex
 	printstr( chk_data_s.padstr1 );
@@ -444,17 +449,16 @@ static void check_motor_hall_client_data( // Display Hall results for one motor
 		} // select
 	} // while( loop )
 
-	// Loop until Hall Server terminates
-	while(HALL_TERMINATED != chk_data_s.curr_params.err)
+	// Loop until Hall Server acknowledges termination request
+	do // while(HALL_CMD_ACK != cmd)
 	{
-		chronometer when timerafter(chk_data_s.time + HALL_PERIOD) :> chk_data_s.time;
-		get_new_hall_client_data( chk_data_s ,c_hall ); // Request data from server & check
+		c_hall :> cmd;
 
 		if (0 == chk_data_s.print_on)
 		{
 			print_progress( chk_data_s ); // Print progress indicator
 		} // if (0 == chk_data_s.print_on)
-	} // while(QEI_TERMINATED != chk_data_s.curr_params.err)
+	} while(HALL_CMD_ACK != cmd);
 
 } // check_motor_hall_client_data
 /*****************************************************************************/

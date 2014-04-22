@@ -36,6 +36,9 @@
 /** Define default No. OF QEI positions per Revolution */
 #define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
 
+/** Define the No. Of QEI resolution bits */
+#define QEI_RES_BITS 10 // No. Of bits used to represent QEI_PER_REV (see below)
+
 /** Define default Filter Mode  1 == On */
 #define QEI_FILTER 0
 
@@ -74,5 +77,8 @@
 #define SECOND PLATFORM_REFERENCE_HZ // One Second in Clock ticks
 #define MILLI_SEC (PLATFORM_REFERENCE_KHZ) // One milli-second in clock ticks
 #define MICRO_SEC (PLATFORM_REFERENCE_MHZ) // One micro-second in clock ticks
+
+typedef signed long long S64_T;
+typedef unsigned long long U64_T;
 
 #endif /* _APP_GLOBAL_H_ */

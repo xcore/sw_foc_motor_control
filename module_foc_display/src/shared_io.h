@@ -22,6 +22,8 @@
 #include <print.h>
 #include <xccompat.h>
 
+#include "use_locks.h"
+
 #include "app_global.h"
 #include "lcd.h"
 
@@ -50,7 +52,10 @@ typedef enum CMD_IO_ETAG
 {
 	IO_CMD_GET_VALS	= 1,
 	IO_CMD_GET_IQ,
-	IO_CMD_SET_SPEED,
+	IO_CMD_SET_SPEED, // Set Motor Speed: Expect another parameter 
+	IO_CMD_INC_SPEED, // Increment speed by STEP_SPEED
+	IO_CMD_DEC_SPEED, // Decrement speed by STEP_SPEED
+	IO_CMD_FLIP_SPIN, // Change direction of spin
 	IO_CMD_DIR,
 	IO_CMD_GET_VALS2,
 	IO_CMD_GET_FAULT,

@@ -38,32 +38,45 @@ void xscope_user_init()
 int main ( void ) // Program Entry Point
 {
 	streaming chan c_qei_chk[NUMBER_OF_MOTORS]; // For each motor, a channel connecting QEI Server and Checker cores
+	streaming chan c_master[MB_FIXME]; // Array of channel for sending display data to Master_Print core
+	streaming chan c_slave[NUM_DISP_SLAVES]; // Array of channels for sending data from Master to Slave print cores
 	streaming chan c_gen_chk; // Channel for sending test vectors from Generator to Checker core
-	streaming chan c_gen_dis; // Channel for sending data from Generator to Display core
 
 
 	par
 	{	// NB All cores are run on one tile so that all cores use the same clock frequency (100 MHz)
 		on tile[MOTOR_TILE] :
 		{
+			COMMON_TST_TYP comm_data_s; // Reference to structure of common test data
+
+
+			init_common_data( comm_data_s ); // Initialise common test data
+  
 		  init_locks(); // Initialise Mutex for display
 
 			par
 			{
-				gen_all_qei_test_data( c_gen_chk ,c_gen_dis ,pb4_tst ); // Generate test data
-
-				disp_gen_data( c_gen_dis ); // Display generated test data
+				// Generate test data
+				gen_all_qei_test_data( comm_data_s ,c_gen_chk ,c_master[DISP_INP_GEN] ,pb4_tst );
 
 				foc_qei_do_multiple( c_qei_chk, pb4_qei ); // Server function under test
 
-				check_all_qei_client_data( c_gen_chk ,c_qei_chk ); // Check results using QEI Client
+				// Check results using QEI Client
+				check_all_qei_client_data( comm_data_s ,c_gen_chk ,c_qei_chk ,c_master[DISP_INP_CHK] );
+
+				master_print( comm_data_s ,c_slave ,c_master ); // Collect and schedule display data
+
+				// Loop through slave Display cores
+				par (int disp_cnt=0; disp_cnt<NUM_DISP_SLAVES; disp_cnt++)
+				{
+					slave_print( comm_data_s ,c_slave[disp_cnt] ,disp_cnt ); // Print display data
+				} // par disp_cnt
 			} // par
 
 		  free_locks(); // Free Mutex for display
 
 		} // on tile[MOTOR_TILE] :
 	} // par
-
 
 	return 0;
 } // main

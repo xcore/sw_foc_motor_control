@@ -65,7 +65,7 @@ int main ( void ) // Program Entry Point
 				gen_all_pwm_test_data( c_gen_chk ,c_gen_pwm ); // Generate test data using PWM Client
 
 				// Server function under test
-				foc_pwm_do_triggered( MOTOR_ID, c_gen_pwm ,pb32_pwm_hi ,pb32_pwm_lo ,c_pwm2adc_trig ,p16_adc_sync ,pwm_clk );
+				foc_pwm_do_triggered( MOTOR_ID, c_gen_pwm ,pb32_pwm_hi ,pb32_pwm_lo ,c_pwm2adc_trig ,p16_adc_sync );
 
 				capture_pwm_leg_data( pb32_tst_hi ,c_hi_leg ,PWM_HI_LEG ); // Capture PWM Hi-Leg data
 

@@ -81,8 +81,8 @@ static void init_spin_component( // Initialise HALL Test data for spin-direction
 	vect_comp_s.num_states = inp_states; // Assign number of states for current component
 	safestrcpy( vect_comp_s.comp_name.str ,inp_name );
 
-	safestrcpy( vect_comp_s.state_names[ANTI].str ," Anti-Clock" );
-	safestrcpy( vect_comp_s.state_names[CLOCK].str ," Clock-Wise" );
+	safestrcpy( vect_comp_s.state_names[NEGATIVE].str ," Negative" );
+	safestrcpy( vect_comp_s.state_names[POSITIVE].str ," Positive" );
 
 	// Add any new component states here
 } // init_spin_component
@@ -213,8 +213,8 @@ void init_common_data( // Initialise HALL Test data
 	COMMON_TST_TYP &comm_hall_s // Reference to structure of common Hall test data
 )
 {
-	// Array of Hall Phase values [CBA} (NB Increment for clock-wise rotation)
-	int clkwise[HALL_PER_POLE] = { 1 ,3 ,2 ,6 ,4 ,5 };
+	// Array of CBA bit-patterns for Hall Phases (NB Increment for Positive rotation)
+	int bit_patterns[HALL_PER_POLE] = { 1 ,3 ,2 ,6 ,4 ,5 };
 	int phase_val; // phase value
 	int phase_cnt; // phase counter
 
@@ -223,7 +223,7 @@ void init_common_data( // Initialise HALL Test data
 
 	for (phase_cnt=0; phase_cnt<HALL_PER_POLE; phase_cnt++)
 	{
-	 	phase_val = clkwise[phase_cnt]; // Get current phase value
+	 	phase_val = bit_patterns[phase_cnt]; // Get current phase value
 	 	comm_hall_s.phases[phase_cnt] = phase_val; // Assign Hall Phase values
 	 	comm_hall_s.inverse[phase_val] = phase_cnt; // Assign array offset
 	} // for (phase_cnt=0; phase_cnt<HALL_PHASE_MASK; phase_cnt++)

@@ -23,12 +23,13 @@ The following QEI definitions are required. These are set in ``qei_common.h`` or
    * QEI_NERR_MASK // Bit Mask for error status bit (1 == No Errors)
    * PLATFORM_REFERENCE_HZ // Platform Reference Frequency
    * QEI_FILTER // QEI filter switch (0 == Off)
+   * QEI_RS_MODE // QEI Sampling Mode  0 == Edge-Triggered, 1 == Regularly-Sampled */
    * MAX_SPEC_RPM // Maximium specified motor speed
 
 Test Applications
 -----------------
 
-This module has a test harness called ``Quadrature Encoder Interface (QEI) Test Harness`` which can be found in the xSOFTip Explorer pane.
+This module has a test harness called ``Quadrature Encoder Interface (QEI) Test Harness`` which can be found in the xSOFTip Explorer pane. WARNING: This is out-of-date.
 
 To get started with this application, run through the instructions in the quickstart guide for the test harness. More details about using this test harness are given below.
 
@@ -60,8 +61,8 @@ To start the test type
 
 Test results will be printed to standard-out.
 Remember this is a simulator, and is very slow.
-There may be gaps of upto 1 minute between each printed line.
-The whole test takes upto 10 minutes to run.
+There may be gaps of up to 1 minute between each printed line.
+The whole test takes up to 10 minutes to run.
 
 For a explanation of the test results refer to the quickstart guide in doc_quickstart/qei/index.rst
 

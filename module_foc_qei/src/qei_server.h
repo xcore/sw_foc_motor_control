@@ -17,6 +17,7 @@
 	and a 1024 counts per revolution.
 
 	The QEI data is read in via a 4-bit port. With assignments as follows:-
+	WARNING: This in NON-standard. Traditionally Phase_A is the MS-bit.
 
 	 bit_3   bit_2   bit_1    bit_0
 	-------  -----  -------  -------
@@ -24,29 +25,31 @@
 
 	N_Error = 1 for No Errors
 
-	In normal operation the B and A bits change as a grey-code,
-	with the following convention
 
-			  ----------->  Counter-Clockwise
+	In normal operation the B and A bits change as a grey-code,
+	with the following convention.
+
+	The positive spin direction is the one where Phase_A leads Phase_B.
+	E.g. Phase_A goes high one bit-change earlier than Phase_B goes high.
+	This definition is based on time, and is NOT dependent on spatial orientation of the motor!-)
+
+
+			  <-----------  Negative Spin
 	BA:  00 01 11 10 00
-			  <-----------  Clockwise
+			  ----------->  Positive Spin
 
 	During one revolution, BA will change 1024 times,
 	Index will take the value of zero 1023 times, and the value one once only,
   at the position origin.
 	NB When the motor starts, it is NOT normally at the origin
 
-	A look-up table is used to decode the 2 phase bits, into a spin direction
-	with the following meanings:
-		 1: Anit-Clocwise,
-		 0: Unknown    (The motor has either stopped, or jumped one or more phases)
-		-1: Clocwise,
+	The timer is read every time a full buffer of samples is returned to the S/W.
+	(Currently 8 4-bit samples) NB these may all be the same value.
 
-	The timer is read every time the phase bits change. I.E. 1024 times per revolution
+	The samples are inspected in chronological order, and when a valid phase change is detected,
+	the angular postion is incremented/decremented (with the spin value).
 
-	The angular postion is incremented/decremented (with the spin value) if the
-	motor is NOT at the origin.
-	If the motor is at the origin, the angular position is reset to zero.
+	If the origin flag is detected, the angular position is corrected (to the nearest multiple of 1024).
 
 \*****************************************************************************/
 
@@ -58,6 +61,8 @@
 #include <xs1.h>
 #include <assert.h>
 #include <print.h>
+#include <safestring.h>
+#include <syscall.h>
 
 #include "qei_common.h"
 
@@ -65,92 +70,122 @@
 	#error Define. QEI_FILTER in app_global.h
 #endif
 
-#define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
-
 #ifndef MAX_SPEC_RPM
 	#error Define. MAX_SPEC_RPM in app_global.h
 #endif // MAX_SPEC_RPM
 
+#define QEI_DBG 0 // Set flag for printout of debug info.
+
+#define HALF_QEI_CNT (QEI_PER_REV >> 1) // 180 degrees of mechanical rotation
+
 #define MIN_TICKS_PER_QEI (TICKS_PER_MIN_PER_QEI / MAX_SPEC_RPM) // Min. expected Ticks/QEI // 12 bits
 #define THR_TICKS_PER_QEI (MIN_TICKS_PER_QEI >> 1) // Threshold value used to trap annomalies // 11 bits
 
-#define MAX_CONFID 4 // Maximum confidence value
-#define MAX_QEI_STATE_ERR 8 // Maximum number of consecutive QEI state-transition errors allowed
-
-#define QEI_CNT_LIMIT (QEI_PER_REV + HALF_QEI_CNT) // 540 degrees of rotation
-
-#define START_UP_CHANGES 3 // Must see this number of pin changes before calculating velocity
-
 #define QEI_SCALE_BITS 16 // Used to generate 2^n scaling factor
-#define QEI_HALF_SCALE (1 << (QEI_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
+#define QEI_SCALE_DIV (1 << QEI_SCALE_BITS) // Scaling factor
+#define QEI_SCALE_HALF (QEI_SCALE_DIV >>1) // Half Scaling factor (used in rounding)
 
-#define QEI_COEF_BITS 8 // Used to generate filter coef divisor. coef_div = 1/2^n
-#define QEI_COEF_DIV (1 << QEI_COEF_BITS) // Coef divisor
-#define QEI_HALF_COEF (QEI_COEF_DIV >> 1) // Half of Coef divisor
+#define MAX_QEI_STATUS_ERR 3 // 3 Maximum number of consecutive QEI status errors allowed
 
-#define MAX_QEI_STATUS_ERR 3  // Maximum number of consecutive QEI status errors allowed
+/* HALF_PERIOD determines the clock frequency for port sampling. 
+ * The sampling period must allow enough time (inbetween samples) for processing
+ * Currently this is about 660..680 cycles per 32-bit buffer. 
+ * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
+ * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
+ */
+#define HALF_PERIOD 98 // 94 (Min 87) // ~100 Half of Max. allowed No. of ticks-per-sample
+#define TICKS_PER_SAMP (HALF_PERIOD << 1) // ~200 Max. allowed No. of ticks-per-sample
 
-#define INT16_BITS (sizeof(short) * BITS_IN_BYTE) // No. of bits in 16-bit integer
+#define SAMP_LOOP_BITS 3 // Used to define No. of samples in 32-bit port buffer
+#define SAMPS_PER_LOOP (1 << SAMP_LOOP_BITS) // 8  No. of samples in 32-bit port buffer
+#define TICKS_PER_LOOP (TICKS_PER_SAMP << SAMP_LOOP_BITS) // ~1600 Time taken to service a buffer of samples
+#define STAG_TICKS ((TICKS_PER_LOOP + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS) // ~800 NB Used to stagger servicing of port buffers
 
-#define QEI_BUF_BITS 3 // Use power-of-2 size to get all 1's mask
-#define QEI_BUF_SIZ (1 << QEI_BUF_BITS)
-#define QEI_BUF_MASK (QEI_BUF_SIZ - 1)
+// Require filter to decay from 1 to 1/2 after 5 samples. This is equivalent to filter coef of 0.1295 (~ 1/8)
+#define QEI_VELOC_BITS 3 // bit resolution of QEI filter coefficient
+#define QEI_VELOC_DIV (1 << QEI_VELOC_BITS) // 8 Divisor for filter coefficient
+#define QEI_VELOC_HALF (QEI_VELOC_DIV >> 1) // 4 Half of filt-coef divisor (used for rounding) 
 
-/** Different Motor Phases */
-typedef enum QEI_ENUM_TAG
-{
-  QEI_ANTI = -1,		// Anti-Clockwise Phase change
-  QEI_STALL = 0,  // Same Phase
-  QEI_CLOCK = 1, // Clockwise Phase change
-  QEI_JUMP = 2,		// Jumped 2 Phases
-} QEI_ENUM_TYP;
+#define MAX_TIME_ERR 1 // Max. No of consecutive timing errors allowed 
+
+#define PERIOD_DELTA_LIM 5 // Allow a change in QEI PERIOD of upto 5 phases
 
 typedef signed char ANG_INC_TYP; // Angular Increment type
 
-typedef struct QEI_BUF_TAG //
+/** Different QEI phases */
+typedef enum QEI_PHASE_ETAG
 {
-	QEI_RAW_TYP inp_pins; // Set of raw data values on input port pins
-	int id; // Motor Id
-	unsigned time; // Time when port-pins read
-} QEI_BUF_TYP;
+  QEI_PHASE_A = 0,  // Phase_A identifier
+  QEI_PHASE_B,  // Phase_B identifier
+	NUM_QEI_PHASES // Number of different QEI Phase signals
+} QEI_PHASE_ETYP;
+
+/** Type containing 2-D array for look-up table */
+typedef struct QEI_LUT_TAG
+{
+	int incs[QEI_PERIOD_LEN][QEI_PERIOD_LEN];	// 2-D Look-up table
+} QEI_LUT_TYP;
+
+/** Structure containing all data for one QEI phase */
+typedef struct QEI_PHASE_TAG // 
+{
+	int up_filt; // Up-scaled Low-pass filtered Phase signal
+	unsigned prev; // Previous value of filtered phase signal
+	int scale_err; // Error diffusion value for scaling
+	int filt_err; // Error diffusion value for filtering
+	QEI_PHASE_ETYP phase_id; // Unique QEI Phase identifier
+	int motor_id; // Unique motor identifier
+} QEI_PHASE_TYP;
 
 /** Structure containing QEI parameters for one motor */
 typedef struct QEI_DATA_TAG //
 {
 	QEI_PARAM_TYP params; // QEI Parameter data (sent to QEI Client)
-	unsigned inp_pins; // Raw data values on input port pins
-	unsigned prev_phases; // Previous phase values
-	unsigned curr_time; // Time when port-pins read
-	unsigned prev_time; // Previous port time-stamp
-	unsigned diff_time; // Difference between 2 adjacent time-stamps. NB Must be unsigned due to clock-wrap
-	unsigned interval; // expected interval between QEI phase changes
-	QEI_ENUM_TYP prev_state; // Previous QEI state
-	int state_errs; // counter for invalid QEI state transistions
-	int status_errs; // counter for invalid QEI status errors
-	int ang_cnt; // Counts angular position of motor (from origin)
-	ANG_INC_TYP ang_inc; // angular increment value
-	int theta; // angular position returned to client
-	int spin_sign; // Sign of spin direction
-	int ang_speed; // Angular speed of motor measured in Ticks/angle_position
-	int prev_orig; // Previous origin flag
-	int confid; // Spin-direction confidence. (+ve: confident Clock-wise, -ve: confident Anti-clockwise)
-	int id; // Unique motor identifier
-	int dbg; // Debug
+	QEI_LUT_TYP ang_lut;	// Look-up table for converting phase changes to angle increments
+	QEI_PHASE_TYP phase_data[NUM_QEI_PHASES];	// Structure containing all data for one QEI phase
 
-	int filt_val; // filtered value
-	int coef_err; // Coefficient diffusion error
-	int scale_err; // Scaling diffusion error
-	int speed_err; // Speed diffusion error
+	unsigned prev_phases; // Previous phase values
+
+	unsigned prev_time; // Previous port time-stamp
+	unsigned change_time; // Time-stamp when valid phase change detected
+	unsigned prev_change; // Previous valid phase change Time-stamp
+	int ang_tot; // Counts total angular position of motor from time=0
+	int prev_ang;	// Angular position when previous origin detected (possibly false)
+	ANG_INC_TYP ang_inc; // angular increment value
+	unsigned rev_period; // number of QEI phases changes per revolution
+	int prev_orig; // Previous origin flag
+
+	int status_errs; // counter for invalid QEI status errors
+	int pins_idle; // Flag set until first pin change detected
+	int id; // Unique motor identifier
+
+	char dbg_str[3]; // String representing BA values as charaters (e.g. "10" )
+	int dbg; // Debug
+	int dbg_ang; // Debug
+
+	int tmp_raw; // Debug
+	int tmp_i[4]; // Debug
 } QEI_DATA_TYP;
+
+#define QEI_PORT port:32 // Use 32-bit buffering for Regular-Sampling mode 
 
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client
+ * \param p4_qei // Array of QEI data ports for each motor
+ * \param qei_clk // clock for generating accurate QEI timing
+ */
+void foc_qei_config(  // Configure all QEI ports
+  buffered QEI_PORT in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
+	clock qei_clks[NUMBER_OF_MOTORS] // Array of clocks for generating accurate QEI timing (one per input port)
+	);
+/*****************************************************************************/
+/** \brief Get QEI Sensor data from port (motor) and send to client
  * \param c_qei // Array of channels connecting server & client
- * \param pb4_qei // Array of QEI data ports for each motor
+ * \param p4_qei // Array of QEI data ports for each motor
  */
 void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to client
 	streaming chanend c_qei[], // Array of channels connecting server & client
-	buffered port:4 in pb4_qei[] // Array of buffered QEI data ports for each motor
+	buffered QEI_PORT in pb4_inp[NUMBER_OF_MOTORS] // Array of 32-bit buffered 4-bit input ports on which to receive test data
 );
 /*****************************************************************************/
 

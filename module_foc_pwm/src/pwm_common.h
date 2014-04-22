@@ -16,7 +16,6 @@
 #define _PWM_COMMON_H_
 
 #include "use_locks.h"
-
 #include "app_global.h"
 
 #ifndef PWM_SHARED_MEM
@@ -42,18 +41,13 @@
 
 #define HALF_PWM_MAX (PWM_MAX_VALUE >> 1)  // Half of maximum PWM width value
 
-// PWM specific definitions ...
-
-#define PWM_DEAD_TIME ((12 * MICRO_SEC + 5) / 10) // 1200ns PWM Dead-Time WARNING: Safety critical
-#define HALF_DEAD_TIME (PWM_DEAD_TIME >> 1) // Used for rounding
-
-#define PWM_WID_LIMIT (PWM_MAX_VALUE - PWM_DEAD_TIME - PWM_PORT_WID) // Pulse width limit
-
-/** Maximum Port timer value. See also PORT_TIME_TYP */
-#define PORT_TIME_MASK 0xFFFF
-
-/** Loop termination Command */
-#define PWM_TERMINATED (-1) // Choose a negative value
+/** Different PWM Control Commands (Client --> Server) */
+typedef enum CMD_PWM_ETAG
+{
+	// NB Don't use non-negative integer, due to conflicts with Buffer indices
+	PWM_CMD_ACK = (-2),	// PWM Server Command Acknowledged (Control)
+	PWM_CMD_LOOP_STOP = (-1), // Stop while-loop.
+} CMD_PWM_ENUM;
 
 /** Different PWM Phases */
 typedef enum PWM_PHASE_ETAG
@@ -72,9 +66,6 @@ typedef enum PWM_LEG_ETAG
   NUM_PWM_LEGS	// Handy Value!-)
 } PWM_LEG_ENUM;
 
-/** Type for Port timer values. See also PORT_TIME_MASK */
-typedef unsigned short PORT_TIME_TYP;
-
 /** Structure containing PWM parameters for one motor */
 typedef struct PWM_PARAM_TAG //
 {
@@ -86,7 +77,7 @@ typedef struct PWM_PARAM_TAG //
 typedef struct PWM_COMMS_TAG
 {
 	PWM_PARAM_TYP params; // Structure of PWM parameters (for Server)
-	unsigned buf; 	// double-buffer identifier (0 or 1)
+	int buf; 	// double-buffer identifier. e.g. 0 or 1
 	unsigned mem_addr; // Shared memory address (if used)
 } PWM_COMMS_TYP;
 

@@ -12,6 +12,23 @@
  * copyright notice above.
  **/                                   
 
+/*****************************************************************************\
+This WatchDog protects a specific selection of motors from a lerger set.
+There is an array of flags, one for each motor in the larger set.
+For each flag, it is set to one if the motor needs protecting, zero otherwise.
+
+WARNING: The user must set these flags (and update the checksum), 
+at the following location:-
+  File: watchdog.xc
+  Function: init_wd
+  Structure: guard_prot_s
+  Method: Initialiser
+
+If any of the selected motors stop sending their 'ticks',
+then the WatchDog fires (and switches off the power board)
+The WatchDog ignores the behaviour of 'ticks' from UN-selected motors.
+\*****************************************************************************/
+
 #ifndef _WATCHDOG_H_
 #define _WATCHDOG_H_
 
@@ -19,7 +36,12 @@
 #include <assert.h>
 #include <print.h>
 
+#include "use_locks.h"
+
 #include "app_global.h"
+
+#define ALL_MOTOR_FLAGS ((1 << NUMBER_OF_MOTORS) - 1) // Set of motor flags e.g. 0b11 for 2 motors
+#define MAX_WD_TICKS 20 // No. of ticks before tick count reset
 
 #define ENABLE_MASK 1 // WatchDog Enable is Bit_0 on WD port
 #define TICK_MASK 2 // WatchDog Tick is Bit_1 on WD port
@@ -32,6 +54,7 @@ typedef enum CMD_WD_ETAG
 	WD_CMD_INIT = 0, // Initialise WatchDog Circuit
 	WD_CMD_DISABLE, // Actively switch off power to motors
 	WD_CMD_TICK, // Keep motor running for another 3.4 ms
+	WD_CMD_ACK, // Acknowledge Command from Control loop
   NUM_WD_CMDS    // Handy Value!-)
 } CMD_WD_ENUM;
 
@@ -44,10 +67,17 @@ typedef enum WD_STATE_ETAG
   NUM_WD_STATES 	// Handy Value!-)
 } WD_STATE_ENUM;
 
-/** Structure containing WatchDog data */
+/** Structure containing guard data, one flag for each motor */
+typedef struct WD_GUARD_TAG // 
+{
+	int guards[NUMBER_OF_MOTORS]; // Array of flags used as guards
+	int num; // Number of protected motors
+} WD_GUARD_TYP;
+
 typedef struct WD_DATA_TAG // 
 {
 	WD_STATE_ENUM state; // WatchDog State
+	WD_GUARD_TYP protect_s; // Structure of guard data, indicating which motors are protected
 	unsigned shared_out; // Clear (Bit_0 and Bit_1 of) shared output port
 	unsigned time; // time when previous WatchDog tick occured
 } WD_DATA_TYP;
@@ -67,11 +97,11 @@ typedef struct WD_DATA_TAG //
  * NB The only way to disable the WatchDog Circuit, is to Stop toggling WD_TICK
  * If the WatchDog becomes disabled, it can only be re-enabled by restarting the program main()
  *
- * \param c_wd the control channel for controlling the watchdog
- * \param wd the control port for the watchdog device
+ * \param c_wd  // Array of control channels for controlling the watchdog
+ * \param wd  // control port for the watchdog device
  */
 void foc_loop_do_wd( // Controls the WatchDog circuit (2 chips)
-	chanend c_wd, // WatchDog control Channel connecting Client & Server 
+	chanend c_wd[NUMBER_OF_MOTORS], // Array of WatchDog channels
 	out port p2_wd // 2-bit port used to control WatchDog circuit (2 chips)
 );
 /*****************************************************************************/

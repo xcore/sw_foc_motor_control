@@ -32,11 +32,19 @@
 /** Define value for Low Speed test */
 #define LOW_SPEED  50
 
+/** Print sources */
+typedef enum DISP_INP_ENUM_TAG
+{
+  DISP_INP_GEN = 0,	// Generator core
+  DISP_INP_CHK,			// Checker core
+	NUM_DISP_INPUTS		// Handy value!-)
+} DISP_INP_ENUM_TYP;
+
 /** Enumeration of PWM Test Options */
 typedef enum PWM_TEST_ETAG
 {
   TST_MOTOR = 0,	// Select which motor to test
-  TST_ANTI,				// Test Anti-Clockwise spin
+  TST_NEGA,				// Test Negative-spin
   TST_ERROR,			// Test Error-Status
   NUM_TEST_OPTS	// Handy Value!-)
 } PWM_TEST_ENUM;
@@ -65,8 +73,8 @@ typedef enum ORIG_QEI_ETAG
 /** Enumeration of QEI Spin states */
 typedef enum SPIN_QEI_ETAG
 {
-  ANTI = 0,				// Anti-clockwise
-  CLOCK = 1,				// Clock-wise
+  NEGATIVE = 0,				// Negative-spin
+  POSITIVE = 1,				// Positive-spin
   NUM_QEI_SPINS = 2	// Handy Value!-)
 } SPIN_QEI_ENUM;
 
@@ -122,7 +130,7 @@ typedef struct TEST_OPTS_TAG // Structure containing all test option data
 typedef struct COMMON_QEI_TAG // Structure containing all common QEI test data
 {
 	VECT_COMP_TYP comp_data[NUM_VECT_COMPS]; // Array of data for each component of test vector
-	TEST_OPTS_TYP options; // Structure of test_option data
+	STRING_TYP prefix[NUM_DISP_INPUTS]; // Array of prefix strings for each display input
 } COMMON_TST_TYP;
 
 /*****************************************************************************/
@@ -131,17 +139,6 @@ typedef struct COMMON_QEI_TAG // Structure containing all common QEI test data
  */
 void init_common_data( // Initialise common QEI Test data
 	COMMON_TST_TYP &comm_qei_s // Reference to structure of common QEI data
-);
-/*****************************************************************************/
-/** Print test vector details
- * \param comm_qei_s, // Reference to structure of common QEI data
- * \param inp_vect, // Structure containing current QEI test vector to be printed
- * \param prefix_str[] // Prefix string
- */
-void print_test_vector( // Print test vector details
-	COMMON_TST_TYP &comm_qei_s, // Reference to structure of common QEI data
-	TEST_VECT_TYP inp_vect, // Structure containing current QEI test vector to be printed
-	const char prefix_str[] // prefix string
 );
 /*****************************************************************************/
 #endif /* _TEST_QEI_COMMON_H_ */

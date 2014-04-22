@@ -27,7 +27,10 @@
 /** Define string size */
 #define STR_LEN 256
 
-/** Define samll PWM width resolution */
+/** Pulse Width Limit */
+#define PWM_WID_LIMIT (PWM_MAX_VALUE - PWM_DEAD_TIME - PWM_PORT_WID) // Pulse width limit
+
+/** Define small PWM width resolution */
 #define SMALL_RES_BITS ((PORT_RES_BITS + PWM_RES_BITS - 1) >> 1) // NB Geometric mean of MINI and EQUAL widths
 
 /** Define value for Minimum Speed test */

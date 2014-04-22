@@ -24,17 +24,21 @@
 #include "sine_lookup.h"
 
 // Do a park transform
-void park_transform( int *Id, int *Iq, int I_a, int I_b, unsigned theta )
+void park_transform( int *Id, int *Iq, int I_alpha, int I_beta, unsigned theta )
 {
 	int tmp;
-	int s = sine( theta );
-	int c = cosine( theta );
+	int sin_val = sine( theta );
+	int cos_val = cosine( theta );
 
-	tmp = (((I_a * c ) >> 14) + ((I_b * s ) >> 14));
-	*Id = tmp ;
 
-	tmp = (((I_b * c ) >> 14) - ((I_a * s ) >> 14));
-	*Iq = tmp ;
+	assert( MAX_PARK_VAL > I_alpha );
+	assert( MAX_PARK_VAL > I_beta );
+
+	tmp = (I_alpha * cos_val) + (I_beta * sin_val);
+	*Id = (tmp + HALF_SINE_AMP) >> SINE_AMP_BITS;
+
+	tmp = (I_beta * cos_val) - (I_alpha * sin_val);
+	*Iq = (tmp + HALF_SINE_AMP) >> SINE_AMP_BITS;
 
 }
 
@@ -43,13 +47,17 @@ void park_transform( int *Id, int *Iq, int I_a, int I_b, unsigned theta )
 void inverse_park_transform( int *I_alpha, int *I_beta, int Id, int Iq, unsigned theta )
 {
 	int tmp;
-	int s = sine( theta );
-	int c = cosine( theta );
+	int sin_val = sine( theta );
+	int cos_val = cosine( theta );
 
-	tmp = ((( Id * c ) >> 14) - ((Iq * s ) >> 14));
-	*I_alpha = tmp;
 
-	tmp = ((( Id * s ) >> 14) + ((Iq * c ) >> 14));
-	*I_beta = tmp;
+	assert( MAX_PARK_VAL > Id );
+	assert( MAX_PARK_VAL > Iq );
+
+	tmp = (Id * cos_val) - (Iq * sin_val);
+	*I_alpha = (tmp + HALF_SINE_AMP) >> SINE_AMP_BITS;
+
+	tmp = (Id * sin_val) + (Iq * cos_val);
+	*I_beta = (tmp + HALF_SINE_AMP) >> SINE_AMP_BITS;
 
 }

@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial
- * property rights are retained by XMOS and/or its licensors.
+ * The copyrights, all other intellectual and industrial 
+ * property rights are retained by XMOS and/or its licensors. 
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the
+ * below. The modifications to the code are still covered by the 
  * copyright notice above.
- **/
+ **/ 
 
 #include "check_adc_tests.h"
 
@@ -47,8 +47,8 @@ static void init_check_data( // Initialise check data for ADC tests
 	// Clear error and test counters for current motor
 	for (comp_cnt=0; comp_cnt<NUM_VECT_COMPS; comp_cnt++)
 	{
-		chk_data_s.motor_errs[comp_cnt] = 0;
-		chk_data_s.motor_tsts[comp_cnt] = 0;
+		chk_data_s.motor_errs[comp_cnt] = 0; 
+		chk_data_s.motor_tsts[comp_cnt] = 0; 
 	} // for comp_cnt
 
 } // init_check_data
@@ -60,11 +60,11 @@ static void init_ang_velocity( // Initialises angular velocity
 	switch( chk_data_s.curr_vect.comp_state[SPIN] )
 	{
 		case CLOCK: // Clock-wise
-			chk_data_s.sign = 1;
+			chk_data_s.sign = 1; 
 		break; // case CLOCK:
 
 		case ANTI: // Anti-clockwise
-			chk_data_s.sign = -1;
+			chk_data_s.sign = -1; 
 		break; // case ANTI:
 
 		default:
@@ -104,17 +104,17 @@ static void init_gain( // Initialises ADC gain
 	switch( chk_data_s.curr_vect.comp_state[GAIN] )
 	{
 		case SMALL: // Small amplitude
-			chk_data_s.skips = HI_SKIP_CHANGES;
+			chk_data_s.skips = HI_SKIP_CHANGES; 
 			chk_data_s.chk_ampli = (MIN_GAIN * (MAX_ADC_VAL - MIN_ADC_VAL)) / 255 ; // Check value for ADC Gain
 			chk_data_s.ampli_bound = (MIN_GAIN + 1); // Error Bound for ADC Gain test
 			chk_data_s.mean_bound = (SMALL_BOUND * MIN_GAIN) / chk_data_s.speed;  // Error Bound for Zero-Mean test
 		break; // case SMALL
 
 		case LARGE: // large amplitude
-			chk_data_s.skips = LO_SKIP_CHANGES;
+			chk_data_s.skips = LO_SKIP_CHANGES; 
 			chk_data_s.chk_ampli = (MAX_GAIN * (MAX_ADC_VAL - MIN_ADC_VAL)) / 255 ; // Check value for ADC Gain
 			chk_data_s.ampli_bound = (MAX_GAIN + 1); // Error Bound for ADC Gain test
-			chk_data_s.mean_bound = (LARGE_BOUND * MAX_GAIN) / chk_data_s.speed;  // Error Bound for Zero-Mean test
+			chk_data_s.mean_bound = (LARGE_BOUND * MAX_GAIN) / chk_data_s.speed;  // Error Bound for Zero-Mean test 
 		break; // case LARGE
 
 		default:
@@ -145,7 +145,7 @@ static void initialise_one_phase_test_vector( // Initialise one set of ADC phase
 	chk_data_s.stats[curr_phase].max = MIN_ADC_VAL; // Initialise to minimum possible value
 	chk_data_s.stats[curr_phase].min = MAX_ADC_VAL; // Initialise to maximum possible value
 
-} // initialise_one_phase_test_vector
+} // initialise_one_phase_test_vector 
 /*****************************************************************************/
 static void initialise_test_vector( // Initialise all ADC phase data
 	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
@@ -167,7 +167,7 @@ static void initialise_test_vector( // Initialise all ADC phase data
 	initialise_one_phase_test_vector( chk_data_s ,ADC_PHASE_B ,NEGATIVE );
 	initialise_one_phase_test_vector( chk_data_s ,ADC_PHASE_C ,POSITIVE );
 
-} // initialise_test_vector
+} // initialise_test_vector 
 /*****************************************************************************/
 static void print_progress( // Print progress indicator
 	CHECK_TST_TYP &chk_data_s // Reference to structure containing test check data
@@ -319,7 +319,7 @@ static void check_adc_period( // Check one set of ADC phase data
 	chk_data_s.motor_tsts[SPEED]++;
 
 	// Calculate average period duration (with rounding)
-	mean_period = (chk_data_s.stats[curr_phase].sum_periods + HALF_PERIODS) >> PERIOD_BITS;
+	mean_period = (chk_data_s.stats[curr_phase].sum_periods + HALF_PERIODS) >> PERIOD_BITS; 
 
 	period_err = mean_period - chk_data_s.chk_period; // Measurement error
 
@@ -409,7 +409,7 @@ static void detect_phase_state_change( // Detect if state-change occured for cur
  * However, this introduces some hysteresis into the state-change cycle
  */
 {
-	ADC_TYP curr_val = chk_data_s.curr_params.vals[curr_phase]; // Current ADC value
+	ADC_TYP curr_val = chk_data_s.curr_params.vals[curr_phase]; // Current ADC value	
 
 
 	chk_data_s.stats[curr_phase].sum_adcs += (int)curr_val; // Update ADC value accumulator
@@ -430,7 +430,7 @@ static void detect_phase_state_change( // Detect if state-change occured for cur
 
 			chk_data_s.stats[curr_phase].min = curr_val; // Initialise new minimum test
 
-			chk_data_s.stats[curr_phase].state = NEGATIVE; // Update adc state
+			chk_data_s.stats[curr_phase].state = NEGATIVE; // Update adc state					
 		} // if (0 > curr_val)
 	} // if (POSITIVE == chk_data_s.stats[curr_phase].state)
 	else
@@ -448,7 +448,7 @@ static void detect_phase_state_change( // Detect if state-change occured for cur
 
 			chk_data_s.stats[curr_phase].max = curr_val; // Initialise new maximum test
 
-			chk_data_s.stats[curr_phase].state = POSITIVE; // Update adc state
+			chk_data_s.stats[curr_phase].state = POSITIVE; // Update adc state					
 		} // if (0 <= curr_val)
 	} // else !if (POSITIVE == chk_data_s.stats[curr_phase].state)
 
@@ -517,7 +517,7 @@ static void get_adc_client_data( // Get next set of ADC parameters
 
 		// To improve speed, a speculative request is issued (NB the last one will NOT be used)
 		c_gen <: (int)TST_REQ_CMD; // Request next ADC value
-
+	
 		// Get new parameter values from Client function under test
 		foc_adc_get_parameters( chk_data_s.curr_params ,c_adc );
 
@@ -526,17 +526,17 @@ static void get_adc_client_data( // Get next set of ADC parameters
 		xscope_int( 1 ,chk_data_s.curr_params.vals[ADC_PHASE_B] );
 		xscope_int( 2 ,chk_data_s.curr_params.vals[ADC_PHASE_C] );
 #endif // (USE_XSCOPE)
-
+	
 		// Check for change in non-speed parameters
-		diff_params = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params );
-
+		diff_params = parameter_compare( chk_data_s.curr_params ,chk_data_s.prev_params ); 
+	
 		if (chk_data_s.print_on & diff_params )
 		{
 			print_adc_parameters( chk_data_s ); // Print new ADC parameters
 		} // if (chk_data_s.print_on & diff_params )
-
+	
 		process_new_adc_parameters( chk_data_s ); // Process new ADC parameters
-
+	
 		chk_data_s.prev_time = chk_data_s.curr_time; // Store previous time-stamp
 		chk_data_s.prev_params = chk_data_s.curr_params; // Store previous parameter values
 
@@ -549,7 +549,7 @@ static void get_adc_client_data( // Get next set of ADC parameters
 
 	// Eat last unused time-stamp (from speculative request)
 	c_gen :> chk_data_s.curr_time;
-
+	
 } // get_adc_client_data
 /*****************************************************************************/
 static void finalise_phase_test_vector( // terminate ADC phase test and check results
@@ -557,7 +557,7 @@ static void finalise_phase_test_vector( // terminate ADC phase test and check re
 )
 {
 	check_all_adc_phase_data( chk_data_s ); // Check all ADC phase data
-} // finalise_phase_test_vector
+} // finalise_phase_test_vector 
 /*****************************************************************************/
 static void check_motor_adc_client_data( // Display ADC results for one motor
 	CHECK_TST_TYP &chk_data_s, // Reference to structure containing test check data
@@ -565,13 +565,22 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 	streaming chanend c_adc // ADC channel communication with between ADC Client
 )
 {
-	int do_loop = 1;   // Flag set until loop-end condition found
+	unsigned cmd; // ADC control Command
+	int do_loop = 1;   // Flag set until loop-end condition found 
+
+
+	// Wait for ADC server to start
+	c_adc :> cmd; // Receive ADC control command
+	assert(ADC_CMD_ACK == cmd); // ERROR: ADC server did NOT send acknowledge signal
 
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
 	printstr( chk_data_s.padstr1 );
-	printstr("Start Checks For Motor_"); printintln( chk_data_s.common.options.flags[TST_MOTOR] );
+	printstr("Start Checks For Motor_"); printintln( chk_data_s.common.options.flags[TST_MOTOR] ); 
 	release_lock(); // Release Display Mutex
+
+	// Initialise parameter values by calling Client function
+	foc_adc_get_parameters( chk_data_s.curr_params ,c_adc );
 
 	// Loop until end condition found
 	while( do_loop )
@@ -593,17 +602,27 @@ static void check_motor_adc_client_data( // Display ADC results for one motor
 		else
 		{ // Do new test
 			c_gen <: (int)TST_REQ_CMD; // Request next ADC value
-
+	
 			initialise_test_vector( chk_data_s ); // Do Initialisation for new test
 
 			// Get next set of ADC parameters
 			get_adc_client_data( chk_data_s ,c_gen ,c_adc );
 
-			finalise_phase_test_vector( chk_data_s );
+			finalise_phase_test_vector( chk_data_s ); 
 		} // else !(QUIT == chk_data_s.curr_vect.comp_state[CNTRL])
 
 		c_gen <: (int)END_TST_CMD; // Signal to test generator that this test is complete
 	} // while( loop )
+
+	do // while(ADC_CMD_ACK != cmd)
+	{
+		c_adc :> cmd; // Receive ADC control command
+
+		if (0 == chk_data_s.print_on)
+		{
+			print_progress( chk_data_s ); // Progress indicator
+		} // if (0 == chk_data_s.print_on)
+	} while(ADC_CMD_ACK != cmd);
 
 } // check_motor_adc_client_data
 /*****************************************************************************/
@@ -625,13 +644,13 @@ static void display_test_results( // Display test results for one motor
 		if (0 < chk_data_s.motor_tsts[comp_cnt])
 		{
 			num_tests++; // Update macro-test counter
-			num_checks += chk_data_s.motor_tsts[comp_cnt];
+			num_checks += chk_data_s.motor_tsts[comp_cnt]; 
 
 			// Check if any micro-errors where detected for current test vector component
 			if (0 < chk_data_s.motor_errs[comp_cnt])
 			{
 				test_errs++; // Update macro-error counter
-				check_errs += chk_data_s.motor_errs[comp_cnt];
+				check_errs += chk_data_s.motor_errs[comp_cnt]; 
 			} // if (0 < chk_data_s.motor_errs[comp_cnt])
 		} // if (0 < chk_data_s.motor_tsts[comp_cnt])
 	} // for comp_cnt
@@ -667,7 +686,7 @@ static void display_test_results( // Display test results for one motor
 			{
 				printstr( chk_data_s.padstr1 );
 				printstr( chk_data_s.common.comp_data[comp_cnt].comp_name.str );
-
+	
 				if (chk_data_s.motor_errs[comp_cnt])
 				{
 					printstr(" Test FAILED");
@@ -722,9 +741,6 @@ void check_all_adc_client_data( // Display ADC results for all motors
 
 
 	c_gen :> chk_data_s.common.options; // Get test options from generator core
-
-	// Initialise parameter values by calling Client function
-	foc_adc_get_parameters( chk_data_s.curr_params ,c_adc[chk_data_s.common.options.flags[TST_MOTOR]]  );
 
 	init_check_data( chk_data_s ); // Initialise check data
 

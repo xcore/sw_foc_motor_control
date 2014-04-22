@@ -320,8 +320,7 @@ static void do_pwm_vector( // Do all tests for one PWM test vector
 		// Check for termination
 		if (QUIT == tst_data_s.curr_vect.comp_state[CNTRL])
 		{
-			tst_data_s.pwm_comms.params.id = PWM_TERMINATED; // Signal Termination
-			foc_pwm_put_parameters( tst_data_s.pwm_comms ,c_pwm ); // Stop PWM server core
+			c_pwm <: PWM_CMD_LOOP_STOP; // Signal PWM Server to terminate
 		} // if (QUIT == tst_data_s.curr_vect.comp_state[CNTRL])
 	} // if (new_vect)
 
@@ -404,7 +403,7 @@ void gen_all_pwm_test_data( // Generate PWM Test data
 )
 {
 	GENERATE_PWM_TYP tst_data_s; // Structure of PWM test data
-	int pwm_cmd; // PWM command
+	int cmd; // Control command
 
 
 	init_pwm( tst_data_s.pwm_comms ,c_pwm ,MOTOR_ID );	// Initialise PWM communication data
@@ -413,15 +412,21 @@ void gen_all_pwm_test_data( // Generate PWM Test data
 
 	gen_motor_pwm_test_data( tst_data_s ,c_chk ,c_pwm );
 
+	// Wait for PWM Seerver to terminate
+	do // while(PWM_CMD_ACK != cmd)
+	{
+		c_pwm :> cmd; // get next signal from PWM Server
+	} while(PWM_CMD_ACK != cmd);
+
 	acquire_lock(); // Acquire Display Mutex
 	printstrln("Test Generation Ends" );
 	release_lock(); // Release Display Mutex
 
 	// Wait for test checker to terminate
-	while(PWM_TERMINATED != pwm_cmd)
+	do // while(PWM_CMD_ACK != cmd)
 	{
-		c_chk :> pwm_cmd; // get next PWM command
-	} // while(PWM_TERMINATED != pwm_cmd)
+		c_chk :> cmd; // get next signal from Checker
+	} while(PWM_CMD_ACK != cmd);
 
 	_Exit(0); // Exit without house-keeping
 } // gen_all_pwm_test_data

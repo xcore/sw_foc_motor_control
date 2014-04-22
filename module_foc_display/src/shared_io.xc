@@ -14,20 +14,488 @@
 
 #include "shared_io.h"
 
+#define ASJ 1
+
+/*****************************************************************************/
+
+#if (1 == ASJ) // Start-of Andrew_SJ's test-code
+
+#include <stdlib.h>
+
+#define MAX_TEST_RPM 4000
+#define MIN_TEST_RPM 400
+#define SPEED_2000 2000
+#define EASY_SPEED 1000
+#define LO_SPEED_INC 50
+#define HI_SPEED_INC 100
+
+#define FIRST_MOTOR 0 //MB~
+#define LAST_MOTOR 1 //MB~
+
+/*****************************************************************************/
+static void wait(unsigned millis){
+    timer t;
+    unsigned time;
+    t:> time;
+    t when timerafter(time+millis*100000) :> int;
+}
+/*****************************************************************************/
+static void stop(chanend c_speed[]){
+
+	int motor_cnt;
+
+
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_SET_SPEED;
+		c_speed[motor_cnt] <: 0;
+	} // for motor_cnt
+
+	wait(300);
+}
+/*****************************************************************************/
+static void set_both_motors_speed(chanend c_speed[], int rpm){
+
+	int motor_cnt;
+
+
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_SET_SPEED;
+		c_speed[motor_cnt] <: rpm * (2*motor_cnt - 1);
+	} // for motor_cnt
+}
+/*****************************************************************************/
+static void print_speed(chanend c_speed[])
+{
+	int meas_vel; // Measured velocity
+	int req_vel; // Requested velocity
+	int motor_cnt;
+
+
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_GET_IQ;
+		c_speed[motor_cnt] :> meas_vel;
+		c_speed[motor_cnt] :> req_vel;
+
+		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t"); 
+	} // for motor_cnt
+
+	printstr(" R:"); printint(req_vel); printstrln(" ");
+}
+/*****************************************************************************/
+static void measure_velocities(
+	chanend c_speed[],
+	int meas_vels[] 
+)
+{
+	int req_vel; // Requested velocity
+	int motor_cnt;
+
+
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_GET_IQ;
+		c_speed[motor_cnt] :> meas_vels[motor_cnt];
+		c_speed[motor_cnt] :> req_vel;
+	} // for motor_cnt
+} // measure_velocities
+/*****************************************************************************/
+static void print_speed2(
+	chanend c_speed[],
+	int req_speed )
+{
+	int meas_vel; // Measured velocity
+	int req_vel; // Requested velocity
+	int motor_cnt;
+
+
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_GET_IQ;
+		c_speed[motor_cnt] :> meas_vel;
+		c_speed[motor_cnt] :> req_vel;
+
+		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t"); 
+	} // for motor_cnt
+
+	printstr(" R:"); printint(req_speed); printstrln(" ");
+}
+/*****************************************************************************/
+static void print_asj_speed(chanend c_speed[], int target)
+{
+	int meas_vel; // Measured velocity
+	int req_vel; // Requested velocity
+	int motor_cnt;
+
+	printint(target); printstr(" ->\t");
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
+	{
+		c_speed[motor_cnt] <: IO_CMD_GET_IQ;
+		c_speed[motor_cnt] :> meas_vel;
+		c_speed[motor_cnt] :> req_vel;
+
+		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t"); 
+	} // for motor_cnt
+
+	printstrln(" ");
+}
+/*****************************************************************************/
+static void test_motor( chanend c_speed[])
+{
+	printstrln("Start Motor Tests");
+	wait(3000);
+	stop(c_speed);
+
+	printstrln("Test 1: LDO_MOTOR_STARTUP_PLUS (10s)");
+	set_both_motors_speed(c_speed, EASY_SPEED);
+	wait(3000);
+	print_speed( c_speed );
+
+	set_both_motors_speed(c_speed, MAX_TEST_RPM);
+	wait(3000);
+	print_speed( c_speed );
+	printstrln("End of Test 1");
+
+	stop(c_speed);
+
+	printstrln("Test 2: LDO_MOTOR_STARTUP_MINUS (10s)");
+	set_both_motors_speed(c_speed, -EASY_SPEED);
+	wait(3000);
+	print_speed( c_speed );
+	printstrln("End of Test 2");
+
+	stop(c_speed);
+
+	printstrln("Test 3: LDO_RPM_PLUS_400 (15s)");
+	set_both_motors_speed(c_speed, EASY_SPEED);
+	wait(3000);
+	print_speed( c_speed );
+	for(unsigned speed = (EASY_SPEED - LO_SPEED_INC); speed >= MIN_TEST_RPM; speed -= LO_SPEED_INC)
+		{
+	  set_both_motors_speed(c_speed, speed);
+	  wait(1000);
+			print_speed( c_speed );
+	}
+	printstrln("End of Test 3");
+
+	stop(c_speed);
+
+	printstrln("Test 4: LDO_RPM_MINUS_400 (15s)");
+	set_both_motors_speed(c_speed, -EASY_SPEED);
+	wait(3000);
+	print_speed( c_speed );
+	for(unsigned speed = (LO_SPEED_INC - EASY_SPEED); speed <= MIN_TEST_RPM; speed += LO_SPEED_INC)
+		{
+	  set_both_motors_speed(c_speed, speed);
+	  wait(1000);
+			print_speed( c_speed );
+	}
+	printstrln("End of Test 4");
+
+	stop(c_speed);
+
+	printstrln("Test 5: LDO_RPM_PLUS_4000 (15s)");
+	set_both_motors_speed(c_speed, EASY_SPEED);
+	wait(3000);
+	print_speed( c_speed );
+	for(unsigned speed = (EASY_SPEED + HI_SPEED_INC); speed <= MAX_TEST_RPM;speed += HI_SPEED_INC)
+		{
+	  set_both_motors_speed(c_speed, speed);
+	  wait(1000);
+			print_speed( c_speed );
+	}
+	printstrln("End of Test 5");
+
+	stop(c_speed);
+
+	printstrln("Test 6: LDO_RPM_MINUS_4000 (15s)");
+	set_both_motors_speed(c_speed, -EASY_SPEED);
+	wait(3000);
+	print_speed( c_speed );
+	for(unsigned speed = (-EASY_SPEED - HI_SPEED_INC); speed >= -MAX_TEST_RPM; speed -= HI_SPEED_INC)
+		{
+	  set_both_motors_speed(c_speed, speed);
+	  wait(1000);
+			print_speed( c_speed );
+	}
+	printstrln("End of Test 6");
+
+	stop(c_speed);
+
+	printstrln("Test 7: LDO_RPM_PLUS_400_STARTUP (8s)");
+	set_both_motors_speed(c_speed, MIN_TEST_RPM);
+	wait(8000);
+	print_speed( c_speed );
+	printstrln("End of Test 7");
+
+	stop(c_speed);
+
+	printstrln("Test 8: LDO_RPM_MINUS_400_STARTUP (8s)");
+	set_both_motors_speed(c_speed, -MIN_TEST_RPM);
+	wait(8000);
+	print_speed( c_speed );
+	printstrln("End of Test 8");
+
+	stop(c_speed);
+
+	printstrln("Test 9: LDO_RPM_PLUS_4000_STARTUP (8s)");
+	set_both_motors_speed(c_speed, MAX_TEST_RPM);
+	wait(3000);
+	print_speed( c_speed );
+	printstrln("End of Test 9");
+
+	stop(c_speed);
+
+	printstrln("Test 10: LDO_RPM_MINUS_4000_STARTUP (8s)");
+	set_both_motors_speed(c_speed, -MAX_TEST_RPM);
+	wait(3000);
+	print_speed( c_speed );
+	printstrln("End of Test 10");
+
+	stop(c_speed);
+
+	printstrln("Test 11: LDO_CHANGE_DIRECTION_POS2NEG(6s)");
+	set_both_motors_speed(c_speed, MAX_TEST_RPM);
+	wait(3000);
+	print_speed( c_speed );
+	set_both_motors_speed(c_speed, -MAX_TEST_RPM);
+	wait(3000);
+	print_speed( c_speed );
+	printstrln("End of Test 11");
+
+	printstrln("Test 12: LDO_CHANGE_DIRECTION_NEG2POS (6s)");
+	set_both_motors_speed(c_speed, MAX_TEST_RPM);
+	wait(3000);
+	print_speed( c_speed );
+	printstrln("End of Test 12");
+
+	stop(c_speed);
+
+		// Set back to Easy Speed before exit
+		set_both_motors_speed(c_speed, EASY_SPEED);
+	wait(3000);
+
+	printstrln(" ");
+	printstrln("End Of Motor Tests");
+
+	return;
+} // test_motor 
+/*****************************************************************************/
+void pretty_print_speed(int speed){
+    printstr("Motor speed: ");
+    printint(speed);
+    printstrln(" RPM");
+}
+
+static void demo_motor( chanend c_speed[])
+{
+    set_both_motors_speed(c_speed, 1000);
+    wait(10000);
+    print_asj_speed( c_speed, 1000);
+    set_both_motors_speed(c_speed, 1000);
+    wait(10000);
+    print_asj_speed( c_speed, 1000);
+#define MAX_ASJ_TEST_RPM 2000
+    while(1){
+
+        //////////////////////////////////////////////////////////////
+        set_both_motors_speed(c_speed, EASY_SPEED);
+        pretty_print_speed(EASY_SPEED);
+        wait(3000);
+
+        set_both_motors_speed(c_speed, MAX_ASJ_TEST_RPM);
+        pretty_print_speed(MAX_ASJ_TEST_RPM);
+        wait(15000);
+
+        stop(c_speed);
+        wait(1000);
+        pretty_print_speed(0);
+
+        //////////////////////////////////////////////////////////////
+        set_both_motors_speed(c_speed, -EASY_SPEED);
+        pretty_print_speed(-EASY_SPEED);
+        wait(3000);
+
+        set_both_motors_speed(c_speed, -MAX_ASJ_TEST_RPM);
+        pretty_print_speed(-MAX_ASJ_TEST_RPM);
+        wait(15000);
+
+        stop(c_speed);
+        wait(1000);
+        pretty_print_speed(0);
+
+        //////////////////////////////////////////////////////////////
+        set_both_motors_speed(c_speed, MAX_ASJ_TEST_RPM);
+        pretty_print_speed(MAX_ASJ_TEST_RPM);
+        wait(15000);
+
+        set_both_motors_speed(c_speed, -MAX_ASJ_TEST_RPM);
+        pretty_print_speed(-MAX_ASJ_TEST_RPM);
+        wait(15000);
+
+        stop(c_speed);
+        wait(1000);
+        pretty_print_speed(0);
+
+        //////////////////////////////////////////////////////////////
+        set_both_motors_speed(c_speed, EASY_SPEED);
+        wait(1000);
+        for(int i=EASY_SPEED;i > 220; i-= 20){
+            pretty_print_speed(i);
+            set_both_motors_speed(c_speed, i);
+            wait(1000);
+            print_asj_speed( c_speed, i);
+        }
+        for(int i=220;i >= 120; i-=4){
+            pretty_print_speed(i);
+            set_both_motors_speed(c_speed, i);
+            wait(2000);
+            print_asj_speed( c_speed, i);
+        }
+        wait(10000);
+    }
+
+
+    return;
+} // demo_motor
+/*****************************************************************************/
+static void dbg_motor(
+	chanend c_speed[NUMBER_OF_MOTORS]
+)
+#define WAIT_TIME 5000
+{
+	int set_speed; // Requested Speed
+#ifdef MB
+	int cur_speed; // Current Speed
+	int targ_speed; // Target Speed
+	int meas_vels[NUMBER_OF_MOTORS]; // Array of Measured Motor Velocities
+	int hunt_flags[NUMBER_OF_MOTORS]; // Array of 'hunting' flags for each motor
+	int num_hunting; // No of motors still 'hunting' set speed
+	int motor_cnt;
+#endif //MB~
+
+
+	printstrln("Debug Motor Tests");
+
+/*
+	set_speed = 4000;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(WAIT_TIME);
+	print_speed2( c_speed ,set_speed );
+*/
+while(1)
+{
+	set_speed = 400;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(WAIT_TIME);
+	print_speed2( c_speed ,set_speed );
+} // while(1)
+
+	return;
+} // dbg_motor
+/*****************************************************************************/
+static void demo_1(
+	chanend c_speed[NUMBER_OF_MOTORS]
+)
+#define ONE_SECOND 1000
+#define FIVE_SECOND (5 * ONE_SECOND)
+#define TEN_SECOND (10 * ONE_SECOND)
+#define TWENTY_SECOND (2 * TEN_SECOND)
+{
+	int set_speed; // Requested Speed
+#ifdef MB
+	int cur_speed; // Current Speed
+	int targ_speed; // Target Speed
+	int meas_vels[NUMBER_OF_MOTORS]; // Array of Measured Motor Velocities
+	int hunt_flags[NUMBER_OF_MOTORS]; // Array of 'hunting' flags for each motor
+	int num_hunting; // No of motors still 'hunting' set speed
+	int motor_cnt;
+#endif //MB~
+
+
+	printstrln("Demo_1");
+
+while(1)
+{
+	set_speed = 4000;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(FIVE_SECOND);
+	print_speed2( c_speed ,set_speed );
+	stop(c_speed);
+
+	set_speed = 30;
+  set_both_motors_speed( c_speed ,set_speed );
+	wait(TWENTY_SECOND);
+	wait(TWENTY_SECOND);
+	print_speed2( c_speed ,set_speed );
+	stop(c_speed);
+} // while(1)
+
+
+	return;
+} // demo_1
+/*****************************************************************************/
+static void demo_2( // Angular Synchronisation
+	chanend c_speed[NUMBER_OF_MOTORS]
+)
+#define ONE_SECOND 1000
+#define FIVE_SECOND (5 * ONE_SECOND)
+#define TEN_SECOND (10 * ONE_SECOND)
+#define TWENTY_SECOND (2 * TEN_SECOND)
+{
+	int set_speed; // Requested Speed
+#ifdef MB
+	int cur_speed; // Current Speed
+	int targ_speed; // Target Speed
+	int meas_vels[NUMBER_OF_MOTORS]; // Array of Measured Motor Velocities
+	int hunt_flags[NUMBER_OF_MOTORS]; // Array of 'hunting' flags for each motor
+	int num_hunting; // No of motors still 'hunting' set speed
+	int motor_cnt;
+#endif //MB~
+
+
+	printstrln("Demo_1");
+
+while(1)
+{
+	set_speed = 4000;
+	set_both_motors_speed( c_speed ,set_speed );
+	wait(FIVE_SECOND);
+	print_speed2( c_speed ,set_speed );
+	stop(c_speed);
+
+	set_speed = 30;
+  set_both_motors_speed( c_speed ,set_speed );
+	while(1)
+	{
+		wait(TWENTY_SECOND);
+		print_speed2( c_speed ,set_speed );
+	} // while(1)
+	stop(c_speed);
+} // while(1)
+
+
+	return;
+} // demo_2
+/*****************************************************************************/
+
+#endif // ( 1 == ASJ) End-of Andrew_SJ's test-code
+
 /*****************************************************************************/
 static void update_speed_control( // Updates the speed control loop
 	chanend c_speed[], // speed channel
-	unsigned int cmd_id, // Command identifier
-	unsigned int cmd_val // Command value
+	CMD_IO_ENUM cmd_id // Command identifier
 )
 {
 	int motor_cnt; // motor counter
 
+
 	// Loop through motors
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++) 
 	{
 		c_speed[motor_cnt] <: cmd_id;
-		c_speed[motor_cnt] <: cmd_val;
 	} // for motor_cnt
 } // update_speed_control 
 /*****************************************************************************/
@@ -42,24 +510,20 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 	int new_meas_speed[NUMBER_OF_MOTORS]; // Array containing new measured speeds
 	int old_meas_speed[NUMBER_OF_MOTORS]; // Array containing old measured speeds
 	int fault[NUMBER_OF_MOTORS]; // Array containing motor fault ids
-	int new_req_speed; // new requested speed
-	int old_req_speed = 1000; // old requested speed
+	int new_req_speed[NUMBER_OF_MOTORS]; // new requested speed
+	int old_req_speed[NUMBER_OF_MOTORS] = { 1000 ,-1000 }; // old requested speed
 	int speed_change; // flag set when new speed parameters differ from old
-	int cur_speed; // current speed
 	unsigned int btn_en = 0; // button debounce counter
-	int motor_cnt; // motor counter
-	int toggle = 1; // indicates motor spin direction 
+	int motor_cnt = -1; // motor counter
 	unsigned btns_val; // value that encodes state of buttons
 	int err_cnt; // error counter
 
 	timer timer_10Hz; // 10Hz timer
-	timer timer_30ms; // 30ms timer
 	unsigned int time_10Hz_val; // 10Hz timer value
-	unsigned int time_30ms_val; // 30ms timer value
 
 
 	// Initialise array of old measured speeds
-	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
 	{
 		old_meas_speed[motor_cnt]=0;
 	} // for motor_cnt
@@ -75,6 +539,11 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 	/* Get the initial time value */
 	timer_10Hz :> time_10Hz_val;
 
+//	demo_motor( c_speed ); //ASJ~
+// demo_1( c_speed ); //MB~
+// demo_2( c_speed ); //MB~
+dbg_motor( c_speed ); //MB~
+
 	/* Loop forever processing commands */
 	while (1)
 	{
@@ -83,36 +552,45 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 		/* Timer event at 10Hz */
 			case timer_10Hz when timerafter(time_10Hz_val + 10000000) :> time_10Hz_val:
 			{
+				speed_change = 0; // Preset to speed change
+
 				/* Get the motor speeds from channels. NB Do this as quickly as possible */
-				for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+				for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++) 
 				{
 					c_speed[motor_cnt] <: IO_CMD_GET_IQ;
 					c_speed[motor_cnt] :> new_meas_speed[motor_cnt];
-					c_speed[motor_cnt] :> new_req_speed;
+					c_speed[motor_cnt] :> new_req_speed[motor_cnt];
 
 					c_speed[motor_cnt] <: IO_CMD_GET_FAULT;
 					c_speed[motor_cnt] :> fault[motor_cnt];
+
+					// Check for speed change
+					if (new_req_speed[motor_cnt] != old_req_speed[motor_cnt])
+					{ 
+						speed_change = 1; // flag speed change
+					} // if (new_req_speed[motor_cnt] != old_req_speed[motor_cnt])
+
+					sprintf( my_string ," SetVeloc%1d:%5d RPM\n" ,motor_cnt ,new_req_speed[motor_cnt] );
+					lcd_draw_text_row( my_string ,(2*motor_cnt) ,lcd_interface_s );
+
+					// Filter estimated velocity 
+					old_meas_speed[motor_cnt] = (old_meas_speed[motor_cnt] + new_meas_speed[motor_cnt]) >> 1;
+
+					if (fault[motor_cnt]) 
+					{
+						sprintf(my_string, "  Motor%1d: FAULT = %02d\n" ,motor_cnt ,fault[motor_cnt] );
+					} 
+					else 
+					{
+						sprintf(my_string, " EstVeloc%1d:%5d RPM\n" ,motor_cnt ,old_meas_speed[motor_cnt] );
+					}
+
+					lcd_draw_text_row( my_string ,(2*motor_cnt + 1) ,lcd_interface_s );
+
+					old_req_speed[motor_cnt] = new_req_speed[motor_cnt]; // Store for next iteration
 				} // for motor_cnt
 
-				// Check for speed change
-				if (new_req_speed != old_req_speed)
-				{ 
-					speed_change = 1; // flag speed change
-				} // if (new_req_speed != old_req_speed)
-				else
-				{ 
-					speed_change = 0; // no speed change (so far)
-
-					for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
-					{
-						if (new_meas_speed[motor_cnt] != old_meas_speed[motor_cnt])
-						{
-							speed_change = 1; // flag speed change
-							break; // Early loop exit
-						} // if (new_meas_speed[motor_cnt] != old_meas_speed[motor_cnt])
-					} // for motor_cnt
-				} // if (new_req_speed != old_req_speed)
-
+#ifdef DEPRECIATED
 				if (speed_change) 
 				{
 					if (1 == USE_CAN)
@@ -124,29 +602,8 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 					{
 						lcd_draw_text_row( "  XMOS Demo 2013: ETH\n" ,0 ,lcd_interface_s );
 					} // if (1 == USE_ETH)
-
-					// update old speed parameters ...
-
-					old_req_speed = new_req_speed;
-					sprintf(my_string, "  SetVeloc:%5d RPM\n", old_req_speed );
-					lcd_draw_text_row( my_string, 1, lcd_interface_s );
-
-					for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
-					{
-						old_meas_speed[motor_cnt] = (old_meas_speed[motor_cnt] + new_meas_speed[motor_cnt]) >> 1;
-
-						if (fault[motor_cnt]) 
-						{
-							sprintf(my_string, "  Motor%1d: FAULT = %02d\n" ,(motor_cnt + 1) ,fault[motor_cnt] );
-						} 
-						else 
-						{
-							sprintf(my_string, "  Velocty%1d:%5d RPM\n" ,(motor_cnt + 1) ,old_meas_speed[motor_cnt] );
-						}
-
-						lcd_draw_text_row( my_string ,(motor_cnt + 2) ,lcd_interface_s );
-					} // for motor_cnt
 				} // if (speed_change)
+#endif // DEPRECIATED
 
 				if ( btn_en > 0) btn_en--; // decrement switch debouncer
 			}
@@ -164,55 +621,33 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 						case 1 : // Increase the speed, by the increment
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 1;
-			
-							old_req_speed += 100;
-							if (old_req_speed > MAX_SPEC_RPM) old_req_speed = MAX_SPEC_RPM;
+
+							update_speed_control( c_speed ,IO_CMD_INC_SPEED ); // Increase speed
 						break; // case 1
 	
 						case 2 : // Decrease the speed, by the increment
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 2;
-			
-							old_req_speed -= 100;
-							/* Limit the speed to the minimum value */
-							if (old_req_speed < MIN_STALL_RPM)
-							{
-								old_req_speed = MIN_STALL_RPM;
-							}
+
+							update_speed_control( c_speed ,IO_CMD_DEC_SPEED ); // Decrease speed
 						break; // case 2
+	
+#if (1 == ASJ) // Call Andrew_SJ's test-code
+						case 4 : // Test tests
+							err_cnt = 0; // Valid button value so clear error count
+							leds <: 3;
+
+//	test_motor( c_speed ); //MB~
+dbg_motor( c_speed ); //MB~
+// demo_1( c_speed ); //MB~
+						break; // case 4
+#endif // ( 1 == ASJ)
 	
 						case 8 : // Change direction of spin
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 4;
 			
-							toggle = !toggle;
-							cur_speed = old_req_speed;
-			
-							/* to avoid jerks during the direction change*/
-							while(cur_speed > MIN_STALL_RPM)
-							{
-								cur_speed -= STEP_SPEED;
-			
-								update_speed_control( c_speed ,IO_CMD_SET_SPEED ,cur_speed ); // Decrease speed
-			
-								timer_30ms :> time_30ms_val;
-								timer_30ms when timerafter(time_30ms_val + UPDATE_WAIT_TICKS) :> time_30ms_val;
-							}
-			
-							update_speed_control( c_speed ,IO_CMD_SET_SPEED ,0 ); // Set speed to zero
-			
-							update_speed_control( c_speed ,IO_CMD_DIR ,toggle ); // Change direction
-			
-							/* to avoid jerks during the direction change*/
-							while(cur_speed < old_req_speed )
-							{
-								cur_speed += STEP_SPEED;
-			
-								update_speed_control( c_speed ,IO_CMD_SET_SPEED ,cur_speed ); // Increase speed
-			
-								timer_30ms :> time_30ms_val;
-								timer_30ms when timerafter(time_30ms_val + UPDATE_WAIT_TICKS) :> time_30ms_val;
-							} // while(old_req_speed < temp)
+							update_speed_control( c_speed ,IO_CMD_FLIP_SPIN ); // Reverse spin direction
 						break; // case 8
 	
 				    default: // btns_val unsupported
@@ -222,8 +657,6 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 				    break;
 					} // switch( btns_val )
 
-					update_speed_control( c_speed ,IO_CMD_SET_SPEED ,old_req_speed ); // Update the speed control loop
-			
 					btn_en = 2;	// Set the debouncer
 				} // if (btns_val)
 				else
@@ -231,13 +664,7 @@ void foc_display_shared_io_manager( // Manages the display, buttons and shared p
 					err_cnt = 0; // Valid button value so clear error count
 					leds <: 0;
 				} // else !(btns_val)
-
 			break; // case !btn_en => btns when pinsneq(btns_val) :> btns_val:
-
-/* JMB 21-NOV-2012  NOT required: Also improves response to push buttons!-)
- *		default:
- *		break;
- */
 		} // select
 	} // while (1)
 } // display_shared_io_manager

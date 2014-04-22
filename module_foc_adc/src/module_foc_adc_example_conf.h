@@ -34,7 +34,7 @@
 #define NUM_POLE_PAIRS 4
 
 /** Default ADC Filter Mode  1 == On */
-#define ADC_FILTER 0
+#define ADC_FILTER 1
 
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000

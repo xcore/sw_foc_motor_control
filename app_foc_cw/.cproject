@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?>
+
+<cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+	<storageModule moduleId="org.eclipse.cdt.core.settings">
+		<cconfiguration id="com.xmos.cdt.toolchain.1431816470">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.1431816470" moduleId="org.eclipse.cdt.core.settings" name="Debug">
+				<externalSettings/>
+				<extensions>
+					<extension id="com.xmos.cdt.core.XEBinaryParser" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="com.xmos.cdt.core.XdeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="scannerConfiguration">
+				<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+				<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="makefileGenerator">
+						<runAction arguments="-E -P -v -dD" command="" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-c 'gcc -E -P -v -dD &quot;${plugin_state_location}/${specs_file}&quot;'" command="sh" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-c 'g++ -E -P -v -dD &quot;${plugin_state_location}/specs.cpp&quot;'" command="sh" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-c 'gcc -E -P -v -dD &quot;${plugin_state_location}/specs.c&quot;'" command="sh" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.1431816470" name="Debug" parent="org.eclipse.cdt.build.core.emptycfg">
+					<folderInfo id="com.xmos.cdt.toolchain.1431816470.1509944888" name="/" resourcePath="">
+						<toolChain id="com.xmos.cdt.toolchain.1011252293" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
+							<targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id="com.xmos.cdt.core.platform.1571336830" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform"/>
+							<builder arguments="CONFIG=Debug" id="com.xmos.cdt.builder.base.335392939" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base"/>
+							<tool id="com.xmos.cdt.xc.compiler.1069960808" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
+								<option id="com.xmos.xc.compiler.option.include.paths.999693271" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_pwm/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_qei/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_adc/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/PWM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_util/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_hall/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display/src}&quot;"/>
+								</option>
+								<inputType id="com.xmos.cdt.xc.compiler.input.2129494056" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
+							</tool>
+							<tool id="com.xmos.cdt.c.compiler.881654042" name="com.xmos.cdt.c.compiler" superClass="com.xmos.cdt.c.compiler">
+								<option id="com.xmos.c.compiler.option.include.paths.1049502538" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_pwm/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_qei/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_adc/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/PWM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_util/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_hall/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display/src}&quot;"/>
+								</option>
+								<inputType id="com.xmos.cdt.c.compiler.input.c.807444310" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
+							</tool>
+							<tool id="com.xmos.cdt.cxx.compiler.1362380926" name="com.xmos.cdt.cxx.compiler" superClass="com.xmos.cdt.cxx.compiler">
+								<option id="com.xmos.cxx.compiler.option.include.paths.259794599" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_pwm/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_qei/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_adc/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/PWM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_util/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_hall/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display/src}&quot;"/>
+								</option>
+								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.281875346" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+				</configuration>
+			</storageModule>
+		</cconfiguration>
+		<cconfiguration id="com.xmos.cdt.toolchain.373905820">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.373905820" moduleId="org.eclipse.cdt.core.settings" name="Default">
+				<externalSettings/>
+				<extensions>
+					<extension id="com.xmos.cdt.core.XEBinaryParser" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="com.xmos.cdt.core.XdeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="scannerConfiguration">
+				<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+				<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="makefileGenerator">
+						<runAction arguments="-E -P -v -dD" command="" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-c 'gcc -E -P -v -dD &quot;${plugin_state_location}/${specs_file}&quot;'" command="sh" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-c 'g++ -E -P -v -dD &quot;${plugin_state_location}/specs.cpp&quot;'" command="sh" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-c 'gcc -E -P -v -dD &quot;${plugin_state_location}/specs.c&quot;'" command="sh" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.373905820" name="Default" parent="org.eclipse.cdt.build.core.emptycfg">
+					<folderInfo id="com.xmos.cdt.toolchain.373905820.989500486" name="/" resourcePath="">
+						<toolChain id="com.xmos.cdt.toolchain.1496200500" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
+							<targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id="com.xmos.cdt.core.platform.1725472650" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform"/>
+							<builder arguments="CONFIG=Default" id="com.xmos.cdt.builder.base.404208694" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base"/>
+							<tool id="com.xmos.cdt.xc.compiler.1630183661" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
+								<option id="com.xmos.xc.compiler.option.include.paths.986775597" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_pwm/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_qei/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_adc/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/PWM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_util/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_hall/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display/src}&quot;"/>
+								</option>
+								<inputType id="com.xmos.cdt.xc.compiler.input.657313424" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
+							</tool>
+							<tool id="com.xmos.cdt.c.compiler.912843157" name="com.xmos.cdt.c.compiler" superClass="com.xmos.cdt.c.compiler">
+								<option id="com.xmos.c.compiler.option.include.paths.1823521178" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_pwm/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_qei/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_adc/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/PWM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_util/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_hall/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display/src}&quot;"/>
+								</option>
+								<inputType id="com.xmos.cdt.c.compiler.input.c.2026080560" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
+							</tool>
+							<tool id="com.xmos.cdt.cxx.compiler.794158191" name="com.xmos.cdt.cxx.compiler" superClass="com.xmos.cdt.cxx.compiler">
+								<option id="com.xmos.cxx.compiler.option.include.paths.1356034146" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_pwm/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_qei/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_adc/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/PWM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_util/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_hall/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display/src}&quot;"/>
+								</option>
+								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.1971193963" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+				</configuration>
+			</storageModule>
+		</cconfiguration>
+		<cconfiguration id="com.xmos.cdt.toolchain.1310576341">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.xmos.cdt.toolchain.1310576341" moduleId="org.eclipse.cdt.core.settings" name="Release">
+				<externalSettings/>
+				<extensions>
+					<extension id="com.xmos.cdt.core.XEBinaryParser" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="com.xmos.cdt.core.XdeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="scannerConfiguration">
+				<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+				<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="makefileGenerator">
+						<runAction arguments="-E -P -v -dD" command="" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-c 'gcc -E -P -v -dD &quot;${plugin_state_location}/${specs_file}&quot;'" command="sh" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-c 'g++ -E -P -v -dD &quot;${plugin_state_location}/specs.cpp&quot;'" command="sh" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+				<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
+					<buildOutputProvider>
+						<openAction enabled="true" filePath=""/>
+						<parser enabled="true"/>
+					</buildOutputProvider>
+					<scannerInfoProvider id="specsFile">
+						<runAction arguments="-c 'gcc -E -P -v -dD &quot;${plugin_state_location}/specs.c&quot;'" command="sh" useDefault="true"/>
+						<parser enabled="true"/>
+					</scannerInfoProvider>
+				</profile>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration buildProperties="" description="" id="com.xmos.cdt.toolchain.1310576341" name="Release" parent="org.eclipse.cdt.build.core.emptycfg">
+					<folderInfo id="com.xmos.cdt.toolchain.1310576341.1170591584" name="/" resourcePath="">
+						<toolChain id="com.xmos.cdt.toolchain.1746158588" name="com.xmos.cdt.toolchain" superClass="com.xmos.cdt.toolchain">
+							<targetPlatform archList="all" binaryParser="com.xmos.cdt.core.XEBinaryParser" id="com.xmos.cdt.core.platform.1800186496" isAbstract="false" osList="linux,win32,macosx" superClass="com.xmos.cdt.core.platform"/>
+							<builder arguments="CONFIG=Release" id="com.xmos.cdt.builder.base.2032277733" keepEnvironmentInBuildfile="false" managedBuildOn="false" superClass="com.xmos.cdt.builder.base"/>
+							<tool id="com.xmos.cdt.xc.compiler.1109482006" name="com.xmos.cdt.xc.compiler" superClass="com.xmos.cdt.xc.compiler">
+								<option id="com.xmos.xc.compiler.option.include.paths.102355054" superClass="com.xmos.xc.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_pwm/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_qei/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_adc/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/PWM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_util/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_hall/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display/src}&quot;"/>
+								</option>
+								<inputType id="com.xmos.cdt.xc.compiler.input.1911968030" name="XC" superClass="com.xmos.cdt.xc.compiler.input"/>
+							</tool>
+							<tool id="com.xmos.cdt.c.compiler.1379924699" name="com.xmos.cdt.c.compiler" superClass="com.xmos.cdt.c.compiler">
+								<option id="com.xmos.c.compiler.option.include.paths.734523721" superClass="com.xmos.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_pwm/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_qei/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_adc/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/PWM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_util/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_hall/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display/src}&quot;"/>
+								</option>
+								<inputType id="com.xmos.cdt.c.compiler.input.c.192273303" name="C" superClass="com.xmos.cdt.c.compiler.input.c"/>
+							</tool>
+							<tool id="com.xmos.cdt.cxx.compiler.962767888" name="com.xmos.cdt.cxx.compiler" superClass="com.xmos.cdt.cxx.compiler">
+								<option id="com.xmos.cxx.compiler.option.include.paths.1652382635" superClass="com.xmos.cxx.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/util}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_pwm/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_qei/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_adc/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/PWM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_32}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_util/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_hall/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/pi_regulator}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_lib_uint_64}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/watchdog}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_locks/doc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_loop/src/control_blocks/transforms}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/module_foc_display/src}&quot;"/>
+								</option>
+								<inputType id="com.xmos.cdt.cxx.compiler.input.cpp.1063004496" name="C++" superClass="com.xmos.cdt.cxx.compiler.input.cpp"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+	</storageModule>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<project id="app_foc_cw.null.1577936133" name="app_foc_cw"/>
+	</storageModule>
+</cproject>

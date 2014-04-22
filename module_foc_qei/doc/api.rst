@@ -12,6 +12,7 @@ Configuration Defines
 .. doxygendefine:: QEI_PER_POLE 
 .. doxygendefine:: MAX_SPEC_RPM 
 .. doxygendefine:: QEI_FILTER 
+.. doxygendefine:: QEI_RS_MODE
 .. doxygendefine:: PLATFORM_REFERENCE_HZ  
 
 Functions

@@ -19,6 +19,10 @@
 
 #include "use_locks.h"
 
+#define ADC_UPSCALE_BITS 2 // No of bits used when upsacaling ADC values (to improve precision)
+#define ADC_UPSCALE_FACTOR (1 << ADC_UPSCALE_BITS) // Factor for upsacaling ADC values (to improve precision)
+#define ADC_HALF_UPSCALE (ADC_UPSCALE_FACTOR >> 1) // Half Up-scaling factor (Used for rounding)
+
 /** Different ADC Phases */
 typedef enum ADC_PHASE_ETAG
 {
@@ -28,13 +32,15 @@ typedef enum ADC_PHASE_ETAG
 	NUM_ADC_PHASES // 3 ADC phases [A, B, C]
 } ADC_PHASE_ENUM;
 
-#define USED_ADC_PHASES (NUM_ADC_PHASES - 1) // NB 3rd Phase can be inferred as 3 phases sum to zero
+// NB H/W only returns 1st and 2nd phases, 3rd Phase can be inferred as 3 phases sum to zero
+#define USED_ADC_PHASES (NUM_ADC_PHASES - 1)
 
 /** Different ADC Commands */
 typedef enum CMD_ADC_ETAG
 {
   ADC_CMD_DATA_REQ = 0,  // Request ADC data
-	ADC_CMD_LOOP_STOP, // Stop while-loop. NB Can't use non-negative integer, due to conflicts in test harness
+	ADC_CMD_LOOP_STOP, // Stop while-loop.
+	ADC_CMD_ACK,	// Acknowledge Command from control loop
   NUM_ADC_CMDS    // Handy Value!-)
 } CMD_ADC_ENUM;
 

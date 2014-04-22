@@ -22,8 +22,8 @@ int frac_mul( int a, int b )
 
 	{h,l} = macs(a,b,0,0);
 
-	l >>= PID_RESOLUTION;
-	l |= h << (32-PID_RESOLUTION);
+	l >>= PID_CONST_RES;
+	l |= h << (32-PID_CONST_RES);
 
 	return l;
 }

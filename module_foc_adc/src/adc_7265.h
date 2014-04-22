@@ -91,11 +91,18 @@
 /* ADC_TRIGGER_DELAY needs to be tuned to move the ADC trigger point into the centre of the PWM 'OFF' period.
  * This value is related to the PWM_MAX_VALUE (in module_pwm_foc) and is independent of the Reference Frequency
  */
-#define ADC_TRIGGER_CORR 68 // Timing correction
-#define ADC_TRIGGER_DELAY (QUART_PWM_MAX - ADC_TRIGGER_CORR) // NB Maybe needs to be tuned for every motor
+#define ADC_TRIGGER_CORR 128 // Timing correction
+#define ADC_TRIGGER_DELAY (QUART_PWM_MAX - ADC_TRIGGER_CORR) // MB~ Re-tune
 
+// Parameters for filtering raw ADC values. WARNING: ADC_FILT_RES>2 will significantly reduce the ADC amplitude
+#define ADC_FILT_RES 2 // ADC Filter scaling resolution
+#define ADC_FILT_DIV (1 << ADC_FILT_RES) // ADC Filter scaling factor
+#define ADC_FILT_HALF (ADC_FILT_DIV >> 1) // Half ADC scaling factor (used for rounding)
+
+// Parameters for filtering to obtain the mean ADC values
 #define ADC_SCALE_BITS 16 // Used to generate 2^n scaling factor
-#define ADC_HALF_SCALE (1 << (ADC_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
+#define ADC_SCALE_DIV (1 << ADC_SCALE_BITS) // ADC scaling factor
+#define ADC_SCALE_HALF (ADC_SCALE_DIV >> 1) // Half Scaling factor (used in rounding)
 
 #define ADC_MAX_COEF_BITS 13 // Used to generate max. filter coef divisor. coef_div = 1/2^n
 #define ADC_MAX_COEF_DIV (1 << ADC_MAX_COEF_BITS) // Max. coef divisor
@@ -103,10 +110,13 @@
 typedef struct ADC_PHASE_TAG // Structure containing data for one phase of ADC Trigger
 {
 	ADC_TYP adc_val; // measured current ADC value
+	ADC_TYP curr_raw; // current raw ADC value
+	ADC_TYP prev_raw; // previous raw ADC value
 	ADC_TYP mean; // local mean value
 	int filt_val; // (Upscaled) filtered value
 	int coef_err; // (Upscaled) Coefficient diffusion error
 	int scale_err; // (Upscaled) Scaling diffusion error
+	int rem; // remainder for error diffusion 
 } ADC_PHASE_TYP;
 
 typedef struct ADC_FILT_TAG // Structure containing data for one ADC Trigger
@@ -119,13 +129,14 @@ typedef struct ADC_FILT_TAG // Structure containing data for one ADC Trigger
 typedef struct ADC_DATA_TAG // Structure containing data for one ADC Trigger
 {
 	ADC_PARAM_TYP params; // Structure containing ADC parameters (for Client)
-	ADC_PHASE_TYP phase_data[USED_ADC_PHASES];
+	ADC_PHASE_TYP phase_data[USED_ADC_PHASES]; // Array of structures for each phase
 	ADC_FILT_TYP filt; // Filter parameters. NB Need to have separate structure to satisfy XC rules on aliasing
 	timer my_timer;	// timer
 	unsigned time_stamp; 	// time-stamp
 	char guard_off;	// Guard
 	int mux_id; // Mux input identifier
 	int filt_cnt; // Counter used in filter
+	int id; // Trigger id
 } ADC_DATA_TYP;
 
 /*****************************************************************************/

@@ -22,6 +22,7 @@
 
 #include "app_global.h"
 #include "use_locks.h"
+#include "pwm_convert_width.h"
 #include "capture_pwm_data.h"
 #include "test_pwm_common.h"
 

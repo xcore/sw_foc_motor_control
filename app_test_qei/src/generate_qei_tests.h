@@ -26,6 +26,7 @@
 #include "qei_common.h"
 #include "qei_server.h"
 #include "test_qei_common.h"
+#include "master_print_scheduler.h"
 
 /** Define No. of tests used for Max. speed check */
 #define MAX_TESTS 31 // No. of tests used for Max. speed check
@@ -39,11 +40,9 @@
 /** Define No. of tests used for Deceleration check */
 #define DEC_TESTS 18 // No. of tests used for Deceleration check
 
-/** Define Scaling factor Used for Acceleration */
-#define ACC_SCALE 807 // 935 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION)
-
-/** Define Scaling factor Used for Deceleration */
-#define DEC_SCALE 1300 // 1104 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION)
+// WARNING: The Accel/Decel Scaling factors need to be less severe than QEI scaling factors to prevent ambiguous data 
+#define ACC_SCALE (LO_QEI_SCALE + 1) // 970 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
+#define DEC_SCALE (HI_QEI_SCALE - 1) // 1113 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
 
 #define FILE_SIZE (STR_LEN * NUM_TEST_OPTS) // Size of PWM control file (in Bytes)
 
@@ -63,11 +62,11 @@ typedef unsigned short PORT_TIME_TYP;
 /** Type containing all QEI test generation data */
 typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 {
-	COMMON_TST_TYP common; // Structure of QEI data common to Generator and Checker
+	TEST_OPTS_TYP options; // Structure of test_option data
 	TEST_VECT_TYP curr_vect; // Structure of containing current QEI test vector (QEI conditions to be tested)
 	TEST_VECT_TYP prev_vect; // Structure of containing previous QEI test vector (QEI conditions to be tested)
 	QEI_PHASE_TYP phases;	// Structure containing all possible QEI phase values;
-	int inc;			// QEI rotation increment (+1 for clock-wise, -1 for anti-clockwise)
+	int inc;			// QEI rotation increment (+1 for Positive-spin, -1 for Negative-spin)
 	int hi_ticks;			// No. of ticks/QEI at high speed
 	int lo_ticks;			// No. of ticks/QEI at low speed
 	unsigned cnt;			// QEI position counter
@@ -90,12 +89,13 @@ typedef struct GENERATE_QEI_TAG // Structure containing QEI test generation data
 /*****************************************************************************/
 /** Generate QEI test data for all motors
  * \param c_tst // Channel for sending test vecotrs to test checker
- * \param c_dis // Channel for sending data to Display core
+ * \param c_disp // Channel for sending display data to print scheduler core
  * \param p4_tst[]  // Array of ports on which to transmit test data
  */
 void gen_all_qei_test_data( // Generate QEI Test data for all motors
+	const COMMON_TST_TYP &comm_data_s, // Structure containing common test data
 	streaming chanend c_tst, // Channel for sending test vecotrs to test checker
-	streaming chanend c_dis, // Channel for sending data to Display core
+	streaming chanend c_disp, // Channel for sending display data to print scheduler core
 	buffered port:4 out pb4_tst[]  // Array of buffered 4-bit output ports on which to transmit test data
 );
 /*****************************************************************************/

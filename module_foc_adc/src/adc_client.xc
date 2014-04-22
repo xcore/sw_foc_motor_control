@@ -15,7 +15,7 @@
 #include "adc_client.h"
 
 /*****************************************************************************/
-void foc_adc_get_parameters( // Read 2 of 3 ADC values from the motor, and convert them into signed 32-bit integer
+void foc_adc_get_parameters( // Read 2 of 3 ADC values from the motor, and converts them into signed 32-bit integer
 	ADC_PARAM_TYP &adc_param_s, // Reference to structure containing ADC parameters
 	streaming chanend c_adc_cntrl // channel connecting to ADC client and server
 )

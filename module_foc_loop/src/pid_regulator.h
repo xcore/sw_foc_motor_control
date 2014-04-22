@@ -1,3 +1,4 @@
+
 /**
  * Module:  module_dsc_blocks
  * Version: 1v0alpha1
@@ -6,8 +7,8 @@
  * Modified by : Srikanth
  * Last Modified on : 04-May-2011
  *
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -15,7 +16,7 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
  *
  **/
@@ -29,61 +30,77 @@
 
 #include "app_global.h"
 
+/* The PID regulator maintains a sum-of-errors, to prevent overflow but maintain maximum precision,
+ * the sum-of-errors is dynamically scaled.
+ */
+
 #ifdef BLDC_FOC
-#define PID_RESOLUTION 13
-//MB~ #define PID_RESOLUTION 16 // tuning
+#define PID_CONST_RES 13 // Bit resolution of PID constants
 #endif
 
 #ifdef BLDC_BASIC
-#define PID_RESOLUTION 15
+#define PID_CONST_RES 15 // Bit resolution of PID constants
 #endif
 
-#ifndef PID_RESOLUTION
-#define PID_RESOLUTION 15
+#ifndef PID_CONST_RES
+#define PID_CONST_RES 9 // Bit resolution of PID constants
 #endif
+
+#define PID_CONST_XTRA_RES 15 // Extra resolution required for Sum and Diff terms
+
+#define PID_CONST_LO_RES PID_CONST_RES // Resolution of Proportional (Kp) Terms
+#define PID_CONST_HI_RES (PID_CONST_RES + PID_CONST_XTRA_RES) // Resolution of Other Terms (Ki & Kd)
+
+#define PID_HALF_HI_SCALE ((1 << PID_CONST_HI_RES) >> 1) // Half Hi-Res PID constant scaling-factor, NB used for rounding
+
+#define MAX_ERR_SUM (1 << 30) // Max. value of error-sum before re-scaling occurs
 
 /** Different PID Regulators */
 typedef enum PID_ETAG
 {
-  SPEED = 0,	// Speed 
-  I_D,		  	// Radial Current (in rotor frame of reference)
-  I_Q,		  	// Tangential (Torque) Current (in rotor frame of reference)
-  NUM_PIDS    // Handy Value!-)
+  ID_PID = 0,  // Radial Current (in rotor frame of reference)
+  IQ_PID,      // Tangential (Torque) Current (in rotor frame of reference)
+  SPEED_PID,     // Speed
+  NUM_PIDS     // Handy Value!-)
 } PID_ENUM;
-
-typedef signed long long S64_T;
 
 // Structure of Constant definitions for PID regulator
 typedef struct PID_CONST_TAG
 {
-	int K_p; // PID Previous-error mix-amount
-	int K_i; // PID Integral-error mix-amount
-	int K_d; // PID Derivative-error mix-amount
-	int resolution;
-	int half_res;
+    int K_p; // PID Previous-error mix-amount
+    int K_i; // PID Integral-error mix-amount
+    int K_d; // PID Derivative-error mix-amount
+    int sum_res; // Resolution used for sum-of-errors
+    int half_scale; // Half sum-of-errors scaling-factor, NB used for rounding
 } PID_CONST_TYP;
 
-typedef struct PID_REGULATOR_TAG 
+typedef struct PID_REGULATOR_TAG
 {
-	int prev_err; // Previous error
-	int sum_err; // Sum of errors
-	int rem; // Remainder
-	int qnt_err; // Quantisation Error
+    S64_T sum_err; // Sum of errors
+    int prev_err; // Previous error
+    int rem; // Remainder
+    int qnt_err; // Quantisation Error
 } PID_REGULATOR_TYP;
 
 #ifdef __XC__
 // XC Version
 /*****************************************************************************/
-void init_pid_consts( // Initialise a set of PID Constants
-	PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
-	int inp_K_p, // Input Proportional Error constant
-	int inp_K_i, // Input Integral Error constant
-	int inp_K_d, // Input Differential Error constant
-	int inp_resolution // Input PID resolution
+void init_all_pid_consts( // Initialise a set of floating point PID Constants
+    PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
+    float inp_K_p, // Input Proportional Error constant
+    float inp_K_i, // Input Integral Error constant
+    float inp_K_d // Input Differential Error constant
+);
+/*****************************************************************************/
+void init_int_pid_consts( // Initialise a set of integer PID Constants
+    PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
+    int inp_K_p, // Input Proportional Error constant
+    int inp_K_i, // Input Integral Error constant
+    int inp_K_d // Input Differential Error constant
 );
 /*****************************************************************************/
 void initialise_pid( // Initialise PID settings
-	PID_REGULATOR_TYP &pid_regul_s // Reference to PID regulator data structure
+    PID_REGULATOR_TYP &pid_regul_s // Reference to PID regulator data structure
 );
 /*****************************************************************************/
 void preset_pid( // Computes new PID correction based on input error
@@ -97,25 +114,26 @@ void preset_pid( // Computes new PID correction based on input error
 /*****************************************************************************/
 int get_pid_regulator_correction( // Computes new PID correction based on input error
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
 	PID_REGULATOR_TYP &pid_regul_s, // Reference to PID regulator data structure
 	PID_CONST_TYP &pid_const_p, // Reference to PID constants data structure
 	int requ_val, // request value
-	int meas_val // measured value
+	int meas_val, // measured value
+	int num_vals // Number of updates to perform
 );
 /*****************************************************************************/
 #else // ifdef __XC__
 // C Version
 /*****************************************************************************/
 void init_pid_consts( // Initialise a set of PID Constants
-	PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
-	int inp_K_p, // Input Proportional Error constant
-	int inp_K_i, // Input Integral Error constant
-	int inp_K_d, // Input Differential Error constant
-	int inp_resolution // Input PID resolution
+    PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
+    int inp_K_p, // Input Proportional Error constant
+    int inp_K_i, // Input Integral Error constant
+    int inp_K_d // Input Differential Error constant
 );
 /*****************************************************************************/
 void inititialise_pid( // Initialise PID settings
-	PID_REGULATOR_TYP * pid_regul_p // Pointer to PID regulator data structure
+    PID_REGULATOR_TYP * pid_regul_p // Pointer to PID regulator data structure
 );
 /*****************************************************************************/
 void preset_pid( // Preset PID data ready for first iteration
@@ -129,46 +147,14 @@ void preset_pid( // Preset PID data ready for first iteration
 /*****************************************************************************/
 int get_pid_regulator_correction( // Computes new PID correction based on input error
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
+	PID_ENUM pid_id, // Unique PID identifier e.g. ID_PID
 	PID_REGULATOR_TYP * pid_regul_p, // Pointer to PID regulator data structure
 	PID_CONST_TYP * pid_const_p, // Pointer to PID constants data structure
 	int requ_val, // request value
-	int meas_val // measured value
+	int meas_val, // measured value
+	int num_vals // Number of updates to perform
 );
 /*****************************************************************************/
 #endif // else !__XC__
-
-#ifdef MB // Depreciated
-#define PID_MAX_OUTPUT	32768
-#define PID_MIN_OUTPUT  -32767
-
-typedef struct S_PID {
-	int previous_error;
-	int integral;
-	int Kp;
-	int Ki;
-	int Kd;
-} pid_data;
-
-#ifdef __XC__
-// XC Version
-int pid_regulator( int set_point, int actual, pid_data &d );
-int pid_regulator_delta( int set_point, int actual, pid_data &d );
-int pid_regulator_delta_cust_error( int error, pid_data &d );
-int pid_regulator_delta_cust_error_speed( int error, pid_data &d );
-int pid_regulator_delta_cust_error_Iq_control( int error, pid_data &iq );
-int pid_regulator_delta_cust_error_Id_control( int error, pid_data &id );
-void init_pid( int Kp, int Ki, int Kd, pid_data &d );
-#else
-// C Version
-int pid_regulator( int set_point, int actual, pid_data *d );
-int pid_regulator_delta( int set_point, int actual, pid_data *d );
-int pid_regulator_delta_cust_error( int error, pid_data *d );
-int pid_regulator_delta_cust_error_speed( int error, pid_data *d );
-int pid_regulator_delta_cust_error_Iq_control( int error, pid_data *iq );
-int pid_regulator_delta_cust_error_Id_control( int error, pid_data *id );
-void init_pid( int Kp, int Ki, int Kd, pid_data *d );
-#endif
-
-#endif //MB~ Depreciated
 
 #endif // ifndef __PI_REGULATOR_H__

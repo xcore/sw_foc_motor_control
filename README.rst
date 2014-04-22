@@ -10,7 +10,7 @@ sw_foc_motor_control
 Description
 ===========
 
-This repository contains S/W to support Field-Oriented Control (FOC) of motors.
+This repository contains S/W to support Field-Oriented Control (FOC) of motors
 
 Key Features
 ============
