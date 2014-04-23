@@ -11,6 +11,7 @@ Features
 
    * Computes following PWM parameters: Synchronisation pulse for ADC, 6 PWM signals: consisting of 3 phases for both high-leg and low-leg voltages. where high-leg is a positive going pulse, and low-leg is a negative going pulse.
    * The S/W for each motor runs in its own core to maximise PWM resolution.
+   * To minimise transmission delays, the PWM cores are synchronised, and communication for each core is interleaved.
 
 Evaluation
 ----------

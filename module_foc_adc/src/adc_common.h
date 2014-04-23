@@ -44,6 +44,7 @@ typedef enum CMD_ADC_ETAG
   NUM_ADC_CMDS    // Handy Value!-)
 } CMD_ADC_ENUM;
 
+/** ADC value type */
 typedef signed long ADC_TYP;
 
 /** Structure containing ADC parameters for one motor */

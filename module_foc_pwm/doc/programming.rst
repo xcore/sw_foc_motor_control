@@ -7,7 +7,7 @@ The pulse-width information is transmitted from the PWM Client to the PWM Server
 
 The PWM resolution determines how many different voltages may be applied to the motor coils. For example, a resolution of 12 bits will allow a PWM wave with a period of 4096 bits. Assuming this period starts low (at zero) and finishes high (at one), then there are 4095 points inbetween at which the pulse can rise. If the pulse rises early, the majority of the pulse will consist of ones, this will create a large voltage in the motor, and a fast speed. Conversly a pulse which rises late will consist mainly of zeros, this will create a small voltage in the motor, and a slow speed. If the patterns of all-ones and all-zeros (no voltage) are included, 4096 different voltages are possible. Due to symmetry constraints, there should be an even number of ones in a pulse. This reduces the PWM resolution from 4096 to 2048 possible voltages.
 
-The PWM to ADC trigger is used to signal to the ADC module when it should sample the motor current, in order to estimate the back EMF in the motor coils. The trigger is required because the sampling should be done in the middle of a high portion of the PWM pulse. That is, when the PWM bitstream is held at one.
+The PWM to ADC trigger is used to signal to the ADC module when it should sample the motor current (in order to estimate the back EMF in the motor coils). The trigger is required because the sampling should be done in the middle of a high portion of the PWM pulse. That is, when the PWM bitstream is held at one.
 
 Key Files
 ---------
@@ -22,6 +22,7 @@ The following 2 functions are designed to be called from an XC file.
 
    * ``foc_pwm_put_parameters()`` Client function designed to be called from an XC file each time a new set of PWM parameters is required.
    * ``foc_pwm_do_triggered()``, Server function designed to be called from an XC file. It continually runs in its own core, and receives data from the PWM Client.
+   * ``foc_pwm_config()``, Server function designed to be called from an XC file. It is used in the initialisation phase, to configure a single clock to synchronise all PWM cores.
 
 The following PWM definitions are required. These are set in ``pwm_common.h`` or ``app_global.h``
 
@@ -96,7 +97,7 @@ The PWM component can be used in conjunction with the ADC component. For more de
     = {  {PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
   on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
     = {  {PORT_M1_LO_A, PORT_M1_LO_B, PORT_M1_LO_C} ,{PORT_M2_LO_A, PORT_M2_LO_B, PORT_M2_LO_C} };
-  on tile[MOTOR_TILE]: clock pwm_clk[NUMBER_OF_MOTORS] = { XS1_CLKBLK_5 ,XS1_CLKBLK_4 };
+  on tile[MOTOR_TILE]: clock pwm_clk = XS1_CLKBLK_3;
   on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
   
   // ADC ports
@@ -118,6 +119,9 @@ The PWM component can be used in conjunction with the ADC component. For more de
     {
       on tile[MOTOR_TILE] : 
       {
+        // Configure PWM ports to run from common clock
+        foc_pwm_config( pb32_pwm_hi ,pb32_pwm_lo ,p16_adc_sync ,pwm_clk );
+
         par
         {
           // Loop through all motors
@@ -126,7 +130,7 @@ The PWM component can be used in conjunction with the ADC component. For more de
             run_motor( motor_cnt ,c_pwm[motor_cnt] ,c_adc_cntrl[motor_cnt] );
       
             foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] 
-              ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
+              ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] );
           } // par motor_cnt
       
           foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );

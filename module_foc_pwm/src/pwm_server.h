@@ -24,9 +24,21 @@
 #include "pwm_common.h"
 #include "pwm_convert_width.h"
 
+#ifndef PWM_STAGGER
+	#error Define. PWM_STAGGER in app_global.h
+#endif // PWM_STAGGER
+
 #ifndef LOCK_ADC_TO_PWM
 	#error Define. LOCK_ADC_TO_PWM in app_global.h
 #endif // LOCK_ADC_TO_PWM
+
+#ifndef PLATFORM_REFERENCE_MHZ
+	#error Define. PLATFORM_REFERENCE_MHZ in app_global.h
+#endif // PLATFORM_REFERENCE_MHZ
+
+#ifndef INIT_SYNC_INCREMENT
+	#error Define. INIT_SYNC_INCREMENT in app_global.h
+#endif // INIT_SYNC_INCREMENT
 
 #define PWM_CLK_MHZ 250 // For historical reasons, PWM timings are based on a 250 MHz clock
 
@@ -39,14 +51,10 @@ typedef struct PWM_SERV_TAG
 } PWM_SERV_TYP;
 
 /*****************************************************************************/
-/** \brief Implementation of the centre aligned inverted pair PWM server, with ADC synchronization
+/** \brief Configures PWM clock, and synchronises all PWM cores
  *
- *  This server includes a port which triggers the ADC measurement
- *
- *  \param c_pwm PWM channel between Client and Server
  *  \param p32_pwm_hi the array of PWM ports (HI side)
  *  \param p32_pwm_lo the array of PWM ports (LO side)
- *  \param c_adc_trig the control channel for triggering the ADC
  *  \param p16_adc_sync a dummy port used for precise timing of the ADC trigger
  *  \param pwm_clk a clock for generating accurate PWM timing
  */

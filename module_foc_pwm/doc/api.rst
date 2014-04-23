@@ -7,7 +7,12 @@ API
 
 Configuration Defines
 ---------------------
+.. doxygendefine:: PWM_RES_BITS
+.. doxygendefine:: PWM_DEAD_TIME
 .. doxygendefine:: PWM_SHARED_MEM
+.. doxygendefine:: PWM_STAGGER
+.. doxygendefine:: LOCK_ADC_TO_PWM
+.. doxygendefine:: INIT_SYNC_INCREMENT
 .. doxygendefine:: PLATFORM_REFERENCE_HZ
 
 Functions
@@ -24,6 +29,10 @@ Data Structures
 
 Configuration Functions
 +++++++++++++++++++++++
+
+Initialisation Functions
+++++++++++++++++++++++++
+.. doxygenfunction:: foc_pwm_config
 
 Receive Functions
 +++++++++++++++++

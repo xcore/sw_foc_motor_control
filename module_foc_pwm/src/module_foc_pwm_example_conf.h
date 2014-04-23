@@ -43,9 +43,18 @@
 #define PWM_MAX_VALUE (1 << PWM_RES_BITS) // No.of different PWM pulse-widths
 #define QUART_PWM_MAX (PWM_MAX_VALUE >> 2)  // Quarter of maximum PWM width value
 
+/** PWM Dead-Time WARNING: Safety critical */
+#define PWM_DEAD_TIME ((12 * MICRO_SEC + 5) / 10) // 1200ns PWM Dead-Time WARNING: Safety critical
+
+/** Number of PWM time increments between ADC/PWM synchronisation points. NB Independent of Reference Frequency */
+#define INIT_SYNC_INCREMENT (PWM_MAX_VALUE)
+
+/** The time at which each motor starts the PWM, is staggered by this amount */
+#define PWM_STAGGER ((INIT_SYNC_INCREMENT + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS)
+
 // If locked, the ADC sampling will occur in the middle of the  switching sequence.
 // It is triggered over a channel. Set this define to 0 to disable this feature
-/** Define sync. mode for ADC sampling. Default 1 is 'ADC synchronised to PWM' */
+/** Define sync mode for ADC sampling. Default 1 is 'ADC synchronised to PWM' */
 #define LOCK_ADC_TO_PWM 1
 
 /** Define if Shared Memory is used to transfer PWM data from Client to Server */
@@ -71,5 +80,8 @@
 #define SECOND PLATFORM_REFERENCE_HZ // One Second in Clock ticks
 #define MILLI_SEC (PLATFORM_REFERENCE_KHZ) // One milli-second in clock ticks
 #define MICRO_SEC (PLATFORM_REFERENCE_MHZ) // One micro-second in clock ticks
+
+/** Type for Port timer values. See also PORT_TIME_MASK */
+typedef unsigned short PORT_TIME_TYP;
 
 #endif /* _APP_GLOBAL_H_ */

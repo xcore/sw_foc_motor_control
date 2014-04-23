@@ -14,12 +14,14 @@ Resource Requirements
 +----------------+-------+-------+
 | Timers         |       |       |
 +----------------+-------+-------+
-| Clocks         |   1   |       |
+| Clocks         |   1#  |       | 
 +----------------+-------+-------+
 | Code memory    | 1332B |       |
 +----------------+-------+-------+
 | Data memory    | 542B  |       |
 +----------------+-------+-------+
+
+# Note Well: One Clock-block is shared between all PWM cores
 
 
 Performance

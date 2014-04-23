@@ -23,7 +23,7 @@
 #endif // PWM_SHARED_MEM
 
 #ifndef PWM_MAX_VALUE
-	#error Define. PWM_NAX_VALUE in app_global.h
+	#error Define. PWM_MAX_VALUE in app_global.h
 #endif // PWM_MAX_VALUE
 
 /** Define Number of buffers in storage ring */
