@@ -15,21 +15,20 @@ The following 2 functions are designed to be called from an xC file.
    * ``foc_qei_get_parameters()`` Client function designed to be called from an Xx file each time a new set of QEI parameters are required.
    * ``foc_qei_do_multiple()``, Server function designed to be called from an xC file. It runs on its own core, and receives data from all QEI motor ports.
 
-The following QEI definitions are required. These are set in ``qei_common.h`` or ``app_global.h``
+The following QEI definitions are required. These are set in ``qei_server.h`` or ``app_global.h``
 
    * QEI_PER_REV  // No of QEI positions per Revolution
    * QEI_PHASE_MASK // Bit Mask for [B A] phase info.
    * QEI_ORIG_MASK // Bit Mask for origin bit.
    * QEI_NERR_MASK // Bit Mask for error status bit (1 == No Errors)
-   * PLATFORM_REFERENCE_HZ // Platform Reference Frequency
-   * QEI_FILTER // QEI filter switch (0 == Off)
-   * QEI_RS_MODE // QEI Sampling Mode  0 == Edge-Triggered, 1 == Regularly-Sampled */
    * MAX_SPEC_RPM // Maximium specified motor speed
 
 Test Applications
 -----------------
 
-This module has a test harness called ``Quadrature Encoder Interface (QEI) Test Harness`` which can be found in the xSOFTip Explorer pane. WARNING: This is out-of-date.
+This module has a test harness called ``Quadrature Encoder Interface (QEI) Test Harness`` which can be found in the xSOFTip Explorer pane. 
+
+WARNING: This test harness is no longer compatible with the current QEI algorithm. 
 
 To get started with this application, run through the instructions in the quickstart guide for the test harness. More details about using this test harness are given below.
 
@@ -80,12 +79,15 @@ The code example below demonstrates how to use the QEI component with other comp
 
 ::
 
+  // Clock Blocks
+  on tile[MOTOR_TILE]: clock pwm_clk = XS1_CLKBLK_3;
+  on tile[MOTOR_TILE]: clock qei_clks[NUMBER_OF_MOTORS] = { XS1_CLKBLK_4 ,XS1_CLKBLK_5 };
+
   // PWM ports
   on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
     = {  {PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
   on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
     = {  {PORT_M1_LO_A, PORT_M1_LO_B, PORT_M1_LO_C} ,{PORT_M2_LO_A, PORT_M2_LO_B, PORT_M2_LO_C} };
-  on tile[MOTOR_TILE]: clock pwm_clk[NUMBER_OF_MOTORS] = { XS1_CLKBLK_5 ,XS1_CLKBLK_4 };
   on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
   
   // ADC ports
@@ -111,6 +113,12 @@ The code example below demonstrates how to use the QEI component with other comp
     {
       on tile[MOTOR_TILE] :
       {
+        // Configure QEI ports to run from common clock
+        foc_qei_config( pb4_qei ,qei_clks );
+
+        // Configure PWM ports to run from common clock
+        foc_pwm_config( pb32_pwm_hi ,pb32_pwm_lo ,p16_adc_sync ,pwm_clk );
+
         par 
         {
           foc_qei_do_multiple( c_qei, pb4_qei );
@@ -123,7 +131,7 @@ The code example below demonstrates how to use the QEI component with other comp
             run_motor( motor_cnt ,c_pwm[motor_cnt] ,c_qei[motor_cnt] ,c_adc_cntrl[motor_cnt] );
     
             foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] 
-              ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] ,pwm_clk[motor_cnt] );
+              ,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] );
           } // par motor_cnt
         } // par
       } // on tile[MOTOR_TILE]

@@ -66,13 +66,48 @@
 
 #include "qei_common.h"
 
-#ifndef QEI_FILTER
-	#error Define. QEI_FILTER in app_global.h
-#endif
+#ifndef QEI_PER_REV
+	#error Define. QEI_PER_REV in app_global.h
+#endif // QEI_PER_REV
+
+#ifndef NUMBER_OF_MOTORS
+	#error Define. NUMBER_OF_MOTORS in app_global.h
+#endif // NUMBER_OF_MOTORS
 
 #ifndef MAX_SPEC_RPM
 	#error Define. MAX_SPEC_RPM in app_global.h
 #endif // MAX_SPEC_RPM
+
+#ifndef SECS_PER_MIN
+	#error Define. SECS_PER_MIN in app_global.h
+#endif
+
+#define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK] 
+
+#define QEI_SAMP_BITS 4 // Size of QEI input port sample in bits
+#define QEI_SAMP_SIZ (1 << QEI_SAMP_BITS) // Max. No. of possible QEI sample values
+#define QEI_SAMP_MASK (QEI_SAMP_SIZ - 1) // Mask used to extract sample bits from buffer
+
+/** 2 LS-bits contain [A,B] phase info. */
+#define QEI_PHASE_MASK (0b0011) // 2 LS-bits contain [A,B] phase info.
+
+/** Bit_2 contain origin info. */
+#define QEI_ORIG_MASK (0b0100) // Bit_2 contain origin info.
+
+/** Bit_3 contains error status (1 == No Errors) */
+#define QEI_NERR_MASK (0b1000)
+
+#define QEI_PERIOD_LEN (QEI_PHASE_MASK + 1) // Number of different Phase combinations before a repeat. e.g [00 10 11 01]
+
+/* Calculate speed definitions, preserving precision and preventing overflow !-)
+ *
+ * The time difference between changes in QEI data is measured in 'ticks'.
+ * For a Platform Reference frequency of 100 MHz, there will be 6,000,000,000 ticks/minute
+ * If there are 1024 different QEI points per revolution, then angular velocity (in RPM) is
+ * (60 * 100000000)/(1024 * Tick_Diff) or (TICKS_PER_MIN_PER_QEI / Tick_Diff)
+ */
+#define TICKS_PER_SEC_PER_QEI ((PLATFORM_REFERENCE_HZ + (QEI_PER_REV >> 1)) / QEI_PER_REV) // Ticks/sec/angular_position (rounded) // 18-bits
+#define TICKS_PER_MIN_PER_QEI (SECS_PER_MIN * TICKS_PER_SEC_PER_QEI) // Ticks/min/angular_position // 24 bits
 
 #define QEI_DBG 0 // Set flag for printout of debug info.
 
@@ -170,22 +205,22 @@ typedef struct QEI_DATA_TAG //
 #define QEI_PORT port:32 // Use 32-bit buffering for Regular-Sampling mode 
 
 /*****************************************************************************/
-/** \brief Get QEI Sensor data from port (motor) and send to client
- * \param p4_qei // Array of QEI data ports for each motor
- * \param qei_clk // clock for generating accurate QEI timing
+/** \brief Configures QEI clocks, and synchronises QEI data sampling 
+ * \param pb4_qei // Array of QEI data ports for each motor
+ * \param qei_clks // Array of clocks for generating accurate QEI timing
  */
 void foc_qei_config(  // Configure all QEI ports
-  buffered QEI_PORT in pb4_QEI[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
+  buffered QEI_PORT in pb4_qei[NUMBER_OF_MOTORS], // Array of buffered 4-bit input ports (carries raw QEI motor data)
 	clock qei_clks[NUMBER_OF_MOTORS] // Array of clocks for generating accurate QEI timing (one per input port)
 	);
 /*****************************************************************************/
 /** \brief Get QEI Sensor data from port (motor) and send to client
  * \param c_qei // Array of channels connecting server & client
- * \param p4_qei // Array of QEI data ports for each motor
+ * \param pb4_qei // Array of QEI data ports for each motor
  */
 void foc_qei_do_multiple( // Get QEI Sensor data from port (motor) and send to client
 	streaming chanend c_qei[], // Array of channels connecting server & client
-	buffered QEI_PORT in pb4_inp[NUMBER_OF_MOTORS] // Array of 32-bit buffered 4-bit input ports on which to receive test data
+	buffered QEI_PORT in pb4_qei[NUMBER_OF_MOTORS] // Array of 32-bit buffered 4-bit input ports on which to receive test data
 );
 /*****************************************************************************/
 

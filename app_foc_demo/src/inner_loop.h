@@ -74,6 +74,7 @@
 #include "qei_client.h"
 #include "adc_client.h"
 #include "pwm_client.h"
+#include "qei_server.h"
 #include "pid_regulator.h"
 #include "clarke.h"
 #include "park.h"

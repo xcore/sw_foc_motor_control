@@ -7,19 +7,19 @@ API
 
 Configuration Defines
 ---------------------
+.. doxygendefine:: QEI_PER_REV
+.. doxygendefine:: QEI_PHASE_MASK
+.. doxygendefine:: QEI_ORIG_MASK
+.. doxygendefine:: QEI_NERR_MASK
+.. doxygendefine:: QEI_PER_POLE 
+.. doxygendefine:: MAX_SPEC_RPM
 .. doxygendefine:: NUMBER_OF_MOTORS 
 .. doxygendefine:: NUM_POLE_PAIRS 
-.. doxygendefine:: QEI_PER_POLE 
 .. doxygendefine:: MAX_SPEC_RPM 
-.. doxygendefine:: QEI_FILTER 
-.. doxygendefine:: QEI_RS_MODE
-.. doxygendefine:: PLATFORM_REFERENCE_HZ  
+
 
 Functions
 ---------
-
-Data Types
-++++++++++
 
 Data Structures
 +++++++++++++++
@@ -27,6 +27,7 @@ Data Structures
 
 Configuration Functions
 +++++++++++++++++++++++
+.. doxygenfunction:: foc_qei_config
 
 Receive Functions
 +++++++++++++++++

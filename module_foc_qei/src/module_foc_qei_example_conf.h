@@ -36,7 +36,7 @@
 /** Define the number of different QEI sensor positions per pole-pair */
 #define QEI_PER_POLE 256
 
-/**  Default No. OF QEI positions per Revolution */
+/**  Default number of QEI positions per Revolution */
 #define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
 
 /**  Seconds in a minute */
@@ -44,23 +44,5 @@
 
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000
-
-/* This is a bit of a cludge, we are using a non-standard configuration
- * where the timer on the tile for inner_loop() is running at 250 MHz,
- * but other timers are running at the default of 100 MHz.
- * Currently this flexibility to define timer frequencies for each tile does not exist.
- * Therefore, we set up the timer frequency here.
- */
-#ifndef PLATFORM_REFERENCE_MHZ
-#define PLATFORM_REFERENCE_MHZ 100
-#define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ)
-
-/** Define Referency Frequency to Match that in platform configuration (.XN) file */
-#define PLATFORM_REFERENCE_HZ (1000 * PLATFORM_REFERENCE_KHZ) // NB Uses 28-bits
-#endif
-
-#define SECOND PLATFORM_REFERENCE_HZ // One Second in Clock ticks
-#define MILLI_SEC (PLATFORM_REFERENCE_KHZ) // One milli-second in clock ticks
-#define MICRO_SEC (PLATFORM_REFERENCE_MHZ) // One micro-second in clock ticks
 
 #endif // _MODULE_FOC_QEI_EXAMPLE_CONF_H_

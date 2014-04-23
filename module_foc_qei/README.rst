@@ -9,14 +9,14 @@ Quadrature Encoder Interface (QEI) Component
 Features
 --------
 
-   * Filters raw QEI input data (from motor)
-   * Computes the following QEI parameters: Total_Angular_Position, Phase_Interval, Angular_Correction, Correction_Flag, Error_Status
    * Can handle QEI for multiple motors in one logical core
+   * For each motor, each QEI phase of the raw QEI input data is filtered by over-sampling
+   * Computes the following QEI parameters: Total_Angular_Position of current motor and master motor, Phase_Interval, Angular_Correction, Correction_Flag, Error_Status
 
 Evaluation
 ----------
 
-WARMING: This Test-harness NOT upto date.
-The module can be evaluated using the following demo applications:
+WARNING: This Test-harness is NOT up to date.
+The module has PREVIOUSLY been evaluated using the following demo application, but is no longer relevant to the current QEI algorithm:
 
    * QEI test harness ``Quadrature Encoder Interface (QEI) Test Harness``
