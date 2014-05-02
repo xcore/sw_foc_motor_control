@@ -16,6 +16,15 @@ sw_foc_motor_control Change Log
 
   * ADC resolution increased, to reduce 'speed flutter' at low speeds.
 
+  * Changes to dependencies:
+
+    - sc_util: 1.0.3rc0 -> 1.0.4rc0
+
+      + module_logging now compiled at -Os
+      + debug_printf in module_logging uses a buffer to deliver messages unfragmented
+      + Fix thread local storage calculation bug in libtrycatch
+      + Fix debug_printf itoa to work for unsigned values > 0x80000000
+
 1.0.0
 -----
   * Test harnesses added for ADC, QEI, and Hall Sensor
