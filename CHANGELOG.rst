@@ -7,13 +7,15 @@ sw_foc_motor_control Change Log
 
   * Changes to dependencies:
 
-    - sc_util: 1.0.0rc0 -> 1.0.3rc0
+    - sc_util: 1.0.1rc0 -> 1.0.4rc0
 
+      + module_logging now compiled at -Os
+      + debug_printf in module_logging uses a buffer to deliver messages unfragmented
+      + Fix thread local storage calculation bug in libtrycatch
+      + Fix debug_printf itoa to work for unsigned values > 0x80000000
       + Remove module_slicekit_support (moved to sc_slicekit_support)
       + Update mutual_thread_comm library to avoid communication race conditions
       + Fix module_slicekit_support to work with L16 target
-      + Fix to module_logging to remove excess warning and avoid compiler reserved _msg
-      + Minor fixes and code tidying to lock module
 
 0.0.1
 -----
