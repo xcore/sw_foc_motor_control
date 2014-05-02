@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/ 
+ **/
 
 #include "slave_print_data.h"
 
@@ -63,7 +63,7 @@ static void print_qei_value( // Prints QEI value in binary format
 	} // for bit_cnt
 
 	acquire_lock(); // Acquire Display Mutex
-	printstr( "QEI=" ); printstrln(disp_data_s.qei_str); 
+	printstr( "QEI=" ); printstrln(disp_data_s.qei_str);
 	release_lock(); // Release Display Mutex
 
 } // print_qei_value
@@ -142,10 +142,10 @@ void slave_print( // Displays generated QEI test data
 {
 	DISP_DATA_TYP disp_data_s; // Structure containing display data
 	TEST_VECT_TYP vect; // Structure containing QEI test vector to be printed
-	QEI_PARAM_TYP params;	// Structure containing QEI parameters to be printed 
+	QEI_PARAM_TYP params;	// Structure containing QEI parameters to be printed
 	QEI_RAW_TYP qei_val;  // QEI value  to be printed
 	DISP_CLASS_ENUM_TYP disp_class; // Signals which print-class to receive
-	int do_loop = 1;   // Flag set until loop-end condition found 
+	int do_loop = 1;   // Flag set until loop-end condition found
 
 
 	init_print( disp_data_s );

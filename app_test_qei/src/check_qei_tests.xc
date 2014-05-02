@@ -36,8 +36,8 @@ static void init_check_data( // Initialise check data for QEI tests
 	int tmp_val;	// temporary manipulation variable
 
 
-	/* Calculate error bounds for angular position after reset: 
-		 In the worst case, the angular position may not be measured until 
+	/* Calculate error bounds for angular position after reset:
+		 In the worst case, the angular position may not be measured until
 		 a whole QEI_PERIOD after the reset. The amount the position changes during this time
      depends on the speed. We need to calculate the following
 
@@ -47,15 +47,15 @@ static void init_check_data( // Initialise check data for QEI tests
 
 		 This has to be done without overflow, and retaining as much precision as possible.
      So it is done in the following order ...
-	*/ 
+	*/
 	tmp_val = QEI_PERIOD * HIGH_SPEED; // ~24 bits
 	tmp_val = (tmp_val + (SECS_PER_MIN - 1)) / SECS_PER_MIN; // division with round-up // ~19 bits
 	tmp_val *= QEI_PER_REV; // ~29 bits
 	chk_data_s.ang_bound = (tmp_val + (PLATFORM_REFERENCE_HZ - 1)) / PLATFORM_REFERENCE_HZ; // division with round-up ~2 bits
 
 	// Evaluate error bounds for speed checks
-	chk_data_s.hi_bound = 1 + eval_speed_bound( HIGH_SPEED ); 
-	chk_data_s.lo_bound = 1 + eval_speed_bound( LOW_SPEED ); 
+	chk_data_s.hi_bound = 1 + eval_speed_bound( HIGH_SPEED );
+	chk_data_s.lo_bound = 1 + eval_speed_bound( LOW_SPEED );
 
 	chk_data_s.prefix = comm_data_s.prefix[DISP_INP_CHK]; // local copy of display prefix
 
@@ -477,8 +477,8 @@ static void get_new_qei_client_data( // Get next set of QEI parameters
 
 		if (chk_data_s.print_on)
 		{
-			c_disp <: DISP_CLASS_CHECK; // Signal tranmission of parameter data 
-			c_disp <: chk_data_s.curr_params; // Send parameter data 
+			c_disp <: DISP_CLASS_CHECK; // Signal tranmission of parameter data
+			c_disp <: chk_data_s.curr_params; // Send parameter data
 		} // if (chk_data_s.print_on)
 
 		// Check if this current test vector is valid
@@ -631,7 +631,7 @@ static void check_motor_qei_client_data( // Check QEI results for one motor
 	acquire_lock(); // Acquire Display Mutex
 	printcharln(' ');
 	printstr( chk_data_s.prefix.str );
-	printstr("Start Checks For Motor_"); printintln( chk_data_s.options.flags[TST_MOTOR] ); 
+	printstr("Start Checks For Motor_"); printintln( chk_data_s.options.flags[TST_MOTOR] );
 	release_lock(); // Release Display Mutex
 
 	c_tst :> chk_data_s.curr_vect; // Initialise test-vector structure with 1st test

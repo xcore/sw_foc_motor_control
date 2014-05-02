@@ -6,8 +6,8 @@
  * Modified by: Upendra
  * Last Modified on : 18-May-2011
  *
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -15,21 +15,21 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
  *
- **/                                   
+ **/
 #include "clarke.h"
 #include "transform_constants.h"
 
 
 void clarke_transform( // Do a clarke transform
 
-	int Ia, 
-	int Ib, 
-	int Ic, 
-	int *I_alpha, 
-	int *I_beta 
+	int Ia,
+	int Ib,
+	int Ic,
+	int *I_alpha,
+	int *I_beta
 )
 {
 	assert( MAX_CLARKE_VAL > Ia );
@@ -38,14 +38,14 @@ void clarke_transform( // Do a clarke transform
 
 	*I_alpha = Ia;
 	*I_beta = (ONE_OVER_ROOT_3 * (Ib - Ic) + HALF_CONST) >> CONST_RES_BITS;
-} // clarke_transform 
+} // clarke_transform
 /*****************************************************************************/
 void inverse_clarke_transform( // Inverse clarke transform
-	int *Ia, 
-	int *Ib, 
-	int *Ic, 
-	int alpha, 
-	int beta 
+	int *Ia,
+	int *Ib,
+	int *Ic,
+	int alpha,
+	int beta
 )
 {
 	int sqrt3_beta = ((ROOT_THREE * beta + HALF_CONST) >> CONST_RES_BITS); // sqrt(3) * beta

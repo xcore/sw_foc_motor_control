@@ -116,7 +116,7 @@ typedef struct ADC_PHASE_TAG // Structure containing data for one phase of ADC T
 	int filt_val; // (Upscaled) filtered value
 	int coef_err; // (Upscaled) Coefficient diffusion error
 	int scale_err; // (Upscaled) Scaling diffusion error
-	int rem; // remainder for error diffusion 
+	int rem; // remainder for error diffusion
 } ADC_PHASE_TYP;
 
 typedef struct ADC_FILT_TAG // Structure containing data for one ADC Trigger

@@ -7,8 +7,8 @@
  * Last Modified on : 26-May-2011
  *
  *
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -16,10 +16,10 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
  *
- **/                                   
+ **/
 
 #include "pid_regulator.h"
 
@@ -81,7 +81,7 @@ void init_int_pid_consts( // Initialise a set of integer PID Constants
 	pid_const_p->half_scale = 0;
 } // init_int_pid_consts
 /*****************************************************************************/
-void initialise_pid( // Initialise PID regulator 
+void initialise_pid( // Initialise PID regulator
 	PID_REGULATOR_TYP * pid_regul_p // Pointer to PID regulator data structure
 )
 {
@@ -114,7 +114,7 @@ void preset_pid( // Preset PID ready for first iteration
 		// Integer division (with rounding) by Hi-Res up-scaled Integral constant
 		pid_regul_p->sum_err = (int)((tmp_64 + ((S64_T)pid_const_p->K_i >> 1)) / (S64_T)pid_const_p->K_i);
 	} //if (pid_const_p->K_i)
-} // preset_pid 
+} // preset_pid
 /*****************************************************************************/
 int get_pid_regulator_correction( // Computes new PID correction based on input error
 	unsigned motor_id, // Unique Motor identifier e.g. 0 or 1
@@ -143,7 +143,7 @@ int get_pid_regulator_correction( // Computes new PID correction based on input 
 	if (pid_const_p->K_i)
 	{
 		corr_err = (num_vals * inp_err) + pid_regul_p->rem; // Add-in previous remainder
-		down_err = (int)((corr_err + (S64_T)pid_const_p->half_scale) >> pid_const_p->sum_res); // Down-scale error 
+		down_err = (int)((corr_err + (S64_T)pid_const_p->half_scale) >> pid_const_p->sum_res); // Down-scale error
 
 		// Check for overflow
 		while (pid_regul_p->sum_err > (MAX_ERR_SUM - down_err))
@@ -151,16 +151,16 @@ int get_pid_regulator_correction( // Computes new PID correction based on input 
 printf("PID Re-scale\n"); //MB~
 
 			// Save old scaling factor as new half-scaling-factor
-			pid_const_p->half_scale = (1 << pid_const_p->sum_res); 
+			pid_const_p->half_scale = (1 << pid_const_p->sum_res);
 			pid_const_p->sum_res++; // Double down-scaling factor
 
 			assert(16 > pid_const_p->sum_res); // Check for over-large scaling factor
 
  			pid_regul_p->sum_err >>= 1; // Halve error-sum
 			pid_const_p->K_i <<= 1; // Double constant for error-sum
- 
+
 			// Recompute down-scaled error
-			down_err = (int)((corr_err + (S64_T)pid_const_p->half_scale) >> pid_const_p->sum_res); // Down-scale error 
+			down_err = (int)((corr_err + (S64_T)pid_const_p->half_scale) >> pid_const_p->sum_res); // Down-scale error
 		} // while (pid_regul_p->sum_err > (MAX_ERR_SUM - down_err))
 
 if ((SPEED_PID == pid_id))
@@ -173,7 +173,7 @@ if ((SPEED_PID == pid_id))
 
 		pid_regul_p->rem = corr_err - (down_err << pid_const_p->sum_res); // Update remainder
 	} // if (pid_const_p->K_d)
- 
+
 	// Check if Differential Error used
 	if (pid_const_p->K_d)
 	{
@@ -185,7 +185,7 @@ if ((SPEED_PID == pid_id))
 	} // if (pid_const_p->K_d)
 
 pid_regul_p->prev_err = inp_err; // MB~ Dbg
- 
+
 	// Convert to 32-bit result ...
 
 if ((SPEED_PID == pid_id))
@@ -203,7 +203,7 @@ if ((SPEED_PID == pid_id))
 } // if (motor_id)
 
 	return res_32;
-} // get_pid_regulator_correction 
+} // get_pid_regulator_correction
 /*****************************************************************************/
 // pid_regulator.c
 

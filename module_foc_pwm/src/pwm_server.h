@@ -59,8 +59,8 @@ typedef struct PWM_SERV_TAG
  *  \param pwm_clk a clock for generating accurate PWM timing
  */
 void foc_pwm_config( // Configure PWM ports
-	buffered out port:32 p32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (High side)  
-	buffered out port:32 p32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (Low side)   
+	buffered out port:32 p32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (High side)
+	buffered out port:32 p32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (Low side)
 	in port p16_adc_sync[NUMBER_OF_MOTORS], // Dummy port used with ADC trigger
 	clock pwm_clk // clock for generating accurate PWM timing
 );
@@ -79,9 +79,9 @@ void foc_pwm_config( // Configure PWM ports
 void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pair, PWM server, with ADC synchronization
 	unsigned motor_id, // Motor identifier
 	chanend c_pwm, // PWM channel between Client and Server
-	buffered out port:32 p32_pwm_hi[NUM_PWM_PHASES], // array of PWM ports (High side)  
-	buffered out port:32 p32_pwm_lo[NUM_PWM_PHASES], // array of PWM ports (Low side)   
-	chanend c_adc_trig, // ADC trigger channel 
+	buffered out port:32 p32_pwm_hi[NUM_PWM_PHASES], // array of PWM ports (High side)
+	buffered out port:32 p32_pwm_lo[NUM_PWM_PHASES], // array of PWM ports (Low side)
+	chanend c_adc_trig, // ADC trigger channel
 	in port p16_adc_sync // Dummy port used with ADC trigger
 );
 /*****************************************************************************/

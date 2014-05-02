@@ -14,12 +14,12 @@
 
 #include "generate_hall_tests.h"
 
-/* This code adopts the Traditional convention that 
+/* This code adopts the Traditional convention that
  * the positive spin direction is the one where Phase_A leads Phase_B.
  * E.g. Phase_A goes high one bit-change earlier than Phase_B goes high.
  * This definition is based on time, and is NOT dependent on spatial orientation of the motor!-)
  *
- * WARNING: Traditionally Phase_A is the Most Significant Bit (MSB). 
+ * WARNING: Traditionally Phase_A is the Most Significant Bit (MSB).
  * However, the QEI server S/W is designed to work with the XMOS motor board.
  * This board has Phase_A as the Least Significant Bit (LSB).
  * So the generated bit changes are as follows:-

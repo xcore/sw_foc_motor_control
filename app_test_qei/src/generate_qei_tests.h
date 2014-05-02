@@ -40,9 +40,9 @@
 /** Define No. of tests used for Deceleration check */
 #define DEC_TESTS 18 // No. of tests used for Deceleration check
 
-// WARNING: The Accel/Decel Scaling factors need to be less severe than QEI scaling factors to prevent ambiguous data 
-#define ACC_SCALE (LO_QEI_SCALE + 1) // 970 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION) 
-#define DEC_SCALE (HI_QEI_SCALE - 1) // 1113 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION) 
+// WARNING: The Accel/Decel Scaling factors need to be less severe than QEI scaling factors to prevent ambiguous data
+#define ACC_SCALE (LO_QEI_SCALE + 1) // 970 Scaling factor Used for Acceleration (ACC_SCALE >> SCALE_PRECISION)
+#define DEC_SCALE (HI_QEI_SCALE - 1) // 1113 Scaling factor Used for Deceleration (DEC_SCALE >> SCALE_PRECISION)
 
 #define FILE_SIZE (STR_LEN * NUM_TEST_OPTS) // Size of PWM control file (in Bytes)
 

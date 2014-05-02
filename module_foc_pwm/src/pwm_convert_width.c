@@ -79,7 +79,7 @@ static void convert_pulse_width( // convert pulse width to a 32-bit pattern and 
 
 			// earlier edge ( zeros transmitted 1st)
 			// NB Need MSB to be 1, as this lasts for long high section of pulse
-			rise_port_data_ps->time_off = -(PWM_MAX_VALUE >> 1); // Fixed time-offset is half PWM-cycle earlier 
+			rise_port_data_ps->time_off = -(PWM_MAX_VALUE >> 1); // Fixed time-offset is half PWM-cycle earlier
 			tmp = (num_zeros >> 1); // Range [15..0]
 			tmp = ((1 << tmp)-1); // Range 0x0000_7FFF .. 0x0000_0000
 			rise_port_data_ps->pattern = ~tmp; // Invert Pattern: Range 0xFFFF_8000 .. 0xFFFF_FFFF
@@ -106,7 +106,7 @@ static void convert_phase_pulse_widths(  // Convert PWM pulse widths for current
 	/* WARNING: Both legs of the balanced line must NOT be switched at the same time. Safety Critical.
 	 * Calculate PWM Pulse data for low leg (V+) of balanced line
 	 * The Low-leg pulse is extended symmetrically on either side by a small amount. This ensures that ...
-	 * (a) Both legs do NOT switch at the same time, and 
+	 * (a) Both legs do NOT switch at the same time, and
 	 * (b) That the High and Low legs pulses are centred on the same time offset
 	 */
 

@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #include "watchdog.h"
 
@@ -22,7 +22,7 @@ static void init_wd( // Initialise WatchDog circuit (2 chips)
 )
 {
 	/* The following structure determines which motors are protected, Edit the array initialiser and checksum to suit
-	 * E.g. { { 1 ,1 ,0 } ,2 }; signifies, Motor_0 and Motor_1 protected, Motor_2 UN-protected, 
+	 * E.g. { { 1 ,1 ,0 } ,2 }; signifies, Motor_0 and Motor_1 protected, Motor_2 UN-protected,
 	 * and a total of 2 motors prrotected
 	 */
 WD_GUARD_TYP guard_prot_s = { { 1 ,1 } ,2 }; // Structure of guard data, contains motor protection data
@@ -40,32 +40,32 @@ WD_GUARD_TYP guard_prot_s = { { 1 ,1 } ,2 }; // Structure of guard data, contain
 
 	wd_data_s.protect_s = guard_prot_s; // Load motor protection data
 
-	// Initialise and check protection motor data 
+	// Initialise and check protection motor data
 	checksum = 0;
 	guard_init_s.num = NUMBER_OF_MOTORS; // Set number of UN-initialised motors
- 
+
  	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{
 		if (wd_data_s.protect_s.guards[motor_cnt]) checksum++;
 		guard_init_s.guards[motor_cnt] = 1; // Set guards for UN-initialised motors
 	} // for motor_cnt
 
-	assert(checksum == wd_data_s.protect_s.num); // ERROR; Protection checksum failed. Update guard_prot_s initialiser 
+	assert(checksum == wd_data_s.protect_s.num); // ERROR; Protection checksum failed. Update guard_prot_s initialiser
 
 	wd_data_s.state = WD_UNARMED; // Initialise WatchDog to Un-armed state
-	wd_data_s.shared_out = 0; // Clear (Bit_0 and Bit_1 of) data for shared output port 
+	wd_data_s.shared_out = 0; // Clear (Bit_0 and Bit_1 of) data for shared output port
 
 	// Loop until all motors have sent initialisation command
 	while(0 < guard_init_s.num)
 	{
 		select {
 			// Service any change on input port pins of UN-initialised motors
-			case (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+			case (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 						guard_init_s.guards[motor_cnt] => c_wd[motor_cnt] :> cmd :
 			{
 				assert (WD_CMD_INIT == cmd); // Un-expected command Received
 
-				guard_init_s.guards[motor_cnt] = 0; // Switch off guard for initialised motor 
+				guard_init_s.guards[motor_cnt] = 0; // Switch off guard for initialised motor
 				guard_init_s.num--; // Decrement No. of UN-initialised motors
 			} // case
 			break;
@@ -84,11 +84,11 @@ WD_GUARD_TYP guard_prot_s = { { 1 ,1 } ,2 }; // Structure of guard data, contain
 	wd_data_s.shared_out |= TICK_MASK;			// Set Bit_1 to switch On WatchDog Chip
 
 	p2_wd <: wd_data_s.shared_out; // NB Switches on WatchDog chip
-	
+
 	// FlipFlop pulse width minimum in 3 ns. Therefore, stay low for a micro-second
 	chronometer :> pulse_width;
 	chronometer when timerafter(pulse_width + MICRO_SEC) :> void;
-	
+
 	wd_data_s.shared_out |= ENABLE_MASK; ; // Set Bit_0 (end of rising Edge for FlipFlop Chip)
 	p2_wd <: wd_data_s.shared_out; // NB Switches on FlipFlop chip
 
@@ -117,14 +117,14 @@ static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have war
 		select
 		{
 			// Service any change on the input port pins of any protected motors
-			case (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+			case (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 						wd_data_s.protect_s.guards[motor_cnt] => c_wd[motor_cnt] :> cmd :
 			{
 				switch(cmd)
 				{
 					case WD_CMD_DISABLE : // Actively disable the WatchDog circuit
 						wd_data_s.state = WD_STOP; // Switch to state where WatchDog stops Motors
-					break; // WD_CMD_DISABLE 
+					break; // WD_CMD_DISABLE
 
 					case WD_CMD_TICK : // Check for end of Start-up mode
 						wd_data_s.shared_out ^= TICK_MASK; // Toggle Bit_1 (for WatchDog Chip)
@@ -155,7 +155,7 @@ static void run_unarmed( // Runs WatchDog in UN-armed mode until Motors have war
 	} // while
 
 	wd_data_s.state = WD_ARMED; // Switch to fully armed WatchDog state
-} // run_unarmed 
+} // run_unarmed
 /*****************************************************************************/
 static void run_wd_armed( // Run WatchDog fully armed until STOP request received
 	WD_DATA_TYP &wd_data_s, // Reference to structure containing data for WatchDog circuit
@@ -180,15 +180,15 @@ static void run_wd_armed( // Run WatchDog fully armed until STOP request receive
 		select
 		{
 			// Service any change on the input port pins of any protected motors
-			case (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+			case (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 						wd_data_s.protect_s.guards[motor_cnt] => c_wd[motor_cnt] :> cmd :
 			{
 				switch(cmd)
 				{
 					case WD_CMD_DISABLE : // Actively disable the WatchDog circuit
 						wd_data_s.state = WD_STOP; // Switch to state where WatchDog stops Motors
-					break; // WD_CMD_DISABLE 
-		
+					break; // WD_CMD_DISABLE
+
 					case WD_CMD_TICK : // Toggle WD_TICK pin to keep WatchDog 'alive'
 						wd_data_s.shared_out ^= TICK_MASK; // Toggle Bit_1 (for WatchDog Chip)
 						tick_cnts[motor_cnt]++; // Increment No. of ticks for this motor
@@ -207,13 +207,13 @@ static void run_wd_armed( // Run WatchDog fully armed until STOP request receive
 										wd_data_s.state = WD_STOP; // Switch to state where WatchDog stops Motors
 										break;
 									} // if (0 == tick_cnts[motor_id])
-	
+
 									tick_cnts[motor_id] = 0; // Clear this motors tick count
                 } // if (wd_data_s.protect_s.guards[motor_id])
 							} // for motor_id
 						} // if (tick_cnts[motor_cnt] > MAX_WD_TICKS)
-					break; // WD_CMD_TICK 
-		
+					break; // WD_CMD_TICK
+
 					default :
 						assert( 1 == 2 ); // Unexpected Command Received
 					break; // default
@@ -225,7 +225,7 @@ static void run_wd_armed( // Run WatchDog fully armed until STOP request receive
 		p2_wd <: wd_data_s.shared_out; // Send out the new value to the shared port
 	} // while (WD_STOP != wd_data_s.state)
 
-} // run_wd_armed 
+} // run_wd_armed
 /*****************************************************************************/
 void foc_loop_do_wd( // Controls WatchDog circuit (2 chips)
 	chanend c_wd[NUMBER_OF_MOTORS], // Array of WatchDog channels
@@ -244,8 +244,8 @@ void foc_loop_do_wd( // Controls WatchDog circuit (2 chips)
 	// Client now supplying ticks, so switch to Armed state
 	run_wd_armed( wd_data_s ,c_wd ,p2_wd );
 
-	/* NB If this line is reached, then in less than 3.4ms, 
-	 * the WatchDog will switch off motor power, 
+	/* NB If this line is reached, then in less than 3.4ms,
+	 * the WatchDog will switch off motor power,
 	 * because this Server is no longer supplying ticks
 	 */
 

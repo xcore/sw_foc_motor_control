@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,16 +8,16 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
  **/
 
 #include "control_comms_eth.h"
 
 /*****************************************************************************/
-static void to_hex_string( 
-	int number, 
-	char& lsb, 
+static void to_hex_string(
+	int number,
+	char& lsb,
 	char& msb
 )
 {
@@ -55,11 +55,11 @@ void foc_comms_init_eth(	// The Ethernet & TCP/IP server core
 )
 {
 	ethernet_xtcp_server( xtcp_ports ,ipconfig ,c_ethernet ,1 );
-} // foc_comms_init_eth  
+} // foc_comms_init_eth
 /*****************************************************************************/
 void foc_comms_do_eth( // Core to extract Motor commands from ethernet commands
-	chanend c_commands[], 
-	chanend tcp_svr 
+	chanend c_commands[],
+	chanend tcp_svr
 )
 {
 	unsigned char tx_buf[128];
@@ -266,5 +266,5 @@ void foc_comms_do_eth( // Core to extract Motor commands from ethernet commands
                     break;
         }
 	}
-} // foc_comms_do_eth 
+} // foc_comms_do_eth
 /*****************************************************************************/

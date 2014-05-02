@@ -17,7 +17,7 @@
 /*****************************************************************************/
 static void do_qei_port_config( // Configure one QEI input port
 	buffered QEI_PORT in pb4_QEI, // buffered 4-bit input ports (carries raw QEI motor data)
-	clock qei_clk 
+	clock qei_clk
 )
 {
 	// Configure port to be a clocked input port with no ready signals.
@@ -43,7 +43,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	int inp_id  // Input unique motor identifier
 )
 {
-  /* Look-up table for converting phase changes to angle increments, 
+  /* Look-up table for converting phase changes to angle increments,
 	 * inner(fastest) changing index is NEW phase combination
 	 * WARNING: Using a 1-D table is slower, because index is calculated in XC.
 	 */
@@ -75,7 +75,7 @@ static void init_qei_data( // Initialise  QEI data for one motor
 	inp_qei_s.prev_orig = 0; // Clear value of previous origin flag
 	inp_qei_s.prev_phases = 0; // Clear value of previous phase combination
 
-	// Initialise data for both QEI Phases 
+	// Initialise data for both QEI Phases
 	init_phase_data( inp_qei_s.phase_data[QEI_PHASE_A] ,QEI_PHASE_A ,inp_id );
 	init_phase_data( inp_qei_s.phase_data[QEI_PHASE_B] ,QEI_PHASE_B ,inp_id );
 
@@ -208,7 +208,7 @@ static unsigned update_one_phase( // Returns filtered phase value NB Only works 
 	unsigned inp_phase // Input raw phase value (Zero or One)
 )
 {
-	unsigned scaled_inp = (inp_phase << QEI_SCALE_BITS); // NB Scale by 65536 
+	unsigned scaled_inp = (inp_phase << QEI_SCALE_BITS); // NB Scale by 65536
 	int inp_diff; // Difference between previous filtered value and new input value
 	int filt_corr; // Correction to filtered value
 	int out_phase; // Output (Down-sampled) filtered phase value (Zero or One)
@@ -295,7 +295,7 @@ static void service_input_pins( // Service detected change on input pins
 	// NB Due to noise corrupting bit-values, flags may change, even though phase does NOT appear to have changed
 	cur_phases = inp_pins & QEI_PHASE_MASK; // Extract Phase bits from input pins
 			orig_flg = inp_pins & QEI_ORIG_MASK; 		// Extract origin flag
-	err_flg = !(inp_pins & QEI_NERR_MASK); 	// Extract error flag. NB Bit_3=0, and err_flg=1, if error detected, 
+	err_flg = !(inp_pins & QEI_NERR_MASK); 	// Extract error flag. NB Bit_3=0, and err_flg=1, if error detected,
 
 	// Check for first data
 	if (inp_qei_s.pins_idle)
@@ -322,10 +322,10 @@ static void service_input_pins( // Service detected change on input pins
 			{ // New origin found
 				process_new_origin( inp_qei_s ); // process new origin
 			} // if (orig_flg)
-	
+
 			inp_qei_s.prev_orig = orig_flg; // Store origin flag value
 		} // if (orig_flg != inp_qei_s.prev_orig)
-	
+
 		// Check for change in error state
 		if (err_flg != inp_qei_s.params.err)
 		{ // Change in error state detected
@@ -371,10 +371,10 @@ void foc_qei_config(  // Configure all QEI ports
 
 		// Stagger when each port starts sampling, so buffer servicing is interleaved
 		chronometer when timerafter(big_ticks) :> void;	// Wait until next synchronisation time
-		start_clock( qei_clks[motor_cnt] ); // Start current QEI clock, 
+		start_clock( qei_clks[motor_cnt] ); // Start current QEI clock,
 
 		big_ticks += STAG_TICKS; // Update time to when next port should start
-	} // for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+	} // for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 
 } // foc_qei_config
 /*****************************************************************************/
@@ -409,12 +409,12 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	if(0 == _is_simulation())
 	{ // Running on real hardware
 		// Wait 128ms for UV_FAULT pin to finish toggling
-		chronometer :> samp32_time; 
+		chronometer :> samp32_time;
 		chronometer when timerafter(samp32_time + (MILLI_SEC << 7)) :> void;
 	} // if (0 == _is_simulation())
 
 	// Loop through all motors
-	for (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; ++motor_cnt) 
+	for (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; ++motor_cnt)
 	{ // Initialise current motor
 
 		init_qei_data( all_qei_s[motor_cnt] ,motor_cnt ); // Initialise QEI data for current motor
@@ -433,7 +433,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 	} // for motor_cnt
 
 	// Loop until terminate condition received
-	while (do_loop) 
+	while (do_loop)
 	{
 #pragma xta endpoint "qei_main_loop"
 
@@ -448,7 +448,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 
 			// Check Timing has been met ...
 
-			// Calculate number of samples captured since previous iteration 
+			// Calculate number of samples captured since previous iteration
 			num_samps = (PORT_TIME_TYP)(port16_cnt - prev16_cnt[motor_cnt]);
 
 			// Check for lost samples
@@ -462,7 +462,7 @@ void foc_qei_do_multiple( // Get QEI data from motor and send to client
 				if (time_err > 0) time_err--; // Decrement error count
 			} // if (num_samps > SAMPS_PER_LOOP)
 
-			// Loop through all samples in buffer 
+			// Loop through all samples in buffer
 			for (samp_cnt=0; samp_cnt<SAMPS_PER_LOOP; samp_cnt++)
 			{
 				inp_pins = buf_data & QEI_SAMP_MASK; // mask out LS 4 bits

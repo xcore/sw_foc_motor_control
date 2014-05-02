@@ -2,8 +2,8 @@
  * Module:  module_dsc_blocks
  * File:    clarke.h
  *
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -11,16 +11,16 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
  *
- */                                   
+ */
 #ifndef CLARKE_H_
 #define CLARKE_H_
 
 #include <assert.h>
 
-#define MAX_CLARKE_BITS (30 - CONST_RES_BITS) // Max. size of input values in bits 
+#define MAX_CLARKE_BITS (30 - CONST_RES_BITS) // Max. size of input values in bits
 #define MAX_CLARKE_VAL (1 << MAX_CLARKE_BITS) // Max. allowed input value
 
 #ifdef __XC__

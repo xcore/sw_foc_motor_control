@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,16 +8,16 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 /*****************************************************************************\
 This WatchDog protects a specific selection of motors from a lerger set.
 There is an array of flags, one for each motor in the larger set.
 For each flag, it is set to one if the motor needs protecting, zero otherwise.
 
-WARNING: The user must set these flags (and update the checksum), 
+WARNING: The user must set these flags (and update the checksum),
 at the following location:-
   File: watchdog.xc
   Function: init_wd
@@ -68,13 +68,13 @@ typedef enum WD_STATE_ETAG
 } WD_STATE_ENUM;
 
 /** Structure containing guard data, one flag for each motor */
-typedef struct WD_GUARD_TAG // 
+typedef struct WD_GUARD_TAG //
 {
 	int guards[NUMBER_OF_MOTORS]; // Array of flags used as guards
 	int num; // Number of protected motors
 } WD_GUARD_TYP;
 
-typedef struct WD_DATA_TAG // 
+typedef struct WD_DATA_TAG //
 {
 	WD_STATE_ENUM state; // WatchDog State
 	WD_GUARD_TYP protect_s; // Structure of guard data, indicating which motors are protected
@@ -87,7 +87,7 @@ typedef struct WD_DATA_TAG //
  *
  * The Watchdog circuit needs a constant stream of +ve edges to prevent it
  * from shutting down the motor.
- * 
+ *
  * The Watchdog circuit consists of the following 2 chips:
  *	STWD100NP: A WatchDog chip, requires a 1-bit signal WD_TICK (Bit_1 on WD port)
  *	NC7SZ175: A FlipFlop chip, requires a 1-bit signal WD_EN (Bit_0 on WD port)

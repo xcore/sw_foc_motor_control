@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #include "main.h"
 
@@ -25,9 +25,9 @@ on tile[MOTOR_TILE]: clock qei_clks[NUMBER_OF_MOTORS] = { XS1_CLKBLK_4 ,XS1_CLKB
 
 // PWM ports
 on tile[MOTOR_TILE]: in port p16_adc_sync[NUMBER_OF_MOTORS] = { XS1_PORT_16A ,XS1_PORT_16B }; // NB Dummy port
-on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
+on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES]
 	= {	{PORT_M1_HI_A, PORT_M1_HI_B, PORT_M1_HI_C} ,{PORT_M2_HI_A, PORT_M2_HI_B, PORT_M2_HI_C} };
-on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES] 
+on tile[MOTOR_TILE]: buffered out port:32 pb32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES]
 	= {	{PORT_M1_LO_A, PORT_M1_LO_B, PORT_M1_LO_C} ,{PORT_M2_LO_A, PORT_M2_LO_B, PORT_M2_LO_C} };
 
 // ADC ports
@@ -105,7 +105,7 @@ void xscope_user_init()
 		,XSCOPE_CONTINUOUS, "p_err", XSCOPE_INT , "n"
 		,XSCOPE_CONTINUOUS, "s_err", XSCOPE_INT , "n"
 */
-	); // xscope_register 
+	); // xscope_register
 
 	xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing
 } // xscope_user_init
@@ -132,7 +132,7 @@ int main ( void ) // Program Entry Point
 
 			par {
 				foc_display_shared_io_manager( c_speed ,lcd_ports ,p_btns, p_leds );
-		
+
 				/* NB Ideally WatchDog Server Core should be on Tile most likely to Hang,
 				 * However, unfortunately p2_i2c_wd port is on INTERFACE_TILE
 				 */
@@ -142,7 +142,7 @@ int main ( void ) // Program Entry Point
 		  free_locks(); // Free Mutex for display
 		} // on tile[INTERFACE_TILE]
 
-		on tile[MOTOR_TILE] : 
+		on tile[MOTOR_TILE] :
 		{
 		  init_locks(); // Initialise Mutex for display
 
@@ -156,17 +156,17 @@ int main ( void ) // Program Entry Point
 				// Loop through all motors
 				par (int motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 				{
-					run_motor( motor_cnt ,c_wd[motor_cnt]  ,c_pwm[motor_cnt] ,c_hall[motor_cnt] ,c_qei[motor_cnt] 
+					run_motor( motor_cnt ,c_wd[motor_cnt]  ,c_pwm[motor_cnt] ,c_hall[motor_cnt] ,c_qei[motor_cnt]
 						,c_adc_cntrl[motor_cnt] ,c_speed[motor_cnt] ,c_commands ); //MB~ Was ,c_commands[motor_cnt] );
-		
-					foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt] 
+
+					foc_pwm_do_triggered( motor_cnt ,c_pwm[motor_cnt] ,pb32_pwm_hi[motor_cnt] ,pb32_pwm_lo[motor_cnt]
 						,c_pwm2adc_trig[motor_cnt] ,p16_adc_sync[motor_cnt] );
 				} // par motor_cnt
-	
+
 				foc_qei_do_multiple( c_qei ,pb4_qei );
-		
+
 				foc_hall_do_multiple( c_hall ,p4_hall );
-		
+
 				foc_adc_7265_triggered( c_adc_cntrl ,c_pwm2adc_trig ,pb32_adc_data ,adc_xclk ,p1_adc_sclk ,p1_ready ,p4_adc_mux );
 			} // par
 

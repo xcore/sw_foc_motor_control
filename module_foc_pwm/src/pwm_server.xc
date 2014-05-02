@@ -62,8 +62,8 @@ static void do_pwm_port_config( // Configure ports for one motor
 } // do_pwm_port_config
 /*****************************************************************************/
 void foc_pwm_config(  // Configure ports
-	buffered out port:32 p32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (High side)  
-	buffered out port:32 p32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (Low side)   
+	buffered out port:32 p32_pwm_hi[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (High side)
+	buffered out port:32 p32_pwm_lo[NUMBER_OF_MOTORS][NUM_PWM_PHASES], // array of PWM ports (Low side)
 	in port p16_adc_sync[NUMBER_OF_MOTORS], // Dummy port used with ADC trigger
 	clock pwm_clk // clock for generating accurate PWM timing
 )
@@ -78,7 +78,7 @@ void foc_pwm_config(  // Configure ports
 	for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 	{ // Configure all ports for this motor
 		do_pwm_port_config( p32_pwm_hi[motor_cnt] ,p32_pwm_lo[motor_cnt]  ,p16_adc_sync[motor_cnt] ,pwm_clk );
-	} // for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++) 
+	} // for (motor_cnt=0; motor_cnt<NUMBER_OF_MOTORS; motor_cnt++)
 
 	start_clock( pwm_clk ); // Start common PWM clock, once all ports configured
 } // foc_pwm_config
@@ -86,9 +86,9 @@ void foc_pwm_config(  // Configure ports
 void foc_pwm_do_triggered( // Implementation of the Centre-aligned, High-Low pair, PWM server, with ADC sync
 	unsigned motor_id, // Motor identifier
 	chanend c_pwm, // PWM channel between Client and Server
-	buffered out port:32 p32_pwm_hi[NUM_PWM_PHASES], // array of PWM ports (High side)  
-	buffered out port:32 p32_pwm_lo[NUM_PWM_PHASES], // array of PWM ports (Low side)   
-	chanend c_adc_trig, // ADC trigger channel 
+	buffered out port:32 p32_pwm_hi[NUM_PWM_PHASES], // array of PWM ports (High side)
+	buffered out port:32 p32_pwm_lo[NUM_PWM_PHASES], // array of PWM ports (Low side)
+	chanend c_adc_trig, // ADC trigger channel
 	in port p16_adc_sync // Dummy port used with ADC trigger
 )
 {

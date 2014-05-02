@@ -157,7 +157,7 @@ void init_common_data( // Initialise Test data
 	safestrcpy( comm_data_s.prefix[DISP_INP_GEN].str ,"" );
 	safestrcpy( comm_data_s.prefix[DISP_INP_CHK].str ,"                                             " );
 
-	// Add any new display input prefixes here 
+	// Add any new display input prefixes here
 
 } // init_common_data
 /*****************************************************************************/

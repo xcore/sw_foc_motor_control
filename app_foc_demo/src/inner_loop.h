@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,18 +8,18 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
  *
  *****************************************************************************
  *
  * During normal operation, the inner_loop() function loops through the following states:
- *  START: Initial entry state. 
+ *  START: Initial entry state.
  *		Move to SEARCH state.
  *
  *  SEARCH:	Motor runs open-loop, spinning the magnetic field around at a fixed torque,
  *		until the QEI reports that it has an accurate position measurement.
- *		Then the Hall sensors and QEI data are used to calculate the phase 
+ *		Then the Hall sensors and QEI data are used to calculate the phase
  *		difference between the motors coils and the QEI origin.
  *		Move to FOC state.
  *
@@ -34,7 +34,7 @@
  *
  *	For each iteration of the FOC state, the following actions are performed:-
  *		Read the QEI and ADC data.
- *		Estimate the angular velocity from the QEI data. 
+ *		Estimate the angular velocity from the QEI data.
  *		Estimate the Iq value from either the ADC data or angular velocity.
  *		Optionally estimate the Id value from the ADC data
  *		Optionally use the demand and estimated velocity to produce a demand Iq value, using a PID
@@ -46,17 +46,17 @@
  *
  * Notes:
  *
- *	The Leading_Angle is the angle between the position of maximum Iq 
+ *	The Leading_Angle is the angle between the position of maximum Iq
  *	(tangential magnetic field), and the position of the magnetic pole.
  *	This allows the coil to be pulled towards the pole in an efficient manner.
  *
  *	The Phase_Lag, is the angular difference between the applied voltage (PWM),
  *	and the measured current (ADC).
  *
- *	Due to the effects of back EMF and inductance, both the Leading_Angle and 
+ *	Due to the effects of back EMF and inductance, both the Leading_Angle and
  *	Phase_Lag vary with angular velocity.
  *
- **/                                   
+ **/
 
 #ifndef _INNER_LOOP_H_
 #define _INNER_LOOP_H_
@@ -92,9 +92,9 @@
 #define VOLT_MAX_MAG (1 << VOLT_RES_BITS) // No.of different Voltage Magnitudes. NB Voltage is -VOLT_MAX_MAG..(VOLT_MAX_MAG-1)
 
 // Check precision data
-#if (VOLT_RES_BITS < PWM_RES_BITS)  
-#error  VOLT_RES_BITS < PWM_RES_BITS  
-#endif // (VOLT_RES_BITS < PWM_RES_BITS)  
+#if (VOLT_RES_BITS < PWM_RES_BITS)
+#error  VOLT_RES_BITS < PWM_RES_BITS
+#endif // (VOLT_RES_BITS < PWM_RES_BITS)
 
 #define VOLT_TO_PWM_BITS (VOLT_RES_BITS - PWM_RES_BITS + 1) // bit shift required for converting volts to PWM pulse-widths
 #define HALF_VOLT_TO_PWM (1 << (VOLT_TO_PWM_BITS - 1)) // Used for rounding
@@ -170,7 +170,7 @@
 #define SHIFT_12 12
 #define SHIFT_9   9
 
-#define PHASE_BITS SHIFT_20 // No of bits in phase offset scaling factor 
+#define PHASE_BITS SHIFT_20 // No of bits in phase offset scaling factor
 #define PHASE_DENOM (1 << PHASE_BITS)
 #define HALF_PHASE (PHASE_DENOM >> 1)
 
@@ -192,15 +192,15 @@
 #define VOLT_DIFF_MASK ((1 << VOLT_DIFF_BITS ) - 1) // Used to mask out Voltage difference bits
 
 // Linear conversion are used to relate 2 parameters. E.G. PWM Voltage applied to the coil current produced  (I = m*V + c)
-#define S2V_BITS SHIFT_12 // No of bits in Voltage to current scaling factor 
+#define S2V_BITS SHIFT_12 // No of bits in Voltage to current scaling factor
 #define S2V_DENOM (1 << S2V_BITS)
 #define HALF_S2V (S2V_DENOM >> 1)
-#define S2V_MUX 2575 // Speed multiplier. NB 0.6286 ~= 2575/2^12 
+#define S2V_MUX 2575 // Speed multiplier. NB 0.6286 ~= 2575/2^12
 
-#define V2I_BITS SHIFT_16 // No of bits in Voltage to current scaling factor 
+#define V2I_BITS SHIFT_16 // No of bits in Voltage to current scaling factor
 #define V2I_DENOM (1 << V2I_BITS)
 #define HALF_V2I (V2I_DENOM >> 1)
-#define V2I_MUX 1341 // Voltage multiplier. NB 0.02045 ~= 1341/2^16 
+#define V2I_MUX 1341 // Voltage multiplier. NB 0.02045 ~= 1341/2^16
 
 // Used to smooth demand Voltage
 #define SMOOTH_VOLT_INC 2 // Maximum allowed increment in demand voltage
@@ -209,9 +209,9 @@
 // Defines for Field Weakening
 #define FW_SPEED ((3*SPEC_MAX_SPEED + 2) >> 2) // Only use field-weakening if above 3/4 of SPEC_MAX_SPEED
 #define IQ_LIM 55 // 55 Maximum allowed target Iq value, before field weakening applied
-#define IQ_ID_BITS 2 // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
-#define IQ_ID_RATIO (1 << IQ_ID_BITS) // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
-#define IQ_ID_HALF (IQ_ID_RATIO >> 1) // Quantisation error is half IQ_ID_RATIO 
+#define IQ_ID_BITS 2 // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq
+#define IQ_ID_RATIO (1 << IQ_ID_BITS) // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq
+#define IQ_ID_HALF (IQ_ID_RATIO >> 1) // Quantisation error is half IQ_ID_RATIO
 
 #define VEL_SCALE_BITS 16 // Used to generate 2^n scaling factor
 #define VEL_HALF_SCALE (1 << (VEL_SCALE_BITS - 1)) // Half Scaling factor (used in rounding)
@@ -326,7 +326,7 @@ typedef struct STRING_TAG // Structure containing string
 
 typedef struct ERR_DATA_TAG // Structure containing Error handling data
 {
-	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array messages for each error type 
+	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array messages for each error type
 	unsigned err_cnt[NUM_ERR_TYPS];	// Count No of Errors.
 	unsigned err_lim[NUM_ERR_TYPS];	// Error count Limit
 	int line[NUM_ERR_TYPS];	// Array of line number for NEWEST occurance of error type.
@@ -339,11 +339,11 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	HALL_PARAM_TYP hall_params; // Structure containing measured data from Hall sensors
 	PWM_COMMS_TYP pwm_comms; // Structure containing PWM communication data between Client/Server.
 	QEI_PARAM_TYP qei_params; // Structure containing measured data from QEI sensors
-	PID_CONST_TYP pid_consts[NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
+	PID_CONST_TYP pid_consts[NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
 	ERR_DATA_TYP err_data; // Structure containing data for error-handling
 	ROTA_DATA_TYP vect_data[NUM_ROTA_COMPS]; // Array of structures holding data for each rotating vector component
-	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
+	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state
 	MOTOR_STATE_ENUM state; // Current motor state
 	CMD_IO_ENUM cmd_id; // Speed Command
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
@@ -405,15 +405,15 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	int filt_adc; // filtered ADC value
 	int coef_err; // Coefficient diffusion error
-	int scale_err; // Scaling diffusion error 
+	int scale_err; // Scaling diffusion error
 
 	int half_qei; // Half QEI points per revolution (used for rounding)
 	int filt_veloc; // filtered velocity value
 	int period_coef_err; // QEI-Period filter coefficient diffusion error
-	int period_scale_err; // QEI-Period scaling diffusion error 
+	int period_scale_err; // QEI-Period scaling diffusion error
 	int coef_vel_err; // velocity filter coefficient diffusion error
-	int scale_vel_err; // Velocity scaling diffusion error 
-	int veloc_calc_err; // Velocity calculation diffusion error 
+	int scale_vel_err; // Velocity scaling diffusion error
+	int veloc_calc_err; // Velocity calculation diffusion error
 
 	int tmp; // MB~
 	int temp; // MB~ Dbg
@@ -438,7 +438,7 @@ void run_motor ( // run the motor inner loop
 	streaming chanend c_qei,
 	streaming chanend c_adc,
 	chanend c_speed,
-	chanend c_can_eth_shared 
+	chanend c_can_eth_shared
 );
 /*****************************************************************************/
 

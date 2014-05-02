@@ -96,7 +96,7 @@ static void service_client_data_request( // Send processed HALL data to client
 	streaming chanend c_hall // Data channel to client (carries processed HALL data)
 )
 {
-	c_hall <: hall_data_s.params; // Send set of hall data to client 
+	c_hall <: hall_data_s.params; // Send set of hall data to client
 
 	return;
 } // service_client_data_request

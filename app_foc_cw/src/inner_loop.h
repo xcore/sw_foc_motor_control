@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,7 +8,7 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
  *
  *****************************************************************************
@@ -22,16 +22,16 @@
 	POWER_OFF, // Error state where motor powered off
  *
  * During normal operation, the inner_loop() function loops through the following states:
- *  WAIT_START: Initial entry state. Motor waits for valid command 
+ *  WAIT_START: Initial entry state. Motor waits for valid command
  *		Move to ALIGN state.
  *
- *  ALIGN: A short burst of voltage is applied to the Motor, 
+ *  ALIGN: A short burst of voltage is applied to the Motor,
  *    to align the coils opposite a magnet (NB magnets move, coils are stationary)
  *		Move to SEARCH:	state.
  *
  *  SEARCH:	Motor runs open-loop, spinning the magnetic field around at a fixed torque,
  *		until the QEI reports that it has an accurate position measurement.
- *		Then the Hall sensors and QEI data are used to calculate the phase 
+ *		Then the Hall sensors and QEI data are used to calculate the phase
  *		difference between the motors coils and the QEI origin.
  *		Move to TRANSIT state.
  *
@@ -44,19 +44,19 @@
  *		is used to commutate the rotor, until a 'stop' or 'stall' 'power off' condition is detected.
  *		Move to WAIT_STOP, STALL, or POWER_OFF state.
  *
- *	STALL: (Motor continues to run), the stall-condition is analysed and the state is changed to 
+ *	STALL: (Motor continues to run), the stall-condition is analysed and the state is changed to
  *    either WAIT_START or FOC.
  *		Move to WAIT_START or FOC state.
  *
- *	WAIT_STOP: (Motor continues to run). Power to the coils is cut, 
+ *	WAIT_STOP: (Motor continues to run). Power to the coils is cut,
  *    and when the speed is below the stall-speed, the state is changed to WAIT_START
  *
- *	POWER_OFF: This state is entered at the end of the motor schedule, 
+ *	POWER_OFF: This state is entered at the end of the motor schedule,
  *    or when a un-recoverable error is encountered.
  *
  *	For each iteration of the FOC state, the following actions are performed:-
  *		Read the QEI and ADC data.
- *		Estimate the angular velocity from the QEI data. 
+ *		Estimate the angular velocity from the QEI data.
  *		Estimate the Iq and Id values from the ADC data
  *		Read a requested velocity from the control interface.
  *    Convert the requested velocity into a series of target velocities
@@ -68,7 +68,7 @@
  *
  * This is a standard FOC algorithm, with the current and speed control loops combined.
  *
- **/                                   
+ **/
 
 #ifndef _INNER_LOOP_H_
 #define _INNER_LOOP_H_
@@ -105,9 +105,9 @@
 #define VOLT_MAX_MAG (1 << VOLT_RES_BITS) // No.of different Voltage Magnitudes. NB Voltage is -VOLT_MAX_MAG..(VOLT_MAX_MAG-1)
 
 // Check precision data
-#if (VOLT_RES_BITS < PWM_RES_BITS)  
-#error  VOLT_RES_BITS < PWM_RES_BITS  
-#endif // (VOLT_RES_BITS < PWM_RES_BITS)  
+#if (VOLT_RES_BITS < PWM_RES_BITS)
+#error  VOLT_RES_BITS < PWM_RES_BITS
+#endif // (VOLT_RES_BITS < PWM_RES_BITS)
 
 #define VOLT_TO_PWM_BITS (VOLT_RES_BITS - PWM_RES_BITS + 1) // bit shift required for converting volts to PWM pulse-widths
 #define HALF_VOLT_TO_PWM (1 << (VOLT_TO_PWM_BITS - 1)) // Used for rounding
@@ -163,15 +163,15 @@
 #define VOLT_DIFF_MASK ((1 << VOLT_DIFF_BITS ) - 1) // Used to mask out Voltage difference bits
 
 // Linear conversion are used to relate 2 parameters. E.G. PWM Voltage applied to the coil current produced (I = m*V + c)
-#define V2I_BITS SHIFT_16 // No of bits in Voltage-to-Current scaling factor 
+#define V2I_BITS SHIFT_16 // No of bits in Voltage-to-Current scaling factor
 #define V2I_DENOM (1 << V2I_BITS) // Voltage-to-Current scaling factor
 #define HALF_V2I (V2I_DENOM >> 1) // Half Voltage-to-Current scaling factor (used in rounding)
-#define V2I_MUX 1341 // Voltage pre-multiplier. NB 0.02045 ~= 1341/2^16 
+#define V2I_MUX 1341 // Voltage pre-multiplier. NB 0.02045 ~= 1341/2^16
 
-#define S2V_BITS SHIFT_12 // No of bits in Speed-to-Voltage scaling factor 
+#define S2V_BITS SHIFT_12 // No of bits in Speed-to-Voltage scaling factor
 #define S2V_DENOM (1 << S2V_BITS) // Speed-to-Voltage scaling factor
 #define HALF_S2V (S2V_DENOM >> 1) // Half Speed-to-Voltage scaling factor (used in rounding)
-#define S2V_MUX 2575 // Speed pre-multiplier. NB 0.6286 ~= 2575/2^12 
+#define S2V_MUX 2575 // Speed pre-multiplier. NB 0.6286 ~= 2575/2^12
 
 // Used to smooth demand Voltage
 #define SMOOTH_VOLT_INC 2 // Maximum allowed increment in demand voltage
@@ -180,9 +180,9 @@
 // Defines for Field Weakening
 #define FW_SPEED ((3*SPEC_MAX_SPEED + 2) >> 2) // Only use field-weakening if above 3/4 of SPEC_MAX_SPEED
 #define IQ_LIM 55 // 55 Maximum allowed target Iq value, before field weakening applied
-#define IQ_ID_BITS 2 // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
-#define IQ_ID_RATIO (1 << IQ_ID_BITS) // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq 
-#define IQ_ID_HALF (IQ_ID_RATIO >> 1) // Quantisation error is half IQ_ID_RATIO 
+#define IQ_ID_BITS 2 // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq
+#define IQ_ID_RATIO (1 << IQ_ID_BITS) // NB Near stability, 1 unit change in Id is equivalent to a 4 unit change in Iq
+#define IQ_ID_HALF (IQ_ID_RATIO >> 1) // Quantisation error is half IQ_ID_RATIO
 
 #define VEL_FILT_BITS 16 // Resolution of Velocity filter
 #define VEL_FILT_DIV (1 << VEL_FILT_BITS) // Velocity filter Scaling factor
@@ -280,7 +280,7 @@ typedef struct STRING_TAG // Structure containing string
 
 typedef struct ERR_DATA_TAG // Structure containing Error handling data
 {
-	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array messages for each error type 
+	STRING_TYP err_strs[NUM_ERR_TYPS]; // Array messages for each error type
 	unsigned err_cnt[NUM_ERR_TYPS];	// Count No of Errors.
 	unsigned err_lim[NUM_ERR_TYPS];	// Error count Limit
 	int line[NUM_ERR_TYPS];	// Array of line number for NEWEST occurance of error type.
@@ -293,11 +293,11 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 	HALL_PARAM_TYP hall_params; // Structure containing measured data from Hall sensors
 	PWM_COMMS_TYP pwm_comms; // Structure containing PWM communication data between Client/Server.
 	QEI_PARAM_TYP qei_params; // Structure containing measured data from QEI sensors
-	PID_CONST_TYP pid_consts[NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms 
+	PID_CONST_TYP pid_consts[NUM_PIDS]; // array of PID const data for different IQ Estimate algorithms
 	PID_REGULATOR_TYP pid_regs[NUM_PIDS]; // array of pid regulators used for motor control
 	ERR_DATA_TYP err_data; // Structure containing data for error-handling
 	ROTA_DATA_TYP vect_data[NUM_ROTA_COMPS]; // Array of structures holding data for each rotating vector component
-	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state	
+	int cnts[NUM_MOTOR_STATES]; // array of counters for each motor state
 	MOTOR_STATE_ENUM state; // Current motor state
 	CMD_IO_ENUM cmd_id; // Speed Command
 	int meas_speed;	// speed, i.e. magnitude of angular velocity
@@ -359,21 +359,21 @@ typedef struct MOTOR_DATA_TAG // Structure containing motor state data
 
 	int filt_adc; // filtered ADC value
 	int coef_err; // Coefficient diffusion error
-	int scale_err; // Scaling diffusion error 
+	int scale_err; // Scaling diffusion error
 
 	int half_qei; // Half QEI points per revolution (used for rounding)
 	int filt_veloc; // filtered velocity value
 	int period_coef_err; // QEI-Period filter coefficient diffusion error
-	int period_scale_err; // QEI-Period scaling diffusion error 
+	int period_scale_err; // QEI-Period scaling diffusion error
 	int coef_vel_err; // velocity filter coefficient diffusion error
-	int scale_vel_err; // Velocity scaling diffusion error 
-	int veloc_calc_err; // Velocity calculation diffusion error 
+	int scale_vel_err; // Velocity scaling diffusion error
+	int veloc_calc_err; // Velocity calculation diffusion error
 } MOTOR_DATA_TYP;
 
 /*****************************************************************************/
 void run_motor ( // run the motor inner loop
 	unsigned motor_id, // Unique motor identifier (NB 0 or 1)
-	chanend c_wd, // channel to WatchDog client (fail-safe) 
+	chanend c_wd, // channel to WatchDog client (fail-safe)
 	chanend c_pwm, // channel to PWM client
 	streaming chanend c_hall, // channel to Hall client
 	streaming chanend c_qei, // channel to QEI client

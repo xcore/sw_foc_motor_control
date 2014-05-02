@@ -82,7 +82,7 @@
 	#error Define. SECS_PER_MIN in app_global.h
 #endif
 
-#define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK] 
+#define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK]
 
 #define QEI_SAMP_BITS 4 // Size of QEI input port sample in bits
 #define QEI_SAMP_SIZ (1 << QEI_SAMP_BITS) // Max. No. of possible QEI sample values
@@ -122,9 +122,9 @@
 
 #define MAX_QEI_STATUS_ERR 3 // 3 Maximum number of consecutive QEI status errors allowed
 
-/* HALF_PERIOD determines the clock frequency for port sampling. 
+/* HALF_PERIOD determines the clock frequency for port sampling.
  * The sampling period must allow enough time (inbetween samples) for processing
- * Currently this is about 660..680 cycles per 32-bit buffer. 
+ * Currently this is about 660..680 cycles per 32-bit buffer.
  * Therefore ~85 cycles/sample. There are a maximum of 2 motors to service.
  * Therefore, 170 cycles/sample/motor. With safety margin lets make it 192 cycles.
  */
@@ -139,9 +139,9 @@
 // Require filter to decay from 1 to 1/2 after 5 samples. This is equivalent to filter coef of 0.1295 (~ 1/8)
 #define QEI_VELOC_BITS 3 // bit resolution of QEI filter coefficient
 #define QEI_VELOC_DIV (1 << QEI_VELOC_BITS) // 8 Divisor for filter coefficient
-#define QEI_VELOC_HALF (QEI_VELOC_DIV >> 1) // 4 Half of filt-coef divisor (used for rounding) 
+#define QEI_VELOC_HALF (QEI_VELOC_DIV >> 1) // 4 Half of filt-coef divisor (used for rounding)
 
-#define MAX_TIME_ERR 1 // Max. No of consecutive timing errors allowed 
+#define MAX_TIME_ERR 1 // Max. No of consecutive timing errors allowed
 
 #define PERIOD_DELTA_LIM 5 // Allow a change in QEI PERIOD of upto 5 phases
 
@@ -162,7 +162,7 @@ typedef struct QEI_LUT_TAG
 } QEI_LUT_TYP;
 
 /** Structure containing all data for one QEI phase */
-typedef struct QEI_PHASE_TAG // 
+typedef struct QEI_PHASE_TAG //
 {
 	int up_filt; // Up-scaled Low-pass filtered Phase signal
 	unsigned prev; // Previous value of filtered phase signal
@@ -202,10 +202,10 @@ typedef struct QEI_DATA_TAG //
 	int tmp_i[4]; // Debug
 } QEI_DATA_TYP;
 
-#define QEI_PORT port:32 // Use 32-bit buffering for Regular-Sampling mode 
+#define QEI_PORT port:32 // Use 32-bit buffering for Regular-Sampling mode
 
 /*****************************************************************************/
-/** \brief Configures QEI clocks, and synchronises QEI data sampling 
+/** \brief Configures QEI clocks, and synchronises QEI data sampling
  * \param pb4_qei // Array of QEI data ports for each motor
  * \param qei_clks // Array of clocks for generating accurate QEI timing
  */

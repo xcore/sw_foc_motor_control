@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 #ifndef _APP_GLOBAL_H_
 #define _APP_GLOBAL_H_
 
@@ -81,7 +81,7 @@
 
 // Number of PWM time increments between ADC/PWM synchronisation points. NB Independent of Reference Frequency
 #define INIT_SYNC_INCREMENT (PWM_MAX_VALUE)
-// The time each motor starts the PWM is staggered by this amount 
+// The time each motor starts the PWM is staggered by this amount
 #define	PWM_STAGGER ((INIT_SYNC_INCREMENT + (NUMBER_OF_MOTORS >> 1)) / NUMBER_OF_MOTORS)
 
 // If locked, the ADC sampling will occur in the middle of the  switching sequence.
@@ -103,7 +103,7 @@
  */
 #ifndef PLATFORM_REFERENCE_MHZ
 #define PLATFORM_REFERENCE_MHZ 100
-#define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ) 
+#define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ)
 #define PLATFORM_REFERENCE_HZ  (1000 * PLATFORM_REFERENCE_KHZ) // NB Uses 28-bits
 #endif
 

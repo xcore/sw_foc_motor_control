@@ -51,7 +51,7 @@ int main ( void ) // Program Entry Point
 
 
 			init_common_data( comm_data_s ); // Initialise common test data
-  
+
 		  init_locks(); // Initialise Mutex for display
 
 			par

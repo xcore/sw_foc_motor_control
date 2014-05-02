@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,7 +8,7 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
  **/
 
@@ -79,7 +79,7 @@ static void print_speed(chanend c_speed[])
 		c_speed[motor_cnt] :> meas_vel;
 		c_speed[motor_cnt] :> req_vel;
 
-		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t"); 
+		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t");
 	} // for motor_cnt
 
 	printstr(" R:"); printint(req_vel); printstrln(" ");
@@ -87,7 +87,7 @@ static void print_speed(chanend c_speed[])
 /*****************************************************************************/
 static void measure_velocities(
 	chanend c_speed[],
-	int meas_vels[] 
+	int meas_vels[]
 )
 {
 	int req_vel; // Requested velocity
@@ -117,7 +117,7 @@ static void print_speed2(
 		c_speed[motor_cnt] :> meas_vel;
 		c_speed[motor_cnt] :> req_vel;
 
-		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t"); 
+		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t");
 	} // for motor_cnt
 
 	printstr(" R:"); printint(req_speed); printstrln(" ");
@@ -136,7 +136,7 @@ static void print_asj_speed(chanend c_speed[], int target)
 		c_speed[motor_cnt] :> meas_vel;
 		c_speed[motor_cnt] :> req_vel;
 
-		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t"); 
+		printint(motor_cnt); printstr(":"); printint(meas_vel); printstr("\t");
 	} // for motor_cnt
 
 	printstrln(" ");
@@ -281,7 +281,7 @@ static void test_motor( chanend c_speed[])
 	printstrln("End Of Motor Tests");
 
 	return;
-} // test_motor 
+} // test_motor
 /*****************************************************************************/
 void pretty_print_speed(int speed){
     printstr("Motor speed: ");
@@ -493,15 +493,15 @@ static void update_speed_control( // Updates the speed control loop
 
 
 	// Loop through motors
-	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++) 
+	for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
 	{
 		c_speed[motor_cnt] <: cmd_id;
 	} // for motor_cnt
-} // update_speed_control 
+} // update_speed_control
 /*****************************************************************************/
 void foc_display_shared_io_manager( // Manages the display, buttons and shared ports.
 	chanend c_speed[], // Display channel between Client & Server
-	LCD_INTERFACE_TYP &lcd_interface_s, // Reference to structure containing data for LCD display 
+	LCD_INTERFACE_TYP &lcd_interface_s, // Reference to structure containing data for LCD display
 	in port btns, // Input port buttons
 	out port leds // Output port LED's
 )
@@ -555,7 +555,7 @@ dbg_motor( c_speed ); //MB~
 				speed_change = 0; // Preset to speed change
 
 				/* Get the motor speeds from channels. NB Do this as quickly as possible */
-				for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++) 
+				for (motor_cnt=FIRST_MOTOR; motor_cnt<=LAST_MOTOR; motor_cnt++)
 				{
 					c_speed[motor_cnt] <: IO_CMD_GET_IQ;
 					c_speed[motor_cnt] :> new_meas_speed[motor_cnt];
@@ -566,21 +566,21 @@ dbg_motor( c_speed ); //MB~
 
 					// Check for speed change
 					if (new_req_speed[motor_cnt] != old_req_speed[motor_cnt])
-					{ 
+					{
 						speed_change = 1; // flag speed change
 					} // if (new_req_speed[motor_cnt] != old_req_speed[motor_cnt])
 
 					sprintf( my_string ," SetVeloc%1d:%5d RPM\n" ,motor_cnt ,new_req_speed[motor_cnt] );
 					lcd_draw_text_row( my_string ,(2*motor_cnt) ,lcd_interface_s );
 
-					// Filter estimated velocity 
+					// Filter estimated velocity
 					old_meas_speed[motor_cnt] = (old_meas_speed[motor_cnt] + new_meas_speed[motor_cnt]) >> 1;
 
-					if (fault[motor_cnt]) 
+					if (fault[motor_cnt])
 					{
 						sprintf(my_string, "  Motor%1d: FAULT = %02d\n" ,motor_cnt ,fault[motor_cnt] );
-					} 
-					else 
+					}
+					else
 					{
 						sprintf(my_string, " EstVeloc%1d:%5d RPM\n" ,motor_cnt ,old_meas_speed[motor_cnt] );
 					}
@@ -591,7 +591,7 @@ dbg_motor( c_speed ); //MB~
 				} // for motor_cnt
 
 #ifdef DEPRECIATED
-				if (speed_change) 
+				if (speed_change)
 				{
 					if (1 == USE_CAN)
 					{
@@ -624,14 +624,14 @@ dbg_motor( c_speed ); //MB~
 
 							update_speed_control( c_speed ,IO_CMD_INC_SPEED ); // Increase speed
 						break; // case 1
-	
+
 						case 2 : // Decrease the speed, by the increment
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 2;
 
 							update_speed_control( c_speed ,IO_CMD_DEC_SPEED ); // Decrease speed
 						break; // case 2
-	
+
 #if (1 == ASJ) // Call Andrew_SJ's test-code
 						case 4 : // Test tests
 							err_cnt = 0; // Valid button value so clear error count
@@ -642,14 +642,14 @@ dbg_motor( c_speed ); //MB~
 // demo_1( c_speed ); //MB~
 						break; // case 4
 #endif // ( 1 == ASJ)
-	
+
 						case 8 : // Change direction of spin
 							err_cnt = 0; // Valid button value so clear error count
 							leds <: 4;
-			
+
 							update_speed_control( c_speed ,IO_CMD_FLIP_SPIN ); // Reverse spin direction
 						break; // case 8
-	
+
 				    default: // btns_val unsupported
 							assert(err_cnt < ERR_LIM); // Check for persistant error
 

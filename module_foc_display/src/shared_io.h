@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #ifndef _SHARED_IO_H_
 #define _SHARED_IO_H_
@@ -52,7 +52,7 @@ typedef enum CMD_IO_ETAG
 {
 	IO_CMD_GET_VALS	= 1,
 	IO_CMD_GET_IQ,
-	IO_CMD_SET_SPEED, // Set Motor Speed: Expect another parameter 
+	IO_CMD_SET_SPEED, // Set Motor Speed: Expect another parameter
 	IO_CMD_INC_SPEED, // Increment speed by STEP_SPEED
 	IO_CMD_DEC_SPEED, // Decrement speed by STEP_SPEED
 	IO_CMD_FLIP_SPIN, // Change direction of spin
@@ -65,13 +65,13 @@ typedef enum CMD_IO_ETAG
 /*****************************************************************************/
 /** \brief Manages the display, buttons and shared ports.
  * \param c_speed // Display channel between Client & Server
- * \param lcd_interface_s // Reference/Pointer to structure containing data for LCD display 
+ * \param lcd_interface_s // Reference/Pointer to structure containing data for LCD display
  * \param btns // Input port buttons
  * \param leds // Output port LED's
  */
 void foc_display_shared_io_manager( // Manages the display, buttons and shared ports.
 	chanend c_speed[], // Display channel between Client & Server
-	REFERENCE_PARAM( LCD_INTERFACE_TYP, lcd_interface_s ), // Reference/Pointer to structure containing data for LCD display 
+	REFERENCE_PARAM( LCD_INTERFACE_TYP, lcd_interface_s ), // Reference/Pointer to structure containing data for LCD display
 	in port btns, // Input port buttons
 	out port leds // Output port LED's
 );

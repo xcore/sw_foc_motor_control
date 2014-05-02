@@ -14,12 +14,12 @@
 
 #include "generate_qei_tests.h"
 
-/* This code adopts the Traditional convention that 
+/* This code adopts the Traditional convention that
  * the positive spin direction is the one where Phase_A leads Phase_B.
  * E.g. Phase_A goes high one bit-change earlier than Phase_B goes high.
  * This definition is based on time, and is NOT dependent on spatial orientation of the motor!-)
  *
- * WARNING: Traditionally Phase_A is the Most Significant Bit (MSB). 
+ * WARNING: Traditionally Phase_A is the Most Significant Bit (MSB).
  * However, the QEI server S/W is designed to work with the XMOS motor board.
  * This board has Phase_A as the Least Significant Bit (LSB).
  * So the generated bit changes are as follows:-
@@ -328,7 +328,7 @@ static void do_qei_test( // Performs one QEI test
 	qei_val |= tst_data_s.nerr; // OR with error flag (Bit_3)
 
 	if (crc_rand(tst_data_s)) qei_val ^= 1; // Flip bit_0 with low probability
-	if (crc_rand(tst_data_s)) qei_val ^= 2; // Flip bit-1 with low probability 
+	if (crc_rand(tst_data_s)) qei_val ^= 2; // Flip bit-1 with low probability
 
 	// Wait till test period elapsed ...
 

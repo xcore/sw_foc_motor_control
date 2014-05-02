@@ -1,6 +1,6 @@
 /**
- * The copyrights, all other intellectual and industrial 
- * property rights are retained by XMOS and/or its licensors. 
+ * The copyrights, all other intellectual and industrial
+ * property rights are retained by XMOS and/or its licensors.
  * Terms and conditions covering the use of this code can
  * be found in the Xmos End User License Agreement.
  *
@@ -8,9 +8,9 @@
  *
  * In the case where this code is a modification of existing code
  * under a separate license, the separate license terms are shown
- * below. The modifications to the code are still covered by the 
+ * below. The modifications to the code are still covered by the
  * copyright notice above.
- **/                                   
+ **/
 
 #include "lcd.h"
 
@@ -54,12 +54,12 @@ void lcd_ports_init( // Initiate the LCD ports
 	lcd_comm_out(p, 0xB0);		/* Reset page and column addresses */
 	lcd_comm_out(p, 0x10);		/* column address upper 4 bits + 0x10 */
 	lcd_comm_out(p, 0x00);		/* column address lower 4 bits + 0x00 */
-} // lcd_ports_init 
+} // lcd_ports_init
 /*****************************************************************************/
 // Send a byte out to the LCD
 void lcd_byte_out(
 	LCD_INTERFACE_TYP &p, // Reference to structure containing LCD interface data
-	unsigned char c, 
+	unsigned char c,
 	int is_data
 )
 {
@@ -132,10 +132,10 @@ void lcd_clear( // Clear the display
 	}
 
 	lcd_comm_out(p, 0xAF);				// Display ON
-} // lcd_clear 
+} // lcd_clear
 /*****************************************************************************/
 void lcd_draw_image( // Draw an image to the display
-	const unsigned char image[], 
+	const unsigned char image[],
 	LCD_INTERFACE_TYP &p // Reference to structure containing LCD interface data
 )
 {
@@ -167,8 +167,8 @@ void lcd_draw_image( // Draw an image to the display
 } // lcd_draw_image
 /*****************************************************************************/
 void lcd_draw_text_row( // Draw a row of text to the display
-	const char string[], 
-	int lcd_row, 
+	const char string[],
+	int lcd_row,
 	LCD_INTERFACE_TYP &p // Reference to structure containing LCD interface data
 )
 {
@@ -325,5 +325,5 @@ void lcd_draw_text_row( // Draw a row of text to the display
 	}
 
 	lcd_comm_out(p, 0xAF);			// Display ON
-} // lcd_draw_text_row 
+} // lcd_draw_text_row
 /*****************************************************************************/
