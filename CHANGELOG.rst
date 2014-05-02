@@ -1,6 +1,21 @@
 sw_foc_motor_control Change Log
 ===============================
 
+1.0.0beta9
+----------
+
+  * QEI server algorithm now uses regular sampling of QEI ports (i.e. NOT triggered by change on port). This is more robust to QEI noise.
+
+  * QEI client now transmits position of current motor AND master motor.
+
+  * PWM bug-fix: 'Previous_PWM_Time' was being set to zero on re-start, now reads from timer.
+
+  * PWM processing (and Start-up of motors) is now staggered, so common processing load is symmetrically interleaved.
+
+  * ADC median filter added to remove glitch noise
+
+  * ADC resolution increased, to reduce 'speed flutter' at low speeds.
+
 1.0.0
 -----
   * Test harnesses added for ADC, QEI, and Hall Sensor
