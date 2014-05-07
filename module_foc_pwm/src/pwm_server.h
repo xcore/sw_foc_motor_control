@@ -24,6 +24,10 @@
 #include "pwm_common.h"
 #include "pwm_convert_width.h"
 
+#ifndef NUMBER_OF_MOTORS
+	#error Define. NUMBER_OF_MOTORS in app_global.h
+#endif // NUMBER_OF_MOTORS
+
 #ifndef PWM_STAGGER
 	#error Define. PWM_STAGGER in app_global.h
 #endif // PWM_STAGGER

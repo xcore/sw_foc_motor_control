@@ -17,6 +17,9 @@
 /** Define this to switch on error checks */
 #define CHECK_ERRORS 1
 
+/** Define the number of motors */
+#define NUMBER_OF_MOTORS 2
+
 /** Define Motor Identifier (0 or 1) */
 #define MOTOR_ID 1
 
