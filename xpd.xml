@@ -94,10 +94,6 @@
         <uri>https://github.com/xcore/sc_util</uri>
         <version>1.0.4rc0</version>
     </dependency>
-    <dependency repo = "sw_mb_motor_control">
-        <githash>f5c8d3e6dbfb1253ad5255cf66d96247cb952a3d</githash>
-        <uri>git://git/sw_mb_motor_control</uri>
-    </dependency>
     <description>This repository contains S/W to support Field-Oriented Control (FOC) of motors.</description>
     <docdir>module_foc_adc/doc</docdir>
     <docdir>module_foc_hall/doc</docdir>
