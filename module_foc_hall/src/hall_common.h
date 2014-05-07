@@ -35,10 +35,6 @@
 	#error Define. HALL_PER_REV in app_global.h
 #endif // HALL_PER_REV
 
-#ifndef USE_XSCOPE
-	#error Define. USE_XSCOPE in app_global.h
-#endif
-
 #define HALL_BITS 4 // No of Active bits in QEI value
 #define HALL_PHASE_MASK (0b0111) // Used to mask out 3 Hall Sensor Phase Bits
 #define HALL_NERR_MASK (0b1000) // Used to mask out Hall Error Bit(s)
