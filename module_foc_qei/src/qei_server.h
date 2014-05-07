@@ -86,6 +86,10 @@
 	#error Define. SECS_PER_MIN in app_global.h
 #endif // SECS_PER_MIN
 
+#ifndef MILLI_SEC
+	#error Define. MILLI_SEC in app_global.h
+#endif // MILLI_SEC
+
 #define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK]
 
 #define QEI_SAMP_BITS 4 // Size of QEI input port sample in bits

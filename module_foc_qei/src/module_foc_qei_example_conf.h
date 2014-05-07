@@ -48,6 +48,26 @@
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000
 
+/* This is a bit of a cludge, we are using a non-standard configuration
+ * where the timer on the tile for inner_loop() is running at 250 MHz,
+ * but other timers are running at the default of 100 MHz.
+ * Currently this flexibility to define timer frequencies for each tile does not exist.
+ * Therefore, we set up the timer frequency here.
+ */
+#ifndef PLATFORM_REFERENCE_MHZ
+#define PLATFORM_REFERENCE_MHZ 100
+#define PLATFORM_REFERENCE_KHZ (1000 * PLATFORM_REFERENCE_MHZ)
+#define PLATFORM_REFERENCE_HZ  (1000 * PLATFORM_REFERENCE_KHZ) // NB Uses 28-bits
+#endif
+
+#define SECOND PLATFORM_REFERENCE_HZ // One Second in Clock ticks
+
+/** One milli-second in clock ticks */
+#define MILLI_SEC (PLATFORM_REFERENCE_KHZ)
+
+#define MICRO_SEC (PLATFORM_REFERENCE_MHZ) // One micro-second in clock ticks
+
+
 /** Type for Port timer values. See also PORT_TIME_MASK */
 typedef unsigned short PORT_TIME_TYP;
 
