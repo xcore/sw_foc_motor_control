@@ -39,10 +39,16 @@
 /**  Default number of QEI positions per Revolution */
 #define QEI_PER_REV (QEI_PER_POLE * NUM_POLE_PAIRS)
 
+/** Define the No. Of QEI resolution bits */
+#define QEI_RES_BITS 10 // No. Of bits used to represent QEI_PER_REV (see below)
+
 /**  Seconds in a minute */
 #define SECS_PER_MIN 60
 
 /** Define Maximum specified motor speed. WARNING: Safety critical */
 #define MAX_SPEC_RPM 4000
+
+/** Type for Port timer values. See also PORT_TIME_MASK */
+typedef unsigned short PORT_TIME_TYP;
 
 #endif // _MODULE_FOC_QEI_EXAMPLE_CONF_H_

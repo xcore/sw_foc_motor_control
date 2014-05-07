@@ -70,6 +70,10 @@
 	#error Define. QEI_PER_REV in app_global.h
 #endif // QEI_PER_REV
 
+#ifndef QEI_RES_BITS
+	#error Define. QEI_RES_BITS in app_global.h
+#endif // QEI_RES_BITS
+
 #ifndef NUMBER_OF_MOTORS
 	#error Define. NUMBER_OF_MOTORS in app_global.h
 #endif // NUMBER_OF_MOTORS
@@ -80,7 +84,11 @@
 
 #ifndef SECS_PER_MIN
 	#error Define. SECS_PER_MIN in app_global.h
-#endif
+#endif // SECS_PER_MIN
+
+#ifndef PORT_TIME_TYP
+	#error Define. PORT_TIME_TYP in app_global.h
+#endif // PORT_TIME_TYP
 
 #define QEI_REV_MASK (QEI_PER_REV - 1) // Mask used to force QEI count into base-range [0..QEI_REV_MASK]
 
