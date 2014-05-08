@@ -103,7 +103,6 @@
     <docdir>doc_quickstart/adc</docdir>
     <docdir>doc_quickstart/hall</docdir>
     <docdir>doc_quickstart/pwm</docdir>
-    <docdir>doc_quickstart/qei</docdir>
     <exclude_dir>app_dbg</exclude_dir>
     <exclude_dir>app_dbg_qei</exclude_dir>
     <exclude_dir>app_foc_angle</exclude_dir>
