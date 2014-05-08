@@ -8,7 +8,8 @@ API
 Functions
 ---------
 
-   * init_locks
-   * acquire_lock
-   * release_lock
-   * free_locks
+.. doxygenfunction:: init_locks
+.. doxygenfunction:: acquire_locks
+.. doxygenfunction:: release_locks
+.. doxygenfunction:: free_locks
+
