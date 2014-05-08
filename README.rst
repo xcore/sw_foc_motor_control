@@ -2,7 +2,7 @@
 sw_foc_motor_control
 ....................
 
-:Latest release: 1.0.1beta7
+:Latest release: 1.0.1beta8
 :Maintainer: markb
 :Description: This repository contains S/W to support Field-Oriented Control (FOC) of motors.
 
