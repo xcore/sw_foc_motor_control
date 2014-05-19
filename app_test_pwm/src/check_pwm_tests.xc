@@ -403,13 +403,15 @@ static void finalise_pwm_phase( // Terminate pulse-width test for one phase
 {
 	WIDTH_PWM_ENUM wid_state = chk_data_s.prev_vect.comp_state[WIDTH]; // Local copy of width-state under test
 	unsigned hi_width = chk_data_s.common.pwm_wids[wid_state]; // Pulse-width check value for High-Leg
+	unsigned lo_width = (PWM_MAX_VALUE - hi_width - PWM_DEAD_TIME); // Pulse-width check value for Lo-Leg
 
 
 	chk_data_s.curr_leg = PWM_HI_LEG; // Set PWM-leg under test
 	finalise_pwm_leg( chk_data_s ,line_data_s.waves[PWM_HI_LEG] ,hi_width ); // finalise pulse-width test for Hi-Leg
 
 	chk_data_s.curr_leg = PWM_LO_LEG; // Set PWM-leg under test
-	finalise_pwm_leg( chk_data_s ,line_data_s.waves[PWM_LO_LEG] ,(hi_width + PWM_DEAD_TIME) ); // finalise pulse-width test for Lo-Leg
+	finalise_pwm_leg( chk_data_s ,line_data_s.waves[PWM_LO_LEG] ,lo_width ); // finalise pulse-width test for Lo-Leg
+
 } // finalise_pwm_phase
 /*****************************************************************************/
 static void finalise_pwm_width_test( // Terminate pulse-width test for all phases under test
